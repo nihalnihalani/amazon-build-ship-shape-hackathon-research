@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:40:19+05:30",
+ "updated_at": "2026-10-05T03:49:56+05:30",
  "states": [
   "pending",
   "ready",
@@ -50,7 +50,8 @@
     "EV-0005",
     "EV-0006",
     "EV-0010",
-    "EV-0013"
+    "EV-0013",
+    "EV-0015"
    ],
    "commit": null,
    "blocker": null
@@ -357,7 +358,9 @@
     "apps/tv"
    ],
    "reviewer": "lead",
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0014"
+   ],
    "commit": null,
    "blocker": "Native render part blocked by B-001; code + typecheck + jest proceeding"
   },
