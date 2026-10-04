@@ -1,4 +1,4 @@
-import * as sessionCore from '@atr/session-core';
+import { createSessionStore } from '@atr/session-core';
 import type { SessionStore, SessionStoreDeps } from '@atr/session-core';
 import { createAsyncStoragePort } from '../adapters/asyncStoragePort';
 import { createClock } from '../adapters/clock';
@@ -10,11 +10,8 @@ import type { AppConfig } from '../config';
 export type SessionStoreFactory = (deps: SessionStoreDeps) => SessionStore;
 
 /**
- * The session engine (`createSessionStore`) is implemented in @atr/session-core by another owner and is
- * not part of the frozen contract file. It is looked up by name so this app compiles and its tests run
- * against a fake store until that export lands; once it does, the integrator replaces this lookup with a
- * direct import. Returns null when the export is missing, and the app then shows a fatal screen instead
- * of pretending to work.
+ * Kept for tests that inject a fake store: returns the module's createSessionStore when it is a
+ * function, otherwise null (the app then shows a fatal screen instead of pretending to work).
  */
 export function resolveSessionStoreFactory(moduleExports: object): SessionStoreFactory | null {
   const candidate: unknown = Reflect.get(moduleExports, 'createSessionStore');
@@ -45,7 +42,7 @@ export interface RuntimeOptions {
 /** Builds the real ports (AsyncStorage, WebSocket, local clock) and the session store. */
 export function createRuntime(options: RuntimeOptions = {}): Runtime | null {
   const config = options.config ?? getAppConfig();
-  const factory = options.factory === undefined ? resolveSessionStoreFactory(sessionCore) : options.factory;
+  const factory = options.factory === undefined ? createSessionStore : options.factory;
   if (factory === null) return null;
   const transport = createWsTransport();
   const randomBytes = randomBytesFromPlatform();

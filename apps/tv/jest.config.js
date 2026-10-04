@@ -7,6 +7,9 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest/setup.ts'],
   // Resolves NodeNext-style "./file.js" imports inside ../../packages/*/src to the .ts sources.
   resolver: '<rootDir>/jest/resolver.js',
+  // Workspace package sources live outside apps/tv; let their Babel-injected helpers
+  // (@babel/runtime) resolve from this project's node_modules.
+  modulePaths: ['<rootDir>/node_modules'],
   moduleNameMapper: {
     '^@atr/protocol$': '<rootDir>/../../packages/protocol/src/index.ts',
     '^@atr/session-core$': '<rootDir>/../../packages/session-core/src/index.ts',

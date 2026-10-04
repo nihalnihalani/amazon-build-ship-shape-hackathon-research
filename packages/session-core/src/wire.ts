@@ -14,7 +14,6 @@ import { MessageFactory, isAllowedSender, parseWireMessage, specFor, validateMes
 import type {
   IdFactory,
   MessageIds,
-  MessageOf,
   MessageType,
   PayloadMap,
   WireMessage,
