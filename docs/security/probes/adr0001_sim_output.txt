@@ -1,0 +1,47 @@
+A1 grid cal_margin in [13,60], rise in [-30,3]: checked 15518001 blocked 0
+A2 boundary: (13,3)-> false  (13,3.01)-> true  (12.99,0)-> false  (12.99,2.99)-> false
+A3 cal_margin=13: max rise not blocked = 3.000 dB
+A3 cal_margin=14: max rise not blocked = 4.000 dB
+A3 cal_margin=15: max rise not blocked = 5.000 dB
+A3 cal_margin=16: max rise not blocked = 6.000 dB
+A3 cal_margin=20: max rise not blocked = 6.000 dB
+A3 cal_margin=30: max rise not blocked = 6.000 dB
+D n=1: p20=1 p50=1 p80=1 p95=1 (rank from top for p95: 1)
+D n=2: p20=1 p50=1 p80=2 p95=2 (rank from top for p95: 1)
+D n=20: p20=4 p50=10 p80=16 p95=19 (rank from top for p95: 2)
+D n=40: p20=8 p50=20 p80=32 p95=38 (rank from top for p95: 3)
+D n=100: p20=20 p50=50 p80=80 p95=95 (rank from top for p95: 6)
+D n=160: p20=32 p50=80 p80=128 p95=152 (rank from top for p95: 9)
+B session floor dBFS -60.01
+B transient sweep (fraction of frame-phase offsets accepted as voice; max candidate frames)
+  burst +10 dB: 50ms:0/40 (maxCand 2) | 100ms:0/40 (maxCand 3) | 125ms:0/40 (maxCand 3) | 150ms:19/40 (maxCand 4) | 175ms:35/40 (maxCand 4) | 200ms:40/40 (maxCand 5) | 250ms:40/40 (maxCand 6)
+  burst +15 dB: 50ms:0/40 (maxCand 2) | 100ms:0/40 (maxCand 3) | 125ms:12/40 (maxCand 4) | 150ms:32/40 (maxCand 4) | 175ms:40/40 (maxCand 5) | 200ms:40/40 (maxCand 5) | 250ms:40/40 (maxCand 6)
+  burst +20 dB: 50ms:0/40 (maxCand 2) | 100ms:0/40 (maxCand 3) | 125ms:18/40 (maxCand 4) | 150ms:38/40 (maxCand 4) | 175ms:40/40 (maxCand 5) | 200ms:40/40 (maxCand 5) | 250ms:40/40 (maxCand 6)
+  burst +30 dB: 50ms:0/40 (maxCand 2) | 100ms:0/40 (maxCand 3) | 125ms:19/40 (maxCand 4) | 150ms:39/40 (maxCand 4) | 175ms:40/40 (maxCand 5) | 200ms:40/40 (maxCand 5) | 250ms:40/40 (maxCand 6)
+C silent-speaker 8 s phrase window in a room that PASSED the 5 s quiet check (Gaussian per-frame dB, AR(1) rho)
+  sigma rho | P(quiet valid) | P(active_ms>=400 | silent) | P(any accepted seg) | P(prewindow false-fail: burst only) | P(false-fail: burst+stability)
+  1.5 0.0 | 1.000 | 0.0000 | 0.0000 | 0.0000 | 0.0000
+  1.5 0.5 | 1.000 | 0.0000 | 0.0000 | 0.0000 | 0.0000
+  1.5 0.8 | 1.000 | 0.0000 | 0.0000 | 0.0000 | 0.0000
+  1.5 0.9 | 1.000 | 0.0003 | 0.0008 | 0.0000 | 0.0000
+  2.5 0.0 | 1.000 | 0.0007 | 0.0008 | 0.0000 | 0.0070
+  2.5 0.5 | 1.000 | 0.0050 | 0.0143 | 0.0000 | 0.0122
+  2.5 0.8 | 0.989 | 0.0482 | 0.1129 | 0.0000 | 0.0398
+  2.5 0.9 | 0.967 | 0.1039 | 0.1689 | 0.0000 | 0.0357
+  3.0 0.0 | 0.961 | 0.0118 | 0.0128 | 0.0000 | 0.1237
+  3.0 0.5 | 0.941 | 0.0477 | 0.0893 | 0.0000 | 0.1246
+  3.0 0.8 | 0.893 | 0.1771 | 0.3011 | 0.0009 | 0.1433
+  3.0 0.9 | 0.865 | 0.2435 | 0.3479 | 0.0004 | 0.1106
+  3.5 0.0 | 0.590 | 0.0712 | 0.0797 | 0.0003 | 0.4253
+  3.5 0.5 | 0.608 | 0.1608 | 0.2570 | 0.0008 | 0.3753
+  3.5 0.8 | 0.660 | 0.3500 | 0.5071 | 0.0061 | 0.3045
+  3.5 0.9 | 0.695 | 0.3923 | 0.5000 | 0.0034 | 0.2135
+E phrase of D ms of continuous candidate frames -> accepted active_ms and valid(>=400)?
+  150 ms voiced -> active_ms=0 (>=400: false)
+  200 ms voiced -> active_ms=200 (>=400: false)
+  250 ms voiced -> active_ms=250 (>=400: false)
+  350 ms voiced -> active_ms=350 (>=400: false)
+  400 ms voiced -> active_ms=400 (>=400: true)
+  450 ms voiced -> active_ms=450 (>=400: true)
+  four isolated 50 ms clicks 100 ms apart -> accepted segs 1 active_ms 350
+F floor of exact digital silence: -140 dBFS -> quiet check passes floor<=-30 and p80-p20=0
