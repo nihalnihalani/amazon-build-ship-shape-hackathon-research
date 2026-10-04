@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T04:25:54+05:30",
+ "updated_at": "2026-10-05T04:38:35+05:30",
  "states": [
   "pending",
   "ready",
@@ -221,7 +221,7 @@
     "T02"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "in_review",
    "attempts": 2,
    "acceptance_criteria": [
     "packages/protocol implements PROTOCOL.md v1 with validators and tests",
@@ -233,9 +233,10 @@
    ],
    "reviewer": "security-review",
    "evidence_refs": [
-    "EV-0009"
+    "EV-0009",
+    "EV-0026"
    ],
-   "commit": "c9adba8",
+   "commit": "c844c21",
    "blocker": "ADR rev 2 rework in progress (AMENDMENTS-REV2.md)"
   },
   {

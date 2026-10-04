@@ -7,7 +7,8 @@
  * they are safe to copy into `error.detail` and logs.
  */
 
-import { codePointLength, containsControlChars, hasLoneSurrogate, validateUserText } from './text.js';
+import { isCoverageQuantized, isDbQuantized } from './quantize.js';
+import { codePointLength, containsControlChars, displaySafe, hasLoneSurrogate, validateUserText } from './text.js';
 import type { TextRejection } from './text.js';
 
 export type Check = (value: unknown, path: string) => string | null;
@@ -92,7 +93,45 @@ const TEXT_REASON: Record<TextRejection, string> = {
   not_normalized: 'text not normalized',
   too_short: 'too short',
   too_long: 'too long',
+  forbidden_char: 'forbidden character',
+  no_visible_content: 'no visible content',
+  combining_run: 'too many combining marks',
 };
+
+/**
+ * Plain string (control characters and lone surrogates rejected, length in code points)
+ * that must also be display safe (revision 4, PK-03). Not required to be NFC; used for
+ * `app_version`.
+ */
+export function displayStr(min: number, max: number): Check {
+  const plain = str(min, max);
+  return (v, p) => {
+    const e = plain(v, p);
+    if (e) return e;
+    const verdict = displaySafe(v as string);
+    return verdict === 'ok' ? null : `${p}: ${TEXT_REASON[verdict]}`;
+  };
+}
+
+/** Finite number in `min..max` that is a multiple of 0.1 (tolerance), revision 4 (PK-06). */
+export function dbNum(min: number, max: number): Check {
+  const range = num(min, max);
+  return (v, p) => {
+    const e = range(v, p);
+    if (e) return e;
+    return isDbQuantized(v as number) ? null : `${p}: not a multiple of 0.1`;
+  };
+}
+
+/** `coverage`: finite number in 0..1 that is a multiple of 0.001 (tolerance), revision 4 (PK-06). */
+export const coverageNum: Check = (() => {
+  const range = num(0, 1);
+  return (v, p) => {
+    const e = range(v, p);
+    if (e) return e;
+    return isCoverageQuantized(v as number) ? null : `${p}: not a multiple of 0.001`;
+  };
+})();
 
 /** User text: strict (must already be NFC + trimmed), code point length range. */
 export function userText(min: number, max: number): Check {

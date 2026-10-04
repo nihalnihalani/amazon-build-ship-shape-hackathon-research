@@ -114,6 +114,8 @@ export interface AuthOkPayload {
   generation: number;
   peer_connected: boolean;
   phone_paired: boolean;
+  /** Revision 4: the rotated credential (43 base64url characters) to present on the next `auth.resume`. */
+  next_credential: string;
 }
 export interface PeerStatePayload {
   role: ClientRole;
