@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:50:01+05:30",
+ "updated_at": "2026-10-05T03:54:49+05:30",
  "states": [
   "pending",
   "ready",
@@ -51,7 +51,8 @@
     "EV-0006",
     "EV-0010",
     "EV-0013",
-    "EV-0015"
+    "EV-0015",
+    "EV-0018"
    ],
    "commit": null,
    "blocker": null
@@ -359,7 +360,8 @@
    ],
    "reviewer": "lead",
    "evidence_refs": [
-    "EV-0014"
+    "EV-0014",
+    "EV-0017"
    ],
    "commit": "e4b87ea",
    "blocker": "Code, typecheck and jest verified (EV-0014); native build/VVD render/doctor/vpt pending B-001"
@@ -400,14 +402,14 @@
     "R-ST1",
     "R-J2"
    ],
-   "owner": "vega-tv",
+   "owner": "session",
    "cwd": null,
    "dependencies": [
     "T05",
     "T09"
    ],
    "required": true,
-   "status": "pending",
+   "status": "in_review",
    "attempts": 0,
    "acceptance_criteria": [
     "Namespaced storage, migrations, resume/discard, verified deletion tests"
@@ -415,10 +417,12 @@
    "expected_outputs": [
     "apps/tv/src/storage"
    ],
-   "reviewer": null,
-   "evidence_refs": [],
+   "reviewer": "qa-accessibility",
+   "evidence_refs": [
+    "EV-0016"
+   ],
    "commit": null,
-   "blocker": null
+   "blocker": "Logic verified with fakes; AsyncStorage persistence across restart on VVD pending B-001"
   },
   {
    "id": "T12",
