@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T05:05:48+05:30",
+ "updated_at": "2026-10-05T05:19:52+05:30",
  "states": [
   "pending",
   "ready",
@@ -434,7 +434,8 @@
    "evidence_refs": [
     "EV-0016",
     "EV-0027",
-    "EV-0028"
+    "EV-0028",
+    "EV-0031"
    ],
    "commit": "2864603",
    "blocker": "Logic verified with fakes; AsyncStorage persistence across restart on VVD pending B-001"
@@ -513,7 +514,7 @@
     "T12"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "Positions 3/6/9 hidden first attempts; leak tests (visual, a11y, phone)"
@@ -524,7 +525,8 @@
    "reviewer": "qa-accessibility",
    "evidence_refs": [
     "EV-0027",
-    "EV-0028"
+    "EV-0028",
+    "EV-0031"
    ],
    "commit": "2864603",
    "blocker": "QA/ADR rev 2 rework"
@@ -555,7 +557,8 @@
    "reviewer": "qa-accessibility",
    "evidence_refs": [
     "EV-0027",
-    "EV-0028"
+    "EV-0028",
+    "EV-0031"
    ],
    "commit": "2864603",
    "blocker": "QA/ADR rev 2 rework"
