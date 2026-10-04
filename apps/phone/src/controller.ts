@@ -11,7 +11,7 @@
  *  - no tap after attempt.reveal is sent; credentials live only in this object's memory.
  */
 
-import { CODE_LENGTH, DEFAULT_CUE_WORD, LIMITS, RECONNECT_BACKOFF_MS } from './config.js';
+import { CODE_LENGTH, DEFAULT_CUE_WORD, FAILURE_WINDOW_MS, LIMITS, RECONNECT_BACKOFF_MS } from './config.js';
 import { joinErrorText, joinRejectedText } from './labels.js';
 import { checkCode, normalizeCodeInput } from './pairing.js';
 import { type PhraseValidation, validateCue, validateDeviceLabel, validatePhrases } from './phrases.js';
@@ -34,8 +34,14 @@ import {
 import { backoffDelay, type SocketFactory, Transport } from './transport.js';
 import type { WakeLockController } from './wake-lock.js';
 
-export type Screen = 'join' | 'setup' | 'unpaired';
-export type JoinPhase = 'idle' | 'connecting' | 'pending';
+/** There is no separate "unpaired" screen: a lost pairing returns to Join with an explanation. */
+export type Screen = 'join' | 'setup';
+/**
+ * idle -> connecting -> pending ("On your TV, pick NN") -> confirming ("Did you just pick NN on
+ * your TV?") -> (Yes) setup. Until the user answers Yes the phone sends nothing but the join
+ * protocol and ping (A3-01).
+ */
+export type JoinPhase = 'idle' | 'connecting' | 'pending' | 'confirming';
 /** Transport state names from PROTOCOL.md section 6. */
 export type LinkState = 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'reconnecting' | 'failed';
 export type UnpairedReason = 'tv_unpaired' | 'room_closed' | 'expired' | 'revoked' | 'superseded';
@@ -73,6 +79,8 @@ export interface AppState {
     message: string | null;
   };
   unpairedReason: UnpairedReason | null;
+  /** True once the user tapped "Yes, that was me" for the current pairing. */
+  pairingConfirmed: boolean;
   link: LinkState;
   reconnectAttempt: number;
   tvConnected: boolean | null;
@@ -90,6 +98,8 @@ export interface AppState {
    */
   phrases: { status: 'none' | 'sending' | 'saved' | 'rejected' | 'not_sent' | 'locked'; count: number; saved: string[] };
   notice: string | null;
+  /** Set when a precheck found no signal at all (the microphone looks muted or blocked). */
+  micNotice: 'silent_input' | null;
   /** Derived controls. */
   canStartMic: boolean;
   canStopMic: boolean;
@@ -115,6 +125,8 @@ export interface ControllerDeps {
   /** Test builds only. */
   banner?: string | null;
   now?: () => number;
+  /** Source of randomness for reconnect jitter, in [0, 1). Default Math.random. */
+  random?: () => number;
 }
 
 interface Credential {
@@ -158,6 +170,9 @@ const COMMAND_TYPES: ReadonlySet<InboundType> = new Set<InboundType>([
   'session.end',
 ]);
 
+/** Outbound types allowed before the user answers "Did you just pick NN on your TV?". */
+const PRE_CONFIRM_TYPES: ReadonlySet<OutboundType> = new Set<OutboundType>(['ping']);
+
 const FATAL_RESUME_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'revoked',
   'expired',
@@ -192,6 +207,10 @@ export class PhoneController {
   private cueBase = 0;
   private cueNet = 0;
   private readonly pendingCues = new Set<string>();
+  /** Credential is held but the user has not yet said "Yes, that was me". */
+  private userConfirmed = false;
+  private failTimer: ReturnType<typeof setTimeout> | null = null;
+  private listenerTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingResponse: string | null = null;
   private pendingPhrases: { id: string; phrases: string[] } | null = null;
   /** Phrases the TV has acknowledged as saved. */
@@ -223,6 +242,7 @@ export class PhoneController {
         message: null,
       },
       unpairedReason: null,
+      pairingConfirmed: false,
       link: 'disconnected',
       reconnectAttempt: 0,
       tvConnected: null,
@@ -235,6 +255,7 @@ export class PhoneController {
       cue: { word: DEFAULT_CUE_WORD, message: null, used: 0, max: LIMITS.cuesPerSession, feedback: null },
       phrases: { status: 'none', count: 0, saved: [] },
       notice: null,
+      micNotice: null,
       canStartMic: false,
       canStopMic: false,
       canAnswer: false,
@@ -275,6 +296,7 @@ export class PhoneController {
       canStartMic:
         (s.secureContext || synthetic) &&
         s.screen === 'setup' &&
+        s.pairingConfirmed &&
         s.visibility === 'visible' &&
         s.mic.state !== 'permission_pending' &&
         !micOpen,
@@ -320,6 +342,7 @@ export class PhoneController {
     this.purpose = 'join';
     this.patch({
       join: { ...join, phase: 'connecting', message: null, codeMessage: null, deviceLabelMessage: null },
+      unpairedReason: null,
       link: 'connecting',
       notice: null,
     });
@@ -328,7 +351,7 @@ export class PhoneController {
 
   /** User cancelled the join (before the TV confirmed). */
   cancelJoin(): void {
-    if (this.state.join.phase === 'idle' || this.credential !== null) return;
+    if (this.state.join.phase === 'idle' || this.state.join.phase === 'confirming') return;
     this.transport.close();
     this.factory.clearAuth();
     this.patch({
@@ -337,13 +360,48 @@ export class PhoneController {
     });
   }
 
-  /** From the "no longer paired" screen. */
-  pairAgain(): void {
+  /**
+   * "Yes, that was me": the user says they just picked this number on their own TV. Only now does
+   * the phone start talking: the first thing sent is `mic.state`, and microphone start is enabled.
+   */
+  confirmPairing(): void {
+    if (this.state.join.phase !== 'confirming' || this.credential === null || this.userConfirmed) return;
+    this.userConfirmed = true;
+    this.pairedOnce = true;
+    this.patch({
+      screen: 'setup',
+      pairingConfirmed: true,
+      unpairedReason: null,
+      join: { ...this.state.join, phase: 'idle', confirmDigits: null, message: null, code: '' },
+    });
+    this.lastMicKey = null;
+    this.publishMic();
+    this.flushPending();
+    this.syncWakeLock();
+  }
+
+  /**
+   * "No, cancel": the user did not pick that number, so this may be somebody else's room. The
+   * credential is discarded, nothing further is sent, and the connection is closed.
+   */
+  rejectPairing(): void {
+    if (this.state.join.phase !== 'confirming') return;
+    this.discardUnconfirmed('Cancelled. Nothing was shared with that TV.');
+  }
+
+  private discardUnconfirmed(message: string): void {
+    this.transport.close();
+    this.factory.clearAuth();
+    this.credential = null;
+    this.userConfirmed = false;
+    this.clearFailureWindow();
     this.patch({
       screen: 'join',
-      unpairedReason: null,
+      pairingConfirmed: false,
       link: 'disconnected',
-      join: { ...this.state.join, phase: 'idle', confirmDigits: null, message: null, code: '', codeMessage: null },
+      tvConnected: null,
+      reconnectAttempt: 0,
+      join: { ...this.state.join, phase: 'idle', confirmDigits: null, message, code: '' },
     });
   }
 
@@ -379,10 +437,15 @@ export class PhoneController {
       }
       return;
     }
+    if (!this.userConfirmed) {
+      // Never resume a pairing the user has not confirmed.
+      this.discardUnconfirmed('The connection closed before you confirmed. Nothing was shared. Pair again from the TV.');
+      return;
+    }
     this.onLinkLost();
   }
 
-  /** Paired but the socket is gone: cancel measurement, then retry with backoff. */
+  /** Paired but the socket is gone: cancel measurement, then retry with backoff and jitter. */
   private onLinkLost(): void {
     this.factory.clearAuth();
     this.lastMicKey = null;
@@ -395,16 +458,37 @@ export class PhoneController {
     }
     this.pendingResponse = null;
     const attempt = this.state.reconnectAttempt;
-    const delay = backoffDelay(attempt, RECONNECT_BACKOFF_MS);
+    const delay = backoffDelay(attempt, RECONNECT_BACKOFF_MS, this.deps.random);
     this.purpose = 'resume';
     this.patch({ link: 'reconnecting', reconnectAttempt: attempt + 1, tvConnected: null });
+    if (this.failTimer === null) this.startFailureWindow();
     this.transport.scheduleRetry(delay, this.deps.relayUrl);
   }
 
-  /** User pressed "Reconnect now". */
+  /** A6-02: after 2 minutes of continuous failure stop retrying by itself and say so. */
+  private startFailureWindow(): void {
+    this.clearFailureWindow();
+    this.failTimer = setTimeout(() => {
+      this.failTimer = null;
+      if (this.state.link === 'connected' || this.credential === null || !this.userConfirmed) return;
+      this.transport.close(); // cancels the retry timer and any half-open socket
+      this.factory.clearAuth();
+      this.patch({ link: 'failed', tvConnected: null });
+    }, FAILURE_WINDOW_MS);
+  }
+
+  private clearFailureWindow(): void {
+    if (this.failTimer !== null) clearTimeout(this.failTimer);
+    this.failTimer = null;
+  }
+
+  /** User pressed Retry (while reconnecting, or after automatic retries stopped). */
   retryNow(): void {
-    if (this.state.link !== 'reconnecting' || this.credential === null) return;
+    const link = this.state.link;
+    if ((link !== 'reconnecting' && link !== 'failed') || this.credential === null || !this.userConfirmed) return;
     this.purpose = 'resume';
+    this.startFailureWindow(); // a deliberate retry gets a fresh 2-minute window
+    this.patch({ link: 'reconnecting', ...(link === 'failed' ? { reconnectAttempt: 0 } : {}) });
     this.transport.open(this.deps.relayUrl);
   }
 
@@ -441,7 +525,7 @@ export class PhoneController {
         this.onAuthOk(msg.payload);
         return;
       case 'peer.state':
-        if (msg.payload.role === 'tv') {
+        if (this.userConfirmed && msg.payload.role === 'tv') {
           this.patch({ tvConnected: msg.payload.connected });
           if (!msg.payload.connected) this.abortRun('interrupted');
           else this.flushPending();
@@ -456,10 +540,11 @@ export class PhoneController {
         this.onRelayError(msg.payload.code, msg.payload.ref_message_id);
         return;
       case 'ack':
-        this.onAck(msg.payload.acked_message_id, msg.payload.outcome, msg.payload.detail);
+        if (this.userConfirmed) this.onAck(msg.payload.acked_message_id, msg.payload.outcome, msg.payload.detail);
         return;
       default:
-        if (COMMAND_TYPES.has(msg.type) && this.state.screen === 'setup') this.onCommand(msg as Command);
+        // TV commands are acted on (and acknowledged) only once the user confirmed the pairing.
+        if (COMMAND_TYPES.has(msg.type) && this.userConfirmed && this.state.screen === 'setup') this.onCommand(msg as Command);
     }
   }
 
@@ -467,10 +552,12 @@ export class PhoneController {
     if (this.credential !== null || this.state.join.phase === 'idle') return;
     this.credential = { roomId, credential, expiresAt };
     this.factory.setAuth(roomId, generation);
-    this.pairedOnce = true;
+    this.userConfirmed = false;
+    // A3-01: the relay says "accepted", but the phone cannot tell whose room this is. Ask the user
+    // whether they just picked this number on their own TV; send nothing but ping until they say Yes.
     this.patch({
-      screen: 'setup',
-      join: { ...this.state.join, phase: 'idle', confirmDigits: null, message: null, code: '' },
+      pairingConfirmed: false,
+      join: { ...this.state.join, phase: 'confirming', message: null },
     });
     this.enterConnected(null);
   }
@@ -496,13 +583,23 @@ export class PhoneController {
         return null;
       }
     });
+    this.clearFailureWindow();
     this.lastMicKey = null;
-    this.publishMic();
-    this.flushPending();
-    this.syncWakeLock();
+    if (this.userConfirmed) {
+      this.publishMic();
+      this.flushPending();
+      this.syncWakeLock();
+    }
   }
 
   private onRelayError(code: ErrorCode, ref: string | null): void {
+    if (this.credential !== null && !this.userConfirmed) {
+      // Waiting for "Yes": any end-of-pairing signal discards the pairing; anything else is ignored.
+      if (FATAL_RESUME_CODES.has(code) || code === 'superseded') {
+        this.discardUnconfirmed('The relay ended this pairing before you confirmed. Nothing was shared.');
+      }
+      return;
+    }
     if (this.credential === null) {
       if (this.state.join.phase !== 'idle') {
         this.transport.close();
@@ -766,7 +863,20 @@ export class PhoneController {
     this.activeRun = null;
     this.rememberClosed(ctx.ids.window_id);
     this.patch({ run: null });
+    this.noteSilentInput(ctx.kind, payload);
     this.sendResult(ctx, payload);
+  }
+
+  /**
+   * A precheck that found no signal at all means the microphone looks muted or blocked. That is a
+   * property of the input, not of anybody's speech, so the phone may say so. Level numbers and
+   * window results are never shown.
+   */
+  private noteSilentInput(kind: 'precheck' | 'window', payload: unknown): void {
+    if (kind !== 'precheck') return;
+    const reason = (payload as { invalid_reason?: unknown }).invalid_reason;
+    const silent = reason === 'silent_input';
+    if (silent !== (this.state.micNotice === 'silent_input')) this.patch({ micNotice: silent ? 'silent_input' : null });
   }
 
   private sendResult(
@@ -775,8 +885,12 @@ export class PhoneController {
   ): void {
     const type = ctx.kind === 'precheck' ? 'precheck.result' : 'window.result';
     // While the TV is known to be away, hold the result until it is back (it will ack it as stale).
-    const sent = this.state.tvConnected !== false && this.sendAuthed(type, payload as never, ctx.ids);
-    if (!sent) {
+    const tvAway = this.state.tvConnected === false;
+    const linkUp = this.linkUp();
+    const sent = !tvAway && this.sendAuthed(type, payload as never, ctx.ids);
+    // Queue only when the link or the TV is away. A message the validators refused is dropped:
+    // retrying it would fail the same way.
+    if (!sent && (tvAway || !linkUp)) {
       this.pendingResults.push({ type, payload, ids: ctx.ids });
       if (this.pendingResults.length > 4) this.pendingResults.shift();
     }
@@ -823,6 +937,9 @@ export class PhoneController {
 
   private onWindowCancel(msg: Extract<Command, { type: 'window.cancel' }>): void {
     if (!this.matchesSession(msg)) return this.ackFor(msg, 'ignored_stale', 'unknown_session');
+    // A4-04: a cancel for the attempt the listener is answering closes the controls (precheck and
+    // capture windows of one attempt share the attempt id).
+    if (this.state.listener.open && this.state.listener.attemptId === msg.attempt_id) this.lockListener();
     const ctx = this.activeRun;
     if (ctx !== null && ctx.ids.window_id === msg.window_id && ctx.ids.attempt_id === msg.attempt_id) {
       this.abortRun('discard');
@@ -849,10 +966,17 @@ export class PhoneController {
         windowId: ids.window_id,
         attemptId: ids.attempt_id,
         answered: same ? l.answered : null,
-        feedback: same ? l.feedback : null,
+        feedback: null, // a fresh open clears "Time is up" and any earlier refusal text
       },
       notice: same ? this.state.notice : null,
     });
+    // A4-04: the controls close by themselves when the TV's timeout elapses. "Keep waiting" on the
+    // TV sends a fresh listener.open, which re-enables them for its attempt.
+    this.clearListenerTimer();
+    this.listenerTimer = setTimeout(() => {
+      this.listenerTimer = null;
+      this.lockListener('Time is up for this answer. The TV decides what happens next.');
+    }, msg.payload.timeout_ms);
     this.ackFor(msg, 'applied');
   }
 
@@ -913,7 +1037,8 @@ export class PhoneController {
   }
 
   private onAudio(snapshot: AudioSnapshot): void {
-    this.patch({ mic: snapshot });
+    const closed = snapshot.state === 'off' || snapshot.state === 'permission_pending';
+    this.patch({ mic: snapshot, ...(closed && this.state.micNotice !== null ? { micNotice: null } : {}) });
     this.syncWakeLock();
     this.publishMic();
   }
@@ -963,9 +1088,15 @@ export class PhoneController {
 
   // ---- listener controls -----------------------------------------------------
 
-  private lockListener(): void {
+  private lockListener(feedback?: string): void {
+    this.clearListenerTimer();
     if (!this.state.listener.open) return;
-    this.patch({ listener: { ...this.state.listener, open: false } });
+    this.patch({ listener: { ...this.state.listener, open: false, ...(feedback !== undefined ? { feedback } : {}) } });
+  }
+
+  private clearListenerTimer(): void {
+    if (this.listenerTimer !== null) clearTimeout(this.listenerTimer);
+    this.listenerTimer = null;
   }
 
   /** Heard / Not heard. Bound to the window and attempt from the TV's listener.open. */
@@ -1070,15 +1201,21 @@ export class PhoneController {
     this.pendingPhrases = null;
     this.pendingResponse = null;
     this.resetCues();
-    this.patch({ session: null });
+    this.userConfirmed = false;
+    this.clearFailureWindow();
+    this.clearListenerTimer();
+    this.patch({ session: null, micNotice: null });
     void this.shutdownCapture('discard');
+    // A6-02: back to Join with a plain explanation; nothing is retried with the old credential.
     this.patch({
-      screen: 'unpaired',
+      screen: 'join',
+      pairingConfirmed: false,
       unpairedReason: reason,
       link: 'disconnected',
       tvConnected: null,
       reconnectAttempt: 0,
       run: null,
+      join: { ...this.state.join, phase: 'idle', confirmDigits: null, message: null, code: '' },
     });
     this.syncWakeLock();
   }
@@ -1086,6 +1223,8 @@ export class PhoneController {
   /** Tear down everything (page unload, tests). */
   dispose(): void {
     this.transport.close();
+    this.clearFailureWindow();
+    this.clearListenerTimer();
     void this.shutdownCapture('discard');
     for (const u of this.unsubs) u();
     this.unsubs.length = 0;
@@ -1097,6 +1236,11 @@ export class PhoneController {
   }
 
   // ---- sending -------------------------------------------------------------
+
+  /** True when an authenticated connection is open right now. */
+  private linkUp(): boolean {
+    return this.state.link === 'connected' && this.factory.authenticated && this.transport.isOpen;
+  }
 
   private sendRaw(message: WireMessage): boolean {
     try {
@@ -1113,7 +1257,9 @@ export class PhoneController {
 
   /** Returns the message_id when sent, otherwise null. */
   private sendAuthedWithId<T extends OutboundType>(type: T, payload: OutboundPayloads[T], ids: Ids = {}): string | null {
-    if (this.state.link !== 'connected' || !this.factory.authenticated || !this.transport.isOpen) return null;
+    if (!this.linkUp()) return null;
+    // A3-01: until the user confirmed the pairing, the only thing sent is the join protocol and ping.
+    if (!this.userConfirmed && !PRE_CONFIRM_TYPES.has(type)) return null;
     try {
       const message = this.factory.build(type, payload, ids);
       return this.transport.send(this.factory.serialize(message)) ? message.message_id : null;

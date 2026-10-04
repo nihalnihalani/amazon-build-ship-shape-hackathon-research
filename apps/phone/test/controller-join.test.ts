@@ -79,7 +79,7 @@ describe('join flow', () => {
     expect(h.controller.getState().screen).toBe('join');
   });
 
-  it('join.accepted pairs: setup screen, connected, credential kept out of observable state, first mic.state sent', async () => {
+  it('after "Yes, that was me": setup screen, connected, credential kept out of observable state, first mic.state sent', async () => {
     const h = await pairedHarness();
     const s = h.controller.getState();
     expect(s.screen).toBe('setup');
@@ -182,7 +182,9 @@ describe('join flow', () => {
     h.controller.join();
     h.sockets.current.open();
     h.sockets.current.receive(joinAccepted());
-    expect(h.controller.getState().screen).toBe('setup'); // accepted while joining is valid
+    // accepted while joining is valid, but the person still has to confirm
+    expect(h.controller.getState()).toMatchObject({ screen: 'join', pairingConfirmed: false });
+    expect(h.controller.getState().join.phase).toBe('confirming');
     const h2 = makeHarness();
     h2.sockets.create('wss://stray');
     expect(h2.controller.getState().screen).toBe('join');

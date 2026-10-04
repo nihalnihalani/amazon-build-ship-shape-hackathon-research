@@ -43,6 +43,21 @@ describe('production bundle (dist)', () => {
     expect(files(DIST).some((f) => /test-audio/.test(f))).toBe(false);
   });
 
+  it('shows the amended privacy sentence (A2-01) and nothing of the old one', () => {
+    const all = read(DIST, /\.js$/);
+    expect(all).toContain(
+      'Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.',
+    );
+    expect(all).not.toContain('Only levels, typed phrases, listener responses, and connection details');
+  });
+
+  it('makes no sound and never vibrates (A8-03): no vibration, speech, notification or audio-element APIs', () => {
+    const all = read(DIST, /\.js$/);
+    for (const forbidden of ['vibrate', 'speechSynthesis', 'SpeechSynthesisUtterance', 'Notification', 'new Audio', 'HTMLAudioElement', 'createOscillator', '<audio', 'showNotification']) {
+      expect(all, forbidden).not.toContain(forbidden);
+    }
+  });
+
   it('never references recorders or browser storage', () => {
     const all = read(DIST);
     for (const forbidden of ['MediaRecorder', 'localStorage', 'sessionStorage', 'indexedDB']) {
@@ -102,6 +117,11 @@ describe('test build (dist-test)', () => {
     expect(csp).not.toMatch(/blob:|unsafe-inline/);
   });
 
+  it('apart from the synthetic source, the test build also never vibrates or speaks', () => {
+    const all = read(DIST_TEST, /assets\/index-.*\.js$/);
+    for (const forbidden of ['vibrate', 'speechSynthesis', 'Notification', 'new Audio']) expect(all, forbidden).not.toContain(forbidden);
+  });
+
   it('also never references recorders or browser storage', () => {
     const all = read(DIST_TEST);
     for (const forbidden of ['MediaRecorder', 'localStorage', 'sessionStorage', 'indexedDB']) {
@@ -116,7 +136,7 @@ describe('source hygiene', () => {
       const code = readFileSync(file, 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/(^|[^:])\/\/.*$/gm, '$1');
-      for (const forbidden of ['MediaRecorder', 'localStorage', 'sessionStorage', 'indexedDB']) {
+      for (const forbidden of ['MediaRecorder', 'localStorage', 'sessionStorage', 'indexedDB', 'navigator.vibrate', 'speechSynthesis', 'document.cookie', 'caches.open']) {
         expect(code, `${file}: ${forbidden}`).not.toContain(forbidden);
       }
     }

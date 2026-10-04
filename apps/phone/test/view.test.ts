@@ -22,8 +22,8 @@ import { type Harness, makeHarness, pairedHarness } from './helpers/harness.js';
 
 /** The ADR-0002 sentence, typed independently of src/config.ts. */
 const SRC = join(import.meta.dirname ?? process.cwd() + '/test', '..', 'src');
-const ADR_0002_SENTENCE =
-  'Audio stays on this phone and is never saved or uploaded. Only levels, typed phrases, listener responses, and connection details are sent to the relay and TV.';
+const AMENDED_PRIVACY_SENTENCE =
+  'Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.';
 
 let root: HTMLElement;
 let view: MountedView | null = null;
@@ -60,13 +60,13 @@ afterEach(() => {
 });
 
 describe('structure and accessibility', () => {
-  it('has landmarks, labelled fields, a polite status region and the exact ADR-0002 sentence', () => {
+  it('has landmarks, labelled fields, a polite status region and the exact amended privacy sentence (A2-01)', () => {
     mount(makeHarness());
     expect(document.querySelector('main')).not.toBeNull();
     const status = $('status');
     expect(status.getAttribute('role')).toBe('status');
     expect(status.getAttribute('aria-live')).toBe('polite');
-    expect(text('privacy')).toBe(ADR_0002_SENTENCE);
+    expect(text('privacy')).toBe(AMENDED_PRIVACY_SENTENCE);
     expect(document.querySelector('label[for="code"]')?.textContent).toBe('Code from the TV');
     expect(document.querySelector('label[for="device-label"]')).not.toBeNull();
     expect(document.querySelector('html')?.getAttribute('lang') ?? 'en').toBeTruthy();
@@ -75,10 +75,12 @@ describe('structure and accessibility', () => {
     for (const b of document.querySelectorAll('button')) expect(b.getAttribute('type')).toBeTruthy();
   });
 
-  it('the privacy sentence is on every screen (join, setup, unpaired)', async () => {
+  it('the privacy sentence is on every screen (join, confirm, setup) and the old wording is gone', async () => {
     mount(makeHarness());
     expect($('privacy').hidden).toBe(false);
     expect($('privacy').closest('[hidden]')).toBeNull();
+    expect(document.body.textContent).not.toContain('Only levels, typed phrases');
+    expect(document.body.textContent).not.toContain('Only levels');
   });
 
   it('tap targets: buttons are at least 64 px tall and the listener buttons are larger', () => {
@@ -110,7 +112,7 @@ describe('join view', () => {
     mount(makeHarness());
     expect($('view-join').hidden).toBe(false);
     expect($('view-setup').hidden).toBe(true);
-    expect($('view-unpaired').hidden).toBe(true);
+    expect($('unpaired-notice').hidden).toBe(true);
     expect($<HTMLInputElement>('device-label').value).toBe('Android Chrome');
   });
 
@@ -130,7 +132,7 @@ describe('join view', () => {
     expect($<HTMLInputElement>('code').value).toBe('ACDEFH');
   });
 
-  it('Join dials the relay; join.pending shows "Check the TV: does it show NN?"', async () => {
+  it('Join dials the relay; join.pending shows "On your TV, pick NN"', async () => {
     mount(makeHarness());
     type('code', CODE);
     click('join');
@@ -139,8 +141,8 @@ describe('join view', () => {
     h.sockets.current.receive(joinPending('47'));
     expect($('pending').hidden).toBe(false);
     expect($('join-form').hidden).toBe(true);
-    expect(text('pending-heading')).toBe('Check the TV: does it show 47?');
-    expect(text('status')).toBe('Check the TV: does it show 47?');
+    expect(text('pending-heading')).toBe('On your TV, pick 47');
+    expect(text('status')).toBe('On your TV, pick 47');
     expect(document.activeElement?.id).toBe('pending-heading');
   });
 
@@ -175,17 +177,27 @@ describe('join view', () => {
     expect($('join-form').hidden).toBe(false);
   });
 
-  it('after joining, the setup view replaces the join view and takes focus', () => {
+  it('after joining and "Yes, that was me", the setup view replaces the join view and takes focus', () => {
     mount(makeHarness());
     type('code', CODE);
     click('join');
     h.sockets.current.open();
     h.sockets.current.receive(joinPending());
     h.sockets.current.receive(joinAccepted());
+    click('confirm-yes');
     expect($('view-join').hidden).toBe(true);
     expect($('view-setup').hidden).toBe(false);
     expect(document.activeElement?.id).toBe('setup-heading');
     expect(text('setup-heading')).toBe('Paired with the TV');
+  });
+});
+
+describe('A8-03: setup copy', () => {
+  it('suggests Do Not Disturb and says the page is silent, without the word "vibrate" anywhere', async () => {
+    mount(await pairedHarness());
+    expect(text('dnd-tip')).toMatch(/turn on Do Not Disturb/);
+    expect(text('dnd-tip')).toMatch(/never plays a sound/);
+    expect(document.body.textContent).not.toMatch(/vibrat/i);
   });
 });
 
@@ -362,7 +374,7 @@ describe('no meter and no verdict on the phone', () => {
     await flush();
     const body = document.body.textContent ?? '';
     expect(body).not.toMatch(/-12\.5|reached today|below today|loud enough/i);
-    expect(body).not.toMatch(/p95|peak/i);
+    expect(body).not.toMatch(/\bp95\b|\bpeak\b|\bp50\b/i);
   });
 
   it('the live region is not updated while measuring (no speech into the microphone) and catches up afterwards', async () => {
@@ -638,21 +650,22 @@ describe('phrase editor', () => {
   });
 });
 
-describe('unpaired view', () => {
-  it('says the phone is no longer paired, that the mic is off, and offers pairing again', async () => {
+describe('after the pairing ends', () => {
+  it('returns to Join with a plain explanation, the mic off, and a ready form', async () => {
     mount(await pairedHarness());
     h.audio.makeOpen();
     h.sockets.current.receive(relayMsg('unpaired', { reason: 'tv_unpaired' }));
     await flush();
-    expect($('view-unpaired').hidden).toBe(false);
+    expect($('view-join').hidden).toBe(false);
     expect($('view-setup').hidden).toBe(true);
+    expect($('unpaired-notice').hidden).toBe(false);
     expect(text('unpaired-heading')).toBe('This phone is no longer paired');
     expect(text('unpaired-reason')).toBe('The TV removed this phone.');
-    expect(text('status')).toBe('This phone is no longer paired.');
+    expect($('join-form').hidden).toBe(false);
+    expect(text('status')).toBe('This phone is no longer paired. The TV removed this phone.');
     expect(document.activeElement?.id).toBe('unpaired-heading');
     expect(h.audio.getSnapshot().state).toBe('off');
-    click('pair-again');
-    expect($('view-join').hidden).toBe(false);
+    expect($<HTMLButtonElement>('join').disabled).toBe(false);
   });
 
   it.each([
@@ -663,5 +676,14 @@ describe('unpaired view', () => {
     h.sockets.current.receive(relayMsg('unpaired', { reason }));
     await flush();
     expect(text('unpaired-reason')).toBe(expected);
+  });
+
+  it('starting a new join clears the explanation', async () => {
+    mount(await pairedHarness());
+    h.sockets.current.receive(relayMsg('unpaired', { reason: 'tv_unpaired' }));
+    await flush();
+    type('code', CODE);
+    click('join');
+    expect($('unpaired-notice').hidden).toBe(true);
   });
 });

@@ -75,8 +75,10 @@ describe('unpaired', () => {
     h.sockets.current.receive(relayMsg('unpaired', { reason }));
     await flush();
     const s = h.controller.getState();
-    expect(s.screen).toBe('unpaired');
+    expect(s.screen).toBe('join');
     expect(s.unpairedReason).toBe(reason);
+    expect(s.pairingConfirmed).toBe(false);
+    expect(s.join.phase).toBe('idle');
     expect(h.audio.closeCalls).toBeGreaterThan(0);
     expect(h.audio.getSnapshot().state).toBe('off');
     expect(h.audio.hasOpenRun).toBe(false);
@@ -99,13 +101,16 @@ describe('unpaired', () => {
     expect(h.sockets.current.sent.length).toBe(before);
   });
 
-  it('pairing again goes back to a clean join form', async () => {
+  it('after an unpair the Join form is ready again with a clean slate, and a new join clears the explanation', async () => {
     const h = await ready();
     h.sockets.current.receive(relayMsg('unpaired', { reason: 'tv_unpaired' }));
     await flush();
-    h.controller.pairAgain();
-    expect(h.controller.getState()).toMatchObject({ screen: 'join' });
+    expect(h.controller.getState()).toMatchObject({ screen: 'join', unpairedReason: 'tv_unpaired' });
     expect(h.controller.getState().join).toMatchObject({ phase: 'idle', code: '', confirmDigits: null });
+    h.controller.setCode('ACDEFH');
+    h.controller.join();
+    expect(h.controller.getState()).toMatchObject({ unpairedReason: null });
+    expect(h.sockets.sockets).toHaveLength(2);
   });
 });
 
@@ -296,7 +301,7 @@ describe('reconnect (ADR-0006)', () => {
     h.sockets.current.open();
     h.sockets.current.receive(relayMsg('error', { code, ref_message_id: null, detail: '' }));
     await flush();
-    expect(h.controller.getState()).toMatchObject({ screen: 'unpaired', unpairedReason: reason });
+    expect(h.controller.getState()).toMatchObject({ screen: 'join', unpairedReason: reason });
     expect(h.audio.getSnapshot().state).toBe('off');
     const n = h.sockets.sockets.length;
     vi.advanceTimersByTime(60_000);
@@ -323,7 +328,7 @@ describe('reconnect (ADR-0006)', () => {
     h.sockets.current.open();
     h.sockets.current.receive(relayMsg('auth.ok', { role: 'phone', generation: 2, peer_connected: true, phone_paired: false }));
     await flush();
-    expect(h.controller.getState().screen).toBe('unpaired');
+    expect(h.controller.getState()).toMatchObject({ screen: 'join', unpairedReason: 'revoked' });
   });
 
   it('retryNow reconnects immediately', async () => {

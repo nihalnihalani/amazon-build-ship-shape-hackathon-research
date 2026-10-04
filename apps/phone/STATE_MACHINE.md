@@ -1,6 +1,6 @@
 # Phone companion: state machine and behaviour
 
-Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3, ADR-0001, 0002, 0003, 0004, 0006. Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
+Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3, ADR-0001, 0002, 0003, 0004, 0006 and `docs/adr/AMENDMENTS-REV2.md` (rows owned by H: A2-01, A3-01, A3-07 (pending), A4-04, A5-02, A6-02, A8-03, PK-06; where it conflicts with an ADR it wins). Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
 
 ## Layers
 
@@ -22,26 +22,35 @@ Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3
 5. Nothing is persisted: no `localStorage`/`sessionStorage`/`IndexedDB`/`MediaRecorder`; credentials and phrases live in memory; a reload means pairing again.
 6. Every text the phone sends is `normalizeUserText(...)` output and passes the package validators before it is sent; invalid text is explained on the phone and never sent.
 7. Once a message is sent it is never resent automatically (phrases, cue, listener answer). A refusal is shown and the user acts again.
+8. (A3-01) Until the person answers "Yes, that was me" to "Did you just pick NN on your TV?", the phone sends nothing but the join protocol and `ping`: no `mic.state`, `ack`, `phrases.update`, `cue`, `level` or result; TV commands are ignored without an ack; the microphone is never opened. The gate is one check in the single send function, so no UI path can bypass it.
+9. (A5-02) Nothing is persisted: no cookies, `localStorage`, `sessionStorage`, IndexedDB or Cache API entries (unit test traps every access; real-Chrome flow checks the stores are empty).
+10. (A8-03) The page never plays a sound and never vibrates; the audio graph reaches the output only through a zero-gain node.
+11. (PK-06) Levels, summaries, validity and rounding come from `@atr/phone-mic-meter` and are sent exactly as returned; the phone never recomputes or re-rounds them.
 
 ## Screens and the join/pairing machine
 
 ```
-            Join pressed                    socket open                 join.pending
- join/idle ------------> join/connecting ---------------> (join.request sent) ----------> join/pending
-    ^  ^                       |  socket error/close                                  |  show "Check the TV: does it show NN?"
-    |  |                       v                                                       |
-    |  +---- join.rejected / error / close / Cancel (message shown) <------------------+
-    |                                                                                  | join.accepted
-    |                                                                                  v
-    |        pairAgain                       unpaired / revoked / expired / superseded
- unpaired <------------------------------------------------------------------------ setup (paired)
+ join/idle --Join tapped--> join/connecting --socket open: join.request--> join/pending
+    ^                            | error/close                               |  "On your TV, pick NN"
+    |                            v                                           | join.accepted (credential held, NOT yet trusted)
+    +<-- reject / error / close / Cancel (reason shown) <-------------------- v
+    |                                                                  join/confirming   "Did you just pick NN on your TV?"
+    |        No, cancel / connection lost / unpaired / revoked before Yes     |  (only join protocol and ping are sent)
+    +<---------------------------------------------------------------------+  | Yes, that was me
+    |                                                                          v
+    |   unpaired / revoked / expired / superseded / auth refused         setup (paired)  -> mic.state is the first message
+    +<------------------------------------------------------------------------+
+        (Join screen with "This phone is no longer paired" + the reason; no retries)
 ```
 
-* Code input: 6 characters from `ACDEFHJKMNPRTUVWXY3479`, case-insensitive (upper-cased), spaces and hyphens ignored. `#code=XXXXXX` fills the field once and is removed from the address bar (fragments are never sent to a server). It never auto-submits.
+* There are two screens, Join and Setup. A lost pairing returns to Join with a plain explanation ("This phone is no longer paired", the reason, "The microphone is off. To pair again, enter a new code from the TV below."); there is no separate unpaired screen.
+* Code input: 6 characters from `ACDEFHJKMNPRTUVWXY3479`, case-insensitive (upper-cased), spaces and hyphens ignored. `#code=XXXXXX` fills the field once and is removed from the address bar (fragments are never sent to a server). **It never auto-joins**: a connection opens only when the person taps Join.
+* After `join.pending`: heading "On your TV, pick NN" (the TV shows three numbers; the phone shows only the real one).
+* After `join.accepted` (A3-01): heading "Did you just pick NN on your TV?" with "Yes, that was me" and "No, cancel". The relay saying "accepted" proves nothing about whose room it is (a hostile QR can point at an attacker's room that accepts anyone). Yes: setup opens, `mic.state` is sent at once, Start microphone is enabled. No, or the connection dropping, or an unpaired/revoked/superseded signal before Yes: the credential is discarded, nothing more is sent, the socket is closed, and the phone is back on Join; an unconfirmed pairing is never resumed.
 * Device label: default `Android Chrome` (Android + Chrome user agent) else `Browser`; 1-24 code points.
 * Relay: `wss://<this host>/ws`. `?relay=` (ws/wss only) is honoured in the **test build only**.
 * Not a secure context: a banner says the microphone cannot work here; Start is disabled; the port never calls `getUserMedia`.
-* Credentials (`phone_credential`, room id) are held in the controller object only; they are not part of observable state and never reach the DOM.
+* Credentials (`phone_credential`, room id) are held in the controller object only; they are not part of observable state and never reach the DOM. A3-07 credential rotation (`auth.ok.next_credential`) is pending protocol revision 4.
 
 ### Wire rules (PROTOCOL.md rev 2/3)
 
@@ -58,9 +67,10 @@ Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3
 States (PROTOCOL.md section 6): `disconnected`, `connecting`, `authenticating`, `connected`, `reconnecting`, `failed`.
 
 * Heartbeat: `ping` every 10 s while connected. No inbound traffic for 25 s: the link is declared dead and reconnecting starts. The phone shows "Connection to the TV unknown", never "off".
-* Backoff after an unexpected close: 0.5, 1, 2, 4, 8 s, then 8 s; no jitter. Each attempt sends `auth.resume` with the in-memory credential. The schedule restarts after a successful `auth.ok`. "Reconnect now" skips the wait.
+* Backoff after an unexpected close: 0.5, 1, 2, 4, 8 s, then 8 s, each multiplied by a jitter factor in [0.75, 1.25) (A6-02; the draw is injectable, 0.5 gives exactly the nominal delay). Each attempt sends `auth.resume` with the in-memory credential. The schedule restarts after a successful `auth.ok`.
+* After 2 minutes of continuous failure (from the first lost link, or from a manual Retry) the phone reports `failed`, closes any half-open socket and stops retrying by itself; the page shows "Cannot reach the relay. Automatic retries stopped after 2 minutes. Tap Retry now." with a Retry now button. Retry reconnects at once, resets the attempt counter and starts a fresh 2-minute window. A successful `auth.ok` clears the window. The microphone is left as it is (the user can turn it off).
 * Link lost: any open window or precheck is aborted (levels stop at once) and an `interrupted` result is queued; it is delivered after `auth.ok` (or when the TV reappears, `peer.state`). A window is never resumed: the TV must send a fresh `window.start` with new ids.
-* Refusals while resuming: `revoked`, `expired`, `unauthorized`, `not_found`, `unauthenticated`, or `auth.ok` with `phone_paired: false` end the pairing (screen "This phone is no longer paired", capture shut down, no more retries). `superseded` does the same with its own wording. `rate_limited` keeps retrying. `origin_rejected` stops with `failed`.
+* Refusals while resuming: `revoked`, `expired`, `unauthorized`, `not_found`, `unauthenticated`, `superseded`, an `unpaired` message, or `auth.ok` with `phone_paired: false` end the pairing: capture shut down, no more retries, back on Join with the explanation. `rate_limited` keeps retrying. `origin_rejected` stops with `failed`.
 * Messages naming another room are ignored.
 
 ## Microphone (audio port snapshot)
@@ -78,6 +88,8 @@ States are the protocol's `MicStatePayload.state`:
 | `open_idle` | stream open, nothing analysed | Mic open, not measuring | hidden; Turn off shown |
 | `measuring` | first frame of a run observed | Measuring | hidden |
 | `error` | insecure context, no `mediaDevices`, worklet failed, track ended, context suspended/closed | specific wording per `detail` | yes |
+
+A precheck that reports `invalid_reason: 'silent_input'` (no signal at all) shows "The microphone looks muted or blocked." (with a hint) in the microphone section and the status region until a later precheck is fine or the microphone is closed or restarted. Only prechecks set it; no window result or level is ever shown. Note: until `silent_input` exists in `@atr/protocol`'s `PrecheckInvalidReason`, the package validator refuses to build such a `precheck.result`, so the phone shows the notice but the TV does not receive that result.
 
 Settings (`auto_gain_control`, `echo_cancellation`, `noise_suppression`, `sample_rate`, `channel_count`) are what the browser reports; `null` means unknown. `supported.*` is `null` when `getSupportedConstraints()` is unavailable (revision 3). The page says these are reports and "do not prove the audio is unprocessed".
 
@@ -109,7 +121,7 @@ Every TV command gets an `ack` carrying the command's session/window/attempt ids
 | `attempt.reveal` | locks the controls; a reveal for another attempt does not lock the open one | `applied/nothing_open`, `ignored_stale/other_attempt` |
 | `session.end` | stops capture completely, releases wake lock, reports `mic.state off`, then acks | `ignored_stale` |
 
-`listener.open.timeout_ms` is not enforced on the phone (the TV owns the timeout and "Keep waiting" / "Continue without listener response").
+`listener.open.timeout_ms` IS enforced on the phone (A4-04): the controls lock exactly when it elapses ("Time is up for this answer. The TV decides what happens next."). The TV's "Keep waiting" sends a fresh `listener.open`, which re-enables them for its attempt (an answer already given for the same attempt is kept) and restarts the clock. The controls also lock on `attempt.reveal`, on `window.cancel` naming the attempt (precheck and capture windows of one attempt share the attempt id), on `session.end`, on the next precheck/capture, and on unpair; every lock cancels the timer.
 
 ## Listener controls (ADR-0004)
 
@@ -135,12 +147,17 @@ Connection lost before an ack: `phrases.update` shows "Not sent... try again whe
 * The AudioWorklet module is `FRAME_PROCESSOR_SOURCE` from `@atr/phone-mic-meter`, written by the build as `frame-processor.js` next to `index.html` (content hash in the URL query) and loaded **by module URL from the page's own origin**. No Blob URL is used, so the CSP is `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' wss:; img-src 'self'; base-uri 'none'; form-action 'none'` (the test build also allows `ws:`). No inline script or style, no third-party origin.
 * Author CSS must not defeat the `hidden` attribute: `[hidden] { display: none !important; }` (a real-browser e2e run found `.btn { display: inline-block }` was showing "hidden" buttons).
 
+## Privacy copy, silence and Do Not Disturb
+
+* The privacy sentence is the A2-01 text from `docs/adr/AMENDMENTS-REV2.md`, exact: "Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV." It appears on every screen; tests assert the old wording is gone from the DOM and the bundle.
+* A8-03: no sound, no vibration (no `vibrate`, speech, notification or audio-element API in the bundle, asserted). Setup copy suggests turning on Do Not Disturb.
+
 ## Tests and evidence classes
 
 | Command (from the worktree root) | What it shows | Evidence class |
 |---|---|---|
 | `npm run typecheck -w @atr/phone` | types | automated |
 | `npm test -w @atr/phone` | state machine, wire shapes (an independent PROTOCOL.md checker AND the package parser), audio port against the real capture adapter with fake browser objects, view rendering, lifecycle/reconnect, production-bundle exclusions (builds both flavours) | automated (happy-dom, fakes) |
-| `npm run e2e:all -w @atr/phone` | real headless Chrome: render/join smoke; full flow with synthetic audio through the real AudioContext/AudioWorklet; production bundle with strict CSP | automated, synthetic or stubbed audio in desktop Chrome |
+| `npm run e2e:all -w @atr/phone` | real headless Chrome: render/join smoke; full flow with synthetic audio through the real AudioContext/AudioWorklet (including the confirmation step, empty cookie/storage/IndexedDB/Cache API, no vibration or sound); production bundle with strict CSP; hostile-QR scenario against a scripted attacker relay | automated, synthetic or stubbed audio in desktop Chrome |
 
 None of these is a real-phone check. Pending: real Android Chrome permission prompt, AGC/echo/noise read-back on a real input, background/lock behaviour, wake-lock behaviour, capture indicator (see the task handoff).
