@@ -1,0 +1,6 @@
+# relay-local artifacts (not tracked)
+.venv/
+dist/
+dist-lambda/
+coverage/
+*.tsbuildinfo

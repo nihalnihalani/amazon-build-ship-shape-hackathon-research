@@ -1,0 +1,31 @@
+# Copy to infra/samconfig.toml and edit. infra/.gitignore keeps your copy out of git.
+# No account ids belong in this file. Deploy only with credentials of the deployer role created from
+# infra/iam/deployer-policy.json, never with root keys. See infra/README.md.
+version = 0.1
+
+[default.global.parameters]
+stack_name = "atr-relay-staging"   # must start with atr-relay- (the IAM drafts are scoped to that prefix)
+
+[default.validate.parameters]
+lint = false
+
+[default.package.parameters]
+s3_bucket = "atr-relay-artifacts-CHANGE-ME"   # create once, private, by the owner; name must start with atr-relay-artifacts-
+
+[default.deploy.parameters]
+region = "ap-south-1"               # intended region; availability and behaviour must be confirmed at deploy time
+s3_bucket = "atr-relay-artifacts-CHANGE-ME"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true            # always review the change set before execution
+fail_on_empty_changeset = false
+role_arn = "arn:aws:iam::<ACCOUNT_ID>:role/atr-relay-cfn-execution"   # CloudFormation service role (cloudformation-execution-role-*.json)
+parameter_overrides = [
+  "Stage=staging",
+  "AlarmEmail=<YOUR_EMAIL>",
+  "MonthlyBudgetUsd=25",
+  "ReservedConcurrency=20",
+  "AllowedOrigins=",
+  "RelayDisabled=false",
+]
+# HashPepper is a secret: pass it on the command line (--parameter-overrides HashPepper=...) or via the environment,
+# not in this file.

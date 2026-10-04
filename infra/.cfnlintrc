@@ -1,0 +1,4 @@
+templates:
+  - template.yaml
+regions:
+  - ap-south-1
