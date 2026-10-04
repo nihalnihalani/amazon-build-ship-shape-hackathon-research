@@ -253,7 +253,7 @@ export class Harness {
 
   /* ----------------------------- envelopes written from PROTOCOL.md */
 
-  private envelope(
+  envelope(
     type: string,
     role: 'phone' | 'relay',
     payload: Json,
@@ -330,7 +330,7 @@ export class Harness {
 
   /* ----------------------------- phone-originated */
 
-  private ids(cmd: Sent): { s: string | null; w: string | null; a: string | null } {
+  ids(cmd: Sent): { s: string | null; w: string | null; a: string | null } {
     return { s: cmd.session_id, w: cmd.window_id, a: cmd.attempt_id };
   }
 

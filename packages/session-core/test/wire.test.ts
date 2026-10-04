@@ -119,7 +119,8 @@ describe('every message the TV sends is valid protocol', () => {
     const start = h.of('window.start').filter((m) => m.payload.kind === 'phrase')[0];
     const reveal = h.last('attempt.reveal');
     expect(pre?.session_id).toBe(begin.session_id);
-    expect(pre?.window_id).toBe(start?.window_id);
+    // one measurement, one window_id: the precheck and the capture differ in window_id and share the attempt_id
+    expect(pre?.window_id).not.toBe(start?.window_id);
     expect(pre?.attempt_id).toBe(start?.attempt_id);
     expect(reveal.window_id).toBe(start?.window_id);
     expect(reveal.attempt_id).toBe(start?.attempt_id);

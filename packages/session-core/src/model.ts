@@ -15,6 +15,7 @@ export type WinPhase = 'lead' | 'precheck' | 'capture' | 'closing';
 export interface Win {
   kind: WinKind;
   phase: WinPhase;
+  /** Identifies the CURRENT measurement: the precheck's id during the precheck, a fresh id for the capture. */
   windowId: string;
   attemptId: string;
   leadUntil: number;
