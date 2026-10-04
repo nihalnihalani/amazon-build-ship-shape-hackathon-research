@@ -1,0 +1,29 @@
+command: npm test -w @atr/protocol (cwd /Users/nihalnihalani/Desktop/Github/atr-worktrees/security)
+date: 2026-10-04T22:43:12Z / 2026-10-05T04:13:12+0530
+node: v25.2.1
+git: 018bdc00d399624fab901309e2cb0709a1f0066d
+
+> @atr/protocol@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.4 /Users/nihalnihalani/Desktop/Github/atr-worktrees/security/packages/protocol
+
+ ok test/types.test.ts (9 tests) 4ms
+ ok test/doc-consistency.test.ts (46 tests) 5ms
+ ok test/sequence.test.ts (17 tests) 9ms
+ ok test/catalogue.test.ts (44 tests) 5ms
+ ok test/text.test.ts (28 tests) 5ms
+ ok test/audio-guard.test.ts (59 tests) 6ms
+ ok test/envelope.test.ts (92 tests) 22ms
+ ok test/input.test.ts (37 tests) 29ms
+ ok test/validate.test.ts (387 tests) 48ms
+ ok test/build.test.ts (23 tests) 99ms
+ ok test/fuzz.test.ts (4 tests) 347ms
+
+ Test Files  11 passed (11)
+      Tests  746 passed (746)
+   Start at  04:13:11
+   Duration  663ms (transform 448ms, setup 0ms, collect 1.13s, tests 578ms, environment 1ms, prepare 678ms)
+
+exit_code: 0
