@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T04:25:09+05:30",
+ "updated_at": "2026-10-05T04:25:42+05:30",
  "states": [
   "pending",
   "ready",
@@ -107,7 +107,7 @@
     "T01"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 0,
    "acceptance_criteria": [
     "ADR-0001..0009 accepted",
@@ -117,7 +117,9 @@
     "docs/adr/*"
    ],
    "reviewer": "security-review",
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0023"
+   ],
    "commit": null,
    "blocker": "Independent review of ADRs pending (security-review + qa)"
   },
@@ -218,8 +220,8 @@
     "T02"
    ],
    "required": true,
-   "status": "verified",
-   "attempts": 1,
+   "status": "in_progress",
+   "attempts": 2,
    "acceptance_criteria": [
     "packages/protocol implements PROTOCOL.md v1 with validators and tests",
     "State machine type names exported",
@@ -233,7 +235,7 @@
     "EV-0009"
    ],
    "commit": "c9adba8",
-   "blocker": null
+   "blocker": "ADR rev 2 rework in progress (AMENDMENTS-REV2.md)"
   },
   {
    "id": "T06",
@@ -251,8 +253,8 @@
     "T05"
    ],
    "required": true,
-   "status": "verified",
-   "attempts": 1,
+   "status": "in_progress",
+   "attempts": 2,
    "acceptance_criteria": [
     "Pure DSP functions with independent-expected-value tests covering ADR-0001 boundaries",
     "AudioWorklet frame adapter with sample-clock timestamps",
@@ -267,7 +269,7 @@
     "EV-0020"
    ],
    "commit": "HEAD",
-   "blocker": null
+   "blocker": "ADR rev 2 rework in progress (AMENDMENTS-REV2.md)"
   },
   {
    "id": "T07",
