@@ -35,6 +35,7 @@ Screens outside the 16 stages (`onboarding`, `home`, `settings`, `about`, `diagn
 
 ## Rules
 
+- **Heartbeat.** While the socket is open and the TV has sent nothing for 10 s (`HEARTBEAT_INTERVAL_MS`), a `ping` goes out on the next timer tick (before or after authentication); any other outbound message resets the idle clock. Nothing is sent while the link is down. `pong` only increments a diagnostics counter. The relay drops a silent connection after 25 s.
 - **Quiet lead.** After OK on any begin action, the first command is sent after `QUIET_LEAD_MS` = 1500 ms. During the lead, precheck and capture the view is `capturing`, announcements are null, and (before capture) no control is focusable so a repeated OK cannot press Cancel. Back cancels at every phase.
 - **Quiet check re-validation** (`verdict.ts`): phone `valid`, coverage at least 0.90, no clipped frames, `p80 - p20` at most 6, `p95 - floor` at most 10, `floor` at most -30, non-finite at most 5 % of frames, in the reason order of `docs/MEASUREMENT.md`.
 - **Calibration:** accepted when the window is valid, `active_ms` at least 400 and margin (`p95_active - session floor`) at least 13 dB. Decision recorded: Skip calibration is offered only when this session already has a band; if no band could be set, Continue without a band runs the phrases unscored, labelled "No band set: results not scored", and the listener check still works. A failed retry keeps an earlier band.

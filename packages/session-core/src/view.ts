@@ -274,6 +274,8 @@ function diagnosticsOf(s: Core, env: Env): Record<string, string> {
     messages_ignored_stale: String(c.ignored_stale ?? 0),
     messages_rejected: String(c.rejected ?? 0),
     messages_unparseable: String(c.parse_errors ?? 0),
+    heartbeats_sent: String(c.pings_sent ?? 0),
+    heartbeats_answered: String(c.pongs ?? 0),
     duplicates_dropped: String(c.duplicates ?? 0),
     inputs_ignored: String(c.inputs_ignored ?? 0),
     cues_used: String(s.session?.cuesUsed ?? 0),

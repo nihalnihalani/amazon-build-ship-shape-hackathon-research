@@ -139,6 +139,8 @@ export interface Core {
   deleteRemaining: number;
 
   lastStateSig: string;
+  /** Clock time of the last message the TV sent (any type); the heartbeat measures idleness from it. */
+  lastSentAt: number;
   staleLevelAckWindow: string | null;
   counters: Record<string, number>;
 }

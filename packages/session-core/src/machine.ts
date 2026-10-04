@@ -38,7 +38,7 @@ import { DEFAULT_SETTINGS } from './storage.js';
 import type { Checkpoint } from './storage.js';
 import { validateCue, validatePhraseBank } from './text.js';
 import { evaluateCalibration, evaluateGate, evaluateQuietCheck, evaluateWindow } from './verdict.js';
-import { MessageIdDedupe } from '@atr/protocol';
+import { HEARTBEAT_INTERVAL_MS, MessageIdDedupe } from '@atr/protocol';
 import type { MessageOf } from '@atr/protocol';
 import { parseInbound } from './wire.js';
 import type { AckOutcome, Ids, Inbound, Outbound, PrecheckResultPayload, WindowResultPayload } from './wire.js';
@@ -87,6 +87,7 @@ export function initialCore(env: Env): Core {
     deleting: false,
     deleteRemaining: 0,
     lastStateSig: '',
+    lastSentAt: 0,
     staleLevelAckWindow: null,
     counters: {},
   };
@@ -147,6 +148,7 @@ export class Machine {
 
   private send(message: Outbound): void {
     this.bump('sent');
+    this.s.lastSentAt = this.s.now;
     this.fx.push({ kind: 'send', message });
   }
 
@@ -271,6 +273,20 @@ export class Machine {
     this.tickWindow();
     this.tickListener();
     this.tickPairing();
+    this.tickHeartbeat();
+  }
+
+  /**
+   * Keeps the relay connection alive: the relay drops a connection after 25 s without traffic, so when the
+   * socket is open and the TV has sent nothing for HEARTBEAT_INTERVAL_MS (10 s) a `ping` goes out. Other
+   * traffic counts as a heartbeat. A ping is valid before and after authentication.
+   */
+  private tickHeartbeat(): void {
+    const s = this.s;
+    if (s.link !== 'connected') return;
+    if (s.now - s.lastSentAt < HEARTBEAT_INTERVAL_MS) return;
+    this.bump('pings_sent');
+    this.send({ type: 'ping', payload: {} });
   }
 
   private onInternal(event: InternalEvent): void {
@@ -813,6 +829,8 @@ export class Machine {
         this.onPeerState(m);
         break;
       case 'pong':
+        this.bump('pongs');
+        break;
       case 'ack':
         break;
       case 'error':
