@@ -55,7 +55,7 @@ Registry facts come from `npm view` against https://registry.npmjs.org/ (public,
 | Node.js (default shell) | v25.2.1, npm 11.6.2 | `node --version`, `npm --version` | 2026-10-05 | yes |
 | Node.js via nvm | v22.23.2 (npm 10.9.8), v24.11.1 (npm 11.6.2), v25.2.1 (npm 11.6.2) | `ls ~/.nvm/versions/node`; per-version `node --version` | 2026-10-05 | yes |
 | Node for the Vega toolchain | Starter `.nvmrc` = 22.22.2; `engines.node >=22`; `.npmrc engine-strict=true`; `@amazon-devices/react-native-kepler` `engines.node >=22.14.0`. The install page says "18.x or later" and the sample READMEs say "v18-v20": both are stale against the pinned `package.json`. 22.22.2 itself is not installed here; 22.23.2 satisfies every declared range but has not been tried with the Vega CLI. Keep the Vega toolchain Node isolated from the Lambda/phone/CI runtimes (ADR-0007). | `gh api` for `.nvmrc`, `package.json`; registry; install page | 2026-10-05 | no |
-| TypeScript / Vitest / @types/node (this repo) | TypeScript 5.8.3, Vitest 3.2.4, `@types/node` 24.10.1 (installed in `node_modules`). `@atr/protocol` typechecks and its 761 tests pass on Node 22.23.2, 24.11.1 and 25.2.1. | `node_modules/.bin/tsc --version`, `vitest --version`, `npm test -w @atr/protocol` | 2026-10-05 | yes |
+| TypeScript / Vitest / @types/node (this repo) | TypeScript 5.8.3, Vitest 3.2.4, `@types/node` 24.10.1 (installed in `node_modules`). `@atr/protocol` typechecks and its 921 tests pass on Node 22.23.2, 24.11.1 and 25.2.1. | `node_modules/.bin/tsc --version`, `vitest --version`, `npm test -w @atr/protocol` | 2026-10-05 | yes |
 | npm registry | https://registry.npmjs.org/ (default); the `@amazon-devices/*` packages above are readable there without credentials. | `npm config get registry`; `npm view` | 2026-10-05 | yes |
 
 ## 4. Backend and phone runtimes
@@ -66,7 +66,7 @@ Registry facts come from `npm view` against https://registry.npmjs.org/ (public,
 | API Gateway WebSocket limits | 10 min idle timeout, 2 h connection duration, 32 KB frame, 128 KB message, 29 s integration timeout; Lambda REQUEST authorizer runs only on `$connect`; binary frames are closed with code 1003 and oversize with 1009 (the protocol's 8192-byte cap is far below these). | https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html ; https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api-overview.html | 2026-10-05 | no |
 | DynamoDB TTL | Number attribute in epoch seconds; deletion "typically within a few days"; check logical expiry on every read | https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html | 2026-10-05 | no |
 | Phone page build | Plain TypeScript + Vite static build (ADR-0007), Node >= 22; microphone requires a secure context (HTTPS or a real secure localhost route), see MDN `getUserMedia` | https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia | 2026-10-05 | no |
-| Wire protocol package | `@atr/protocol` 0.1.0: zero runtime dependencies, builds to ES2019 ESM. Hermes/Vega runtime behaviour of `String.prototype.normalize` is **not verified** (see package README). | `packages/protocol` | 2026-10-05 | yes (Node only) |
+| Wire protocol package | `@atr/protocol` 0.1.0 (protocol revision 4): zero runtime dependencies, builds to ES2019 ESM. Hermes/Vega runtime behaviour of `String.prototype.normalize` is **not verified** (see package README). | `packages/protocol` | 2026-10-05 | yes (Node only) |
 
 ## 5. Open items and rechecks
 

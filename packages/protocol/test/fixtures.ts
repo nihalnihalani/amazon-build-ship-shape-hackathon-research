@@ -15,6 +15,7 @@ export const WINDOW = 'w_window001';
 export const ATTEMPT = 'a_attempt001';
 export const JOIN = 'j_join12345';
 export const CRED = 'abcdefghijklmnopqrstuvwxyz0123456789-_ABCDE';
+export const CRED2 = 'ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210_-zyxwv';
 
 export interface EnvOptions {
   role: Role;
@@ -60,8 +61,8 @@ const precheckResult = {
   valid: true,
   invalid_reason: null,
   floor_dbfs: -62.5,
-  p20_dbfs: -60,
-  p80_dbfs: -55.25,
+  p20_dbfs: -64,
+  p80_dbfs: -55.3,
   p95_dbfs: -50,
   frame_count: 100,
   expected_frames: 100,
@@ -77,14 +78,14 @@ const windowResult = {
   invalid_reason: null,
   frame_count: 160,
   expected_frames: 160,
-  coverage: 0.99,
+  coverage: 1,
   active_ms: 3200,
   longest_active_ms: 1800,
   segments: 3,
   onset_ms: 420,
   p50_active_dbfs: -31.5,
   p95_active_dbfs: -24,
-  peak_dbfs: -18.25,
+  peak_dbfs: -18.3,
   clipped_frames: 0,
   nonfinite_frames: 0,
   duration_ms: 8000,
@@ -151,7 +152,7 @@ export const VALID_FIXTURES: Fixture[] = [
   fx('join.expired', relay('join.expired', { join_id: JOIN })),
   fx('auth.resume tv', tv('auth.resume', { room_id: ROOM, role: 'tv', credential: CRED }, { gen: 0 })),
   fx('auth.resume phone null envelope room', phone('auth.resume', { room_id: ROOM, role: 'phone', credential: CRED }, { room: null, gen: 0 })),
-  fx('auth.ok', relay('auth.ok', { role: 'phone', generation: 2, peer_connected: true, phone_paired: true })),
+  fx('auth.ok', relay('auth.ok', { role: 'phone', generation: 2, peer_connected: true, phone_paired: true, next_credential: CRED2 })),
   fx('peer.state', relay('peer.state', { role: 'tv', connected: false, generation: 3 })),
   fx('unpair', tv('unpair', {})),
   fx('unpaired', relay('unpaired', { reason: 'tv_unpaired' })),
@@ -188,11 +189,17 @@ export const VALID_FIXTURES: Fixture[] = [
     phone('mic.state', { ...micState, supported: { auto_gain_control: null, echo_cancellation: null, noise_suppression: null } }),
   ),
   fx('precheck.result', phone('precheck.result', precheckResult, SWA)),
+  fx('precheck.result pre_window', phone('precheck.result', { ...precheckResult, purpose: 'pre_window', frame_count: 40, expected_frames: 40, duration_ms: 2000 }, SWA)),
+  fx(
+    'precheck.result silent_input',
+    phone('precheck.result', { ...precheckResult, valid: false, invalid_reason: 'silent_input', floor_dbfs: -120, p20_dbfs: -120, p80_dbfs: -120, p95_dbfs: -118.5 }, SWA),
+  ),
   fx(
     'precheck.result invalid',
     phone('precheck.result', { ...precheckResult, valid: false, invalid_reason: 'burst_noise', floor_dbfs: null, p20_dbfs: null, p80_dbfs: null, p95_dbfs: null }, SWA),
   ),
-  fx('level', phone('level', { frame_index: 12, t_audio_ms: 600.5, dbfs: -42.25, active: true, clipped: false }, SWA)),
+  fx('level', phone('level', { frame_index: 12, t_audio_ms: 600, dbfs: -42.3, active: true, clipped: false }, SWA)),
+  fx('level frame 0', phone('level', { frame_index: 0, t_audio_ms: 0, dbfs: -140, active: false, clipped: false }, SWA)),
   fx('window.result', phone('window.result', windowResult, SWA)),
   fx(
     'window.result invalid',
