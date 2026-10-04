@@ -4,6 +4,7 @@ import {
   MemoryRoomStore,
   RelayCore,
   createRedactingLogger,
+  sanitizeLogEvent,
   parseWireText,
   type Action,
   type MessageType,
@@ -80,6 +81,8 @@ export class Rig {
   readonly store: RoomStore;
   readonly logs: string[] = [];
   readonly metrics: { name: string; value: number }[] = [];
+  /** Log events exactly as the core emitted them, before any sanitizing. */
+  readonly rawLogEvents: unknown[] = [];
   readonly clients = new Map<string, Client>();
   /** Every secret the relay minted (credentials, codes) plus sentinel strings: none may appear in logs. */
   readonly secrets = new Set<string>();
@@ -152,6 +155,7 @@ export class Rig {
           closes.push(a.connId);
         }
       } else if (a.kind === 'log') {
+        this.rawLogEvents.push(a.event);
         this.logger.log(a.event);
       } else {
         this.metrics.push({ name: a.name, value: a.value });
@@ -238,6 +242,9 @@ export class Rig {
   /** Scan every log line for secrets, bodies and field names; throws via expect on a leak. */
   assertNoLeaks(extraSecrets: string[] = []): void {
     assertNoLeaks(this.logs, [...this.secrets, ...extraSecrets]);
+    // The core itself must never attempt to log anything outside the allowlist: sanitizing changes nothing.
+    for (const e of this.rawLogEvents) expect(sanitizeLogEvent(e)).toEqual(e);
+    expect(this.logs.length).toBe(this.rawLogEvents.length);
   }
 }
 

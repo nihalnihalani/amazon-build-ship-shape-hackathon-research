@@ -758,7 +758,7 @@ export class RelayCore {
         bytes: msg.bytes,
         role: conn.role as PeerRole,
         room: roomHashPrefix(room.roomId),
-        latency_ms: this.mono() - c.t0,
+        latency_ms: Math.round((this.mono() - c.t0) * 100) / 100,
       });
     }
   }
