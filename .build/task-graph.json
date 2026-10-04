@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:37:42+05:30",
+ "updated_at": "2026-10-05T03:39:58+05:30",
  "states": [
   "pending",
   "ready",
@@ -49,7 +49,8 @@
     "EV-0004",
     "EV-0005",
     "EV-0006",
-    "EV-0010"
+    "EV-0010",
+    "EV-0013"
    ],
    "commit": null,
    "blocker": null
@@ -247,7 +248,7 @@
     "T05"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "in_review",
    "attempts": 1,
    "acceptance_criteria": [
     "Pure DSP functions with independent-expected-value tests covering ADR-0001 boundaries",
@@ -257,9 +258,11 @@
    "expected_outputs": [
     "packages/phone-mic-meter"
    ],
-   "reviewer": "lead",
-   "evidence_refs": [],
-   "commit": null,
+   "reviewer": "qa-accessibility",
+   "evidence_refs": [
+    "EV-0012"
+   ],
+   "commit": "HEAD",
    "blocker": null
   },
   {
