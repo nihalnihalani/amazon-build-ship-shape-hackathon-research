@@ -14,7 +14,7 @@
 | T14 listener phase, reveal lock, late responses, cues, agreement | **accept-with-defects** | QA-03 (Medium), QA-04 (Low) (cross-cutting, found in session lifecycle) | Ordering, 20 s boundary, missing-never-invented, reveal lock, late exclusion and cue cap all behave as ADR-0004 states. The two open defects are in session end/bank handling, not in the reveal logic. |
 | T11 storage, resume, deletion, pruning | **accept-with-defects** | QA-02 (Medium), QA-06 (Low), QA-07 (Low) | Deletion removes only `atr:` keys and verifies; refusing stores are reported; crash mid-capture yields an interrupted, unscored attempt; the 30-day boundary is exact. Open defects are crash-consistency and retention edge cases. |
 
-Blockers: none. No defect is a Blocker or High. Acceptance does not depend on any `pending_external` item, but the real-device checks in section 8 are still required before these tasks can be called `verified` for Vega.
+Blockers: none. At the original review there was no High; the revision 4 follow-up (section 8) found QA-09 (High, TV credential rotation), which sits in the TV session/runtime integration and not in T11/T13/T14 acceptance. Acceptance does not depend on any `pending_external` item, but the real-device checks in section 9 are still required before these tasks can be called `verified` for Vega.
 
 Severity scale: Blocker (acceptance impossible), High (violates a stated product constraint in a normal path), Medium (violates a stated constraint in an edge path, or loses user data), Low (spec/doc mismatch or cosmetic logic), Info.
 
@@ -93,7 +93,7 @@ Independent scenario tests, written from the ADRs and PROTOCOL.md with my own fa
 
 I applied 27 single-line mutants to a copy of `dist` (never to product source) and ran the review suite against each: 23 killed, 4 survived. The four survivors are equivalent mutants caused by deliberate redundancy: (M01) `meterFor` returning null for hidden windows is backed by a second guard that nulls the meter again at the end of `buildView`; (M06, M06b, M06c) link loss setting the phone state is backed by two other layers (`peerConnected=false`, `micView`). Removing both layers (M01b, M06d) is killed (15 and 2 failing tests). Mutants killed include: positions 3/6/8, retries still hidden, agreement ignoring eligibility, late counted on time, listener wait 19 s, cue cap 4, delete without the `atr:` filter, delete without verification, prune `<=`, resume keeping in-flight attempts, announcing while capturing, controls during the quiet lead, reveal without the listener, a verdict word leaked into the rating prompt, link loss not cancelling the window, dialog preferring Confirm, unchecked window id, cue accepted during a window, Discard marking complete, resumed marked complete, history without the incomplete flag.
 
-## 5. Commands run
+## 5. Commands run (original review at `4d4ef1e`; the current head is in section 8)
 
 Timestamps are UTC, 2026-10-04T22:55Z to 23:15Z (2026-10-05 04:25 to 04:45 IST), commit `4d4ef1e`, macOS, Node v25.2.1.
 
@@ -119,9 +119,52 @@ The a11y runs are in `docs/evaluation/A11Y_T17_PREP.md`.
 ## 7. Files
 
 - `tests/review/rig.ts`, `tests/review/session-core.review.test.ts`, `tests/review/vitest.config.ts`, `tests/review/tsconfig.json`
-- `tests/package.json`: adds devDependency `axe-core` 4.13.0 (used by the a11y suite). The lockfile was NOT regenerated; the lead integrates it.
+- `tests/package.json`: devDependency `axe-core` 4.13.0 (used by the a11y suite); the coordinator wired the `test`, `test:review`, `test:review:strict` and `test:a11y` scripts.
 
-## 8. Remaining for real VVD / device observation (checklist for the VVD session)
+## 8. Update: protocol revision 4 follow-up (wt/qa merged with `build/across-the-room` at `80253a3`)
+
+Rulings received from the coordinator and what changed in the repros:
+
+- **QA-01**: ADR-0004 will be amended so retries are identified by `attemptNumber > 1`. The repro now compares the ADR text with the implementation: it passes (and `it.fails` flips) as soon as the ADR stops naming `visible_retry` and says `attemptNumber > 1`.
+- **QA-05**: ruling: the phone sees `session.state` stage `phrase_active` from capture start until the next `phrase_ready` or summary, and never `response_pending` or `reveal`. The repro now asserts exactly that and still fails (the TV still sends both).
+- **QA-02..QA-07**: routed to the session owner; the merge contains no fix for any of them, so all stay expected-fail.
+
+Rig updated for revision 4: `auth.ok.next_credential`, values on the 0.1 dB / 0.001 grid through `quantizeDb` / `quantizeCoverage`, integer milliseconds, `silent_input`, per-measurement `window_id` (DEF-002). `tests/review/rig.ts` now also has `forge()` (hand-built frames for values the `MessageFactory` refuses) and `silentPrecheck()`. The 5.99 dB gate boundary became 5.9 (passes) versus 6.0 (blocks).
+
+New tests (all `automated`), 19 added:
+
+| Group | What it checks |
+|---|---|
+| (l1) DEF-002 | every precheck and capture has its own `window_id`; a pre-window precheck and its capture share the `attempt_id`; no window id is ever reused in a session; `listener.open` and `attempt.reveal` carry the capture's id; a retry gets a new attempt id and new window ids; stale filtering is per window id (a `precheck.result` naming the capture window, or a `window.result`/`level`/`listener.response` naming the precheck window, is acked `ignored_stale`); `window.cancel` names the open measurement; a gate-blocked attempt keeps the precheck's id and has no capture window; the sustained-sound window is also two measurements. |
+| (l2) quantisation | off-grid dB (-44.01, -46.95, -44.05, -24.97), off-grid coverage (0.9504) and fractional milliseconds are dropped by the TV with no ack and no state change; the grid twin is accepted; gate boundary 5.9 / 6.0; calibration edge 13.0 accepted, 12.9 rejected. |
+| (l3) silent_input | quiet check: failed screen, Retry preferred, no calibration offered, recovers; pre-window: attempt unscored with reason `silent_input`, never started, blind position stays blind on retry; a reason not allowed for the purpose (`unstable_floor` in a pre-window) is dropped at the wire. |
+| (l4) rotation | `auth.ok` without `next_credential` is rejected (the TV never shows `connected`); the first reconnect presents the credential from `room.created`; credentials never reach storage or any view. |
+
+Mutation check of the new tests: removing the fresh capture `window_id` is killed by 6 tests, the listener answer ignoring the window id by 1, the pre-window gate ignoring `silent_input` by 1.
+
+### QA-09 (High, TV session/runtime; found in this follow-up): the TV ignores `auth.ok.next_credential`, so its second reconnect presents a consumed credential
+
+- Repro (`QA-09`, also in the browser suite): pair; link loss; reconnect (`auth.resume` presents the `room.created` credential, correct); the relay answers `auth.ok` with `next_credential: N1`; link loss again; reconnect.
+- Expected (PROTOCOL.md rev 4 section 3.1: the presented credential is consumed, `next_credential` replaces it, "presenting an already consumed credential revokes that role"): the second `auth.resume` carries `N1`.
+- Observed: it carries the original credential again. `grep next_credential packages/session-core/src` finds nothing; only `apps/phone` stores it. Against a relay that enforces rotation the TV role is revoked on the second reconnect and the speaker is told to pair again mid-session.
+- Fix: store `next_credential` in `onAuthOk` (memory only, never persisted or projected) and use it for the next `auth.resume`.
+
+### QA-08 (Low, TV copy): `silent_input` has no TV text
+
+- Repro (`QA-08`): a quiet check or a pre-window precheck answered with `silent_input` shows "The window could not be scored." on both the failed quiet-check screen and the paused screen (also seen in the browser, `report.json` key `silent_input_quiet_check_text`). AMENDMENTS-REV2 A1-05 requires "The phone microphone looks muted or blocked." Fix: add the reason to `REASON_COPY`.
+
+### Suites at this head (UTC 2026-10-04T23:15Z to 23:30Z)
+
+| Command | Exit | Result |
+|---|---|---|
+| `npm test -w @atr/tests` | 0 | 106 tests: 96 pass + 10 expected-fail repros (QA-01, 02, 02b, 03, 04, 05, 06, 07, 08, 09) |
+| `npm run test:review:strict -w @atr/tests` equivalent (`QA_STRICT=1 npx vitest run --config review/vitest.config.ts`) | 1 | the same 10 fail, each for its intended reason, 96 pass |
+| `npm run typecheck -w @atr/tests` | 0 | no type errors |
+| `npx jest --silent` (`apps/tv`) | 0 | 18 suites, 374 tests |
+| `npx vitest run` (`packages/session-core`, the owner's suite) | 1 | 18 failed, 177 passed (6 files). Not triaged by me: the messages (a hand-built `auth.ok`, an 11.01 dB value, a shared precheck/capture window id) look like revision 4 fixture drift in the owner's helpers, to be fixed in the session rework. |
+| `npm run build` | 2 | `services/relay` fails to compile: `src/core/memory-store.ts(241,29) TS2554 Expected 3 arguments` (the revision 4 `SequenceTracker.accept` signature). Relay owner. |
+
+## 9. Remaining for real VVD / device observation (checklist for the VVD session)
 
 Use real Vega Virtual Device builds, record the build id, VVD image and date, keep screen recordings, and label results `real_VVD` only if produced on the VVD.
 
