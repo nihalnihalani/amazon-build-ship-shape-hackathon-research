@@ -21,6 +21,7 @@ import type {
   TvView,
 } from '@atr/session-core';
 import { createSessionStore } from '@atr/session-core';
+import { createWsTransport, type WebSocketLike, type WsTransport } from '../../apps/tv/src/adapters/wsTransport.js';
 
 export class MemoryStorage implements StoragePort {
   readonly map = new Map<string, string>();
@@ -52,62 +53,56 @@ export function systemClock(): ClockPort {
   };
 }
 
-/** TransportPort over the `ws` package. Inbound frames and link state are dispatched into the store. */
+/**
+ * The TV app's own WebSocket adapter (apps/tv/src/adapters/wsTransport.ts: backoff 0.5,1,2,4,8 s),
+ * with sockets created by the `ws` package so the throwaway dev CA can be trusted. No Origin header
+ * is sent, like a native Vega client. `sent`/`received` record frames for the test's privacy checks.
+ */
 export class NodeWsTransport implements TransportPort {
-  private ws: WebSocket | null = null;
+  private readonly inner: WsTransport;
   private dispatch: ((input: TvInput) => void) | null = null;
+  private lastSocket: WebSocket | null = null;
   readonly sent: string[] = [];
   readonly received: string[] = [];
 
-  constructor(private readonly opts: { ca?: string | Buffer; origin?: string } = {}) {}
+  constructor(private readonly opts: { ca?: string | Buffer; origin?: string } = {}) {
+    this.inner = createWsTransport({
+      createSocket: (url: string) => {
+        const ws = new WebSocket(url, {
+          ca: this.opts.ca,
+          headers: this.opts.origin ? { Origin: this.opts.origin } : {},
+        });
+        this.lastSocket = ws;
+        ws.on('message', (data, isBinary) => {
+          if (!isBinary) this.received.push(data.toString('utf8'));
+        });
+        return ws as unknown as WebSocketLike;
+      },
+    });
+  }
 
   bind(dispatch: (input: TvInput) => void) {
     this.dispatch = dispatch;
+    this.inner.attach(dispatch);
   }
 
   connect(url: string): void {
-    this.dispatch?.({ kind: 'transport', state: 'connecting' });
-    const ws = new WebSocket(url, {
-      ca: this.opts.ca,
-      headers: this.opts.origin ? { Origin: this.opts.origin } : {},
-    });
-    this.ws = ws;
-    ws.on('open', () => this.dispatch?.({ kind: 'transport', state: 'connected' }));
-    ws.on('message', (data, isBinary) => {
-      if (isBinary) return;
-      const text = data.toString('utf8');
-      this.received.push(text);
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        return;
-      }
-      this.dispatch?.({ kind: 'wire', message: parsed });
-    });
-    ws.on('close', () => {
-      if (this.ws === ws) this.dispatch?.({ kind: 'transport', state: 'offline' });
-    });
-    ws.on('error', () => {
-      /* close follows */
-    });
+    this.inner.connect(url);
   }
 
   send(serialized: string): boolean {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
-    this.sent.push(serialized);
-    this.ws.send(serialized);
-    return true;
+    const ok = this.inner.send(serialized);
+    if (ok) this.sent.push(serialized);
+    return ok;
   }
 
   close(reason: string): void {
-    this.ws?.close(1000, reason.slice(0, 100));
-    this.ws = null;
+    this.inner.close(reason);
   }
 
-  /** Test hook: drop the socket abruptly to simulate link loss. */
+  /** Test hook: drop the current socket abruptly to simulate link loss (the adapter reconnects). */
   terminate(): void {
-    this.ws?.terminate();
+    this.lastSocket?.terminate();
   }
 }
 
@@ -165,7 +160,7 @@ export async function startTv(opts: {
           const v = store.getView();
           if (pred(v)) return resolve(v);
           if (Date.now() - start > timeoutMs) {
-            return reject(new Error(`timeout waiting for ${label}; screen=${v.screen} stage=${v.stage} title=${v.title}`));
+            return reject(new Error(`timeout waiting for ${label}; screen=${v.screen} stage=${v.stage} title=${v.title} body=${JSON.stringify(v.body)} banner=${JSON.stringify(v.banner)} result=${JSON.stringify(v.result)} mic=${v.mic} link=${v.link} actions=${v.actions.map((a) => a.id).join(',')}`));
           }
           setTimeout(check, 50);
         };
