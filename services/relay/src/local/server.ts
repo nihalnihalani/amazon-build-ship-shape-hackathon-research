@@ -9,6 +9,7 @@ import {
   CLOSE,
   MAX_MESSAGE_BYTES,
   MemoryRoomStore,
+  MinuteAggregator,
   RelayCore,
   createRedactingLogger,
   newConnectionId,
@@ -54,11 +55,21 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
   const logger = createRedactingLogger(opts.logSink ?? defaultSink);
   const metrics = new Map<MetricName, number>();
   let disabled = config.disabled;
-  const pepper = config.hashPepper ?? randomBytes(32).toString('base64url');
+  // Local secret for the keyed hashes (pairing codes, source addresses): random per process, never configured,
+  // never written anywhere. Restarting the relay invalidates every pairing code (as it empties the memory store).
+  const hashSecret = randomBytes(32).toString('base64url');
+  const aggregator = new MinuteAggregator();
 
   const core = new RelayCore({
     store,
-    config: { allowedOrigins: config.allowedOrigins, hashPepper: pepper, isDisabled: () => disabled },
+    config: {
+      phoneOrigins: config.allowedOrigins,
+      tvPreviewOrigins: config.tvPreviewOrigins,
+      hashSecret,
+      environment: config.environment,
+      liveRoomCap: config.liveRoomCap,
+      isDisabled: () => disabled,
+    },
   });
 
   const headers = securityHeaders({ tls: config.tls !== null, hstsMaxAgeSeconds: config.hstsMaxAgeSeconds });
@@ -130,6 +141,12 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
           break;
         case 'metric':
           metrics.set(a.name, (metrics.get(a.name) ?? 0) + a.value);
+          // Ordinary traffic is aggregated per minute instead of logged per message (A2-04).
+          for (const line of aggregator.record(a, now())) logger.log(line);
+          break;
+        case 'schedule':
+          // The authentication deadlines are enforced by the sweep below (every tickMs); the Lambda adapter turns
+          // these requests into delayed SQS messages instead. Same message-level behaviour: error, then close.
           break;
       }
     }
@@ -173,7 +190,9 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
         await execute(actions.filter((a) => a.kind !== 'close'));
         const refused = actions.find((a) => a.kind === 'close');
         if (refused && refused.kind === 'close') {
-          rejectUpgrade(socket, refused.code === CLOSE.DISABLED ? 503 : 403, refused.code === CLOSE.DISABLED ? 'Service Unavailable' : 'Forbidden');
+          if (refused.code === CLOSE.DISABLED) rejectUpgrade(socket, 503, 'Service Unavailable');
+          else if (refused.code === CLOSE.RATE_LIMITED) rejectUpgrade(socket, 429, 'Too Many Requests');
+          else rejectUpgrade(socket, 403, 'Forbidden');
           return;
         }
         wss.handleUpgrade(req, socket, head, (ws) => {
@@ -181,7 +200,7 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
           ws.on('message', (data: RawData, isBinary: boolean) => {
             const bytes = Array.isArray(data) ? data.reduce((n, b) => n + b.length, 0) : (data as Buffer | ArrayBuffer).byteLength;
             enqueue(connId, () =>
-              core.onMessage(connId, isBinary ? { binary: true, bytes } : rawToString(data), now()),
+              core.processInbound(isBinary ? { binary: true, bytes } : rawToString(data), { connId, now: now() }),
             );
           });
           ws.on('close', () => {
@@ -223,6 +242,9 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
             core
               .onTick(now())
               .then(execute)
+              .then(() => {
+                for (const line of aggregator.flush(now())) logger.log(line);
+              })
               .catch(() => logger.log({ event: 'internal_error', code: 'internal' }));
           }, config.tickMs);
           timer.unref();
@@ -233,6 +255,7 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
     },
     stop(): Promise<void> {
       if (timer) clearInterval(timer);
+      for (const line of aggregator.flush(now(), true)) logger.log(line);
       for (const ws of sockets.values()) ws.terminate();
       return new Promise((resolveStop) => {
         wss.close(() => {

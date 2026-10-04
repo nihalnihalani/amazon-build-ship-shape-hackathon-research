@@ -2,7 +2,9 @@ import {
   DeleteCommand,
   GetCommand,
   PutCommand,
+  QueryCommand,
   ScanCommand,
+  TransactWriteCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 
@@ -304,6 +306,9 @@ interface CommonInput {
   ReturnValues?: string;
   ConsistentRead?: boolean;
   ExclusiveStartKey?: Item;
+  IndexName?: string;
+  KeyConditionExpression?: string;
+  Select?: string;
 }
 
 /**
@@ -317,6 +322,8 @@ export class FakeDynamo {
   readonly items = new Map<string, Item>();
   readonly calls: { op: string; key?: Item }[] = [];
   scanPageSize = 2;
+  /** The only global secondary index of the real table (sparse, keys gsi1pk and gsi1sk). */
+  static readonly INDEXES: Record<string, { pk: string; sk: string }> = { 'live-rooms': { pk: 'gsi1pk', sk: 'gsi1sk' } };
   private faults: { match: (op: string, input: CommonInput) => boolean; error: Error; times: number }[] = [];
 
   /** Makes matching calls fail with `error` (for `times` calls). */
@@ -324,22 +331,29 @@ export class FakeDynamo {
     this.faults.push({ match, error, times });
   }
 
+  private opOf(command: unknown): string {
+    return command instanceof GetCommand
+      ? 'get'
+      : command instanceof PutCommand
+        ? 'put'
+        : command instanceof UpdateCommand
+          ? 'update'
+          : command instanceof DeleteCommand
+            ? 'delete'
+            : command instanceof ScanCommand
+              ? 'scan'
+              : command instanceof QueryCommand
+                ? 'query'
+                : command instanceof TransactWriteCommand
+                  ? 'transact'
+                  : 'unsupported';
+  }
+
   async send(command: unknown): Promise<unknown> {
     const input = (command as { input: CommonInput }).input;
-    const op =
-      command instanceof GetCommand
-        ? 'get'
-        : command instanceof PutCommand
-          ? 'put'
-          : command instanceof UpdateCommand
-            ? 'update'
-            : command instanceof DeleteCommand
-              ? 'delete'
-              : command instanceof ScanCommand
-                ? 'scan'
-                : 'unsupported';
+    const op = this.opOf(command);
     if (op === 'unsupported') throw new FakeDynamoError('ValidationException', 'unsupported command');
-    if (!input.TableName) throw new FakeDynamoError('ValidationException', 'TableName is required');
+    if (op !== 'transact' && !input.TableName) throw new FakeDynamoError('ValidationException', 'TableName is required');
     this.calls.push({ op, ...(input.Key ? { key: input.Key } : input.Item ? { key: { pk: input.Item.pk, sk: input.Item.sk } } : {}) });
     for (const f of this.faults) {
       if (f.times > 0 && f.match(op, input)) {
@@ -347,6 +361,12 @@ export class FakeDynamo {
         throw f.error;
       }
     }
+    if (op === 'transact') return this.transact(input as unknown as TransactInput);
+    return this.exec(op, input);
+  }
+
+  /** Executes one single-item operation (also used for the members of a transaction). */
+  private exec(op: string, input: CommonInput): unknown {
     switch (op) {
       case 'get': {
         const item = this.items.get(k(input.Key as Item));
@@ -389,6 +409,29 @@ export class FakeDynamo {
             return {};
         }
       }
+      case 'query': {
+        const idx = FakeDynamo.INDEXES[input.IndexName ?? ''];
+        if (!idx) throw new FakeDynamoError('ValidationException', 'The table does not have the specified index');
+        if (!input.KeyConditionExpression) throw new FakeDynamoError('ValidationException', 'KeyConditionExpression is required');
+        const sc = new Scope(input.ExpressionAttributeNames ?? {}, input.ExpressionAttributeValues ?? {});
+        // a sparse index holds only items that carry both of its key attributes
+        const indexed = [...this.items.values()]
+          .filter((v) => v[idx.pk] !== undefined && v[idx.sk] !== undefined)
+          .sort((a, b) => (a[idx.sk] as number) - (b[idx.sk] as number) || (k(a) < k(b) ? -1 : 1));
+        let start = 0;
+        if (input.ExclusiveStartKey) start = indexed.findIndex((v) => k(v) === k(input.ExclusiveStartKey as Item)) + 1;
+        const page = indexed.slice(start, start + this.scanPageSize);
+        const matched = page.filter((v) => evalCondition(input.KeyConditionExpression, v, sc));
+        if (page.length === 0) evalCondition(input.KeyConditionExpression, {}, sc);
+        assertAllPlaceholdersUsed(sc, input.ExpressionAttributeNames, input.ExpressionAttributeValues);
+        const more = start + this.scanPageSize < indexed.length;
+        const last = page.at(-1);
+        const base = {
+          ...(more && last ? { LastEvaluatedKey: { pk: last.pk, sk: last.sk } } : {}),
+        };
+        if (input.Select === 'COUNT') return { Count: matched.length, ...base };
+        return { Items: matched.map((v) => structuredClone(v)), Count: matched.length, ...base };
+      }
       default: {
         // scan, with pagination to exercise LastEvaluatedKey handling
         const sc = new Scope(input.ExpressionAttributeNames ?? {}, input.ExpressionAttributeValues ?? {});
@@ -412,4 +455,39 @@ export class FakeDynamo {
       }
     }
   }
+
+  /**
+   * TransactWriteItems: every condition is evaluated against the state before the transaction; if any fails nothing is
+   * written and TransactionCanceledException carries one reason per item, as the real service does. Two operations on
+   * one item are refused, as the real service refuses them.
+   */
+  private transact(input: TransactInput): unknown {
+    const ops = input.TransactItems.map((t) => {
+      const entry = t.Put ? ['put', t.Put] : t.Update ? ['update', t.Update] : t.Delete ? ['delete', t.Delete] : t.ConditionCheck ? ['check', t.ConditionCheck] : null;
+      if (!entry) throw new FakeDynamoError('ValidationException', 'transaction item without an operation');
+      return { op: entry[0] as string, input: entry[1] as CommonInput };
+    });
+    if (ops.length === 0 || ops.length > 100) throw new FakeDynamoError('ValidationException', 'a transaction has 1 to 100 items');
+    const keys = ops.map((o) => k(o.op === 'put' ? (o.input.Item as Item) : (o.input.Key as Item)));
+    if (new Set(keys).size !== keys.length) {
+      throw new FakeDynamoError('ValidationException', 'Transaction request cannot include multiple operations on one item');
+    }
+    const reasons = ops.map((o, i) => {
+      const cur = this.items.get(keys[i] as string);
+      const sc = new Scope(o.input.ExpressionAttributeNames ?? {}, o.input.ExpressionAttributeValues ?? {});
+      const ok = evalCondition(o.input.ConditionExpression, cur, sc);
+      return { Code: ok ? 'None' : 'ConditionalCheckFailed' };
+    });
+    if (reasons.some((r) => r.Code !== 'None')) {
+      const e = new FakeDynamoError('TransactionCanceledException', 'Transaction cancelled, please refer cancellation reasons for specific reasons');
+      (e as unknown as { CancellationReasons: unknown }).CancellationReasons = reasons;
+      throw e;
+    }
+    for (const o of ops) if (o.op !== 'check') this.exec(o.op, o.input);
+    return {};
+  }
+}
+
+interface TransactInput {
+  TransactItems: { Put?: CommonInput; Update?: CommonInput; Delete?: CommonInput; ConditionCheck?: CommonInput }[];
 }

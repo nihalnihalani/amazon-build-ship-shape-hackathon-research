@@ -25,14 +25,14 @@ const ROOM = 'r_abcdefghijklmnopqrstuv';
  * PROTOCOL.md tables). These tests cover the port glue the relay relies on.
  */
 describe('protocol port glue', () => {
-  it('adapts a successful parse: keeps the exact raw text, byte length and typed envelope', () => {
+  it('adapts a successful parse: canonical re-serialisation, received byte length and typed envelope', () => {
     const raw = buildEnvelope({ roomId: ROOM, role: 'phone', generation: 1, nextSeq: 0 }, 'cue', NOW, {
       payload: { text: 'été' },
     });
     const r = parseWireText(raw, NOW);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.message.raw).toBe(raw);
+      expect(r.message.canonical).toBe(JSON.stringify(JSON.parse(raw)));
       expect(r.message.bytes).toBe(Buffer.byteLength(raw));
       expect(r.message.type).toBe('cue');
       expect(r.message.envelope.sender_role).toBe('phone');
@@ -91,7 +91,7 @@ describe('protocol port glue', () => {
     expect(LIMITS.maxUnauthenticatedMessages).toBe(5);
     expect(LIMITS.pairingCodeTtlMs).toBe(600_000);
     expect(LIMITS.joinTtlMs).toBe(60_000);
-    expect(LIMITS.credentialTtlMs).toBe(12 * 3_600_000);
+    expect(LIMITS.credentialTtlMs).toBe(2 * 3_600_000); // A3-11: credentials live 2 h, renewed by rotation
     expect(LIMITS.roomTtlMs).toBe(12 * 3_600_000);
     expect(LIMITS.roomIdleCloseMs).toBe(30 * 60_000);
     expect(LIMITS.dedupeWindow).toBe(1024);
@@ -121,7 +121,7 @@ describe('relay-originated envelopes satisfy the package validator', () => {
     'join.accepted': { room_id: ROOM, phone_credential: 'B'.repeat(43), credential_expires_at: NOW + 1000, generation: 1 },
     'join.rejected': { reason: 'busy' },
     'join.expired': { join_id: 'j_abcdefghijklmnopqrstuv' },
-    'auth.ok': { role: 'tv', generation: 2, peer_connected: true, phone_paired: false },
+    'auth.ok': { role: 'tv', generation: 2, peer_connected: true, phone_paired: false, next_credential: 'N'.repeat(43) },
     'peer.state': { role: 'phone', connected: false, generation: 1 },
     unpaired: { reason: 'tv_unpaired' },
     pong: { server_time: NOW },

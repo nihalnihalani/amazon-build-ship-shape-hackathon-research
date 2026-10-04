@@ -285,7 +285,7 @@ describe('kill switch (RELAY_DISABLED)', () => {
   });
 
   it('is controlled by the RELAY_DISABLED environment variable', () => {
-    const base = { TABLE_NAME: 't', ALLOWED_ORIGINS: PHONE_ORIGIN };
+    const base = { TABLE_NAME: 't', ALLOWED_ORIGINS: PHONE_ORIGIN, HASH_SECRET_PARAM: '/atr/relay/staging/hash-secret' };
     expect(loadAwsConfig({ ...base, RELAY_DISABLED: 'true' }).disabled).toBe(true);
     expect(loadAwsConfig({ ...base, RELAY_DISABLED: ' TRUE ' }).disabled).toBe(true);
     expect(loadAwsConfig({ ...base, RELAY_DISABLED: 'false' }).disabled).toBe(false);
@@ -359,10 +359,16 @@ describe('Lambda configuration fails closed', () => {
     const c = loadAwsConfig({
       TABLE_NAME: 'tbl',
       ALLOWED_ORIGINS: 'https://d1.cloudfront.net, http://localhost:5173',
+      HASH_SECRET_PARAM: '/atr/relay/staging/hash-secret',
       STAGE_NAME: 'prod',
-      HASH_PEPPER: 'x',
     });
-    expect(c).toMatchObject({ tableName: 'tbl', stage: 'prod', hashPepper: 'x', allowedOrigins: ['https://d1.cloudfront.net', 'http://localhost:5173'] });
+    expect(c).toMatchObject({
+      tableName: 'tbl',
+      stage: 'prod',
+      environment: 'development',
+      hashSecretParameter: '/atr/relay/staging/hash-secret',
+      phoneOrigins: ['https://d1.cloudfront.net', 'http://localhost:5173'],
+    });
   });
 });
 

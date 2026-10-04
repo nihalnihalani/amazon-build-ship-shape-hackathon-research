@@ -5,10 +5,10 @@ import {
   MESSAGE_TYPES,
   MemoryRoomStore,
   RelayCore,
+  hashCredential,
   specFor,
-  type ClaimResult,
+  type AcceptJoinResult,
   type MessageType,
-  type PhoneSlotClaim,
 } from '../src/core/index.js';
 import { VALID_PAYLOADS } from './helpers/fixtures.js';
 import {
@@ -52,7 +52,7 @@ describe('room creation (ADR-0003 section 2)', () => {
     expect(created.tv_credential).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(created.pairing_code).toMatch(/^[ACDEFHJKMNPRTUVWXY3479]{6}$/);
     expect(created.code_expires_at).toBe(rig.now + 10 * 60_000);
-    expect(created.credential_expires_at).toBe(rig.now + 12 * 3_600_000);
+    expect(created.credential_expires_at).toBe(rig.now + 2 * 3_600_000); // A3-11: credentials live 2 h
     expect(created.generation).toBe(1);
     expect(tv.last('room.created').env.room_id).toBe(created.room_id);
     expect(tv.last('room.created').env.sender_role).toBe('relay');
@@ -74,14 +74,17 @@ describe('room creation (ADR-0003 section 2)', () => {
     expect(room?.codeHash).toBeNull();
   });
 
-  it('rate limits room.create to 10 per source per hour', async () => {
-    const rig = new Rig();
-    for (let i = 0; i < 10; i += 1) await rig.tvCreate(null, '203.0.113.50');
-    const eleventh = await rig.connect(null, '203.0.113.50');
-    eleventh.role = 'tv';
-    await rig.send(eleventh, 'room.create');
-    expect(eleventh.lastError().payload.code).toBe('rate_limited');
-    expect(eleventh.closed?.code).toBe(CLOSE.RATE_LIMITED);
+  it('rate limits room.create to 30 per source per hour (A3-03)', async () => {
+    const rig = new Rig({ liveRoomCap: 1000 });
+    for (let i = 0; i < 30; i += 1) {
+      await rig.tvCreate(null, '203.0.113.50');
+      if (i % 10 === 9) rig.advance(61_000); // stay under the $connect budget of 20 per minute
+    }
+    const next = await rig.connect(null, '203.0.113.50');
+    next.role = 'tv';
+    await rig.send(next, 'room.create');
+    expect(next.lastError().payload.code).toBe('rate_limited');
+    expect(next.closed?.code).toBe(CLOSE.RATE_LIMITED);
     // another source is unaffected
     const other = await rig.tvCreate(null, '203.0.113.51');
     expect(other.roomId).toBeTruthy();
@@ -152,37 +155,6 @@ describe('pairing code brute force (ADR-0003 section 7)', () => {
     expect(rig.metrics.filter((m) => m.name === 'join_failed')).toHaveLength(3);
   });
 
-  it('limits failures per source across connections, even for a valid code', async () => {
-    const rig = new Rig();
-    const tv = await rig.tvCreate();
-    const real = tv.last('room.created').payload.pairing_code as string;
-    let n = 0;
-    // 10 failures from one source spread over four connections (3 + 3 + 3 + 1)
-    for (const failures of [3, 3, 3, 1]) {
-      const c = await rig.connect(PHONE_ORIGIN, '203.0.113.20');
-      c.role = 'phone';
-      for (let i = 0; i < failures; i += 1) {
-        n += 1;
-        await rig.send(c, 'join.request', { payload: { pairing_code: wrongCode(real, n), device_label: 'x' } });
-      }
-    }
-    // the correct code from the exhausted source is now refused without any lookup result
-    const guess = await joinWith(rig, real, '203.0.113.20');
-    expect(guess.errors()).toEqual(['rate_limited']);
-    expect(guess.of('join.pending')).toHaveLength(0);
-    expect(guess.closed?.code).toBe(CLOSE.RATE_LIMITED);
-    expect(tv.of('join.requested')).toHaveLength(0);
-    // a different source is not affected
-    const legit = await joinWith(rig, real, '203.0.113.21');
-    expect(legit.of('join.pending')).toHaveLength(1);
-    // the window rolls over after 10 minutes
-    rig.advance(10 * 60_000 + 1);
-    const later = await rig.tvCreate(null, '198.51.100.99');
-    const real2 = later.last('room.created').payload.pairing_code as string;
-    const again = await joinWith(rig, real2, '203.0.113.20');
-    expect(again.of('join.pending')).toHaveLength(1);
-  });
-
   it('never logs attempted or real codes', async () => {
     const rig = new Rig();
     const tv = await rig.tvCreate();
@@ -223,19 +195,21 @@ describe('join flow', () => {
     expect(accepted.phone_credential).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(accepted.room_id).toBe(tv.roomId);
     expect(accepted.generation).toBe(1);
-    expect(accepted.credential_expires_at).toBe(rig.now + 12 * 3_600_000);
+    expect(accepted.credential_expires_at).toBe(rig.now + 2 * 3_600_000);
     expect(tv.last('peer.state').payload).toMatchObject({ role: 'phone', connected: true, generation: 1 });
     expect(phone.last('peer.state').payload).toMatchObject({ role: 'tv', connected: true });
   });
 
-  it('refuses a second join while one is pending (join_busy)', async () => {
+  it('refuses a second join while one is pending with only join.rejected {busy} (A3-10)', async () => {
     const rig = new Rig();
     const tv = await rig.tvCreate();
     const code = tv.last('room.created').payload.pairing_code as string;
     const first = await joinWith(rig, code, '203.0.113.1');
     const second = await joinWith(rig, code, '203.0.113.2');
     expect(first.of('join.pending')).toHaveLength(1);
-    expect(second.errors()).toEqual(['join_busy']);
+    // A3-10: a busy phone receives only join.rejected {busy}: no error message
+    expect(second.errors()).toEqual([]);
+    expect(second.inbox.map((m) => m.type)).toEqual(['join.rejected']);
     expect(second.last('join.rejected').payload.reason).toBe('busy');
     expect(tv.of('join.requested')).toHaveLength(1);
   });
@@ -253,7 +227,7 @@ describe('join flow', () => {
       rig.send(p2, 'join.request', { payload: { pairing_code: code, device_label: 'two' } }),
     ]);
     const pendings = [p1, p2].filter((p) => p.of('join.pending').length === 1);
-    const busy = [p1, p2].filter((p) => p.errors().includes('join_busy'));
+    const busy = [p1, p2].filter((p) => p.of('join.rejected').some((m) => m.payload.reason === 'busy') && p.errors().length === 0);
     expect(pendings).toHaveLength(1);
     expect(busy).toHaveLength(1);
     expect(tv.of('join.requested')).toHaveLength(1);
@@ -302,12 +276,13 @@ describe('join flow', () => {
     expect(tv.of('join.requested')).toHaveLength(0);
   });
 
-  it('handles the TV reject path: phone told, no credential, code remains usable', async () => {
+  it('handles the TV reject path: phone told, no credential, the code is burned and a fresh one pushed to the TV (A3-02)', async () => {
     const rig = new Rig();
     const tv = await rig.tvCreate();
     const code = tv.last('room.created').payload.pairing_code as string;
     const phone = await joinWith(rig, code, '203.0.113.5');
     const joinId = tv.last('join.requested').payload.join_id as string;
+    tv.clear();
     await rig.send(tv, 'join.confirm', { payload: { join_id: joinId, decision: 'reject' } });
     expect(phone.last('join.rejected').payload.reason).toBe('rejected');
     expect(phone.of('join.accepted')).toHaveLength(0);
@@ -317,9 +292,16 @@ describe('join flow', () => {
     phone.clear();
     await rig.send(phone, 'level', { roomId: tv.roomId });
     expect(phone.errors()).toEqual(['unauthenticated']);
-    // a fresh join with the same (unconsumed) code works
+    // the old code is burned: it no longer resolves, even for a fresh source
     const again = await joinWith(rig, code, '203.0.113.6');
-    expect(again.of('join.pending')).toHaveLength(1);
+    expect(again.errors()).toEqual(['not_found']);
+    expect(again.of('join.pending')).toHaveLength(0);
+    // and the TV was pushed a fresh code that does work
+    const fresh = tv.last('pairing.code').payload;
+    expect(fresh.pairing_code).not.toBe(code);
+    expect(fresh.code_expires_at).toBe(rig.now + 10 * 60_000);
+    const ok = await joinWith(rig, fresh.pairing_code as string, '203.0.113.7');
+    expect(ok.of('join.pending')).toHaveLength(1);
   });
 
   it('answers a stale join id with not_found and does not leak across rooms', async () => {
@@ -407,9 +389,12 @@ describe('logical expiry on every check', () => {
     expect(phone.last('join.rejected').payload.reason).toBe('expired');
     expect(phone.of('join.accepted')).toHaveLength(0);
     expect((await rig.store.getRoom(tv.roomId as string))?.phone).toBeNull();
+    // an unanswered, expired join burns the code and the TV is pushed a fresh one (A3-02)
+    expect(tv.last('pairing.code').payload.pairing_code).not.toBe(code);
+    expect((await joinWith(rig, code, '203.0.113.13')).errors()).toEqual(['not_found']);
   });
 
-  it('expires credentials and the room logically at 12 hours, closing live connections', async () => {
+  it('expires credentials logically at 2 hours, closing live connections and refusing resumes', async () => {
     const rig = new Rig();
     const tv = await rig.tvCreate();
     const phone = await rig.pair(tv);
@@ -424,14 +409,43 @@ describe('logical expiry on every check', () => {
     await rig.send(tv, 'ping');
     expect(tv.errors()).toEqual(['expired']);
     expect(tv.closed?.code).toBe(CLOSE.UNAUTHENTICATED);
-    // resume with an expired credential is refused too, while the stored record still exists
+    // resume with an expired credential gets the generic failure, while the stored record still exists
     const again = await rig.connect();
     again.role = 'tv';
     await rig.send(again, 'auth.resume', {
       payload: { room_id: tv.roomId as string, role: 'tv', credential: tv.credential as string },
     });
-    expect(again.errors()).toEqual(['expired']);
+    expect(again.errors()).toEqual(['unauthorized']);
     expect(await rig.store.getRoom(tv.roomId as string)).not.toBeNull();
+  });
+
+  it('expires the room at 12 hours even though rotation keeps renewing the credential (checked on every message)', async () => {
+    const rig = new Rig();
+    const tv = await rig.tvCreate();
+    const roomId = tv.roomId as string;
+    let live = tv;
+    // six resumes 110 minutes apart (the clients' re-dial interval), each rotating the credential
+    for (let i = 0; i < 6; i += 1) {
+      rig.advance(110 * 60_000);
+      live = await rig.resume(roomId, 'tv', live.credential as string);
+      expect(live.of('auth.ok'), `resume ${i + 1}`).toHaveLength(1);
+    }
+    // at 11 h the credential is capped by the room life: it can never outlive the room
+    const room = await rig.store.getRoom(roomId);
+    expect(room?.tv.credExpiresAt).toBe(room?.expiresAt);
+    rig.advance(LIMITS.roomTtlMs - 6 * 110 * 60_000 - 1);
+    await rig.send(live, 'ping');
+    expect(live.errors()).toEqual([]);
+    rig.advance(1);
+    await rig.send(live, 'ping');
+    expect(live.errors()).toEqual(['expired']);
+    expect(live.closed).not.toBeNull();
+    // and no resume works any more (the stored record still exists: logical expiry, not TTL deletion)
+    const late = await rig.connect();
+    late.role = 'tv';
+    await rig.send(late, 'auth.resume', { payload: { room_id: roomId, role: 'tv', credential: live.credential as string } });
+    expect(late.errors()).toEqual(['unauthorized']);
+    expect(await rig.store.getRoom(roomId)).not.toBeNull();
   });
 
   it('closes a room that had no connection for 30 minutes (checked at resume)', async () => {
@@ -444,7 +458,8 @@ describe('logical expiry on every check', () => {
     await rig.send(again, 'auth.resume', {
       payload: { room_id: tv.roomId as string, role: 'tv', credential: tv.credential as string },
     });
-    expect(again.errors()).toEqual(['expired']);
+    expect(again.errors()).toEqual(['unauthorized']); // the specific reason (room_idle_closed) is logged only
+    expect(rig.rawLogEvents).toContainEqual(expect.objectContaining({ event: 'auth_failed', code: 'room_idle_closed' }));
     const room = await rig.store.getRoom(tv.roomId as string);
     expect(room?.closed).toBe(true);
   });
@@ -460,14 +475,17 @@ describe('revocation and room lifecycle', () => {
     expect(phone.last('unpaired').payload.reason).toBe('tv_unpaired');
     expect(phone.closed?.code).toBe(CLOSE.UNPAIRED);
     expect(tv.last('peer.state').payload).toMatchObject({ role: 'phone', connected: false });
-    expect((await rig.store.getRoom(tv.roomId as string))?.phone).toBeNull();
+    const afterUnpair = await rig.store.getRoom(tv.roomId as string);
+    expect(afterUnpair?.phone).toBeNull();
+    expect(afterUnpair?.phoneEpoch).toBe(2); // claim bumped it to 1, revoke to 2
 
     const retry = await rig.connect(PHONE_ORIGIN);
     retry.role = 'phone';
     await rig.send(retry, 'auth.resume', {
       payload: { room_id: tv.roomId as string, role: 'phone', credential: phone.credential as string },
     });
-    expect(retry.errors()).toEqual(['revoked']);
+    expect(retry.errors()).toEqual(['unauthorized']); // generic to the client (A3-05)
+    expect(rig.rawLogEvents).toContainEqual(expect.objectContaining({ event: 'auth_failed', code: 'credential_revoked' }));
 
     // the dropped connection cannot sneak a message through either
     await rig.send(phone, 'level', { session: 's_session000001' });
@@ -512,15 +530,12 @@ describe('resume, supersede and generations (ADR-0003 section 5)', () => {
     const tv = await rig.tvCreate();
     const phone = await rig.pair(tv);
     phone.clear();
-    const tv2 = await rig.connect();
-    tv2.role = 'tv';
-    await rig.send(tv2, 'auth.resume', {
-      payload: { room_id: tv.roomId as string, role: 'tv', credential: tv.credential as string },
-    });
+    rig.advance(26_000); // the old TV connection was last heard more than 25 s ago (A3-07)
+    const tv2 = await rig.resume(tv.roomId as string, 'tv', tv.credential as string);
     const ok = tv2.last('auth.ok').payload;
     expect(ok).toMatchObject({ role: 'tv', generation: 2, peer_connected: true, phone_paired: true });
-    tv2.roomId = tv.roomId;
-    tv2.generation = 2;
+    expect(ok.next_credential).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(ok.next_credential).not.toBe(tv.credential);
     expect(tv.last('error').payload.code).toBe('superseded');
     expect(tv.closed?.code).toBe(CLOSE.SUPERSEDED);
     expect(phone.last('peer.state').payload).toMatchObject({ role: 'tv', connected: true, generation: 2 });
@@ -539,8 +554,16 @@ describe('resume, supersede and generations (ADR-0003 section 5)', () => {
     const tv = await rig.tvCreate();
     await rig.pair(tv);
     // another worker resumes the TV; this connection is told nothing (simulated lost close)
-    const bump = await rig.store.bumpGeneration(tv.roomId as string, 'tv', 'other-conn', rig.now);
-    expect(bump?.generation).toBe(2);
+    const bump = await rig.store.resumeRole({
+      roomId: tv.roomId as string,
+      role: 'tv',
+      connId: 'other-conn',
+      presentedHash: hashCredential(tv.credential as string),
+      nextHash: hashCredential('f'.repeat(43)),
+      nextExpiresAt: rig.now + 3_600_000,
+      now: rig.now,
+    });
+    expect(bump.ok && bump.generation).toBe(2);
     await rig.send(tv, 'ping');
     expect(tv.lastError().payload.code).toBe('superseded');
     expect(tv.closed?.code).toBe(CLOSE.SUPERSEDED);
@@ -553,13 +576,8 @@ describe('resume, supersede and generations (ADR-0003 section 5)', () => {
     await rig.startSession(tv);
     await rig.send(phone, 'level', { seq: 10 });
     tv.clear();
-    const p2 = await rig.connect(PHONE_ORIGIN);
-    p2.role = 'phone';
-    await rig.send(p2, 'auth.resume', {
-      payload: { room_id: tv.roomId as string, role: 'phone', credential: phone.credential as string },
-    });
-    p2.roomId = tv.roomId;
-    p2.generation = p2.last('auth.ok').payload.generation as number;
+    rig.advance(26_000);
+    const p2 = await rig.resume(tv.roomId as string, 'phone', phone.credential as string);
     expect(p2.generation).toBe(2);
     expect(tv.last('peer.state').payload).toMatchObject({ role: 'phone', connected: true, generation: 2 });
     await rig.send(p2, 'level', { seq: 0 }); // lower than the old generation's 10 but a new generation
@@ -589,28 +607,41 @@ describe('resume, supersede and generations (ADR-0003 section 5)', () => {
     }
   });
 
-  it('limits failed resumes per connection (3) and per source (10 per 10 minutes)', async () => {
+  it('limits failed resumes per connection (3), per source and per room_id (10 per minute), always answering the generic unauthorized (A3-05)', async () => {
     const rig = new Rig();
     const tv = await rig.tvCreate();
+    const room = tv.roomId as string;
     const c = await rig.connect(null, '203.0.113.150');
     c.role = 'tv';
     for (let i = 0; i < 3; i += 1) {
-      await rig.send(c, 'auth.resume', { payload: { room_id: tv.roomId as string, role: 'tv', credential: 'B'.repeat(43) } });
+      await rig.send(c, 'auth.resume', { payload: { room_id: room, role: 'tv', credential: 'B'.repeat(43) } });
     }
+    expect(c.errors()).toEqual(['unauthorized', 'unauthorized', 'unauthorized']);
     expect(c.closed?.code).toBe(CLOSE.RATE_LIMITED);
+    // the same source keeps failing on new connections: after 10 failures in the minute even the right credential is refused
     for (let i = 0; i < 3; i += 1) {
       const d = await rig.connect(null, '203.0.113.150');
       d.role = 'tv';
       for (let j = 0; j < 3 && !d.closed; j += 1) {
-        await rig.send(d, 'auth.resume', { payload: { room_id: tv.roomId as string, role: 'tv', credential: 'C'.repeat(43) } });
+        await rig.send(d, 'auth.resume', { payload: { room_id: room, role: 'tv', credential: 'C'.repeat(43) } });
       }
     }
     const e = await rig.connect(null, '203.0.113.150');
     e.role = 'tv';
-    await rig.send(e, 'auth.resume', {
-      payload: { room_id: tv.roomId as string, role: 'tv', credential: tv.credential as string },
-    });
-    expect(e.errors()).toEqual(['rate_limited']);
+    await rig.send(e, 'auth.resume', { payload: { room_id: room, role: 'tv', credential: tv.credential as string } });
+    expect(e.errors()).toEqual(['unauthorized']);
+    expect(e.of('auth.ok')).toHaveLength(0);
+    expect(rig.rawLogEvents).toContainEqual(expect.objectContaining({ event: 'auth_failed', code: 'throttled' }));
+    // a different source is still blocked because the ROOM saw 10 failures in this minute
+    rig.advance(26_000);
+    const f = await rig.connect(null, '198.51.100.250');
+    f.role = 'tv';
+    await rig.send(f, 'auth.resume', { payload: { room_id: room, role: 'tv', credential: tv.credential as string } });
+    expect(f.errors()).toEqual(['unauthorized']);
+    // the minute passes: the legitimate TV resumes
+    rig.advance(60_000);
+    const ok = await rig.resume(room, 'tv', tv.credential as string, { source: '198.51.100.251' });
+    expect(ok.of('auth.ok')).toHaveLength(1);
   });
 
   it('rejects a role claim that disagrees with sender_role', async () => {
@@ -658,11 +689,8 @@ describe('origin policy (ADR-0003 section 8)', () => {
     const tv = await rig.tvCreate(null);
     expect(tv.roomId).toBeTruthy();
     // auth.resume as tv without Origin
-    const tv2 = await rig.connect(null);
-    tv2.role = 'tv';
-    await rig.send(tv2, 'auth.resume', {
-      payload: { room_id: tv.roomId as string, role: 'tv', credential: tv.credential as string },
-    });
+    rig.advance(26_000); // the first TV connection is silent: the resume may take over
+    const tv2 = await rig.resume(tv.roomId as string, 'tv', tv.credential as string, { origin: null });
     expect(tv2.of('auth.ok')).toHaveLength(1);
     // ping without Origin is fine
     const anon = await rig.connect(null);
@@ -757,11 +785,11 @@ describe('unauthenticated deadline', () => {
 });
 
 describe('phone vanishes during acceptance', () => {
-  it('releases the slot and keeps the code when the phone connection is gone at authentication time', async () => {
+  it('releases the slot, tells the TV and pushes a fresh code when the phone connection is gone at authentication time', async () => {
     class Vanishing extends MemoryRoomStore {
-      override async claimPhoneSlot(roomId: string, claim: PhoneSlotClaim, now: number): Promise<ClaimResult> {
-        const r = await super.claimPhoneSlot(roomId, claim, now);
-        await this.deleteConnection(claim.connId); // the socket drops right after the claim
+      override async acceptJoin(input: Parameters<MemoryRoomStore['acceptJoin']>[0]): Promise<AcceptJoinResult> {
+        const r = await super.acceptJoin(input);
+        await this.deleteConnection(input.claim.connId); // the socket drops right after the atomic claim
         return r;
       }
     }
@@ -770,7 +798,7 @@ describe('phone vanishes during acceptance', () => {
     // run this scenario on a store that loses the phone connection at the worst moment
     Object.assign(rig, {
       store,
-      core: new RelayCore({ store, config: { allowedOrigins: [PHONE_ORIGIN], hashPepper: 'p' } }),
+      core: new RelayCore({ store, config: { phoneOrigins: [PHONE_ORIGIN], hashSecret: 'vanishing-test-secret-123' } }),
     });
     const tv = await rig.tvCreate();
     const code = tv.last('room.created').payload.pairing_code as string;
@@ -781,9 +809,10 @@ describe('phone vanishes during acceptance', () => {
     expect(tv.last('join.expired').payload.join_id).toBe(joinId);
     const room = await store.getRoom(tv.roomId as string);
     expect(room?.phone).toBeNull();
-    expect(room?.codeHash).not.toBeNull();
-    // the code still works for a fresh phone
-    const again = await joinWith(rig, code, '203.0.113.200');
+    // the claim consumed the old code, so the TV is given a new one, and it works for a fresh phone
+    const fresh = tv.last('pairing.code').payload.pairing_code as string;
+    expect(fresh).not.toBe(code);
+    const again = await joinWith(rig, fresh, '203.0.113.200');
     expect(again.of('join.pending')).toHaveLength(1);
   });
 });

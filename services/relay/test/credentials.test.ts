@@ -1,12 +1,12 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  HASH_SECRET_MIN_CHARS,
+  HashKeys,
   PAIRING_ALPHABET,
   constantTimeEqualHex,
   hashCredential,
-  hashPairingCode,
-  hashSource,
   newConfirmDigits,
   newConnectionId,
   newCredential,
@@ -14,6 +14,7 @@ import {
   newMessageId,
   newPairingCode,
   newRoomId,
+  normalizeSourceAddress,
   roomHashPrefix,
   verifyCredential,
   type RandomBytes,
@@ -135,19 +136,88 @@ describe('hashing and comparison', () => {
     expect(constantTimeEqualHex('zz', 'zz')).toBe(false);
   });
 
-  it('keys pairing-code hashes with the pepper and never stores the code', () => {
-    const a = hashPairingCode('ACDEFH', 'pepper-one');
-    const b = hashPairingCode('ACDEFH', 'pepper-two');
-    expect(a).not.toBe(b);
-    expect(a).not.toContain('ACDEFH');
-    expect(a).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it('hashes sources to opaque keys and room ids to an 8-hex prefix', () => {
-    const h = hashSource('203.0.113.7', 'p');
-    expect(h).toMatch(/^[0-9a-f]{32}$/);
-    expect(h).not.toContain('203');
+  it('derives the room hash prefix used in logs from SHA-256 of the room id', () => {
     const room = 'r_AAAAAAAAAAAAAAAAAAAAAA';
     expect(roomHashPrefix(room)).toBe(createHash('sha256').update(room).digest('hex').slice(0, 8));
+  });
+});
+
+describe('keyed hashing (A3-04, A2-03)', () => {
+  const SECRET = 'master-secret-0123456789';
+
+  it('refuses a missing or short secret: there is no unkeyed fallback', () => {
+    expect(() => new HashKeys('')).toThrow();
+    expect(() => new HashKeys('x'.repeat(HASH_SECRET_MIN_CHARS - 1))).toThrow();
+    expect(() => new HashKeys('x'.repeat(HASH_SECRET_MIN_CHARS))).not.toThrow();
+  });
+
+  it('stores pairing codes as HMAC-SHA-256 under a secret-derived key, not as a plain SHA-256', () => {
+    const k = new HashKeys(SECRET);
+    const h = k.code('ACDEFH');
+    expect(h).toMatch(/^[0-9a-f]{64}$/);
+    expect(h).not.toContain('ACDEFH');
+    // independent computation of the documented construction
+    const codeKey = createHmac('sha256', Buffer.from(SECRET)).update('atr:key:pairing-code').digest();
+    expect(h).toBe(createHmac('sha256', codeKey).update('ACDEFH').digest('hex'));
+    // not recoverable by anyone without the secret: a plain hash of the code (what a table dump invites) does not match
+    expect(h).not.toBe(createHash('sha256').update('ACDEFH').digest('hex'));
+    expect(h).not.toBe(createHash('sha256').update('atr:code::ACDEFH').digest('hex'));
+    expect(new HashKeys('another-secret-0123456789').code('ACDEFH')).not.toBe(h);
+    expect(k.code('ACDEFJ')).not.toBe(h);
+    expect(new HashKeys(SECRET).code('ACDEFH')).toBe(h); // stable for a given secret
+  });
+
+  it('keys source addresses under a key that changes every UTC day', () => {
+    const k = new HashKeys(SECRET);
+    const day = 86_400_000;
+    const t = 1_800_000_000_000;
+    const today = k.source('203.0.113.7', t);
+    expect(today).toMatch(/^[0-9a-f]{32}$/);
+    expect(today).not.toContain('203');
+    expect(k.source('203.0.113.7', t + 1000)).toBe(today); // same day, same key
+    const sameDayEnd = t - (t % day) + day - 1;
+    expect(k.source('203.0.113.7', sameDayEnd)).toBe(today);
+    expect(k.source('203.0.113.7', sameDayEnd + 1)).not.toBe(today); // next UTC day: a different key
+    expect(k.source('203.0.113.7', t + 3 * day)).not.toBe(today);
+    expect(k.source('203.0.113.8', t)).not.toBe(today);
+    expect(new HashKeys('another-secret-0123456789').source('203.0.113.7', t)).not.toBe(today);
+  });
+
+  it('derives the rotated credential as a 43-character PRF output bound to room, role and the consumed credential', () => {
+    const k = new HashKeys(SECRET);
+    const a = k.nextCredential('r_room', 'tv', 'aa'.repeat(32));
+    expect(a).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(k.nextCredential('r_room', 'tv', 'aa'.repeat(32))).toBe(a); // deterministic: re-issued identically in the grace
+    expect(k.nextCredential('r_room', 'phone', 'aa'.repeat(32))).not.toBe(a);
+    expect(k.nextCredential('r_other', 'tv', 'aa'.repeat(32))).not.toBe(a);
+    expect(k.nextCredential('r_room', 'tv', 'bb'.repeat(32))).not.toBe(a);
+    expect(new HashKeys('another-secret-0123456789').nextCredential('r_room', 'tv', 'aa'.repeat(32))).not.toBe(a);
+  });
+});
+
+describe('source address normalisation (A3-03)', () => {
+  it('keeps IPv4 as /32 and maps IPv4-mapped IPv6 to the same address', () => {
+    expect(normalizeSourceAddress('203.0.113.7')).toBe('203.0.113.7');
+    expect(normalizeSourceAddress('::ffff:203.0.113.7')).toBe('203.0.113.7');
+    expect(normalizeSourceAddress('::FFFF:203.0.113.7')).toBe('203.0.113.7');
+  });
+
+  it('collapses IPv6 to its /64 so one host cannot rotate through 2^64 addresses', () => {
+    const a = normalizeSourceAddress('2001:db8:1:2::1');
+    const b = normalizeSourceAddress('2001:db8:1:2:ffff:ffff:ffff:ffff');
+    const c = normalizeSourceAddress('2001:0db8:0001:0002:aaaa:bbbb:cccc:dddd');
+    expect(a).toBe(b);
+    expect(a).toBe(c);
+    expect(a).toBe('2001:0db8:0001:0002::/64');
+    expect(normalizeSourceAddress('2001:db8:1:3::1')).not.toBe(a);
+    expect(normalizeSourceAddress('2001:db9:1:2::1')).not.toBe(a);
+    expect(normalizeSourceAddress('fe80::1%en0')).toBe(normalizeSourceAddress('fe80::2%en1')); // zone ids ignored
+    expect(normalizeSourceAddress('::1')).toBe('0000:0000:0000:0000::/64');
+    expect(normalizeSourceAddress('64:ff9b::192.0.2.1')).toBe('0064:ff9b:0000:0000::/64');
+  });
+
+  it('leaves anything that is not an address alone (it is hashed immediately and never stored)', () => {
+    expect(normalizeSourceAddress('not an address')).toBe('not an address');
+    expect(normalizeSourceAddress(' unknown ')).toBe('unknown');
   });
 });

@@ -77,7 +77,9 @@ describe.skipIf(!hasOpenssl)('local HTTPS/WSS server', () => {
       insecureLocalhostOnly: false,
       hstsMaxAgeSeconds: 300,
       tickMs: 25,
-      hashPepper: 'test',
+      tvPreviewOrigins: [],
+      environment: 'development',
+      liveRoomCap: 200,
       disabled: false,
     };
     server = createLocalServer({ config, logSink: (l) => logs.push(l), now: () => clock.now });
@@ -189,7 +191,7 @@ describe.skipIf(!hasOpenssl)('local HTTPS/WSS server', () => {
 
       // ordered level stream phone -> TV
       for (let i = 0; i < 50; i += 1) {
-        phone.send('level', { payload: { ...(VALID_PAYLOADS.level as object), frame_index: i } });
+        phone.send('level', { payload: { ...(VALID_PAYLOADS.level as object), frame_index: i, t_audio_ms: i * 50 } });
       }
       await tv.waitFor(() => tv.of('level').length === 50, 5000, '50 level frames');
       expect(tv.of('level').map((m) => (m.payload.frame_index as number))).toEqual(Array.from({ length: 50 }, (_, i) => i));
@@ -242,18 +244,27 @@ describe.skipIf(!hasOpenssl)('local HTTPS/WSS server', () => {
       expect(closed.reason).toBe('auth_deadline');
     });
 
-    it('supersedes an older TV connection on resume', async () => {
+    it('refuses a resume that would take over a live TV, then lets it through once the old one is silent (A3-07)', async () => {
       const tv = await connect(null, 'tv');
       tv.send('room.create');
       const created = await tv.next('room.created');
-      const tv2 = await connect(null, 'tv');
-      tv2.send('auth.resume', {
-        payload: { room_id: created.payload.room_id as string, role: 'tv', credential: created.payload.tv_credential as string },
+      const resume = (credential: string) => ({
+        payload: { room_id: created.payload.room_id as string, role: 'tv' as const, credential },
       });
-      expect((await tv2.next('auth.ok')).payload.generation).toBe(2);
-      expect((await tv.next('error')).payload.code).toBe('superseded');
-      expect((await tv.waitClosed()).code).toBe(4409);
-      tv2.close();
+      const tv2 = await connect(null, 'tv');
+      tv2.send('auth.resume', resume(created.payload.tv_credential as string));
+      expect((await tv2.next('error')).payload.code).toBe('unauthorized'); // generic; the old TV was just heard
+      expect(tv2.of('auth.ok')).toHaveLength(0);
+      expect(tv.closeInfo).toBeNull();
+      // the old connection goes silent past the heartbeat window: the sweep drops it, and the resume now works
+      clock.now += 26_000;
+      expect((await tv.waitClosed()).code).toBe(4408);
+      const tv3 = await connect(null, 'tv');
+      tv3.send('auth.resume', resume(created.payload.tv_credential as string));
+      const ok = await tv3.next('auth.ok');
+      expect(ok.payload.generation).toBe(2);
+      expect(ok.payload.next_credential).toMatch(/^[A-Za-z0-9_-]{43}$/);
+      tv3.close();
     });
 
     it('applies the kill switch at runtime: refuses new sockets and closes live ones on their next message', async () => {

@@ -1,4 +1,5 @@
-import { createHash, randomBytes as nodeRandomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes as nodeRandomBytes, timingSafeEqual } from 'node:crypto';
+import { isIPv4, isIPv6 } from 'node:net';
 import { PAIRING_ALPHABET, PAIRING_CODE_LENGTH, createIdFactory } from './protocol-port.js';
 
 /** Injectable entropy source (tests use deterministic bytes; production uses node:crypto). */
@@ -68,20 +69,6 @@ export function hashCredential(credential: string): string {
   return sha256Hex(`atr:cred:${credential}`);
 }
 
-/**
- * Pairing codes have only about 26.8 bits of entropy, so their stored hash is keyed with a server-side pepper
- * (HMAC-style domain separation through a secret prefix). The pepper may be empty (then this is a plain
- * domain-separated SHA-256) but deployments should set one.
- */
-export function hashPairingCode(code: string, pepper: string): string {
-  return sha256Hex(`atr:code:${pepper}:${code}`);
-}
-
-/** Opaque, non-reversible key for source-address rate limiting. The raw address is never stored or logged. */
-export function hashSource(source: string, pepper: string): string {
-  return sha256Hex(`atr:src:${pepper}:${source}`).slice(0, 32);
-}
-
 /** 8 hex characters of SHA-256(room_id): the only room identifier that may appear in logs. */
 export function roomHashPrefix(roomId: string): string {
   return sha256Hex(roomId).slice(0, 8);
@@ -97,4 +84,97 @@ export function constantTimeEqualHex(aHex: string, bHex: string): boolean {
 
 export function verifyCredential(presented: string, storedHashHex: string): boolean {
   return constantTimeEqualHex(hashCredential(presented), storedHashHex);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Keyed hashing (A3-04, A2-03)
+// ---------------------------------------------------------------------------------------------
+
+export const HASH_SECRET_MIN_CHARS = 16;
+const DAY_MS = 86_400_000;
+
+/** Expands an IPv6 address into its eight 16-bit groups (lower-case hex, four digits). Input must pass isIPv6. */
+function ipv6Groups(address: string): string[] {
+  let a = address;
+  const tail = /(\d+\.\d+\.\d+\.\d+)$/.exec(a);
+  if (tail && isIPv4(tail[1] as string)) {
+    const o = (tail[1] as string).split('.').map(Number);
+    const hi = (((o[0] as number) << 8) | (o[1] as number)).toString(16);
+    const lo = (((o[2] as number) << 8) | (o[3] as number)).toString(16);
+    a = `${a.slice(0, a.length - (tail[1] as string).length)}${hi}:${lo}`;
+  }
+  const [head = '', rest] = a.split('::');
+  const left = head === '' ? [] : head.split(':');
+  const right = rest === undefined || rest === '' ? [] : rest.split(':');
+  const fill = rest === undefined ? [] : Array<string>(Math.max(0, 8 - left.length - right.length)).fill('0');
+  return [...left, ...fill, ...right].map((g) => g.padStart(4, '0').toLowerCase());
+}
+
+/**
+ * Source key material: IPv4 as the /32 address, IPv6 as the /64 prefix (one host can rotate through 2^64
+ * addresses), IPv4-mapped IPv6 as the IPv4 address. A string that is not an address is returned as is (it is
+ * hashed immediately; it never reaches a store or a log).
+ */
+export function normalizeSourceAddress(address: string): string {
+  const a = (address.trim().split('%')[0] ?? '').trim();
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(a);
+  if (mapped && isIPv4(mapped[1] as string)) return mapped[1] as string;
+  if (isIPv4(a)) return a;
+  if (isIPv6(a)) return `${ipv6Groups(a).slice(0, 4).join(':')}::/64`;
+  return a;
+}
+
+/**
+ * Keyed hashes derived from one master secret (SSM SecureString on AWS, random per process locally).
+ *
+ * - Pairing codes: HMAC-SHA-256 with a code-specific key (never a plain hash: the code space is only 26.8 bits).
+ * - Source addresses: HMAC-SHA-256 with a key derived for the current UTC day, so the effective key rotates
+ *   daily without an operator step and keys of different days cannot be linked by anyone who holds only the
+ *   stored values. Counters keyed by it live at most one hour.
+ */
+export class HashKeys {
+  private readonly master: Buffer;
+  private readonly codeKey: Buffer;
+  private readonly rotationKey: Buffer;
+  private readonly dayKeys = new Map<number, Buffer>();
+
+  constructor(secret: string) {
+    if (typeof secret !== 'string' || secret.length < HASH_SECRET_MIN_CHARS) {
+      throw new Error(`hash secret must be at least ${HASH_SECRET_MIN_CHARS} characters`);
+    }
+    this.master = Buffer.from(secret, 'utf8');
+    this.codeKey = createHmac('sha256', this.master).update('atr:key:pairing-code').digest();
+    this.rotationKey = createHmac('sha256', this.master).update('atr:key:credential-rotation').digest();
+  }
+
+  /**
+   * The credential a resume rotates to: HMAC-SHA-256 (a PRF, so 256 uniformly unpredictable bits, 43 base64url
+   * characters) under a rotation key derived from the master secret, bound to the room, the role and the hash of
+   * the credential being consumed. Deriving it, instead of drawing it at random, lets the relay re-issue the SAME
+   * next credential during the one-step grace for a lost auth.ok without ever storing the credential itself.
+   * The first credentials (room.created, join.accepted) are drawn from the CSPRNG.
+   */
+  nextCredential(roomId: string, role: string, consumedHash: string): string {
+    return createHmac('sha256', this.rotationKey).update(`next:${roomId}:${role}:${consumedHash}`, 'utf8').digest('base64url');
+  }
+
+  /** HMAC-SHA-256 of a pairing code, hex. This is the lookup key stored for the code. */
+  code(code: string): string {
+    return createHmac('sha256', this.codeKey).update(code, 'utf8').digest('hex');
+  }
+
+  /** Opaque, non-reversible key for per-source counters: 32 hex characters. */
+  source(address: string, nowMs: number): string {
+    const day = Math.floor(nowMs / DAY_MS);
+    let key = this.dayKeys.get(day);
+    if (!key) {
+      key = createHmac('sha256', this.master).update(`atr:key:source:${day}`).digest();
+      this.dayKeys.set(day, key);
+      if (this.dayKeys.size > 3) {
+        const oldest = this.dayKeys.keys().next();
+        if (!oldest.done) this.dayKeys.delete(oldest.value);
+      }
+    }
+    return createHmac('sha256', key).update(normalizeSourceAddress(address), 'utf8').digest('hex').slice(0, 32);
+  }
 }

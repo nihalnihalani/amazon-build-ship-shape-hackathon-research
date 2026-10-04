@@ -54,14 +54,17 @@ async function fullScenario(rig: Rig): Promise<{ extra: string[] }> {
   bad.role = 'tv';
   await rig.send(bad, 'auth.resume', { payload: { room_id: tv.roomId as string, role: 'tv', credential: 'Z'.repeat(43) } });
   extra.push('Z'.repeat(43));
-  // resume, supersede, binary, unpair, close, idle, deadline, kill switch
-  const phone2 = await rig.connect(PHONE_ORIGIN, SOURCES[1]);
-  phone2.role = 'phone';
-  await rig.send(phone2, 'auth.resume', { payload: { room_id: tv.roomId as string, role: 'phone', credential: phone.credential as string } });
+  // resume (rotation), refused takeover, supersede, binary, credential reuse, unpair, close, idle, deadline, kill switch
+  const refused = await rig.resume(tv.roomId as string, 'phone', phone.credential as string, { source: SOURCES[1] }); // old phone still live
+  expect(refused.of('auth.ok')).toHaveLength(0);
+  rig.advance(26_000);
+  const phone2 = await rig.resume(tv.roomId as string, 'phone', phone.credential as string, { source: SOURCES[1] });
   await rig.sendRaw(phone2, { binary: true, bytes: 10 });
-  const phone3 = await rig.connect(PHONE_ORIGIN, SOURCES[1]);
-  phone3.role = 'phone';
-  await rig.send(phone3, 'auth.resume', { payload: { room_id: tv.roomId as string, role: 'phone', credential: phone.credential as string } });
+  const phone3 = await rig.resume(tv.roomId as string, 'phone', phone2.credential as string, { source: SOURCES[1] });
+  extra.push(phone3.credential as string);
+  const replay = await rig.resume(tv.roomId as string, 'phone', phone.credential as string, { source: SOURCES[1] }); // consumed twice over: reuse
+  void replay;
+  await rig.advance(1);
   await rig.send(tv, 'unpair');
   await rig.tick(30_000);
   const idle = await rig.connect(PHONE_ORIGIN, SOURCES[1]);
@@ -70,6 +73,15 @@ async function fullScenario(rig: Rig): Promise<{ extra: string[] }> {
   rig.disabled = true;
   await rig.connect(PHONE_ORIGIN, SOURCES[1]);
   rig.disabled = false;
+  // a rejected join burns the code and pushes a fresh one
+  const tvB = await rig.tvCreate(null, SOURCES[2]);
+  const codeB = tvB.last('room.created').payload.pairing_code as string;
+  extra.push(codeB);
+  const joiner = await rig.connect(PHONE_ORIGIN, SOURCES[1]);
+  joiner.role = 'phone';
+  await rig.send(joiner, 'join.request', { payload: { pairing_code: codeB, device_label: SECRET_LABEL } });
+  await rig.send(tvB, 'join.confirm', { payload: { join_id: tvB.last('join.requested').payload.join_id as string, decision: 'reject' } });
+  extra.push(String(tvB.last('pairing.code').payload.pairing_code));
   const tv2 = await rig.tvCreate(null, SOURCES[2]);
   await rig.send(tv2, 'room.close');
   void (null as unknown as Client);
@@ -80,7 +92,8 @@ describe('log redaction over a full scenario (ADR-0002)', () => {
   it('logs nothing but allowlisted, content-free fields for every message type and failure path (memory store)', async () => {
     const rig = new Rig();
     const { extra } = await fullScenario(rig);
-    expect(rig.logs.length).toBeGreaterThan(50);
+    rig.flushAggregates(true);
+    expect(rig.logs.length).toBeGreaterThan(40);
     rig.assertNoLeaks(extra);
     const text = rig.logs.join('\n');
     // full room ids, message ids, device labels, addresses and credentials never appear; only 8-hex prefixes do
@@ -89,7 +102,7 @@ describe('log redaction over a full scenario (ADR-0002)', () => {
     expect(text).not.toMatch(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/);
     expect(text).not.toMatch(/[A-Za-z0-9_-]{43}/);
     const events = new Set(rig.logs.map((l) => (JSON.parse(l) as { event: string }).event));
-    for (const e of ['room_created', 'join_requested', 'join_accepted', 'join_failed', 'message_forwarded', 'message_rejected', 'rate_limited', 'origin_rejected', 'superseded', 'unpaired', 'idle_timeout', 'auth_deadline', 'kill_switch', 'room_closed']) {
+    for (const e of ['room_created', 'join_requested', 'join_accepted', 'join_failed', 'minute_aggregate', 'credential_reuse', 'code_burned', 'message_rejected', 'rate_limited', 'origin_rejected', 'superseded', 'unpaired', 'idle_timeout', 'auth_deadline', 'kill_switch', 'room_closed']) {
       expect(events.has(e), `scenario should have produced a ${e} log line`).toBe(true);
     }
   });
@@ -99,6 +112,7 @@ describe('log redaction over a full scenario (ADR-0002)', () => {
     try {
       const rig = new Rig();
       const { extra } = await fullScenario(rig);
+      rig.flushAggregates(true);
       rig.assertNoLeaks(extra);
       // and nothing sensitive was persisted
       const dump = JSON.stringify([...(rig.fake?.items.values() ?? [])]);
