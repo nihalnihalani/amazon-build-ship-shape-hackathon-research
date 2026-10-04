@@ -130,6 +130,10 @@ export interface HarnessOptions {
   seed?: Record<string, string>;
   relayUrl?: string;
   noBoot?: boolean;
+  /** Seed for the deterministic byte source (identifiers and number-matching decoys). */
+  randomSeed?: number;
+  /** Replaces the byte source entirely (to observe or degrade it). */
+  randomBytes?: (n: number) => Uint8Array;
 }
 
 type Json = Record<string, unknown>;
@@ -187,7 +191,7 @@ export class Harness {
       storage: this.storage,
       transport: this.transport,
       relayUrl: this.opts.relayUrl ?? 'https://relay.example.test/ws',
-      randomBytes: seededBytes(),
+      randomBytes: this.opts.randomBytes ?? seededBytes(this.opts.randomSeed),
       appVersion: '0.1.0-test',
       platform: 'test',
       fixtureMode: this.opts.fixtureMode,
@@ -331,8 +335,8 @@ export class Harness {
   joinExpired(joinId = 'j_testjoin000001'): void {
     this.wire(this.relay('join.expired', { join_id: joinId }));
   }
-  peerState(connected: boolean): void {
-    this.wire(this.relay('peer.state', { role: 'phone', connected, generation: 1 }));
+  peerState(connected: boolean, generation = 1): void {
+    this.wire(this.relay('peer.state', { role: 'phone', connected, generation }));
   }
   authOk(opts: { peer?: boolean; paired?: boolean; generation?: number; next?: string } = {}): void {
     this.wire(
@@ -433,8 +437,8 @@ export class Harness {
       coverage,
       active_ms: active,
       longest_active_ms: o.longest ?? active,
-      segments: 1,
-      onset_ms: 200,
+      segments: active === 0 ? 0 : 1,
+      onset_ms: active === 0 ? null : 200,
       p50_active_dbfs: db(this.floor + rel - 4),
       p95_active_dbfs: o.p95 !== undefined ? o.p95 : db(this.floor + rel),
       peak_dbfs: db(this.floor + rel + 2),
