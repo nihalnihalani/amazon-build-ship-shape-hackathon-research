@@ -6,6 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { isDbQuantized, quantizeCoverage } from '@atr/protocol';
 import { describe, expect, it } from 'vitest';
 import { evaluateCalibration, evaluateGate, evaluateQuietCheck, evaluateWindow, validateWindowResult } from '../src/index.js';
 import type { PrecheckResultPayload, WindowResultPayload } from '../src/wire.js';
@@ -58,7 +59,19 @@ describe('fixtures/dsp/soft-windows.json (20 valid phrase windows below the band
       expect(validateWindowResult('phrase', c.expected_window), c.id).toEqual({ valid: true });
       expect(c.cal_margin_db).toBeGreaterThanOrEqual(13);
       expect(c.band_edge_rel_db).toBeCloseTo(c.cal_margin_db - 1, 12);
-      const cal: WindowResultPayload = { ...c.expected_window, kind: 'calibration', p95_active_dbfs: c.session_floor_dbfs + c.cal_margin_db };
+      // the same activity shape as a 6 s calibration window with the fixture's calibration margin
+      const p95 = c.session_floor_dbfs + c.cal_margin_db;
+      const cal: WindowResultPayload = {
+        ...c.expected_window,
+        kind: 'calibration',
+        duration_ms: 6000,
+        expected_frames: 120,
+        frame_count: 120,
+        coverage: 1,
+        p50_active_dbfs: p95 - 1,
+        p95_active_dbfs: p95,
+        peak_dbfs: p95 + 2,
+      };
       expect(evaluateCalibration(cal, c.session_floor_dbfs), c.id).toMatchObject({ accepted: true });
       const quiet: PrecheckResultPayload = {
         purpose: 'pre_window',
@@ -79,8 +92,24 @@ describe('fixtures/dsp/soft-windows.json (20 valid phrase windows below the band
     }
   });
 
+  /** Protocol revision 4 puts dB fields on a 0.1 dB grid; a few fixtures use 0.01 dB steps to probe the edge. */
+  const onGrid = (c: SoftCase): boolean =>
+    [c.expected_window.p50_active_dbfs, c.expected_window.p95_active_dbfs, c.expected_window.peak_dbfs].every(
+      (v) => v === null || isDbQuantized(v),
+    );
+
+  it('fixtures 03, 04 and 18 sit below the 0.1 dB wire grid: the verdict function handles them, the wire cannot carry them', () => {
+    expect(soft.filter((c) => !onGrid(c)).map((c) => c.id)).toEqual([
+      'soft-03-11.01dB-borderline',
+      'soft-04-11.99dB-borderline',
+      'soft-18-fractional-margin',
+    ]);
+  });
+
   it('through the whole TV flow (quiet check, calibration at the fixture margin, phrase window) none comes out reached', async () => {
+    let sent = 0;
     for (const c of soft) {
+      if (!onGrid(c)) continue;
       const h = new Harness({ settings: { onboarded: true } });
       await h.boot();
       h.floor = c.session_floor_dbfs;
@@ -92,14 +121,18 @@ describe('fixtures/dsp/soft-windows.json (20 valid phrase windows below the band
       h.beginAndLead('begin_phrase');
       h.answerPrecheck();
       expect(h.view.stage, c.id).toBe('phrase_active');
-      h.answerWindowWith(c.expected_window as unknown as Record<string, unknown>);
+      // fixture 16 has coverage 0.98125; the wire carries multiples of 0.001 and the TV recomputes it from the counts
+      const payload = { ...c.expected_window, coverage: quantizeCoverage(c.expected_window.coverage) };
+      h.answerWindowWith(payload as unknown as Record<string, unknown>);
       expect(h.view.stage, c.id).toBe('reveal');
-      expect(h.view.result?.label, c.id).toBe("Below today's relative level band");
+      expect(h.view.result?.label, c.id).toBe("Below today's relative level band (unqualified phone)");
       expect(h.view.result?.tone, c.id).toBe('below');
       expect(h.view.result?.borderline, c.id).toBe(c.expected_borderline);
       h.ui('finish_early');
       expect(h.view.summary, c.id).toMatchObject({ scoredVisible: 1, reachedVisible: 0 });
+      sent += 1;
     }
+    expect(sent).toBe(17);
   });
 });
 

@@ -12,12 +12,16 @@
 
 import {
   CALIBRATION_PHRASE,
+  CALIBRATION_WINDOW_MS,
   DEVICE_QUALIFICATION_STATUS,
   LEVEL_STALE_MS,
   LICENSES_NOTICE_PLACEHOLDER,
+  PHRASE_WINDOW_MS,
   PRE_WINDOW_MS,
   QUIET_CHECK_MS,
   QUIET_LEAD_MS,
+  QUIET_LEAD_SCREEN_READER_MS,
+  VOWEL_MAX_MS,
 } from './constants.js';
 import type {
   ActionId,
@@ -37,12 +41,16 @@ import {
   COPY,
   FOOTER,
   LABEL_FIXTURE,
+  LABEL_LISTENER_EDITION,
   LABEL_NO_BAND,
   LABEL_RELATIVE,
   LABEL_SAME_HOST,
   METER_CAPTION,
   RESULT_COPY,
+  UNQUALIFIED_SUFFIX,
   reasonText,
+  secondsWords,
+  speakScript,
 } from './copy.js';
 import type { Banner, Core, DialogKind, Env, Win } from './model.js';
 import { deriveHistory, deriveSummary, summarizeRecord } from './records.js';
@@ -50,14 +58,16 @@ import type { AttemptRecord, VowelRecord } from './records.js';
 import {
   attemptsAt,
   currentAttempt,
-  isBlindPending,
+  isBlindNow,
   isHiddenPosition,
+  isListenerEdition,
   linkView,
   micOpen,
   micView,
+  quietLeadMs,
 } from './selectors.js';
 import { phoneJoinUrl } from './urls.js';
-import { bandEdgeRelDb } from './verdict.js';
+import { bandEdgeRelDb, maxTolerableRiseDb } from './verdict.js';
 
 const act = (id: ActionId, label: string, extra: Partial<ViewAction> = {}): ViewAction => ({ id, label, ...extra });
 
@@ -101,31 +111,35 @@ export function buildView(s: Core, env: Env): TvView {
     announcement = v.title;
   } else if (s.dialog !== null) {
     announcement = projectDialog(v, s.dialog);
-  } else if (s.overlay !== null) {
+  } else if (s.overlay !== null && !isBlindNow(s)) {
     announcement = projectOverlay(v, s, env);
   } else {
     announcement = projectStage(v, s, env);
   }
 
-  // Derived banners never hide an explicit one, and never appear on hidden-pending screens' content.
+  // Derived banners never hide an explicit one.
   if (banner === null) banner = derivedBanner(s, v);
   v.banner = banner;
 
   // Meter / result / summary are mutually consistent with the blind rule: enforce one last time.
-  const attempt = currentAttempt(s.session);
-  const blind = isBlindPending(attempt) && (s.stage === 'phrase_active' || s.stage === 'response_pending');
+  const blind = isBlindNow(s);
   if (blind) {
     v.meter = null;
     v.result = null;
+    v.summary = null;
   }
 
   v.labels = labelsFor(s, v, env);
   if (v.capturing) {
+    // A8-01: nothing is announced while a precheck or capture is open.
     v.announcement = null;
-  } else if (v.cue !== null) {
-    v.announcement = COPY.cue(v.cue.text);
-  } else {
+  } else if (blind) {
+    // A hidden attempt waiting for its reveal: the static stage text only. Cue and banner text is queued.
     v.announcement = announcement;
+  } else {
+    const base = v.cue !== null ? COPY.cue(v.cue.text) : announcement;
+    const queued = s.deferred.texts;
+    v.announcement = queued.length > 0 ? `${base ?? ''} ${queued.join(' ')}`.trim() : base;
   }
   // After a dialog closes, focus returns to the control that opened it.
   if (s.dialog === null && s.restoreFocus !== null && v.actions.some((a) => a.id === s.restoreFocus && a.disabled !== true)) {
@@ -148,8 +162,10 @@ function labelsFor(s: Core, v: TvView, env: Env): string[] {
   if (s.mic.mode === 'same_host' && v.mic !== 'not_paired') labels.push(LABEL_SAME_HOST);
   if (v.meter !== null || v.result !== null || v.summary !== null) labels.push(LABEL_RELATIVE);
   const session = s.session;
+  if (session && isListenerEdition(s)) labels.push(LABEL_LISTENER_EDITION);
   if (
     session &&
+    !isListenerEdition(s) &&
     session.noBand &&
     session.calMarginDb === null &&
     (s.stage === 'vowel_ready' ||
@@ -167,6 +183,14 @@ function labelsFor(s: Core, v: TvView, env: Env): string[] {
 }
 
 function derivedBanner(s: Core, v: TvView): Banner | null {
+  const flow = derivedFlowBanner(s, v);
+  if (flow !== null) return flow;
+  // PK-12: if String.prototype.normalize is missing, typed text is not normalised; say so everywhere.
+  if (!s.nfcOk && s.overlay === null && s.dialog === null) return { kind: 'warning', text: COPY.banner.nfcFailed };
+  return null;
+}
+
+function derivedFlowBanner(s: Core, v: TvView): Banner | null {
   const inFlow = s.session !== null || s.stage === 'pairing';
   if (!inFlow || s.overlay !== null || s.dialog !== null) return null;
   if (s.stage === 'summary' || s.stage === 'history' || s.stage === 'resume_or_discard') return null;
@@ -203,6 +227,8 @@ function projectOverlay(v: TvView, s: Core, env: Env): string {
     v.body = [
       COPY.about.version(env.appVersion),
       COPY.about.storage,
+      COPY.about.relayLine,
+      COPY.about.abuseLine,
       `Phone microphone: ${DEVICE_QUALIFICATION_STATUS}.`,
       LICENSES_NOTICE_PLACEHOLDER,
     ];
@@ -225,10 +251,17 @@ function projectOverlay(v: TvView, s: Core, env: Env): string {
   v.body = [
     COPY.settings.positioning,
     COPY.settings.measurement,
-    `Phone: ${DEVICE_QUALIFICATION_STATUS}.`,
+    COPY.settings.qualification(
+      s.settings.qualification === 'passed'
+        ? COPY.settings.qualPassed
+        : s.settings.qualification === 'failed'
+          ? COPY.settings.qualFailed
+          : COPY.settings.qualNotRun,
+    ),
     s.settings.familyMode ? COPY.settings.familyOn : COPY.settings.familyOff,
     s.settings.cueWord === null ? COPY.settings.cueNone : COPY.settings.cue(s.settings.cueWord),
   ];
+  if (s.corruptKeys > 0) v.body.push(COPY.settings.corrupt);
   const canReset =
     inSession &&
     s.session !== null &&
@@ -258,17 +291,40 @@ function projectOverlay(v: TvView, s: Core, env: Env): string {
 
 function diagnosticsOf(s: Core, env: Env): Record<string, string> {
   const c = s.counters;
-  return {
+  const sess = s.session;
+  const margin = sess?.calMarginDb ?? null;
+  const tolerance = margin !== null ? maxTolerableRiseDb(margin) : null;
+  const lead = quietLeadMs(s);
+  const d: Record<string, string> = {
     link: linkView(s),
     authenticated: s.authed ? 'yes' : 'no',
     generation: String(s.generation),
     phone_connected: s.peerConnected ? 'yes' : 'no',
     mic_state: s.mic.state ?? 'unknown',
-    stage: s.stage,
+    // A4-03: the practice step is redacted while an unrevealed attempt exists (cannot be reached from the UI;
+    // enforced here as well).
+    stage: isBlindNow(s) ? 'redacted' : s.stage,
     platform: env.platform,
     app_version: env.appVersion,
     fixture_mode: env.fixtureMode ? 'yes' : 'no',
     storage_blocked_by_newer_version: s.future ? 'yes' : 'no',
+    unreadable_stored_values: String(s.corruptKeys),
+    // A1-08: what the gate will tolerate today (relative dB, this session only).
+    calibration_margin_db: margin === null ? 'not set' : margin.toFixed(1),
+    max_tolerated_floor_rise_db:
+      tolerance === null
+        ? 'not set'
+        : tolerance.inclusive
+          ? `${tolerance.limitDb.toFixed(1)} or less`
+          : `less than ${tolerance.limitDb.toFixed(1)}`,
+    // A8-02: the quiet lead in use and whether the screen reader raised it.
+    screen_reader: s.screenReader ? 'on' : 'off',
+    quiet_lead_ms: String(lead),
+    quiet_lead_default_ms: String(QUIET_LEAD_MS),
+    quiet_lead_screen_reader_ms: String(s.settings.quietLeadScreenReaderMs ?? QUIET_LEAD_SCREEN_READER_MS),
+    // PK-12
+    nfc_self_test: s.nfcOk ? 'pass' : 'FAIL',
+    phone_qualification: s.settings.qualification,
     messages_sent: String(c.sent ?? 0),
     messages_received: String(c.received ?? 0),
     messages_ignored_stale: String(c.ignored_stale ?? 0),
@@ -277,10 +333,14 @@ function diagnosticsOf(s: Core, env: Env): Record<string, string> {
     heartbeats_sent: String(c.pings_sent ?? 0),
     heartbeats_answered: String(c.pongs ?? 0),
     duplicates_dropped: String(c.duplicates ?? 0),
+    integrity_errors: String(c.integrity_errors ?? 0),
+    join_mismatches: String(c.join_mismatches ?? 0),
     inputs_ignored: String(c.inputs_ignored ?? 0),
-    cues_used: String(s.session?.cuesUsed ?? 0),
+    cues_used: isBlindNow(s) ? 'redacted' : String(sess?.cuesUsed ?? 0),
     delete_remaining_keys: String(s.deleteRemaining),
+    relay_cleanup: s.relayCleanup,
   };
+  return d;
 }
 
 /* ------------------------------------------------------------------ stages */
@@ -334,10 +394,14 @@ function projectIdle(v: TvView, s: Core, env: Env): string {
     const sum = summarizeRecord(last);
     const reached = sum.reachedVisible + sum.reachedHidden;
     const scored = sum.scoredVisible + sum.scoredHidden;
-    lastLine = `Last session, ${last.localDate}: reached ${reached} of ${scored} scored${last.complete ? '' : ' (incomplete)'}.`;
+    lastLine =
+      scored === 0
+        ? `Last session, ${last.localDate}: ${sum.phrasesCompleted} phrases completed${last.complete ? '' : ' (incomplete)'}.`
+        : `Last session, ${last.localDate}: reached ${reached} of ${scored} scored${last.complete ? '' : ' (incomplete)'}.`;
   }
   v.body = [...COPY.home.body, lastLine];
   if (s.future) v.body.push(COPY.home.futureData);
+  if (s.corruptKeys > 0) v.body.push(COPY.home.corrupt);
   v.actions = [
     act('start_session', COPY.home.start),
     act('open_history', COPY.home.history),
@@ -357,22 +421,30 @@ function projectPairing(v: TvView, s: Core, env: Env): string {
     codeExpiresAt: s.codeExpiresAt,
     qrPayload: qr,
     joinRequest: s.joinRequest
-      ? { deviceLabel: s.joinRequest.deviceLabel, confirmDigits: s.joinRequest.confirmDigits }
+      ? { deviceLabel: s.joinRequest.deviceLabel, choices: [...s.joinRequest.choices] as [string, string, string] }
       : null,
   };
   if (s.joinRequest !== null) {
+    // A3-06 number matching: three choices, Reject preferred. The view never says which choice is right.
     v.screen = 'join_confirm';
     v.title = COPY.join.title;
-    v.body = COPY.join.body(s.joinRequest.deviceLabel, s.joinRequest.confirmDigits);
-    v.actions = [act('accept_join', COPY.join.accept), act('reject_join', COPY.join.reject)];
-    v.preferredAction = 'accept_join';
-    return `${v.title} ${v.body.join(' ')}`;
+    v.body = COPY.join.body(s.joinRequest.deviceLabel);
+    const pickIds = ['pick_choice_1', 'pick_choice_2', 'pick_choice_3'] as const;
+    v.actions = [
+      ...s.joinRequest.choices.map((digits, i) =>
+        act(pickIds[i] as ActionId, COPY.join.pickLabel(digits), { hint: COPY.join.pickHint }),
+      ),
+      act('reject_join', COPY.join.reject),
+    ];
+    v.preferredAction = 'reject_join';
+    return `${v.title}. ${v.body.join(' ')}`;
   }
   v.screen = 'pairing';
   v.title = COPY.pairing.title;
   let status: string = COPY.pairing.waiting;
   if (s.joinAccepted) status = COPY.pairing.waitingConnect;
   else if (s.link === 'failed' || s.roomId === null) status = s.link === 'failed' ? COPY.banner.linkFailed : COPY.pairing.connecting;
+  else if (s.code === null) status = COPY.pairing.gettingCode;
   v.body = [...COPY.pairing.body, status];
   const expired = s.codeExpiresAt !== null && s.now >= s.codeExpiresAt;
   v.actions = [
@@ -426,7 +498,7 @@ function clampElapsed(elapsed: number, max: number): number {
 function timerFor(s: Core, w: Win, captureLabel: string): TimerView | null {
   const now = s.now;
   if (w.phase === 'lead') {
-    return { elapsedMs: clampElapsed(now - (w.leadUntil - QUIET_LEAD_MS), QUIET_LEAD_MS), maxMs: QUIET_LEAD_MS, label: COPY.phrase.lead };
+    return { elapsedMs: clampElapsed(now - (w.leadUntil - w.leadMs), w.leadMs), maxMs: w.leadMs, label: COPY.phrase.lead };
   }
   if (w.phase === 'precheck') {
     const max = w.kind === 'quiet_check' ? QUIET_CHECK_MS : PRE_WINDOW_MS;
@@ -451,7 +523,7 @@ function meterFor(s: Core, w: Win): MeterView | null {
   const fresh = lvl !== null && s.now - lvl.at <= LEVEL_STALE_MS;
   return {
     levelRelDb: fresh && lvl ? Math.round(lvl.relDb * 10) / 10 : null,
-    bandRelDb: bandEdgeRelDb(s.session?.calMarginDb ?? null),
+    bandRelDb: isListenerEdition(s) ? null : bandEdgeRelDb(s.session?.calMarginDb ?? null),
     active: fresh && lvl ? lvl.active : false,
     caption: fresh ? METER_CAPTION : COPY.meter.noLevel,
   };
@@ -490,12 +562,13 @@ function projectQuiet(v: TvView, s: Core): string {
     return `${v.title}. ${v.body[0] ?? ''}`;
   }
   v.body = [...COPY.quiet.readyBody];
+  if (s.screenReader) v.body.push(`After this message, stay quiet for the whole check. Measurement lasts ${secondsWords(QUIET_CHECK_MS)}.`);
   v.actions = [
     act('begin_quiet_check', COPY.quiet.begin, { hint: BEGIN_HINT, disabled: !open }),
     act('cancel', COPY.quiet.cancel),
   ];
   v.preferredAction = 'begin_quiet_check';
-  return `${v.title}. ${COPY.quiet.readyBody.join(' ')}`;
+  return `${v.title}. ${v.body.join(' ')}`;
 }
 
 /* ---- calibration ---- */
@@ -538,6 +611,7 @@ function projectCalibration(v: TvView, s: Core): string {
     return `${v.title}. ${v.body.join(' ')}`;
   }
   v.body = COPY.calibration.readyBody(CALIBRATION_PHRASE, hasBand);
+  if (s.screenReader) v.body.push(speakScript(quietLeadMs(s), secondsWords(CALIBRATION_WINDOW_MS)));
   v.actions = [
     act('begin_calibration', COPY.calibration.begin, { hint: BEGIN_HINT, disabled: !open }),
     act('skip_calibration', COPY.calibration.keep, {
@@ -552,7 +626,12 @@ function projectCalibration(v: TvView, s: Core): string {
 
 /* ---- vowel ---- */
 
-function vowelResult(rec: VowelRecord, hasBand: boolean): ResultView {
+function qualified(s: Core): string {
+  // A9-02: until the phone is qualified, a band verdict says so.
+  return s.settings.qualification === 'passed' ? '' : UNQUALIFIED_SUFFIX;
+}
+
+function vowelResult(s: Core, rec: VowelRecord, hasBand: boolean): ResultView {
   const dur = rec.longestActiveMs !== null ? `${(rec.longestActiveMs / 1000).toFixed(1)} s` : null;
   if (!rec.valid) {
     return {
@@ -565,9 +644,9 @@ function vowelResult(rec: VowelRecord, hasBand: boolean): ResultView {
     };
   }
   const durationLine = dur !== null ? `Voice-activity duration: ${dur}` : null;
-  if (hasBand && (rec.verdict === 'reached' || rec.verdict === 'not_reached')) {
+  if (hasBand && !isListenerEdition(s) && (rec.verdict === 'reached' || rec.verdict === 'not_reached')) {
     return {
-      label: rec.verdict === 'reached' ? RESULT_COPY.reached : RESULT_COPY.below,
+      label: (rec.verdict === 'reached' ? RESULT_COPY.reached : RESULT_COPY.below) + qualified(s),
       tone: rec.verdict === 'reached' ? 'reached' : 'below',
       detail: durationLine,
       borderline: rec.borderline,
@@ -578,7 +657,7 @@ function vowelResult(rec: VowelRecord, hasBand: boolean): ResultView {
   return {
     label: durationLine ?? 'Voice-activity duration',
     tone: 'neutral',
-    detail: hasBand ? null : RESULT_COPY.noBand,
+    detail: isListenerEdition(s) ? null : hasBand ? null : RESULT_COPY.noBand,
     borderline: false,
     listener: null,
     speakerRating: null,
@@ -601,7 +680,7 @@ function projectVowel(v: TvView, s: Core): string {
   }
   if (s.stage === 'vowel_result' && session?.lastVowel) {
     v.title = COPY.vowel.resultTitle;
-    v.result = vowelResult(session.lastVowel, hasBand);
+    v.result = vowelResult(s, session.lastVowel, hasBand);
     v.body = [v.result.label];
     if (v.result.detail !== null) v.body.push(v.result.detail);
     v.actions = [act('continue', COPY.vowel.continue), act('rest', COPY.vowel.rest)];
@@ -610,13 +689,14 @@ function projectVowel(v: TvView, s: Core): string {
   }
   v.title = COPY.vowel.readyTitle;
   v.body = [...COPY.vowel.readyBody];
+  if (s.screenReader) v.body.push(speakScript(quietLeadMs(s), `up to ${secondsWords(VOWEL_MAX_MS)}`));
   v.actions = [
     act('begin_vowel', COPY.vowel.begin, { hint: BEGIN_HINT, disabled: !micOpen(s) }),
     act('skip_vowel', COPY.vowel.skip),
     act('open_settings', COPY.home.settings),
   ];
   v.preferredAction = 'begin_vowel';
-  return `${v.title}. ${COPY.vowel.readyBody[0] ?? ''}`;
+  return `${v.title}. ${v.body.join(' ')}`;
 }
 
 /* ---- phrases ---- */
@@ -630,15 +710,32 @@ function phraseInfo(s: Core, attempt: AttemptRecord | null): TvView['phrase'] {
   return { position, total: session.phrases.length, text, attemptNumber };
 }
 
-function resultForAttempt(a: AttemptRecord, familyMode: boolean): ResultView {
+function listenerText(a: AttemptRecord): string | null {
+  if (a.state !== 'revealed') return null;
+  let text: string | null = null;
+  if (a.listener === 'heard') text = COPY.reveal.listener(COPY.reveal.listenerHeard);
+  else if (a.listener === 'not_heard') text = COPY.reveal.listener(COPY.reveal.listenerNotHeard);
+  else if (a.listener === 'missing') text = COPY.reveal.listener(COPY.reveal.listenerMissing);
+  if (a.lateListener !== null) {
+    text = COPY.reveal.listenerLate(a.lateListener === 'heard' ? COPY.reveal.listenerHeard : COPY.reveal.listenerNotHeard);
+  }
+  return text;
+}
+
+function resultForAttempt(s: Core, a: AttemptRecord, familyMode: boolean): ResultView {
   let label: string;
   let tone: ResultView['tone'];
   let detail: string | null = null;
-  if (a.verdict === 'reached') {
-    label = RESULT_COPY.reached;
+  const listener = familyMode ? listenerText(a) : null;
+  if (a.reason === 'listener_edition') {
+    // Listener Edition: the listener's answer is the primary outcome; band verdicts are not shown (A9-02).
+    label = listener ?? RESULT_COPY.listenerPending;
+    tone = 'neutral';
+  } else if (a.verdict === 'reached') {
+    label = RESULT_COPY.reached + qualified(s);
     tone = 'reached';
   } else if (a.verdict === 'not_reached') {
-    label = RESULT_COPY.below;
+    label = RESULT_COPY.below + qualified(s);
     tone = 'below';
   } else if (a.reason === 'no_band') {
     label = RESULT_COPY.noBand;
@@ -650,17 +747,6 @@ function resultForAttempt(a: AttemptRecord, familyMode: boolean): ResultView {
   }
   const borderline = a.borderline && (a.verdict === 'reached' || a.verdict === 'not_reached');
   if (borderline) detail = RESULT_COPY.borderline;
-  let listener: string | null = null;
-  if (familyMode && a.state === 'revealed') {
-    if (a.listener === 'heard') listener = COPY.reveal.listener(COPY.reveal.listenerHeard);
-    else if (a.listener === 'not_heard') listener = COPY.reveal.listener(COPY.reveal.listenerNotHeard);
-    else if (a.listener === 'missing') listener = COPY.reveal.listener(COPY.reveal.listenerMissing);
-    if (a.lateListener !== null) {
-      listener = COPY.reveal.listenerLate(
-        a.lateListener === 'heard' ? COPY.reveal.listenerHeard : COPY.reveal.listenerNotHeard,
-      );
-    }
-  }
   let speakerRating: string | null = null;
   if (a.hidden && a.state === 'revealed' && a.rating !== null) {
     speakerRating = COPY.reveal.youFelt(
@@ -671,7 +757,7 @@ function resultForAttempt(a: AttemptRecord, familyMode: boolean): ResultView {
           : COPY.reveal.ratingNone,
     );
   }
-  return { label, tone, detail, borderline, listener, speakerRating };
+  return { label, tone, detail, borderline, listener: a.reason === 'listener_edition' ? null : listener, speakerRating };
 }
 
 function projectPhrase(v: TvView, s: Core): string {
@@ -688,6 +774,7 @@ function projectPhrase(v: TvView, s: Core): string {
     const priorStarted = attemptsAt(session, pos).some((a) => a.started);
     const blindNext = isHiddenPosition(pos) && !priorStarted;
     v.body = [COPY.phrase.ready];
+    if (s.screenReader) v.body.push(speakScript(quietLeadMs(s), secondsWords(PHRASE_WINDOW_MS)));
     if (blindNext) v.body.push(COPY.phrase.blind);
     else if (priorStarted) v.body.push(COPY.phrase.retryNote);
     v.actions = [
@@ -751,14 +838,18 @@ function projectPhrase(v: TvView, s: Core): string {
 
   // reveal
   v.title = COPY.reveal.title;
-  const result = resultForAttempt(attempt, session.familyMode);
+  const result = resultForAttempt(s, attempt, session.familyMode);
   v.result = result;
   const body: string[] = [result.label];
   if (result.detail !== null) body.push(result.detail);
   if (result.speakerRating !== null) body.push(result.speakerRating);
   if (result.listener !== null) body.push(result.listener);
   v.body = body;
-  const scored = attempt.verdict === 'reached' || attempt.verdict === 'not_reached' || attempt.reason === 'no_band';
+  const scored =
+    attempt.verdict === 'reached' ||
+    attempt.verdict === 'not_reached' ||
+    attempt.reason === 'no_band' ||
+    attempt.reason === 'listener_edition';
   const last = session.phraseIdx + 1 >= total;
   if (scored) {
     v.actions = [
@@ -812,6 +903,8 @@ function pausedText(reason: string): string {
       return COPY.paused.mic;
     case 'timeout':
       return COPY.paused.timeout;
+    case 'phone_reconnected':
+      return COPY.paused.phoneReconnected;
     case 'interrupted':
       return COPY.paused.interrupted;
     default:
@@ -829,8 +922,9 @@ function projectSummary(v: TvView, s: Core): string {
     vowels: session.vowels,
     skipped: session.skipped,
     complete,
-    calMarginDb: session.calMarginDb,
+    calMarginDb: isListenerEdition(s) ? null : session.calMarginDb,
     familyMode: session.familyMode,
+    listenerEdition: isListenerEdition(s),
   });
   v.summary = summary;
   v.title = complete ? COPY.summary.title : COPY.summary.titleIncomplete;

@@ -41,7 +41,7 @@ describe('every message the TV sends is valid protocol', () => {
     h.transportState('connected');
     h.roomCreated({ generation: 1 });
     h.joinRequested();
-    h.ui('accept_join');
+    h.acceptJoin();
     h.peerState(true);
     h.phrases(['One.', 'Two.', 'Three.']);
     h.setupPairedToPhrases();

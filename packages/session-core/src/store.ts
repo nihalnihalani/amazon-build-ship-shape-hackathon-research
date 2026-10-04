@@ -22,6 +22,22 @@ import {
 import { relaySocketUrl } from './urls.js';
 import { Outbox } from './wire.js';
 
+function fallbackBytes(n: number): Uint8Array {
+  const out = new Uint8Array(n);
+  for (let i = 0; i < n; i += 1) out[i] = Math.floor(Math.random() * 256);
+  return out;
+}
+
+/** PK-12: 'e' + U+0301 must normalise to U+00E9. Read at call time so a runtime without normalize() is detected. */
+export function nfcSelfTest(): boolean {
+  try {
+    const sample = 'e\u0301';
+    return typeof sample.normalize === 'function' && sample.normalize('NFC') === '\u00e9';
+  } catch {
+    return false;
+  }
+}
+
 export function createSessionStore(deps: SessionStoreDeps): SessionStore {
   const idFactory = createIdFactory(deps.randomBytes);
   const newId = (prefix: string): string => {
@@ -42,6 +58,9 @@ export function createSessionStore(deps: SessionStoreDeps): SessionStore {
     appVersion: deps.appVersion,
     platform: deps.platform,
     fixtureMode: deps.fixtureMode === true,
+    // UI decoys only (A3-06): deps.randomBytes when present, else a non-cryptographic source.
+    randomBytes: (n) => (deps.randomBytes ? deps.randomBytes(n) : fallbackBytes(n)),
+    nfcSelfTest,
   };
   const machine = new Machine(env);
   const storage: StoragePort = deps.fixtureMode === true ? createMemoryStorage() : deps.storage;
