@@ -10,7 +10,7 @@
  * Evidence class of anything produced through this rig: automated (pure state machine). It says nothing
  * about microphone validity, Vega behaviour or a deployed relay.
  */
-import { createIdFactory, MessageFactory } from '@atr/protocol';
+import { createIdFactory, MessageFactory, quantizeCoverage, quantizeDb } from '@atr/protocol';
 import type { MessageType, PayloadMap } from '@atr/protocol';
 import { createSessionStore } from '@atr/session-core';
 import type {
@@ -334,7 +334,7 @@ export class Rig {
       pairing_code: PAIRING_CODE,
       code_expires_at: this.clock.now() + 600_000,
       tv_credential: CREDENTIAL,
-      credential_expires_at: this.clock.now() + 12 * 3_600_000,
+      credential_expires_at: this.clock.now() + 2 * 3_600_000,
       generation: 1,
     });
   }
@@ -349,8 +349,19 @@ export class Rig {
   peer(connected: boolean): void {
     this.relaySend('peer.state', { role: 'phone', connected, generation: 1 });
   }
-  authOk(peerConnected = true): void {
-    this.relaySend('auth.ok', { role: 'tv', generation: 2, peer_connected: peerConnected, phone_paired: true });
+  /** Rotated TV credentials handed out by auth.ok (revision 4): NEXT0001..., 43 base64url characters each. */
+  rotated: string[] = [];
+  /** auth.ok carries the rotated credential the TV must present on its NEXT auth.resume. */
+  authOk(peerConnected = true, next?: string): void {
+    const credential = next ?? `NEXT${String(this.rotated.length + 1).padStart(4, '0')}`.padEnd(43, 'y');
+    this.rotated.push(credential);
+    this.relaySend('auth.ok', {
+      role: 'tv',
+      generation: 2,
+      peer_connected: peerConnected,
+      phone_paired: true,
+      next_credential: credential,
+    });
   }
 
   /* ----------------------------- phone frames (P -> T) */
@@ -386,6 +397,31 @@ export class Rig {
     this.snap(`phone:${type}x2`);
   }
 
+  private forged = 0;
+  /**
+   * A phone frame built by hand, for values the MessageFactory refuses to build (off-grid numbers, missing
+   * fields). The TV validates it exactly as a relay would; it must drop it without changing state.
+   */
+  forge(type: string, payload: Record<string, unknown>, ids: { s?: string | null; w?: string | null; a?: string | null } = {}): void {
+    this.forged += 1;
+    this.rawFrame(
+      JSON.stringify({
+        protocol_version: 1,
+        type,
+        message_id: `m_forged${String(this.forged).padStart(8, '0')}abcd`,
+        room_id: ROOM,
+        session_id: ids.s ?? null,
+        window_id: ids.w ?? null,
+        attempt_id: ids.a ?? null,
+        sender_role: 'phone',
+        producer_generation: 1,
+        sequence: 10_000 + this.forged,
+        event_timestamp: this.clock.now(),
+        payload,
+      }),
+    );
+  }
+
   /** Raw frame, for messages the factory would refuse to build. */
   rawFrame(frame: string): void {
     this.store.dispatch({ kind: 'wire', message: frame });
@@ -407,10 +443,17 @@ export class Rig {
     return { s: cmd.session_id, w: cmd.window_id, a: cmd.attempt_id };
   }
 
-  precheckResult(rise = 0, over: Partial<PayloadMap['precheck.result']> = {}, cmd?: Sent): void {
+  /** Revision 4 grid: dB fields are multiples of 0.1, coverage of 0.001, times are integers (quantizeDb / quantizeCoverage). */
+  precheckResult(
+    rise = 0,
+    over: Partial<PayloadMap['precheck.result']> = {},
+    cmd?: Sent,
+    /** Take the envelope ids from another command (to test per-measurement window binding). */
+    idsFrom?: Sent,
+  ): void {
     const start = cmd ?? this.last('precheck.start');
     const purpose = start.payload['purpose'] as 'quiet_check' | 'pre_window';
-    const floor = FLOOR + (purpose === 'quiet_check' ? 0 : rise);
+    const floor = quantizeDb(FLOOR + (purpose === 'quiet_check' ? 0 : rise));
     const frames = purpose === 'quiet_check' ? 100 : 40;
     this.phoneSend(
       'precheck.result',
@@ -419,18 +462,34 @@ export class Rig {
         valid: true,
         invalid_reason: null,
         floor_dbfs: floor,
-        p20_dbfs: floor - 1,
-        p80_dbfs: floor + 1,
-        p95_dbfs: floor + 3,
+        p20_dbfs: quantizeDb(floor - 1),
+        p80_dbfs: quantizeDb(floor + 1),
+        p95_dbfs: quantizeDb(floor + 3),
         frame_count: frames,
         expected_frames: frames,
-        coverage: 1,
+        coverage: quantizeCoverage(1),
         clipped_frames: 0,
         nonfinite_frames: 0,
         duration_ms: purpose === 'quiet_check' ? 5000 : 2000,
         ...over,
       },
-      this.idsOf(start),
+      this.idsOf(idsFrom ?? start),
+    );
+  }
+
+  /** A muted or blocked microphone: floor below -110 dBFS, reason silent_input (revision 4, A1-05). */
+  silentPrecheck(cmd?: Sent): void {
+    this.precheckResult(
+      0,
+      {
+        valid: false,
+        invalid_reason: 'silent_input',
+        floor_dbfs: -130,
+        p20_dbfs: -131,
+        p80_dbfs: -129,
+        p95_dbfs: -128,
+      },
+      cmd,
     );
   }
 
@@ -444,14 +503,14 @@ export class Rig {
       invalid_reason: valid ? null : (o.reason ?? 'no_voice'),
       frame_count: 160,
       expected_frames: 160,
-      coverage: o.coverage ?? 1,
-      active_ms: active,
-      longest_active_ms: active,
+      coverage: quantizeCoverage(o.coverage ?? 1),
+      active_ms: Math.round(active),
+      longest_active_ms: Math.round(active),
       segments: 1,
       onset_ms: 200,
-      p50_active_dbfs: FLOOR + rel - 4,
-      p95_active_dbfs: valid ? FLOOR + rel : null,
-      peak_dbfs: FLOOR + rel + 2,
+      p50_active_dbfs: quantizeDb(FLOOR + rel - 4),
+      p95_active_dbfs: valid ? quantizeDb(FLOOR + rel) : null,
+      peak_dbfs: quantizeDb(FLOOR + rel + 2),
       clipped_frames: 0,
       nonfinite_frames: 0,
       duration_ms: 8000,
@@ -468,7 +527,7 @@ export class Rig {
     const start = cmd ?? this.last('window.start');
     this.phoneSend(
       'level',
-      { frame_index: frameIndex, t_audio_ms: frameIndex * 50, dbfs, active, clipped },
+      { frame_index: frameIndex, t_audio_ms: frameIndex * 50, dbfs: quantizeDb(dbfs), active, clipped },
       this.idsOf(start),
     );
   }

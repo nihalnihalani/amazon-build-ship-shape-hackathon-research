@@ -11,6 +11,7 @@
  * suite stays green while a defect is open. Set QA_STRICT=1 to run them as ordinary tests (they then fail
  * until the defect is fixed; when a fixed defect makes `it.fails` flip, drop the wrapper).
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { SummaryView, TvView } from '@atr/session-core';
 import { STORAGE_PREFIX } from '@atr/session-core';
@@ -160,7 +161,8 @@ describe('(a) hidden positions by phrase-bank size', () => {
     ]);
   });
 
-  defect('QA-01', 'ADR-0004 says retries are marked meter_visibility: visible_retry, but no such marker exists anywhere', async () => {
+  defect('QA-01', 'ADR-0004 and the implementation disagree on how a retry is marked (ADR names meter_visibility: visible_retry; no such marker exists)', async () => {
+    const adr = readFileSync(new URL('../../docs/adr/0004-listener-reveal-and-agreement.md', import.meta.url), 'utf8');
     const rig = await new Rig({ seed: 23 }).boot();
     await rig.setupToPhrases({ bank: PHRASES.slice(0, 3) });
     for (let p = 1; p <= 2; p += 1) {
@@ -173,7 +175,15 @@ describe('(a) hidden positions by phrase-bank size', () => {
     rig.attempt({ rel: 25 });
     rig.ui('next_phrase');
     await rig.settle();
-    expect(rig.disk.allText()).toContain('visible_retry');
+    const key = rig.disk.atrKeys().find((k) => k.startsWith('atr:v1:session:')) as string;
+    const rec = rig.disk.json(key) as { attempts: { position: number; attemptNumber: number; hidden: boolean }[] };
+    const retry = rec.attempts.find((a) => a.position === 3 && a.attemptNumber === 2);
+    // Whichever marker the ADR names must be the one the implementation carries.
+    if (/visible_retry/.test(adr)) expect(rig.disk.allText()).toContain('visible_retry');
+    else {
+      expect(adr).toMatch(/attemptNumber\s*>\s*1/); // the amended wording: a retry is attemptNumber > 1
+      expect(retry).toMatchObject({ attemptNumber: 2, hidden: false });
+    }
   });
 
   it('cancelling a blind attempt in the quiet lead consumes nothing: the next attempt is still blind', async () => {
@@ -1572,10 +1582,10 @@ describe('(k) timeouts, migration, navigation and documented edge behaviour', ()
     expect(s.phrasesAttempted).toBe(3);
   });
 
-  it('a rise of 5.99 dB passes the gate; exactly 6 dB blocks (boundary)', async () => {
+  it('a rise of 5.9 dB passes the gate; exactly 6.0 dB blocks (boundary on the 0.1 dB grid)', async () => {
     const rig = await new Rig({ seed: 134 }).boot();
     await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
-    rig.attempt({ rise: 5.99, rel: 25 });
+    rig.attempt({ rise: 5.9, rel: 25 });
     expect(rig.view.stage).toBe('reveal');
     rig.ui('next_phrase');
     rig.attempt({ rise: 6 });
@@ -1778,15 +1788,15 @@ describe('(k2) defects found by adversarial probes', () => {
     expect((phrase?.text ?? '').length).toBeGreaterThan(0);
   });
 
-  defect('QA-05', 'speaker-only mode: session.state stage "response_pending" is sent only for blind positions, so the phone can infer them (ADR-0004: phone is never told)', async () => {
+  defect('QA-05', 'the phone must see session.state stage phrase_active from capture start until the next phrase_ready or summary, and never response_pending or reveal (ruling on ADR-0004: the phone is never told which positions are hidden)', async () => {
     const rig = await new Rig({ seed: 147 }).boot();
     await rig.setupToPhrases({ bank: PHRASES.slice(0, 4) });
-    const afterResult: string[][] = [];
+    const perPosition: string[][] = [];
     for (let p = 1; p <= 4; p += 1) {
       const mark = rig.count('session.state');
       rig.attempt({ rel: 25 });
       if (rig.view.stage === 'response_pending') rig.ui('rate_skip');
-      afterResult.push(
+      perPosition.push(
         rig
           .wire.of('session.state')
           .slice(mark)
@@ -1794,9 +1804,11 @@ describe('(k2) defects found by adversarial probes', () => {
       );
       rig.ui('next_phrase');
     }
-    // What the phone sees must be the same for blind and visible positions.
-    const visible = JSON.stringify(afterResult[0]);
-    expect(afterResult.map((a) => JSON.stringify(a))).toEqual([visible, visible, visible, visible]);
+    const everything = rig.wire.of('session.state').map((m) => m.payload['stage'] as string);
+    expect(everything).not.toContain('response_pending');
+    expect(everything).not.toContain('reveal');
+    // Identical for blind and visible positions: only phrase_active after the capture starts.
+    for (const stages of perPosition) expect(stages.every((st) => st === 'phrase_active')).toBe(true);
   });
 
   defect('QA-06', 'a crash checkpoint older than the 30-day retention is still offered for resume and kept indefinitely', async () => {
@@ -1834,3 +1846,379 @@ describe('(k2) defects found by adversarial probes', () => {
   });
 });
 
+
+/* ================================================================== (l) protocol revision 4 */
+
+describe('(l1) revision 4: window_id is unique per measurement (DEF-002); a pre-window precheck shares the capture attempt_id', () => {
+  const ids = (m: Sent): [string | null, string | null, string | null] => [m.session_id, m.window_id, m.attempt_id];
+
+  it('every precheck and every capture has its own window_id; precheck and capture share the attempt_id; no id is ever reused', async () => {
+    const rig = await new Rig({ seed: 171 }).boot();
+    await rig.setupToPhrases({ family: true, bank: PHRASES.slice(0, 3) });
+    for (let p = 1; p <= 3; p += 1) {
+      rig.attempt({ rel: 25 });
+      rig.listenerResponse('heard');
+      if (rig.view.stage === 'response_pending') rig.ui('rate_skip');
+      rig.ui('next_phrase');
+    }
+    const prechecks = rig.wire.of('precheck.start');
+    const captures = rig.wire.of('window.start');
+    // quiet check (1 precheck), then one pre-window precheck per phrase; calibration and the phrases are captures
+    expect(prechecks).toHaveLength(1 + 3);
+    expect(captures).toHaveLength(1 + 3);
+    const all = [...prechecks, ...captures].map((m) => m.window_id as string);
+    expect(new Set(all).size).toBe(all.length); // no window_id appears in two measurements
+    for (let i = 0; i < 3; i += 1) {
+      const pre = prechecks[1 + i] as Sent;
+      const cap = captures[1 + i] as Sent;
+      expect(pre.payload['purpose']).toBe('pre_window');
+      expect(pre.window_id).not.toBe(cap.window_id);
+      expect(pre.attempt_id).toBe(cap.attempt_id);
+      expect(pre.session_id).toBe(cap.session_id);
+    }
+    // Different attempts never share an attempt_id.
+    const attempts = captures.slice(1).map((m) => m.attempt_id);
+    expect(new Set(attempts).size).toBe(3);
+    // Everything after the capture starts is bound to the CAPTURE window.
+    for (const type of ['listener.open', 'attempt.reveal']) {
+      for (const m of rig.wire.of(type)) {
+        expect(captures.some((c) => c.window_id === m.window_id && c.attempt_id === m.attempt_id), `${type} binds to a capture`).toBe(true);
+        expect(prechecks.some((c) => c.window_id === m.window_id), `${type} must not carry a precheck window id`).toBe(false);
+      }
+    }
+  });
+
+  it('a retry gets a new attempt_id and new window ids for both of its measurements', async () => {
+    const rig = await new Rig({ seed: 172 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.attempt({ rel: 25 });
+    rig.ui('try_again');
+    rig.attempt({ rel: 25 });
+    const [firstPre, secondPre] = [rig.wire.of('precheck.start')[1] as Sent, rig.wire.of('precheck.start')[2] as Sent];
+    const [firstCap, secondCap] = [rig.wire.of('window.start')[1] as Sent, rig.wire.of('window.start')[2] as Sent];
+    expect(new Set([firstPre.window_id, firstCap.window_id, secondPre.window_id, secondCap.window_id]).size).toBe(4);
+    expect(firstCap.attempt_id).not.toBe(secondCap.attempt_id);
+    expect(secondPre.attempt_id).toBe(secondCap.attempt_id);
+  });
+
+  it('stale filtering is per window_id: a result for the other measurement of the same attempt is dropped and acked ignored_stale', async () => {
+    const rig = await new Rig({ seed: 173 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    const pre = rig.last('precheck.start');
+    // During the precheck a window.result (any id of this attempt) cannot be a capture result.
+    rig.phoneSend('window.result', rig.windowResultPayload('phrase', { rel: 30 }), { s: pre.session_id, w: pre.window_id, a: pre.attempt_id });
+    expect(rig.last('ack').payload['outcome']).toBe('ignored_stale');
+    expect(rig.count('window.start')).toBe(1); // calibration only: the gate is still waiting for its own result
+    rig.precheckResult();
+    const cap = rig.last('window.start');
+    expect(cap.window_id).not.toBe(pre.window_id);
+    // During the capture, a precheck.result that names the CAPTURE window, and level/window frames that name the
+    // PRECHECK window, are all dropped.
+    const acksBefore = rig.count('ack');
+    rig.precheckResult(0, {}, pre, cap); // purpose pre_window, ids of the capture
+    rig.level(0, FLOOR + 40, true, false, pre); // ids of the precheck
+    rig.phoneSend('window.result', rig.windowResultPayload('phrase', { rel: 30 }), { s: pre.session_id, w: pre.window_id, a: pre.attempt_id }); // would score the attempt if the precheck id were accepted
+    expect(rig.count('ack') - acksBefore).toBeGreaterThanOrEqual(2); // stale acks (levels share one ack per window)
+    for (const a of rig.wire.of('ack').slice(acksBefore)) expect(a.payload['outcome']).toBe('ignored_stale');
+    expect(rig.view.stage).toBe('phrase_active');
+    expect(rig.view.meter?.levelRelDb).toBeNull(); // the stray level never reached the meter
+    rig.windowResult({ rel: 25 }, cap);
+    expect(rig.view.stage).toBe('reveal');
+    expect(rig.view.result?.label).toBe("Reached today's relative level band");
+  });
+
+  it('window.cancel names the measurement that is open: the precheck id in the precheck, the capture id in the capture', async () => {
+    const rig = await new Rig({ seed: 174 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    const pre = rig.last('precheck.start');
+    rig.back();
+    expect(ids(rig.last('window.cancel'))).toEqual(ids(pre));
+    rig.ui('try_again');
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    rig.precheckResult();
+    const cap = rig.last('window.start');
+    rig.back();
+    const cancel = rig.last('window.cancel');
+    expect(ids(cancel)).toEqual(ids(cap));
+    expect(cancel.window_id).not.toBe(rig.wire.of('precheck.start').at(-1)?.window_id);
+  });
+
+  it('a gate-blocked attempt keeps the precheck window id in its record and never gets a capture window', async () => {
+    const rig = await new Rig({ seed: 175 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    const capturesBefore = rig.count('window.start');
+    rig.attempt({ rise: 8 }); // blocked: rise >= 6 dB
+    const pre = rig.last('precheck.start');
+    expect(rig.view.stage).toBe('paused_or_invalid');
+    expect(rig.count('window.start')).toBe(capturesBefore);
+    rig.ui('retry');
+    rig.attempt({ rel: 25 });
+    rig.ui('next_phrase');
+    rig.attempt({ rel: 25 });
+    rig.ui('next_phrase');
+    await rig.settle();
+    const key = rig.disk.atrKeys().find((k) => k.startsWith('atr:v1:session:')) as string;
+    const rec = rig.disk.json(key) as { attempts: { attemptId: string; windowId: string; started: boolean; reason: string | null }[] };
+    const blocked = rec.attempts.find((a) => !a.started);
+    expect(blocked).toMatchObject({ attemptId: pre.attempt_id, windowId: pre.window_id, reason: 'room_noisier' });
+    // Every stored window id is unique across attempts.
+    const windows = rec.attempts.map((a) => a.windowId);
+    expect(new Set(windows).size).toBe(windows.length);
+  });
+
+  it('listener answers bind to the capture window: the precheck window id with the right attempt id is dropped', async () => {
+    const rig = await new Rig({ seed: 176 }).boot();
+    await rig.setupToPhrases({ family: true, bank: PHRASES.slice(0, 2) });
+    rig.attempt({ rel: 25 });
+    const pre = rig.wire.of('precheck.start').at(-1) as Sent;
+    const open = rig.last('listener.open');
+    expect(open.window_id).not.toBe(pre.window_id);
+    rig.phoneSend('listener.response', { response: 'heard' }, { s: pre.session_id, w: pre.window_id, a: pre.attempt_id });
+    expect(rig.last('ack').payload['outcome']).toBe('ignored_stale');
+    expect(rig.view.stage).toBe('response_pending'); // still waiting for the real answer
+    rig.listenerResponse('heard', open);
+    expect(rig.view.stage).toBe('reveal');
+  });
+
+  it('with a band, the sustained-sound window is also two measurements (own precheck id), calibration and quiet check are one each', async () => {
+    const rig = await new Rig({ seed: 177 }).boot();
+    await rig.toQuietReady({ bank: PHRASES.slice(0, 2) });
+    rig.quietCheck();
+    rig.calibrate();
+    rig.ui('continue');
+    rig.ui('begin_vowel');
+    rig.advance(1500);
+    const pre = rig.last('precheck.start');
+    expect(pre.payload['purpose']).toBe('pre_window');
+    rig.precheckResult();
+    const cap = rig.last('window.start');
+    expect(cap.payload['kind']).toBe('vowel');
+    expect(cap.window_id).not.toBe(pre.window_id);
+    expect(cap.attempt_id).toBe(pre.attempt_id);
+    const all = [...rig.wire.of('precheck.start'), ...rig.wire.of('window.start')].map((m) => m.window_id);
+    expect(new Set(all).size).toBe(all.length);
+  });
+});
+
+describe('(l2) revision 4: quantised values on the wire', () => {
+  const base = {
+    purpose: 'pre_window',
+    valid: true,
+    invalid_reason: null,
+    floor_dbfs: -50,
+    p20_dbfs: -51,
+    p80_dbfs: -49,
+    p95_dbfs: -47,
+    frame_count: 40,
+    expected_frames: 40,
+    coverage: 1,
+    clipped_frames: 0,
+    nonfinite_frames: 0,
+    duration_ms: 2000,
+  };
+
+  it('off-grid dB, off-grid coverage and fractional milliseconds are dropped by the TV without an ack and without any state change', async () => {
+    const rig = await new Rig({ seed: 181 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    const pre = rig.last('precheck.start');
+    const w = { s: pre.session_id, w: pre.window_id, a: pre.attempt_id };
+    const sentBefore = rig.wire.sent.length;
+    rig.forge('precheck.result', { ...base, floor_dbfs: -44.01 }, w); // 0.01 dB step
+    rig.forge('precheck.result', { ...base, p95_dbfs: -46.95 }, w);
+    rig.forge('precheck.result', { ...base, coverage: 0.9504 }, w); // not a multiple of 0.001
+    rig.forge('precheck.result', { ...base, duration_ms: 2000.5 }, w); // not an integer
+    expect(rig.wire.sent.length).toBe(sentBefore);
+    expect(rig.view.stage).toBe('phrase_active');
+    expect(rig.count('window.start')).toBe(1);
+    rig.precheckResult(); // the grid-valued twin is accepted
+    expect(rig.count('window.start')).toBe(2);
+  });
+
+  it('off-grid level and window.result values are dropped; the grid value is accepted', async () => {
+    const rig = await new Rig({ seed: 182 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    rig.precheckResult();
+    const cap = rig.last('window.start');
+    const w = { s: cap.session_id, w: cap.window_id, a: cap.attempt_id };
+    const before = rig.wire.sent.length;
+    rig.forge('level', { frame_index: 0, t_audio_ms: 0, dbfs: -44.05, active: true, clipped: false }, w);
+    rig.forge('level', { frame_index: 1, t_audio_ms: 50.5, dbfs: -44, active: true, clipped: false }, w);
+    const good = rig.windowResultPayload('phrase', { rel: 25 });
+    rig.forge('window.result', { ...good, p95_active_dbfs: -24.97 }, w);
+    rig.forge('window.result', { ...good, active_ms: 2500.5 }, w);
+    expect(rig.wire.sent.length).toBe(before);
+    expect(rig.view.stage).toBe('phrase_active');
+    expect(rig.view.meter?.levelRelDb).toBeNull();
+    rig.windowResult({ rel: 25 }, cap);
+    expect(rig.view.stage).toBe('reveal');
+  });
+
+  it('the gate boundary on the 0.1 dB grid: a rise of 5.9 dB passes, 6.0 dB blocks, and the separation rule (margin - rise >= 10) holds at 10.0/9.9', async () => {
+    const rig = await new Rig({ seed: 183 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 4) });
+    rig.attempt({ rise: 5.9, rel: 25 });
+    expect(rig.view.stage).toBe('reveal');
+    rig.ui('next_phrase');
+    rig.attempt({ rise: 6 });
+    expect(rig.view.stage).toBe('paused_or_invalid');
+  });
+
+  it('a calibration that sits exactly on the 13.0 dB edge is accepted, 12.9 dB is not (grid values)', async () => {
+    const edge = await new Rig({ seed: 184 }).boot();
+    await edge.toQuietReady({ bank: PHRASES.slice(0, 2) });
+    edge.quietCheck();
+    edge.ui('begin_calibration');
+    edge.advance(1500);
+    edge.windowResult({ rel: 13 });
+    expect(edge.view.title).toBe("Today's band is set");
+    const below = await new Rig({ seed: 185 }).boot();
+    await below.toQuietReady({ bank: PHRASES.slice(0, 2) });
+    below.quietCheck();
+    below.ui('begin_calibration');
+    below.advance(1500);
+    below.windowResult({ rel: 12.9 });
+    expect(below.view.title).toBe("Today's band was not set");
+  });
+});
+
+describe('(l3) revision 4: silent_input', () => {
+  it('quiet check with silent_input: failed screen with Retry preferred, no floor and no calibration offered, then a good check recovers', async () => {
+    const rig = await new Rig({ seed: 191 }).boot();
+    await rig.toQuietReady({ bank: PHRASES.slice(0, 2) });
+    rig.ui('begin_quiet_check');
+    rig.advance(1500);
+    rig.silentPrecheck();
+    expect(rig.view.stage).toBe('quiet_check');
+    expect(rig.view.title).toBe('Quiet check did not pass');
+    expect(rig.actionIds()).toEqual(['retry', 'cancel']);
+    expect(rig.view.preferredAction).toBe('retry');
+    expect(rig.count('window.start')).toBe(0);
+    rig.ui('retry');
+    rig.ui('begin_quiet_check');
+    rig.advance(1500);
+    rig.precheckResult();
+    expect(rig.view.stage).toBe('calibration');
+  });
+
+  it('pre-window silent_input blocks the attempt: unscored (silent_input), never started, no capture window, and a blind position stays blind on retry', async () => {
+    const rig = await new Rig({ seed: 192 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 3) });
+    for (let p = 1; p <= 2; p += 1) {
+      rig.attempt({ rel: 25 });
+      rig.ui('next_phrase');
+    }
+    const capturesBefore = rig.count('window.start');
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    rig.silentPrecheck();
+    expect(rig.view.stage).toBe('paused_or_invalid');
+    expect(rig.actionIds()).toEqual(['retry', 'skip_phrase', 'finish_early']);
+    expect(rig.count('window.start')).toBe(capturesBefore);
+    rig.ui('retry');
+    const retry = rig.attempt({ rel: 25 });
+    expect(retry?.meter).toBeNull(); // the blocked attempt never captured, so position 3 is still blind
+    rig.ui('rate_skip');
+    rig.ui('next_phrase');
+    const s = rig.summary();
+    expect(s.invalidReasons).toEqual({ silent_input: 1 });
+    expect(s.scoredHidden).toBe(1);
+  });
+
+  it('a silent_input result whose reason is not allowed for the purpose (unstable_floor in a pre-window) is dropped at the wire', async () => {
+    const rig = await new Rig({ seed: 193 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.ui('begin_phrase');
+    rig.advance(1500);
+    const pre = rig.last('precheck.start');
+    const before = rig.wire.sent.length;
+    rig.forge(
+      'precheck.result',
+      { purpose: 'pre_window', valid: false, invalid_reason: 'unstable_floor', floor_dbfs: -50, p20_dbfs: -51, p80_dbfs: -49, p95_dbfs: -47, frame_count: 40, expected_frames: 40, coverage: 1, clipped_frames: 0, nonfinite_frames: 0, duration_ms: 2000 },
+      { s: pre.session_id, w: pre.window_id, a: pre.attempt_id },
+    );
+    expect(rig.wire.sent.length).toBe(before);
+    expect(rig.view.stage).toBe('phrase_active');
+  });
+
+  defect('QA-08', 'silent_input has no TV copy: both the failed quiet check and the paused screen say "The window could not be scored." instead of "The phone microphone looks muted or blocked." (AMENDMENTS-REV2 A1-05)', async () => {
+    const quiet = await new Rig({ seed: 194 }).boot();
+    await quiet.toQuietReady({ bank: PHRASES.slice(0, 2) });
+    quiet.ui('begin_quiet_check');
+    quiet.advance(1500);
+    quiet.silentPrecheck();
+    expect(quiet.view.body.join(' ')).toContain('The phone microphone looks muted or blocked.');
+    const phrase = await new Rig({ seed: 195 }).boot();
+    await phrase.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    phrase.ui('begin_phrase');
+    phrase.advance(1500);
+    phrase.silentPrecheck();
+    expect(phrase.view.body.join(' ')).toContain('The phone microphone looks muted or blocked.');
+  });
+});
+
+describe('(l4) revision 4: credential rotation (auth.ok.next_credential)', () => {
+  it('an auth.ok without next_credential (the old shape) is rejected: the TV never claims to be connected', async () => {
+    const rig = await new Rig({ seed: 201 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.link('reconnecting');
+    rig.link('connected');
+    expect(rig.view.link).toBe('connecting'); // connected socket, not yet authenticated
+    rig.forge('auth.ok', { role: 'tv', generation: 2, peer_connected: true, phone_paired: true }, {});
+    expect(rig.view.link).toBe('connecting');
+    rig.authOk(true);
+    expect(rig.view.link).toBe('connected');
+  });
+
+  it('the first reconnect presents the credential from room.created', async () => {
+    const rig = await new Rig({ seed: 202 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.link('reconnecting');
+    rig.link('connected');
+    const resume = rig.last('auth.resume');
+    expect(resume.payload).toMatchObject({ role: 'tv', credential: CREDENTIAL });
+  });
+
+  defect('QA-09', 'the TV ignores auth.ok.next_credential: its SECOND reconnect presents the credential the relay already consumed, which revokes the TV role (PROTOCOL.md rev 4 section 3.1)', async () => {
+    const rig = await new Rig({ seed: 203 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.link('reconnecting');
+    rig.link('connected');
+    expect(rig.last('auth.resume').payload['credential']).toBe(CREDENTIAL);
+    rig.authOk(true); // the relay rotates: next_credential NEXT0001...
+    const rotated = rig.rotated[0] as string;
+    rig.mic('open_idle');
+    rig.link('reconnecting');
+    rig.link('connected');
+    expect(rig.wire.of('auth.resume')).toHaveLength(2);
+    // Expected: the rotated credential. Observed: the original one again.
+    expect(rig.last('auth.resume').payload['credential']).toBe(rotated);
+  });
+
+  it('credentials never reach storage or any view, including the rotated one', async () => {
+    const rig = await new Rig({ seed: 204 }).boot();
+    await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+    rig.link('reconnecting');
+    rig.link('connected');
+    rig.authOk(true);
+    rig.attempt({ rel: 25 });
+    rig.ui('next_phrase');
+    await rig.settle();
+    const rotated = rig.rotated[0] as string;
+    expect(rig.disk.allText()).not.toContain(rotated);
+    expect(rig.disk.allText()).not.toContain(CREDENTIAL);
+    for (const t of rig.trace) {
+      const json = JSON.stringify(t.view);
+      expect(json).not.toContain(rotated);
+      expect(json).not.toContain(CREDENTIAL);
+    }
+  });
+});

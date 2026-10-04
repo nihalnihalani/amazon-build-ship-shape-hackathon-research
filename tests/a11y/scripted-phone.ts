@@ -9,7 +9,7 @@
  * Evidence class of anything driven through this class: web_preview + scripted phone (no real microphone,
  * no real relay, no Vega).
  */
-import { MessageFactory, createIdFactory } from '@atr/protocol';
+import { MessageFactory, createIdFactory, quantizeCoverage, quantizeDb } from '@atr/protocol';
 import type { MessageType, PayloadMap } from '@atr/protocol';
 import type { Page, WebSocketRoute } from 'playwright-core';
 
@@ -44,6 +44,8 @@ export interface PhoneOptions {
   calibrationRel?: number;
   /** Delay before each precheck/calibration answer. */
   answerDelayMs?: number;
+  /** Answer the FIRST quiet-check precheck with silent_input (a muted or blocked microphone, revision 4). */
+  silentFirstQuietCheck?: boolean;
 }
 
 export class ScriptedPhone {
@@ -53,6 +55,10 @@ export class ScriptedPhone {
   private readonly relay: MessageFactory;
   private bankSent = false;
   private stopRequested = new Set<string>();
+  private silentQuietSent = false;
+  /** Credentials the TV presented in auth.resume, in order, and the rotated ones this script handed out. */
+  readonly resumed: string[] = [];
+  readonly rotated: string[] = [];
 
   private readonly page: Page;
   private readonly opts: PhoneOptions;
@@ -150,10 +156,21 @@ export class ScriptedPhone {
           pairing_code: PAIRING_CODE,
           code_expires_at: Date.now() + 600_000,
           tv_credential: CREDENTIAL,
-          credential_expires_at: Date.now() + 12 * 3_600_000,
+          credential_expires_at: Date.now() + 2 * 3_600_000,
           generation: 1,
         });
         break;
+      case 'auth.resume': {
+        // Revision 4: the presented credential is consumed; auth.ok carries the rotated one.
+        this.resumed.push(String(m.payload['credential']));
+        const next = `NEXTCRED${String(this.rotated.length + 1).padStart(4, '0')}`.padEnd(43, 'z');
+        this.rotated.push(next);
+        this.later(delay, () => {
+          this.sendRelay('auth.ok', { role: 'tv', generation: 2, peer_connected: true, phone_paired: true, next_credential: next });
+          this.later(delay, () => this.micState('open_idle')); // the phone reports again after a reconnect
+        });
+        break;
+      }
       case 'join.confirm':
         if (m.payload['decision'] === 'accept') {
           this.later(delay, () => {
@@ -197,19 +214,42 @@ export class ScriptedPhone {
   private answerPrecheck(m: TvMessage): void {
     const purpose = m.payload['purpose'] as 'quiet_check' | 'pre_window';
     const frames = purpose === 'quiet_check' ? 100 : 40;
+    if (purpose === 'quiet_check' && this.opts.silentFirstQuietCheck === true && !this.silentQuietSent) {
+      this.silentQuietSent = true;
+      this.sendPhone(
+        'precheck.result',
+        {
+          purpose,
+          valid: false,
+          invalid_reason: 'silent_input',
+          floor_dbfs: -130,
+          p20_dbfs: -131,
+          p80_dbfs: -129,
+          p95_dbfs: -128,
+          frame_count: frames,
+          expected_frames: frames,
+          coverage: quantizeCoverage(1),
+          clipped_frames: 0,
+          nonfinite_frames: 0,
+          duration_ms: 5000,
+        },
+        m,
+      );
+      return;
+    }
     this.sendPhone(
       'precheck.result',
       {
         purpose,
         valid: true,
         invalid_reason: null,
-        floor_dbfs: FLOOR,
-        p20_dbfs: FLOOR - 1,
-        p80_dbfs: FLOOR + 1,
-        p95_dbfs: FLOOR + 3,
+        floor_dbfs: quantizeDb(FLOOR),
+        p20_dbfs: quantizeDb(FLOOR - 1),
+        p80_dbfs: quantizeDb(FLOOR + 1),
+        p95_dbfs: quantizeDb(FLOOR + 3),
         frame_count: frames,
         expected_frames: frames,
-        coverage: 1,
+        coverage: quantizeCoverage(1),
         clipped_frames: 0,
         nonfinite_frames: 0,
         duration_ms: purpose === 'quiet_check' ? 5000 : 2000,
@@ -236,7 +276,7 @@ export class ScriptedPhone {
   }
 
   private sendLevel(m: TvMessage, frame: number, dbfs: number): void {
-    this.sendPhone('level', { frame_index: frame, t_audio_ms: frame * 50, dbfs, active: true, clipped: false }, m);
+    this.sendPhone('level', { frame_index: frame, t_audio_ms: frame * 50, dbfs: quantizeDb(dbfs), active: true, clipped: false }, m);
   }
 
   private sendWindowResult(m: TvMessage, script: PhraseScript): void {
@@ -255,9 +295,9 @@ export class ScriptedPhone {
         longest_active_ms: 2500,
         segments: 1,
         onset_ms: 200,
-        p50_active_dbfs: FLOOR + script.rel - 4,
-        p95_active_dbfs: valid ? FLOOR + script.rel : null,
-        peak_dbfs: FLOOR + script.rel + 2,
+        p50_active_dbfs: quantizeDb(FLOOR + script.rel - 4),
+        p95_active_dbfs: valid ? quantizeDb(FLOOR + script.rel) : null,
+        peak_dbfs: quantizeDb(FLOOR + script.rel + 2),
         clipped_frames: 0,
         nonfinite_frames: 0,
         duration_ms: 8000,
