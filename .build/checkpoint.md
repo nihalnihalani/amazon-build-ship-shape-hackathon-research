@@ -22,3 +22,17 @@ T00–T02 (environment, compatibility, ADRs) → dispatching T05 (protocol), T06
 
 | Name | Role | Task | Worktree | Branch |
 |---|---|---|---|---|
+| contracts | research-contracts | T05 protocol package, T01 COMPATIBILITY/SOURCES | ../atr-worktrees/contracts | wt/contracts |
+| dsp | audio-dsp | T06 phone-mic-meter, T04 frozen protocol doc | ../atr-worktrees/dsp | wt/dsp |
+| session | vega-tv (core) | session-core reducer/view/storage logic | ../atr-worktrees/session | wt/session |
+| tv | vega-tv | T09 apps/tv RN-for-Vega code, ten-foot-meter, adapters | ../atr-worktrees/tv | wt/tv |
+| relay | relay-cloud | T07 relay core + local server; AWS adapter + SAM (not deployed) | ../atr-worktrees/relay | wt/relay |
+| phone | phone-companion | T08 phone page | ../atr-worktrees/phone | wt/phone |
+
+All dispatched from base `ea1eef8` on 2026-10-05 ~03:50 IST. Integration order planned: contracts → dsp → session → relay → phone → tv; after contracts merges, notify relay/phone/session to merge `build/across-the-room` and swap ports to `@atr/protocol`.
+
+## Next lead actions
+
+1. On each handoff: review diff + rerun checks in the worktree, merge into `build/across-the-room`, regenerate lockfile, rerun root build/typecheck/test, append evidence, update graph.
+2. Build T12 harness in `tests/` (local relay + phone dist-test in system Chrome with synthetic audio + headless session-core TV driver).
+3. Spawn qa-accessibility, security-review, release-docs after integration.

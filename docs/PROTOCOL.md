@@ -1,6 +1,6 @@
 # Across the Room wire protocol v1
 
-Status: frozen for implementation (revision 1, 2026-10-05). Owner: research-contracts. Changes require a revision note here, an ADR update when behaviour changes, and the lead's approval. The executable source of truth is `packages/protocol`; this document and that package must agree (a test enforces the message-type list).
+Status: frozen for implementation (revision 2, 2026-10-05; revision 2 records the clarifications in §8 without changing any message shape). Owner: research-contracts. Changes require a revision note here, an ADR update when behaviour changes, and the lead's approval. The executable source of truth is `packages/protocol`; this document and that package must agree (a test enforces the message-type list).
 
 Transport: JSON text frames over WSS. Binary frames are rejected (close code 1003). Maximum serialized message size **8192 bytes** (UTF-8). All examples are illustrative.
 
@@ -18,14 +18,16 @@ Every message, in both directions, is one JSON object with exactly these top-lev
 | `window_id` | string or null | `^w_[A-Za-z0-9_-]{8,40}$` |
 | `attempt_id` | string or null | `^a_[A-Za-z0-9_-]{8,40}$` |
 | `sender_role` | string | `tv`, `phone` or `relay` |
-| `producer_generation` | integer | 0 … 2^31−1; 0 for pre-auth messages |
+| `producer_generation` | integer | 0 … 2^31−1; 0 for pre-auth and relay-originated messages; authenticated generations start at 1 |
 | `sequence` | integer | 0 … 2^53−1; strictly increasing per (room, role, generation) for authenticated messages |
 | `event_timestamp` | integer | ms since Unix epoch on the sender's clock; must be within ±24 h of receiver time (sanity check only; freshness uses receiver time) |
 | `payload` | object | exactly the fields listed for the type (unknown fields → `bad_schema`) |
 
+Room binding: `room_id` must be null for `room.create`, `join.request`, `join.pending` and `join.rejected`; it is optional for `auth.resume`, `ping`, `pong` and `error`; it is required for every other type. When a payload repeats `room_id`, a non-null envelope value must equal it.
+
 Identity binding: the per-type table in §3 says which of `session_id`, `window_id`, `attempt_id` are **required** (must be non-null) for that type; all others must be null.
 
-Numbers: all numbers must be finite (`Number.isFinite`). Strings: no control characters except none allowed at all (U+0000–U+001F, U+007F–U+009F rejected); user text is NFC-normalized and trimmed before length checks; lengths are counted in Unicode code points.
+Numbers: all numbers must be finite (`Number.isFinite`). Strings: no control characters are allowed (U+0000–U+001F, U+007F–U+009F rejected); user text is NFC-normalized and trimmed before length checks; lengths are counted in Unicode code points.
 
 ## 2. Roles and authentication summary
 
@@ -150,7 +152,7 @@ Identity columns: S = session_id, W = window_id, A = attempt_id; ✓ required, �
 5. Envelope field formats and identity-binding rules.
 6. Payload schema (exact keys, types, ranges, enum values, finite numbers, text normalization and lengths).
 7. Direction and auth (§3 tables; ADR-0003 §9).
-8. Generation and sequence (stale / replay), message_id dedupe.
+8. message_id dedupe first: a `message_id` already seen in the room's recent window (last 1024) is dropped silently (not forwarded, no error, metric `duplicate_dropped`); then generation and sequence: wrong generation → `stale`, non-increasing sequence with a new `message_id` → `replay`.
 9. Rate limits.
 10. Forward (relay) or apply (receiver). Receivers additionally check state: e.g. TV ignores `level`/`window.result` for a window or attempt that is not the currently open one (`ack ignored_stale`), and the phone ignores commands for an ended session.
 
@@ -185,3 +187,14 @@ Per-attempt states: `capturing` → `capture_closed` → (`response_pending` →
 | Credentials | 32 random bytes base64url (43 chars), 12 h |
 | Room | 12 h absolute; closed after 30 min with no connections |
 | Heartbeat | `ping` every 10 s; peer unknown after 25 s |
+
+## 8. Revision 2 clarifications (2026-10-05)
+
+Recorded after the protocol package review; the package already implements these readings.
+
+1. Room binding rule added to §1 (there is no room column in the §3 tables).
+2. Authenticated `producer_generation` values start at 1; 0 is reserved for pre-auth and relay-originated messages.
+3. Duplicates are dropped silently by the relay (no `ack` from the relay; `ack` remains a TV↔phone message). ADR-0003 §10 is amended to match.
+4. `acked_message_id` and `ref_message_id` must match the `message_id` pattern; an unparsable offending id is reported as `null`.
+5. Ranges not stated in revision 1: result dBFS fields −140…20; frame counts 0…700; durations 0…35000 ms; `valid` is true exactly when `invalid_reason` is null; `sample_rate` 1…384000; `channel_count` integer 1…64; vowel `max_duration_ms` 1000…30000.
+6. §1 wording fix for control characters.
