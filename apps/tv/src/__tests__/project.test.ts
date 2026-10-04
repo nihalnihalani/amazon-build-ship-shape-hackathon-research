@@ -74,9 +74,12 @@ describe('versions and pins (ADR-0007)', () => {
   });
 
   it('has the scripts the integrator needs', () => {
-    for (const name of ['start', 'test', 'typecheck', 'build:debug', 'build:release', 'build:packages', 'bundle:js']) {
+    for (const name of ['start', 'test', 'typecheck', 'build:debug', 'build:release', 'build:packages', 'bundle:js', 'check:bundle']) {
       expect(pkg.scripts[name]).toBeDefined();
     }
+    // Metro's transform cache is not keyed by Babel config or environment: a release bundle must reset it.
+    expect(pkg.scripts['bundle:js']).toContain('--reset-cache');
+    expect(pkg.scripts['bundle:js']).toContain('--dev false');
   });
 });
 

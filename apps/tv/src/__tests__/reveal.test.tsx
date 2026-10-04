@@ -1,5 +1,5 @@
 import { Path } from '@amazon-devices/react-native-svg';
-import { revealBelow, revealNotScored, revealReached, vowelResult } from '../__fixtures__/views';
+import { revealBelow, revealNotScored, revealReached, revealUnqualified, vowelResult } from '../__fixtures__/views';
 import { allStrings, renderView, svgElements } from './testUtils';
 
 function glyphOf(screen: ReturnType<typeof renderView>) {
@@ -48,6 +48,19 @@ describe('reveal: text label plus shape, never colour alone', () => {
     expect(strings).toContain("Above today's band");
     expect(strings).toContain('You rated: Felt normal');
     expect(strings).toContain('Listener: Heard');
+  });
+
+  it('renders the "(unqualified phone)" suffix exactly as the store puts it in the label (the UI only renders it)', () => {
+    const screen = renderView(revealUnqualified);
+    expect(screen.getByTestId('result-label').props.children).toBe('Reached the far side (unqualified phone)');
+    const result = screen.getByTestId('result');
+    expect(result.props.accessibilityLabel ?? result.props['aria-label']).toBe('Reached the far side (unqualified phone)');
+    // The UI adds nothing of its own to the label.
+    expect(allStrings(screen.toJSON()).filter((s) => s.includes('unqualified'))).toHaveLength(2);
+  });
+
+  it('does not add the suffix when the store did not', () => {
+    expect(allStrings(renderView(revealReached).toJSON()).join(' ')).not.toContain('unqualified');
   });
 
   it('adds words for a borderline result', () => {

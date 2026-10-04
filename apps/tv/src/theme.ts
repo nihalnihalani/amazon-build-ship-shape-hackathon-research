@@ -41,8 +41,10 @@ export const layout = {
   pageVerticalPadding: 48,
   focusRing: 6,
   focusScale: 1.05,
-  /** Full-size dial (sustained sound, calibration). */
+  /** Full-size dial (the component default; no screen uses it once body text, banner and controls share the screen). */
   arcRadius: 300,
+  /** Dial for the sustained sound, calibration and quiet check screens, which carry body text, a banner and controls. */
+  arcRadiusMedium: 240,
   /** Compact dial used on the phrase card so phrase, dial and timer fit one 1080 px screen. */
   arcRadiusCompact: 180,
   arcStroke: 36,

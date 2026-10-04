@@ -38,5 +38,5 @@ export default defineConfig({
     global: 'globalThis',
   },
   server: { fs: { allow: [resolve(here, '../../..')] } },
-  build: { outDir: 'dist', sourcemap: true },
+  build: { outDir: 'dist', sourcemap: true, chunkSizeWarningLimit: 900 },
 });

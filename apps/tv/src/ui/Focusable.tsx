@@ -13,13 +13,17 @@ export interface FocusableProps {
   onPress: (id: ActionId) => void;
   /** nativeIDs of static text VoiceView should read with this control (Vega accessibilityDescribedBy). */
   describedBy?: string[];
+  /** Visible text when it should differ from the accessible label (for example a bare number). */
+  text?: string;
+  /** Large number style used by the join-confirmation choices (all choices share one style). */
+  large?: boolean;
 }
 
 /**
  * The one focusable control used everywhere. Focus is shown with a 6 px ring and a 1.05 scale (shape and
  * size, not colour alone). Every control carries a role, a label and, when the view provides one, a hint.
  */
-export function Focusable({ action, preferred, onPress, describedBy }: FocusableProps): React.ReactElement {
+export function Focusable({ action, preferred, onPress, describedBy, text, large = false }: FocusableProps): React.ReactElement {
   const ui = useUiScale();
   const [focused, setFocused] = useState(false);
   const disabled = action.disabled === true;
@@ -40,8 +44,8 @@ export function Focusable({ action, preferred, onPress, describedBy }: Focusable
         if (!disabled) onPress(action.id);
       }}
       style={{
-        minWidth: ui.size(320),
-        minHeight: ui.size(104),
+        minWidth: ui.size(large ? 280 : 320),
+        minHeight: ui.size(large ? 180 : 104),
         paddingHorizontal: ui.space(40),
         paddingVertical: ui.space(20),
         marginRight: ui.space(32),
@@ -55,8 +59,14 @@ export function Focusable({ action, preferred, onPress, describedBy }: Focusable
         transform: [{ scale: focused ? layout.focusScale : 1 }],
       }}
     >
-      <AppText kind="label" center color={action.destructive === true ? colors.danger : colors.text}>
-        {action.label}
+      <AppText
+        kind="label"
+        baseSize={large ? 96 : undefined}
+        bold={large}
+        center
+        color={action.destructive === true ? colors.danger : colors.text}
+      >
+        {text ?? action.label}
       </AppText>
     </Pressable>
   );

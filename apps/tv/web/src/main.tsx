@@ -3,6 +3,7 @@
 //                             Pressed controls and remote keys are recorded in window.__atr.dispatched.
 //   ?mode=store               the real session store (fixture mode, in-memory data) when @atr/session-core
 //                             exports createSessionStore; otherwise a message says it is unavailable.
+// ?screenReader=1 starts with the simulated screen reader on (window.__atr.setScreenReader toggles it).
 // The 1920 x 1080 TV canvas is scaled to fit the window. ?scale=1.5 simulates a larger UI-scale setting.
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -11,11 +12,16 @@ import { AppWithStore } from '../../src/App';
 import { resolveConfig } from '../../src/config';
 import { createRuntime } from '../../src/runtime/createRuntime';
 import { allScreens } from '../../src/__fixtures__/views';
+import { setPreviewScreenReader } from './shims/kepler-a11y';
 
 interface PreviewApi {
   dispatched: TvInput[];
   screens: string[];
   setScreen(name: string): void;
+  /** Show an arbitrary view (layout stress tests). */
+  setView(view: TvView): void;
+  /** Simulates the platform screen reader turning on or off (the app reports it to the store as an a11y input). */
+  setScreenReader(enabled: boolean): void;
   view(): TvView;
 }
 
@@ -132,7 +138,14 @@ function FixturePreview(): React.ReactElement {
   );
 
   React.useEffect(() => {
-    window.__atr = { dispatched: dispatched.current, screens: names, setScreen: select, view: () => store.getView() };
+    window.__atr = {
+      dispatched: dispatched.current,
+      screens: names,
+      setScreen: select,
+      setView: (view) => store.setView(view),
+      setScreenReader: setPreviewScreenReader,
+      view: () => store.getView(),
+    };
   }, [names, select, store]);
 
   return (

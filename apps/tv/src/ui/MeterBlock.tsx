@@ -6,7 +6,15 @@ import { ArcMeter } from './ArcMeter';
  * Mounts the arc ONLY when the view carries a meter. The session core removes the meter from the view for
  * hidden first attempts, so in that case nothing meter-related exists in the tree.
  */
-export function MeterBlock({ view, radius }: { view: TvView; radius?: number }): React.ReactElement | null {
+export function MeterBlock({
+  view,
+  radius,
+  layout,
+}: {
+  view: TvView;
+  radius?: number;
+  layout?: 'stacked' | 'side';
+}): React.ReactElement | null {
   if (view.meter === null) return null;
-  return <ArcMeter meter={view.meter} capturing={view.capturing} radius={radius} />;
+  return <ArcMeter meter={view.meter} capturing={view.capturing} radius={radius} layout={layout} />;
 }

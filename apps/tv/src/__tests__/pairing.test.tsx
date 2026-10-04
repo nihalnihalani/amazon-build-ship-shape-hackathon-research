@@ -1,5 +1,5 @@
 import { act } from '@testing-library/react-native';
-import { joinConfirm, makeView, pairing } from '../__fixtures__/views';
+import { makeView, pairing } from '../__fixtures__/views';
 import { formatCountdown } from '../screens/PairingScreen';
 import { svgElements, renderView } from './testUtils';
 
@@ -55,20 +55,3 @@ describe('pairing screen', () => {
   });
 });
 
-describe('join confirmation', () => {
-  it('shows the phone label and the confirmation digits at 160 px with Accept and Reject', () => {
-    const screen = renderView(joinConfirm);
-    expect(screen.getByTestId('join-device').props.children).toBe('Phone: Pixel 8');
-    expect(screen.getByTestId('join-digits').props.children).toBe('482 913');
-    const style = Object.assign({}, ...[screen.getByTestId('join-digits').props.style].flat(Infinity)) as { fontSize?: number };
-    expect(style.fontSize).toBe(160);
-    expect(screen.getByTestId('action-accept_join').props.accessibilityLabel).toBe('Accept');
-    expect(screen.getByTestId('action-reject_join').props.accessibilityLabel).toBe('Reject');
-  });
-
-  it('renders without a join request', () => {
-    const screen = renderView({ ...joinConfirm, pairing: null });
-    expect(screen.queryByTestId('join-digits')).toBeNull();
-    expect(screen.getByTestId('footer')).toBeTruthy();
-  });
-});

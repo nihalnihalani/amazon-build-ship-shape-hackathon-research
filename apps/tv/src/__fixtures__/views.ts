@@ -84,15 +84,20 @@ export const joinConfirm = makeView({
   screen: 'join_confirm',
   stage: 'pairing',
   title: 'A phone wants to join',
-  body: ['Check that the digits match the phone, then accept.'],
+  body: ['This text is ignored: the UI owns the wording of this prompt.'],
   link: 'connected',
   pairing: {
     code: 'ACDEFH',
     codeExpiresAt: null,
     qrPayload: null,
-    joinRequest: { deviceLabel: 'Pixel 8', confirmDigits: '482 913' },
+    joinRequest: { deviceLabel: 'Pixel 8', choices: ['42', '17', '86'] },
   },
-  actions: [action('reject_join', 'Reject'), action('accept_join', 'Accept')],
+  actions: [
+    action('pick_choice_1', 'Number 42'),
+    action('pick_choice_2', 'Number 17'),
+    action('pick_choice_3', 'Number 86'),
+    action('reject_join', 'Reject'),
+  ],
   preferredAction: 'reject_join',
 });
 
@@ -198,6 +203,25 @@ export const phraseActiveVisible = makeView({
   labels: ['Relative level, this session only'],
 });
 
+/** A visible attempt with a banner and a cue chip arriving during the window: both must be visual only (A8-01). */
+export const phraseCapturingBannerAndCue = makeView({
+  screen: 'phrase',
+  stage: 'phrase_active',
+  title: 'Say the phrase',
+  announcement: 'This must never be spoken while capturing',
+  capturing: true,
+  mic: 'measuring',
+  link: 'connected',
+  phrase: { ...PHRASE, position: 2 },
+  timer: { elapsedMs: 3000, maxMs: 30000, label: 'Phrase window' },
+  meter: { levelRelDb: 12.5, bandRelDb: 9, active: true, caption: 'Relative level, this session only' },
+  banner: { kind: 'warning', text: 'The room is getting noisy' },
+  cue: { text: 'Louder', expiresAt: Date.now() + 60_000 },
+  actions: [action('stop_early', 'Stop'), action('cancel', 'Cancel')],
+  preferredAction: 'stop_early',
+  labels: ['Relative level, this session only'],
+});
+
 /** A hidden first attempt: the view carries NO meter, NO result and NO level-dependent text. */
 export const phraseActiveHidden = makeView({
   screen: 'phrase',
@@ -260,6 +284,23 @@ export const revealReached = makeView({
     speakerRating: 'Felt normal',
   },
   actions: [action('next_phrase', 'Next phrase'), action('try_again', 'Try again'), action('finish_early', 'Finish early')],
+  preferredAction: 'next_phrase',
+});
+
+export const revealUnqualified = makeView({
+  screen: 'reveal',
+  stage: 'reveal',
+  title: 'Result',
+  phrase: PHRASE,
+  result: {
+    label: 'Reached the far side (unqualified phone)',
+    tone: 'reached',
+    detail: null,
+    borderline: false,
+    listener: null,
+    speakerRating: null,
+  },
+  actions: [action('next_phrase', 'Next phrase'), action('try_again', 'Try again')],
   preferredAction: 'next_phrase',
 });
 
@@ -458,9 +499,11 @@ export const allScreens: ReadonlyArray<readonly [string, TvView]> = [
   ['phrase_ready', phraseReady],
   ['phrase_active_visible', phraseActiveVisible],
   ['phrase_active_hidden', phraseActiveHidden],
+  ['phrase_capturing_banner_cue', phraseCapturingBannerAndCue],
   ['response_rating', responseRating],
   ['response_listener_waiting', responseListenerWaiting],
   ['reveal_reached', revealReached],
+  ['reveal_unqualified', revealUnqualified],
   ['reveal_below', revealBelow],
   ['reveal_not_scored', revealNotScored],
   ['summary', summary],

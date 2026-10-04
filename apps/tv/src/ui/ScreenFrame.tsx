@@ -11,6 +11,7 @@ import { Banner } from './Banner';
 import { Footer } from './Footer';
 import { StatusRow } from './StatusRow';
 import { useUiScale } from './scale';
+import { statusA11y } from './visualOnly';
 
 export interface ScreenProps {
   view: TvView;
@@ -25,8 +26,12 @@ export interface ScreenFrameProps extends ScreenProps {
   bodyKind?: TextKind;
   /** Hide the phone microphone / relay chips (used by the dialog, about and diagnostics screens). */
   hideStatus?: boolean;
-  /** The caller renders its own controls (dialog). */
+  /** The caller renders its own controls (dialog, join confirmation). */
   hideActions?: boolean;
+  /** UI-owned heading used instead of view.title (security-critical prompts whose wording the UI guarantees). */
+  titleOverride?: string;
+  /** Do not render view.body (the caller renders its own text). */
+  hideBody?: boolean;
 }
 
 /**
@@ -42,6 +47,8 @@ export function ScreenFrame({
   bodyKind = 'body',
   hideStatus = false,
   hideActions = false,
+  titleOverride,
+  hideBody = false,
 }: ScreenFrameProps): React.ReactElement {
   const ui = useUiScale();
   const orientation = !view.capturing && view.actions.length > 1 ? text.orientationActions : undefined;
@@ -57,11 +64,11 @@ export function ScreenFrame({
       }}
     >
       <AppText testID="screen-title" nativeID="atr-title" kind="title" role={view.capturing ? undefined : 'heading'}>
-        {view.title}
+        {titleOverride ?? view.title}
       </AppText>
       {hideStatus ? null : (
         <View style={{ marginTop: ui.space(12) }}>
-          <StatusRow mic={view.mic} link={view.link} />
+          <StatusRow mic={view.mic} link={view.link} capturing={view.capturing} />
         </View>
       )}
       {view.labels.length > 0 ? (
@@ -69,9 +76,7 @@ export function ScreenFrame({
           {view.labels.map((label) => (
             <View
               key={label}
-              accessible
-             
-              aria-label={label}
+              {...statusA11y(view.capturing, label)}
               style={{ borderWidth: 2, borderColor: colors.neutral, borderRadius: ui.size(12), paddingHorizontal: ui.space(16), marginRight: ui.space(16), marginBottom: ui.space(8) }}
             >
               <AppText kind="body" color={colors.neutral}>
@@ -81,9 +86,9 @@ export function ScreenFrame({
           ))}
         </View>
       ) : null}
-      {view.banner !== null ? <Banner banner={view.banner} /> : null}
+      {view.banner !== null ? <Banner banner={view.banner} capturing={view.capturing} /> : null}
       <View testID="body" style={{ marginTop: ui.space(16) }}>
-        {view.body.map((line, index) => (
+        {(hideBody ? [] : view.body).map((line, index) => (
           <AppText
             key={index + ':' + line}
             nativeID={'atr-body-' + index}
@@ -105,6 +110,7 @@ export function ScreenFrame({
           onAction={onAction}
           direction={actionsDirection}
           describedBy={describedBy}
+          capturing={view.capturing}
         />
       )}
       <Announcer announcement={view.announcement} capturing={view.capturing} />
