@@ -1,6 +1,10 @@
 /**
  * Contract between the authoritative TV session core (@atr/session-core) and the
- * TV user interface (apps/tv). Frozen at revision 1 by the lead (2026-10-05).
+ * TV user interface (apps/tv). Frozen at revision 2 by the lead (2026-10-05).
+ *
+ * Revision 2 (docs/adr/AMENDMENTS-REV2.md): number-matching join confirmation (A3-06) replaces
+ * accept_join; the correct confirm digits are no longer in the view. New input { kind: 'a11y' }
+ * (A8-02). The wire input carries the raw text frame only (PK-09).
  *
  * The UI renders only `TvView` and sends only `TvInput`. Hidden-meter and
  * reveal guarantees are enforced here: when a value must not be shown, it is
@@ -57,7 +61,9 @@ export type ActionId =
   | 'open_settings'
   | 'pair_phone'
   | 'cancel'
-  | 'accept_join'
+  | 'pick_choice_1'
+  | 'pick_choice_2'
+  | 'pick_choice_3'
   | 'reject_join'
   | 'refresh_code'
   | 'begin_quiet_check'
@@ -208,7 +214,12 @@ export interface TvView {
     code: string | null;
     codeExpiresAt: number | null;
     qrPayload: string | null;
-    joinRequest: { deviceLabel: string; confirmDigits: string } | null;
+    /**
+     * Number matching (A3-06): three two-digit choices in display order, exactly one of which equals
+     * the digits shown on the phone. The view never says which one. deviceLabel is untrusted text
+     * chosen by the joining client; render it as "Name the phone gave: …".
+     */
+    joinRequest: { deviceLabel: string; choices: [string, string, string] } | null;
   } | null;
   mic: MicView;
   link: LinkView;
@@ -235,7 +246,10 @@ export type TvInput =
   | { kind: 'ui'; action: ActionId }
   | { kind: 'timer'; now: number }
   | { kind: 'transport'; state: LinkView; detail?: string }
-  | { kind: 'wire'; message: unknown }
+  /** Raw text frame exactly as received; the store parses it with parseWireMessage. Objects are refused. */
+  | { kind: 'wire'; message: string }
+  /** Screen reader state read from the platform (read-only); lengthens the quiet lead (A8-02). */
+  | { kind: 'a11y'; screenReader: boolean }
   | { kind: 'app'; event: 'launched' | 'backgrounded' | 'foregrounded' };
 
 /** Storage port (implemented by AsyncStorage on Vega, memory in tests). */
