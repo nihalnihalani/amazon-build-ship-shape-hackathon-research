@@ -22,9 +22,17 @@ describe('full happy journey (pair, mic, quiet, calibration, vowel, 10 phrases, 
     expect(h.view.pairing?.qrPayload).toBe(`https://relay.example.test/#code=${PAIRING_CODE}`);
     h.joinRequested('Rohan phone', '47');
     expect(h.view.screen).toBe('join_confirm');
-    expect(h.view.pairing?.joinRequest).toEqual({ deviceLabel: 'Rohan phone', confirmDigits: '47' });
-    expect(h.view.preferredAction).toBe('accept_join');
-    h.ui('accept_join');
+    // number matching (A3-06): three distinct two-digit choices, one of them the digits the phone shows; Reject preferred
+    const join = h.view.pairing?.joinRequest;
+    expect(join?.deviceLabel).toBe('Rohan phone');
+    expect(join?.choices).toHaveLength(3);
+    expect(new Set(join?.choices).size).toBe(3);
+    expect(join?.choices.filter((c) => c === '47')).toHaveLength(1);
+    for (const c of join?.choices ?? []) expect(c).toMatch(/^[0-9]{2}$/);
+    expect(JSON.stringify(h.view)).not.toContain('confirmDigits');
+    expect(h.view.body.join(' ')).toContain('Name the phone gave: Rohan phone');
+    expect(h.view.preferredAction).toBe('reject_join');
+    h.acceptJoin();
     expect(h.last('join.confirm').payload).toEqual({ join_id: 'j_testjoin000001', decision: 'accept' });
     h.peerState(true);
     expect(h.view.stage).toBe('permission_pending');
@@ -77,7 +85,7 @@ describe('full happy journey (pair, mic, quiet, calibration, vowel, 10 phrases, 
     expect(h.last('window.stop').payload).toEqual({ reason: 'early_stop' });
     h.answerWindow({ rel: 20, longest: 14200, activeMs: 14500 });
     expect(h.view.stage).toBe('vowel_result');
-    expect(h.view.result?.label).toBe("Reached today's relative level band");
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
     expect(h.view.result?.detail).toBe('Voice-activity duration: 14.2 s');
     h.ui('continue');
     expect(h.view.stage).toBe('phrase_ready');
@@ -91,7 +99,7 @@ describe('full happy journey (pair, mic, quiet, calibration, vowel, 10 phrases, 
       h.runPhrase({ rating: 'felt_normal', rel: i % 4 === 0 ? 10 : 25 });
       if ([3, 6, 9].includes(i)) hiddenSeen.push(i);
       expect(h.view.stage).toBe('reveal');
-      expect(h.view.result?.label).toBe(i % 4 === 0 ? "Below today's relative level band" : "Reached today's relative level band");
+      expect(h.view.result?.label).toBe(i % 4 === 0 ? "Below today's relative level band (unqualified phone)" : "Reached today's relative level band (unqualified phone)");
       h.advance(5000); // no auto-advance between phrases
       expect(h.view.stage).toBe('reveal');
       h.ui('next_phrase');
@@ -143,7 +151,8 @@ describe('full happy journey (pair, mic, quiet, calibration, vowel, 10 phrases, 
     h.ui('confirm_destructive');
     await h.flush();
     expect(Object.keys(h.storage.dump())).toEqual(['other:app:key']);
-    expect(h.view.banner?.text).toBe('All local practice data was deleted.');
+    expect(h.view.banner?.text).toContain('All local practice data was deleted.');
+    expect(h.view.banner?.text).toContain('Relay cleanup');
     h.back();
     expect(h.view.screen).toBe('home');
     expect(h.view.body.join(' ')).toContain('No sessions saved');
@@ -207,7 +216,7 @@ describe('full happy journey (pair, mic, quiet, calibration, vowel, 10 phrases, 
     h.transportState('connected');
     h.roomCreated();
     h.joinRequested();
-    h.ui('accept_join');
+    h.acceptJoin();
     h.peerState(true);
     expect(h.view.screen).toBe('home');
     expect(h.view.banner?.text).toContain('Phone paired');

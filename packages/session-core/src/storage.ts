@@ -4,7 +4,16 @@
  * codes, no level streams and no audio are ever written.
  */
 
-import { DAY_MS, RETENTION_DAYS, SCHEMA_VERSION, STORAGE_PREFIX } from './constants.js';
+import {
+  CHECKPOINT_MAX_AGE_MS,
+  DAY_MS,
+  MAX_PHRASES,
+  QUIET_LEAD_MAX_MS,
+  QUIET_LEAD_MIN_MS,
+  RETENTION_DAYS,
+  SCHEMA_VERSION,
+  STORAGE_PREFIX,
+} from './constants.js';
 import type { StoragePort } from './contract.js';
 import type {
   AttemptRecord,
@@ -20,12 +29,19 @@ import { validatePhraseBank, validateText } from './text.js';
 
 export type MeasurementMode = 'relative_band' | 'listener_edition';
 
+/** A9-02: qualification of the phone microphone path. Starts as not_run until T04A records a result. */
+export type Qualification = 'not_run' | 'passed' | 'failed';
+
 export interface Settings {
   familyMode: boolean;
   /** Last cue word seen from the phone (display only; the phone owns the setting). */
   cueWord: string | null;
   measurementMode: MeasurementMode;
   onboarded: boolean;
+  qualification: Qualification;
+  /** Optional overrides of the quiet lead (A8-02); null uses the built-in values. Recorded in Diagnostics. */
+  quietLeadMs: number | null;
+  quietLeadScreenReaderMs: number | null;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -33,6 +49,9 @@ export const DEFAULT_SETTINGS: Settings = {
   cueWord: null,
   measurementMode: 'relative_band',
   onboarded: false,
+  qualification: 'not_run',
+  quietLeadMs: null,
+  quietLeadScreenReaderMs: null,
 };
 
 export const KEYS = {
@@ -55,10 +74,14 @@ export interface Checkpoint {
   savedAt: number;
   /** Stage the session was in when saved (informational). */
   stage: string;
-  /** Session bank used by that session. */
-  phrases: string[];
+  /** Number of phrase positions in the session. Phrase text is never stored here (A5-04). */
+  phraseCount: number;
   /** 0-based index of the phrase position to continue from. */
   phraseIdx: number;
+  /**
+   * Counts and finished attempts only (A4-02): an attempt that was not revealed has no verdict, rating,
+   * listener answer or window numbers in this record.
+   */
   record: SessionRecord;
 }
 
@@ -152,6 +175,9 @@ export function migrateV0ToV1(v0: V0Snapshot): V1Snapshot {
       cueWord: validateText(v0.settings.cue, 12),
       measurementMode: 'relative_band',
       onboarded: true,
+      qualification: 'not_run',
+      quietLeadMs: null,
+      quietLeadScreenReaderMs: null,
     },
     phrases: bank.ok ? bank.phrases : null,
     sessions,
@@ -181,8 +207,14 @@ export function migrateSnapshot(raw: unknown): MigrationResult {
 type Obj = Record<string, unknown>;
 const isObject = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const numOrNull = (v: unknown): number | null => (isNumber(v) ? v : null);
-const strOrNull = (v: unknown): string | null => (typeof v === 'string' ? v : null);
+const isInt = (v: unknown, min: number, max: number): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
+const numOrNull = (v: unknown, min: number, max: number): number | null | undefined =>
+  v === null || v === undefined ? null : isNumber(v) && v >= min && v <= max ? v : undefined;
+const reasonOrNull = (v: unknown): string | null | undefined =>
+  v === null || v === undefined ? null : typeof v === 'string' && v.length <= 64 ? v : undefined;
+const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ID_LIKE = /^[A-Za-z0-9_-]{1,64}$/;
 
 const ATTEMPT_STATES: readonly AttemptState[] = [
   'capturing',
@@ -196,18 +228,33 @@ const VERDICTS: readonly Verdict[] = ['reached', 'not_reached', 'unscored'];
 const RATINGS: readonly SpeakerRating[] = ['felt_loud', 'felt_normal', 'skipped'];
 const LISTENERS: readonly ListenerValue[] = ['heard', 'not_heard'];
 const END_REASONS: readonly EndReason[] = ['completed', 'user_exit', 'discarded', 'interrupted'];
+const QUALIFICATIONS: readonly Qualification[] = ['not_run', 'passed', 'failed'];
 
-function pick<T extends string>(v: unknown, set: readonly T[]): T | null {
-  return typeof v === 'string' && (set as readonly string[]).includes(v) ? (v as T) : null;
+/** Strict enum read: undefined means "present but not allowed" (the whole value is then rejected). */
+function enumOrNull<T extends string>(v: unknown, set: readonly T[]): T | null | undefined {
+  if (v === null || v === undefined) return null;
+  return typeof v === 'string' && (set as readonly string[]).includes(v) ? (v as T) : undefined;
 }
 
+/**
+ * Stored values are validated like wire data (A5-05): a value that is out of range or of the wrong type
+ * makes the whole record invalid, and an invalid record is treated as absent.
+ */
 export function parseAttempt(v: unknown): AttemptRecord | null {
   if (!isObject(v)) return null;
-  const state = pick(v.state, ATTEMPT_STATES);
-  if (typeof v.attemptId !== 'string' || typeof v.windowId !== 'string' || state === null) return null;
-  if (!isNumber(v.position) || !isNumber(v.attemptNumber)) return null;
-  const listener =
-    v.listener === 'missing' ? ('missing' as const) : pick(v.listener, LISTENERS);
+  const state = enumOrNull(v.state, ATTEMPT_STATES);
+  if (typeof v.attemptId !== 'string' || !ID_LIKE.test(v.attemptId)) return null;
+  if (typeof v.windowId !== 'string' || !ID_LIKE.test(v.windowId)) return null;
+  if (state === null || state === undefined) return null;
+  if (!isInt(v.position, 1, MAX_PHRASES) || !isInt(v.attemptNumber, 1, 100)) return null;
+  const verdict = enumOrNull(v.verdict, VERDICTS);
+  const rating = enumOrNull(v.rating, RATINGS);
+  const lateListener = enumOrNull(v.lateListener, LISTENERS);
+  const listener = v.listener === 'missing' ? ('missing' as const) : enumOrNull(v.listener, LISTENERS);
+  const reason = reasonOrNull(v.reason);
+  const activeMs = numOrNull(v.activeMs, 0, 60_000);
+  const longestActiveMs = numOrNull(v.longestActiveMs, 0, 60_000);
+  if ([verdict, rating, lateListener, listener, reason, activeMs, longestActiveMs].some((x) => x === undefined)) return null;
   return {
     attemptId: v.attemptId,
     windowId: v.windowId,
@@ -216,62 +263,88 @@ export function parseAttempt(v: unknown): AttemptRecord | null {
     hidden: v.hidden === true,
     state,
     started: v.started === true,
-    verdict: pick(v.verdict, VERDICTS),
-    reason: strOrNull(v.reason),
+    verdict: verdict as Verdict | null,
+    reason: reason as string | null,
     borderline: v.borderline === true,
-    activeMs: numOrNull(v.activeMs),
-    longestActiveMs: numOrNull(v.longestActiveMs),
-    rating: pick(v.rating, RATINGS),
-    listener,
-    lateListener: pick(v.lateListener, LISTENERS),
+    activeMs: activeMs as number | null,
+    longestActiveMs: longestActiveMs as number | null,
+    rating: rating as SpeakerRating | null,
+    listener: listener as ListenerValue | 'missing' | null,
+    lateListener: lateListener as ListenerValue | null,
   };
 }
 
 function parseVowel(v: unknown): VowelRecord | null {
-  if (!isObject(v) || typeof v.windowId !== 'string') return null;
+  if (!isObject(v) || typeof v.windowId !== 'string' || !ID_LIKE.test(v.windowId)) return null;
+  const verdict = enumOrNull(v.verdict, VERDICTS);
+  const reason = reasonOrNull(v.reason);
+  const longest = numOrNull(v.longestActiveMs, 0, 60_000);
+  if (verdict === undefined || reason === undefined || longest === undefined) return null;
   return {
     windowId: v.windowId,
     valid: v.valid === true,
-    reason: strOrNull(v.reason),
-    longestActiveMs: numOrNull(v.longestActiveMs),
-    verdict: pick(v.verdict, VERDICTS),
+    reason,
+    longestActiveMs: longest,
+    verdict,
     borderline: v.borderline === true,
   };
 }
 
 export function parseRecord(v: unknown): SessionRecord | null {
   if (!isObject(v)) return null;
-  if (typeof v.sessionId !== 'string' || typeof v.localDate !== 'string') return null;
-  if (!isNumber(v.startedAt) || !isNumber(v.endedAt) || !Array.isArray(v.attempts)) return null;
+  if (typeof v.sessionId !== 'string' || !ID_LIKE.test(v.sessionId)) return null;
+  if (typeof v.localDate !== 'string' || !LOCAL_DATE.test(v.localDate)) return null;
+  if (!isNumber(v.startedAt) || !isNumber(v.endedAt) || v.startedAt < 0 || v.endedAt < 0) return null;
+  if (!Array.isArray(v.attempts) || v.attempts.length > 200) return null;
   const attempts: AttemptRecord[] = [];
   for (const a of v.attempts) {
     const parsed = parseAttempt(a);
-    if (parsed) attempts.push(parsed);
+    if (!parsed) return null;
+    attempts.push(parsed);
   }
   const vowels: VowelRecord[] = [];
-  if (Array.isArray(v.vowels)) {
+  if (v.vowels !== undefined) {
+    if (!Array.isArray(v.vowels) || v.vowels.length > 200) return null;
     for (const x of v.vowels) {
       const parsed = parseVowel(x);
-      if (parsed) vowels.push(parsed);
+      if (!parsed) return null;
+      vowels.push(parsed);
     }
   }
-  const skipped = Array.isArray(v.skipped) ? v.skipped.filter(isNumber) : [];
+  const skipped: number[] = [];
+  if (v.skipped !== undefined) {
+    if (!Array.isArray(v.skipped) || v.skipped.length > MAX_PHRASES) return null;
+    for (const x of v.skipped) {
+      if (!isInt(x, 1, MAX_PHRASES)) return null;
+      skipped.push(x);
+    }
+  }
+  const endReason = enumOrNull(v.endReason, END_REASONS);
+  const calMarginDb = numOrNull(v.calMarginDb, 0, 140);
+  if (endReason === undefined || calMarginDb === undefined) return null;
+  const phraseCount = v.phraseCount === undefined ? attempts.length : v.phraseCount;
+  const cuesUsed = v.cuesUsed === undefined ? 0 : v.cuesUsed;
+  if (!isInt(phraseCount, 0, MAX_PHRASES) || !isInt(cuesUsed, 0, 3)) return null;
   return {
     sessionId: v.sessionId,
     startedAt: v.startedAt,
     endedAt: v.endedAt,
     localDate: v.localDate,
     complete: v.complete === true,
-    endReason: pick(v.endReason, END_REASONS) ?? 'user_exit',
+    endReason: endReason ?? 'user_exit',
     resumed: v.resumed === true,
     familyMode: v.familyMode === true,
-    phraseCount: isNumber(v.phraseCount) ? v.phraseCount : attempts.length,
-    calMarginDb: numOrNull(v.calMarginDb),
-    cuesUsed: isNumber(v.cuesUsed) ? v.cuesUsed : 0,
+    phraseCount,
+    calMarginDb,
+    cuesUsed,
     attempts,
     vowels,
     skipped,
   };
+}
+
+function leadOrNull(v: unknown): number | null {
+  return isInt(v, QUIET_LEAD_MIN_MS, QUIET_LEAD_MAX_MS) ? v : null;
 }
 
 export function parseSettings(v: unknown): Settings {
@@ -281,19 +354,22 @@ export function parseSettings(v: unknown): Settings {
     cueWord: validateText(v.cueWord, 12),
     measurementMode: v.measurementMode === 'listener_edition' ? 'listener_edition' : 'relative_band',
     onboarded: v.onboarded === true,
+    qualification: enumOrNull(v.qualification, QUALIFICATIONS) ?? 'not_run',
+    quietLeadMs: leadOrNull(v.quietLeadMs),
+    quietLeadScreenReaderMs: leadOrNull(v.quietLeadScreenReaderMs),
   };
 }
 
 export function parseCheckpoint(v: unknown): Checkpoint | null {
-  if (!isObject(v) || v.version !== 1 || !isNumber(v.savedAt) || !isNumber(v.phraseIdx)) return null;
+  if (!isObject(v) || v.version !== 1 || !isNumber(v.savedAt) || v.savedAt < 0) return null;
+  if (!isInt(v.phraseIdx, 0, MAX_PHRASES) || !isInt(v.phraseCount, 1, MAX_PHRASES)) return null;
   const record = parseRecord(v.record);
-  const bank = validatePhraseBank(v.phrases);
-  if (!record || !bank.ok) return null;
+  if (!record) return null;
   return {
     version: 1,
     savedAt: v.savedAt,
-    stage: typeof v.stage === 'string' ? v.stage : 'unknown',
-    phrases: bank.phrases,
+    stage: typeof v.stage === 'string' ? v.stage.slice(0, 32) : 'unknown',
+    phraseCount: v.phraseCount,
     phraseIdx: v.phraseIdx,
     record,
   };
@@ -319,7 +395,14 @@ export interface LoadedData {
   active: Checkpoint | null;
   prunedSessions: number;
   migratedFrom: number | null;
+  /** Stored values that could not be validated and are treated as absent (a delete is offered). */
   corruptKeys: number;
+  /** A crash checkpoint older than the room lifetime was removed on this launch. */
+  staleCheckpointDiscarded: boolean;
+  /** Removing expired summaries failed; they were kept. */
+  pruneFailed: boolean;
+  /** A checkpoint for a session that already has a saved final record was dropped (QA-02). */
+  finishedCheckpointDropped: boolean;
 }
 
 const emptyLoaded = (): LoadedData => ({
@@ -332,6 +415,9 @@ const emptyLoaded = (): LoadedData => ({
   prunedSessions: 0,
   migratedFrom: null,
   corruptKeys: 0,
+  staleCheckpointDiscarded: false,
+  pruneFailed: false,
+  finishedCheckpointDropped: false,
 });
 
 const isAtrKey = (k: string): boolean => k.startsWith(STORAGE_PREFIX);
@@ -402,8 +488,12 @@ export async function loadData(storage: StoragePort, now: number): Promise<Loade
     const activeRaw = await storage.getItem(KEYS.active);
     if (activeRaw !== null) {
       const parsed = parseCheckpoint(safeJson(activeRaw));
-      if (parsed) out.active = parsed;
-      else out.corruptKeys += 1;
+      if (!parsed) out.corruptKeys += 1;
+      else if (now - parsed.savedAt > CHECKPOINT_MAX_AGE_MS) {
+        // A5-03: older than the room lifetime, so it is never offered for resume.
+        await storage.removeItem(KEYS.active);
+        out.staleCheckpointDiscarded = true;
+      } else out.active = parsed;
     }
   }
 
@@ -413,10 +503,27 @@ export async function loadData(storage: StoragePort, now: number): Promise<Loade
   const drop: SessionRecord[] = [];
   for (const record of out.records) (record.endedAt < cutoff ? drop : keep).push(record);
   if (drop.length > 0) {
-    await storage.multiRemove(drop.map((r) => sessionKey(r.sessionId)));
-    out.prunedSessions = drop.length;
+    try {
+      await storage.multiRemove(drop.map((r) => sessionKey(r.sessionId)));
+      out.prunedSessions = drop.length;
+    } catch {
+      // A5-05: a partial or failed removal is surfaced, and the unremoved summaries stay in the list.
+      out.pruneFailed = true;
+      keep.push(...drop);
+    }
   }
   out.records = keep.sort((a, b) => a.endedAt - b.endedAt);
+  // QA-02: a crash between "record saved" and "checkpoint cleared" leaves a checkpoint for a finished session.
+  // A session that already has a complete record, or a record written after the checkpoint, is never offered for resume.
+  if (out.active !== null) {
+    const active = out.active;
+    const saved = out.records.find((r) => r.sessionId === active.record.sessionId);
+    if (saved && (saved.complete || saved.endedAt >= active.savedAt)) {
+      await storage.removeItem(KEYS.active);
+      out.active = null;
+      out.finishedCheckpointDropped = true;
+    }
+  }
   await writeIndex(storage, out.records);
   return out;
 }

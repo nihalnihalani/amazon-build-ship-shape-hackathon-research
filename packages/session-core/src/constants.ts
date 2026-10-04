@@ -25,9 +25,22 @@ export const QUIET_BURST_MAX_DB = 10;
 export const QUIET_FLOOR_MAX_DBFS = -30;
 /** Tolerance for floating point noise at the exact thresholds above. */
 export const DB_EPSILON = 1e-9;
+/** A1-05: a quiet floor below this is a muted or blocked microphone, not a quiet room. */
+export const SILENT_FLOOR_DBFS = -110;
+/** A1-09: the TV allows its own timing this much slack when checking a reported duration. */
+export const DURATION_SLACK_MS = 500;
+/** PK-02 tolerances. */
+export const COVERAGE_TOLERANCE = 0.001;
+export const PRECHECK_DURATION_TOLERANCE_MS = 50;
+export const NONFINITE_MAX_SHARE = 0.05;
 
 /** ADR-0008: wait after the OK press before the first command, so a screen-reader utterance can finish. */
 export const QUIET_LEAD_MS = 1500;
+/** A8-02: with the TV screen reader on, the ready screen carries a fixed script and the lead is this long. */
+export const QUIET_LEAD_SCREEN_READER_MS = 3000;
+/** Bounds for a configured lead (settings), so a bad stored value cannot freeze or skip the quiet lead. */
+export const QUIET_LEAD_MIN_MS = 500;
+export const QUIET_LEAD_MAX_MS = 10_000;
 export const QUIET_CHECK_MS = 5000;
 export const PRE_WINDOW_MS = 2000;
 export const CALIBRATION_WINDOW_MS = 6000;
@@ -54,7 +67,10 @@ export const MAX_PHRASE_CODEPOINTS = 60;
 
 /** ADR-0005. */
 export const SCHEMA_VERSION = 1;
-export const RETENTION_DAYS = 30;
+/** A5-04: 7 days shown plus today. */
+export const RETENTION_DAYS = 8;
+/** A5-03: a crash checkpoint older than the room lifetime is discarded on launch. */
+export const CHECKPOINT_MAX_AGE_MS = 12 * 3_600_000;
 export const HISTORY_DAYS = 7;
 export const DAY_MS = 86_400_000;
 export const STORAGE_PREFIX = 'atr:';

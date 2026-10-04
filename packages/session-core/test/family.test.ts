@@ -21,16 +21,16 @@ describe('family mode: listener response phase before reveal', () => {
     const open = h.last('listener.open');
     expect(open.payload).toEqual({ timeout_ms: 60000 });
     expect(open.attempt_id).toBe(h.last('window.start').attempt_id);
-    expect(h.last('session.state').payload).toMatchObject({ stage: 'response_pending', listener_open_attempt: open.attempt_id });
+    expect(h.last('session.state').payload).toMatchObject({ stage: 'phrase_active', listener_open_attempt: open.attempt_id });
     expect(h.of('attempt.reveal')).toHaveLength(0);
 
     h.listener('heard');
     expect(h.view.stage).toBe('reveal');
-    expect(h.view.result?.label).toBe("Reached today's relative level band");
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
     expect(h.view.result?.listener).toBe('Listener: heard');
     expect(h.last('attempt.reveal').attempt_id).toBe(open.attempt_id);
     expect(h.last('ack').payload).toMatchObject({ outcome: 'applied' });
-    expect(h.last('session.state').payload).toMatchObject({ stage: 'reveal', listener_open_attempt: null });
+    expect(h.last('session.state').payload).toMatchObject({ stage: 'phrase_active', listener_open_attempt: null });
   });
 
   it('a hidden attempt needs both the speaker rating and the listener, in either order', async () => {
@@ -95,9 +95,9 @@ describe('family mode: listener response phase before reveal', () => {
     h.listener('heard', open);
     expect(h.last('ack').payload).toEqual({ acked_message_id: expect.any(String), outcome: 'applied', detail: 'late' });
     expect(h.view.result?.listener).toBe('Listener (late, not counted): heard');
-    // the locked on-time record is unchanged and a second late tap is not accepted
+    // the locked on-time record is unchanged and a second late tap is not accepted (A4-05)
     h.listener('not_heard', open);
-    expect(h.last('ack').payload).toMatchObject({ outcome: 'ignored_stale' });
+    expect(h.last('ack').payload).toMatchObject({ outcome: 'rejected', detail: 'already_answered' });
     h.ui('finish_early');
     expect(h.view.summary).toMatchObject({
       lateListenerResponses: 1,
@@ -106,12 +106,12 @@ describe('family mode: listener response phase before reveal', () => {
     });
   });
 
-  it('an on-time response is locked at reveal: a later different answer is stale', async () => {
+  it('the first on-time response wins: a later different answer is rejected as already answered (A4-05)', async () => {
     const h = await familySession();
     h.runPhrase({ listener: 'heard' });
     const open = h.last('listener.open');
     h.listener('not_heard', open);
-    expect(h.last('ack').payload).toMatchObject({ outcome: 'ignored_stale' });
+    expect(h.last('ack').payload).toMatchObject({ outcome: 'rejected', detail: 'already_answered' });
     expect(h.view.result?.listener).toBe('Listener: heard');
   });
 

@@ -131,7 +131,7 @@ describe('pairing screen and relay link', () => {
     h.transportState('connected');
     h.roomCreated();
     h.joinRequested();
-    h.ui('accept_join');
+    h.acceptJoin();
     h.peerState(true);
     expect(h.view.stage).toBe('permission_pending');
     h.back();
@@ -208,7 +208,7 @@ async function makeHarness() {
   h.transportState('connected');
   h.roomCreated();
   h.joinRequested();
-  h.ui('accept_join');
+  h.acceptJoin();
   h.peerState(true);
   return h;
 }

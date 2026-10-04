@@ -1,7 +1,7 @@
 /**
  * Wire boundary for the TV session core: a thin wrapper over @atr/protocol.
  *
- *   - parseInbound(raw, now) : validate a frame or object with the shared validators, then apply the
+ *   - parseInbound(raw, now) : validate a text frame with the shared validators, then apply the
  *                              TV's direction rule (only phone- and relay-originated messages are accepted)
  *   - Outbox                 : MessageFactory (role 'tv') plus the TV's identity mapping
  *
@@ -10,7 +10,7 @@
  * below (camelCase `ids`, protocol payloads) and turned into envelopes by the Outbox.
  */
 
-import { MessageFactory, isAllowedSender, parseWireMessage, specFor, validateMessageObject } from '@atr/protocol';
+import { MessageFactory, isAllowedSender, parseWireMessage, specFor } from '@atr/protocol';
 import type {
   IdFactory,
   MessageIds,
@@ -69,15 +69,13 @@ export type ParseResult =
   | { ok: false; code: string; detail: string };
 
 /**
- * Validates one inbound message with @atr/protocol (text frames and already-decoded objects), using the
- * TV clock for the timestamp sanity check, then keeps only messages the TV may receive: sent by the phone
- * (forwarded to the TV) or originated by the relay for the TV.
+ * Validates one inbound text frame with @atr/protocol (PK-09: receivers parse raw text only, so a decoded
+ * object is refused), using the TV clock for the timestamp sanity check, then keeps only messages the TV may
+ * receive: sent by the phone (forwarded to the TV) or originated by the relay for the TV.
  */
 export function parseInbound(raw: unknown, now: number): ParseResult {
-  const plain =
-    typeof raw === 'object' && raw !== null && (Object.getPrototypeOf(raw) === Object.prototype || Object.getPrototypeOf(raw) === null);
-  // Text frames and plain decoded objects are validated; anything else (typed arrays, buffers, numbers) is binary.
-  const result = plain ? validateMessageObject(raw, { now }) : parseWireMessage(raw, { now });
+  if (typeof raw !== 'string') return { ok: false, code: 'binary_rejected', detail: 'only text frames are accepted' };
+  const result = parseWireMessage(raw, { now });
   if (!result.ok) return { ok: false, code: result.code, detail: result.detail };
   const m = result.message;
   const role = m.sender_role;

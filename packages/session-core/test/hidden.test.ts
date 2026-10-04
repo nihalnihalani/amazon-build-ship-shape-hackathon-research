@@ -62,7 +62,7 @@ describe('hidden first attempt at positions 3, 6, 9', () => {
       for (const v of h.views) if (v.capturing) expect(v.announcement).toBeNull();
 
       // after reveal the result is present with a text label and the speaker's own rating
-      expect(h.view.result?.label).toBe("Reached today's relative level band");
+      expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
       expect(h.view.result?.speakerRating).toBe('You felt: loud');
       expect(h.view.labels).toContain(LABEL_RELATIVE);
     });
@@ -109,7 +109,7 @@ describe('hidden first attempt at positions 3, 6, 9', () => {
     h.advance(10 * 60_000);
     expect(h.view.stage).toBe('response_pending');
     expect(h.actionIds()).toEqual(['rate_felt_loud', 'rate_felt_normal', 'rate_skip']);
-    expect(h.view.title).toBe('How loud did that feel?');
+    expect(h.view.title).toBe('How did that feel?');
   });
 
   it('a retry gets new window and attempt ids, a visible meter, and the first attempt alone counts as blind', async () => {
@@ -136,7 +136,7 @@ describe('hidden first attempt at positions 3, 6, 9', () => {
     h.answerWindow({ rel: 5 }, retry);
     // visible retry: no rating requested, reveal immediately
     expect(h.view.stage).toBe('reveal');
-    expect(h.view.result?.label).toBe("Below today's relative level band");
+    expect(h.view.result?.label).toBe("Below today's relative level band (unqualified phone)");
     expect(h.view.phrase?.attemptNumber).toBe(2);
     h.ui('finish_early');
     // blind count uses the first attempt only; the visible retry never replaces it
@@ -144,15 +144,19 @@ describe('hidden first attempt at positions 3, 6, 9', () => {
     expect(h.view.summary?.hiddenRatings.feltNormal).toBe(1);
   });
 
-  it('an invalid blind attempt reveals as Not scored with its reason and the retry shows the meter', async () => {
+  it('an invalid blind attempt waits behind the neutral prompt, reveals as Not scored with its reason, and the retry shows the meter', async () => {
     const h = await boot();
     await toPosition(h, 3);
     h.runPhrase({ valid: false, reason: 'no_voice' });
+    // A4-01: nothing says "not scored" or why before the speaker has rated
+    expect(h.view.stage).toBe('response_pending');
+    expect(h.view.result).toBeNull();
+    expect(h.view.title).toBe('How did that feel?');
+    h.ui('rate_felt_normal');
     expect(h.view.stage).toBe('reveal');
     expect(h.view.result?.label).toBe('Not scored');
     expect(h.view.result?.tone).toBe('not_scored');
-    // no reveal message and no listener controls for an unscored attempt
-    expect(h.of('attempt.reveal').filter((m) => m.attempt_id === h.last('window.start').attempt_id)).toHaveLength(0);
+    expect(h.view.result?.speakerRating).toBe('You felt: normal');
     expect(h.actionIds()).toEqual(['try_again', 'skip_phrase', 'finish_early']);
     h.ui('try_again');
     h.beginAndLead('begin_phrase');

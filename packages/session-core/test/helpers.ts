@@ -4,6 +4,7 @@
  * The envelope shapes here are written from docs/PROTOCOL.md, independently of src/wire.ts.
  */
 
+import { quantizeDb } from '@atr/protocol';
 import { createMemoryStorage, createSessionStore } from '../src/index.js';
 import type {
   ActionId,
@@ -20,6 +21,9 @@ export const ROOM = 'r_testroom_0000000001';
 export const CREDENTIAL = 'C'.repeat(43);
 export const PAIRING_CODE = 'ACDEFH';
 export const FLOOR = -50;
+/** The credential the relay hands out for the next resume (A3-07 rotation). */
+export const NEXT_CREDENTIAL = 'N'.repeat(43);
+export const db = (x: number): number => quantizeDb(x);
 
 export class FakeClock {
   t = T0;
@@ -70,6 +74,10 @@ export class FakeTransport {
 export interface FlakyStorage extends StoragePort {
   dump(): Record<string, string>;
   failSetFor: Set<string>;
+  /** Fail every write whose key starts with this prefix. */
+  failSetPrefix: string | null;
+  /** After this key is written, every later write and removal is silently lost (a crash). */
+  dieAfterWriteOf: string | null;
   failMultiRemove: boolean;
   /** When true, multiRemove silently removes nothing (a lying store). */
   ignoreMultiRemove: boolean;
@@ -78,23 +86,31 @@ export interface FlakyStorage extends StoragePort {
 
 export function createFlakyStorage(initial?: Record<string, string>): FlakyStorage {
   const base = createMemoryStorage(initial);
+  let dead = false;
   const flaky: FlakyStorage = {
     failSetFor: new Set(),
+    failSetPrefix: null,
+    dieAfterWriteOf: null,
     failMultiRemove: false,
     ignoreMultiRemove: false,
     setCalls: [],
     dump: () => base.dump(),
     getItem: (k) => base.getItem(k),
     getAllKeys: () => base.getAllKeys(),
-    removeItem: (k) => base.removeItem(k),
+    removeItem: (k) => (dead ? Promise.resolve() : base.removeItem(k)),
     setItem: (k, v) => {
       flaky.setCalls.push(k);
-      if (flaky.failSetFor.has(k)) return Promise.reject(new Error('disk full'));
-      return base.setItem(k, v);
+      if (dead) return Promise.resolve();
+      if (flaky.failSetFor.has(k) || (flaky.failSetPrefix !== null && k.startsWith(flaky.failSetPrefix))) {
+        return Promise.reject(new Error('disk full'));
+      }
+      const done = base.setItem(k, v);
+      if (flaky.dieAfterWriteOf === k) dead = true;
+      return done;
     },
     multiRemove: (keys) => {
       if (flaky.failMultiRemove) return Promise.reject(new Error('remove failed'));
-      if (flaky.ignoreMultiRemove) return Promise.resolve();
+      if (flaky.ignoreMultiRemove || dead) return Promise.resolve();
       return base.multiRemove(keys);
     },
   };
@@ -126,6 +142,10 @@ export interface HarnessOptions {
   seed?: Record<string, string>;
   relayUrl?: string;
   noBoot?: boolean;
+  /** Seed for the deterministic byte source (identifiers and number-matching decoys). */
+  randomSeed?: number;
+  /** Replaces the byte source entirely (to observe or degrade it). */
+  randomBytes?: (n: number) => Uint8Array;
 }
 
 type Json = Record<string, unknown>;
@@ -137,6 +157,8 @@ export interface PhraseOpts {
   reason?: string | null;
   activeMs?: number;
   coverage?: number;
+  /** Reported window length (ms); the TV rejects one longer than commanded plus 500 ms. */
+  duration?: number;
   /** Precheck floor relative to the session floor. Default 0. */
   rise?: number;
   /** Stop with OK before the window ends. */
@@ -181,7 +203,7 @@ export class Harness {
       storage: this.storage,
       transport: this.transport,
       relayUrl: this.opts.relayUrl ?? 'https://relay.example.test/ws',
-      randomBytes: seededBytes(),
+      randomBytes: this.opts.randomBytes ?? seededBytes(this.opts.randomSeed),
       appVersion: '0.1.0-test',
       platform: 'test',
       fixtureMode: this.opts.fixtureMode,
@@ -219,8 +241,12 @@ export class Harness {
   transportState(state: LinkView): void {
     this.store.dispatch({ kind: 'transport', state });
   }
+  /** The contract takes the raw text frame; tests may also pass non-text values to prove they are refused. */
   wire(message: unknown): void {
-    this.store.dispatch({ kind: 'wire', message });
+    this.store.dispatch({ kind: 'wire', message: message as string });
+  }
+  a11y(screenReader: boolean): void {
+    this.store.dispatch({ kind: 'a11y', screenReader });
   }
   /** Advance the clock, then tick the store (the app would tick every 100-250 ms). */
   advance(ms: number): void {
@@ -295,7 +321,20 @@ export class Harness {
       }),
     );
   }
+  /** Digits of the most recent join.requested (what the phone shows). */
+  shownDigits = '47';
+
+  /** Pick the choice that equals the digits the phone shows (the correct number-matching answer). */
+  acceptJoin(): void {
+    const choices = this.view.pairing?.joinRequest?.choices;
+    if (!choices) throw new Error('no join request on screen');
+    const index = choices.indexOf(this.shownDigits);
+    if (index < 0) throw new Error(`the right number ${this.shownDigits} is not among ${choices.join(',')}`);
+    this.ui(`pick_choice_${index + 1}` as ActionId);
+  }
+
   joinRequested(label = 'Rohan phone', digits = '47', joinId = 'j_testjoin000001'): void {
+    this.shownDigits = digits;
     this.wire(
       this.relay('join.requested', {
         join_id: joinId,
@@ -308,16 +347,17 @@ export class Harness {
   joinExpired(joinId = 'j_testjoin000001'): void {
     this.wire(this.relay('join.expired', { join_id: joinId }));
   }
-  peerState(connected: boolean): void {
-    this.wire(this.relay('peer.state', { role: 'phone', connected, generation: 1 }));
+  peerState(connected: boolean, generation = 1): void {
+    this.wire(this.relay('peer.state', { role: 'phone', connected, generation }));
   }
-  authOk(opts: { peer?: boolean; paired?: boolean; generation?: number } = {}): void {
+  authOk(opts: { peer?: boolean; paired?: boolean; generation?: number; next?: string } = {}): void {
     this.wire(
       this.relay('auth.ok', {
         role: 'tv',
         generation: opts.generation ?? 2,
         peer_connected: opts.peer ?? true,
         phone_paired: opts.paired ?? true,
+        next_credential: opts.next ?? NEXT_CREDENTIAL,
       }),
     );
   }
@@ -352,17 +392,20 @@ export class Harness {
 
   precheckPayload(purpose: 'quiet_check' | 'pre_window', o: Partial<Json> = {}, rise = 0): Json {
     const floor = purpose === 'quiet_check' ? this.floor : this.floor + rise;
+    const expected = purpose === 'quiet_check' ? 100 : 40;
+    const coverage = typeof o.coverage === 'number' ? o.coverage : 1;
     return {
       purpose,
       valid: true,
       invalid_reason: null,
-      floor_dbfs: floor,
-      p20_dbfs: floor - 1,
-      p80_dbfs: floor + 1,
-      p95_dbfs: floor + 3,
-      frame_count: purpose === 'quiet_check' ? 100 : 40,
-      expected_frames: purpose === 'quiet_check' ? 100 : 40,
-      coverage: 1,
+      floor_dbfs: db(floor),
+      p20_dbfs: db(floor - 1),
+      p80_dbfs: db(floor + 1),
+      p95_dbfs: db(floor + 3),
+      // frame_count follows coverage so the numbers stay internally consistent (the TV checks that)
+      frame_count: Math.round(coverage * expected) + (typeof o.nonfinite_frames === 'number' ? o.nonfinite_frames : 0),
+      expected_frames: expected,
+      coverage,
       clipped_frames: 0,
       nonfinite_frames: 0,
       duration_ms: purpose === 'quiet_check' ? 5000 : 2000,
@@ -376,27 +419,44 @@ export class Harness {
     this.wire(this.envelope('precheck.result', 'phone', this.precheckPayload(purpose, o, rise), this.ids(cmd)));
   }
 
-  windowPayload(kind: 'calibration' | 'vowel' | 'phrase', o: { rel?: number; valid?: boolean; reason?: string | null; activeMs?: number; longest?: number; coverage?: number; p95?: number | null } = {}): Json {
+  windowPayload(
+    kind: 'calibration' | 'vowel' | 'phrase',
+    o: {
+      rel?: number;
+      valid?: boolean;
+      reason?: string | null;
+      activeMs?: number;
+      longest?: number;
+      coverage?: number;
+      p95?: number | null;
+      duration?: number;
+    } = {},
+  ): Json {
     const valid = o.valid !== false;
     const rel = o.rel ?? 25;
-    const active = o.activeMs ?? 2500;
+    const active = o.activeMs ?? Math.max(o.longest ?? 0, 2500);
+    const defaultDuration = kind === 'calibration' ? 6000 : kind === 'vowel' ? Math.min(30000, Math.max(12000, active + 1000)) : 8000;
+    const duration = o.duration ?? defaultDuration;
+    const expected = Math.floor(duration / 50);
+    const coverage = o.coverage ?? 1;
     return {
       kind,
       valid,
       invalid_reason: valid ? null : (o.reason ?? 'no_voice'),
-      frame_count: 160,
-      expected_frames: 160,
-      coverage: o.coverage ?? 1,
+      // frame_count follows coverage so the numbers stay internally consistent (the TV checks that)
+      frame_count: Math.round(coverage * expected),
+      expected_frames: expected,
+      coverage,
       active_ms: active,
       longest_active_ms: o.longest ?? active,
-      segments: 1,
-      onset_ms: 200,
-      p50_active_dbfs: this.floor + rel - 4,
-      p95_active_dbfs: o.p95 !== undefined ? o.p95 : this.floor + rel,
-      peak_dbfs: this.floor + rel + 2,
+      segments: active === 0 ? 0 : 1,
+      onset_ms: active === 0 ? null : 200,
+      p50_active_dbfs: db(this.floor + rel - 4),
+      p95_active_dbfs: o.p95 !== undefined ? o.p95 : db(this.floor + rel),
+      peak_dbfs: db(this.floor + rel + 2),
       clipped_frames: 0,
       nonfinite_frames: 0,
-      duration_ms: 8000,
+      duration_ms: duration,
     };
   }
 
@@ -414,7 +474,7 @@ export class Harness {
   level(frame: number, dbfs: number, active = true, cmdIn?: Sent): void {
     const cmd = cmdIn ?? this.last('window.start');
     this.wire(
-      this.envelope('level', 'phone', { frame_index: frame, t_audio_ms: frame * 50, dbfs, active, clipped: false }, this.ids(cmd)),
+      this.envelope('level', 'phone', { frame_index: frame, t_audio_ms: frame * 50, dbfs: db(dbfs), active, clipped: false }, this.ids(cmd)),
     );
   }
 
@@ -441,7 +501,7 @@ export class Harness {
     this.transportState('connected');
     this.roomCreated();
     this.joinRequested();
-    this.ui('accept_join');
+    this.acceptJoin();
     this.peerState(true);
     this.micState('permission_pending');
     this.micState('open_idle');
@@ -453,7 +513,7 @@ export class Harness {
     this.transportState('connected');
     this.roomCreated();
     this.joinRequested();
-    this.ui('accept_join');
+    this.acceptJoin();
     this.peerState(true);
   }
 
@@ -469,7 +529,8 @@ export class Harness {
   /** Press OK on a begin action and let the quiet lead elapse. */
   beginAndLead(action: ActionId): void {
     this.ui(action);
-    this.advance(1500);
+    // the lead is 1500 ms, or longer with the screen reader on: wait exactly as long as the view says
+    this.advance(this.view.timer?.maxMs ?? 1500);
   }
 
   runQuiet(): void {
@@ -511,7 +572,7 @@ export class Harness {
       this.ok();
     }
     this.answerWindow(
-      { rel: o.rel, valid: o.valid, reason: o.reason, activeMs: o.activeMs, coverage: o.coverage },
+      { rel: o.rel, valid: o.valid, reason: o.reason, activeMs: o.activeMs, coverage: o.coverage, duration: o.duration },
       start,
     );
     if (this.stage() === 'response_pending') {

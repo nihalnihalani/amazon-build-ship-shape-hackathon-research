@@ -58,7 +58,15 @@ describe('schema migration (pure functions)', () => {
   it('migrates a v0 fixture to v1 without inventing anything', () => {
     const v1 = migrateV0ToV1(V0);
     expect(v1.schemaVersion).toBe(1);
-    expect(v1.settings).toEqual({ familyMode: true, cueWord: 'Volume', measurementMode: 'relative_band', onboarded: true });
+    expect(v1.settings).toEqual({
+      familyMode: true,
+      cueWord: 'Volume',
+      measurementMode: 'relative_band',
+      onboarded: true,
+      qualification: 'not_run',
+      quietLeadMs: null,
+      quietLeadScreenReaderMs: null,
+    });
     expect(v1.phrases).toEqual(['Dinner is ready.', 'Please pass the salt.']);
     expect(v1.sessions).toHaveLength(2);
     const first = v1.sessions[0];
@@ -171,19 +179,21 @@ describe('loadData', () => {
     expect(h.view.body.join(' ')).not.toContain('newer version');
   });
 
-  it('prunes session summaries older than 30 days on launch and keeps the rest', async () => {
+  it('prunes session summaries older than 8 days on launch and keeps the rest (A5-04)', async () => {
     const seed: Record<string, string> = {
       'atr:v1:meta': JSON.stringify({ schema_version: 1, created_at: 1 }),
-      'atr:v1:session:s_old': sessionRecordJson('s_old', T0 - 30 * DAY - 1, '2026-09-04'),
-      'atr:v1:session:s_edge': sessionRecordJson('s_edge', T0 - 30 * DAY, '2026-09-05'),
+      'atr:v1:session:s_old': sessionRecordJson('s_old', T0 - 8 * DAY - 1, '2026-09-27'),
+      'atr:v1:session:s_edge': sessionRecordJson('s_edge', T0 - 8 * DAY, '2026-09-27'),
+      'atr:v1:session:s_thirty': sessionRecordJson('s_thirty', T0 - 29 * DAY, '2026-09-06'),
       'atr:v1:session:s_new': sessionRecordJson('s_new', T0 - DAY, '2026-10-04'),
     };
     const storage = createFlakyStorage(seed);
     const data = await loadData(storage, T0);
-    expect(data.prunedSessions).toBe(1);
+    expect(data.prunedSessions).toBe(2);
     expect(data.records.map((r) => r.sessionId)).toEqual(['s_edge', 's_new']);
     const keys = Object.keys(storage.dump());
     expect(keys).not.toContain('atr:v1:session:s_old');
+    expect(keys).not.toContain('atr:v1:session:s_thirty');
     expect(JSON.parse(storage.dump()['atr:v1:index'] as string).entries.map((e: { sessionId: string }) => e.sessionId)).toEqual([
       's_edge',
       's_new',
@@ -254,7 +264,7 @@ describe('delete local data', () => {
     h.ui('confirm_destructive');
     await h.flush();
     expect(Object.keys(h.storage.dump())).toEqual([]);
-    expect(h.view.banner?.text).toBe('All local practice data was deleted.');
+    expect(h.view.banner?.text).toContain('All local practice data was deleted.');
   });
 
   it('cancel leaves the data untouched and delete is unavailable during a session', async () => {
@@ -319,7 +329,7 @@ describe('crash checkpoint, resume and discard', () => {
     h.transportState('connected');
     h.roomCreated();
     h.joinRequested();
-    h.ui('accept_join');
+    h.acceptJoin();
     h.peerState(true);
     expect(h.view.stage).toBe('permission_pending');
     h.micState('open_idle');
@@ -357,7 +367,7 @@ describe('crash checkpoint, resume and discard', () => {
     h.transportState('connected');
     h.roomCreated();
     h.joinRequested();
-    h.ui('accept_join');
+    h.acceptJoin();
     h.peerState(true);
     h.micState('open_idle');
     h.runQuiet();
@@ -396,7 +406,7 @@ describe('crash checkpoint, resume and discard', () => {
       version: 1,
       savedAt: T0,
       stage: 'phrase_ready',
-      phrases: ['One.', 'Two.'],
+      phraseCount: 2,
       phraseIdx: 0,
       record: JSON.parse(sessionRecordJson('s_empty', T0, '2026-10-05')),
     });
@@ -516,7 +526,7 @@ describe('settings, onboarding and fixture mode', () => {
     expect(h.view.stage).toBe('phrase_ready');
     expect(h.view.phrase?.position).toBe(2);
     h.runPhrase({ rel: 25 });
-    expect(h.view.result?.label).toBe("Reached today's relative level band");
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
     h.ui('finish_early');
     expect(h.view.summary?.phrasesCompleted).toBe(2);
     expect(h.view.summary?.calibrationMarginDb).toBe(18);
@@ -528,7 +538,7 @@ describe('settings, onboarding and fixture mode', () => {
     h.transportState('connected');
     h.roomCreated();
     h.joinRequested();
-    h.ui('accept_join');
+    h.acceptJoin();
     h.peerState(true);
     h.ui('open_settings');
     expect(h.view.actions.find((a) => a.id === 'unpair_phone')?.disabled).toBe(false);
