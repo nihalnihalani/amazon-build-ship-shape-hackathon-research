@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T05:23:14+05:30",
+ "updated_at": "2026-10-05T05:25:01+05:30",
  "states": [
   "pending",
   "ready",
@@ -574,25 +574,25 @@
     "R-U2"
    ],
    "owner": "lead",
-   "cwd": null,
+   "cwd": "/Users/nihalnihalani/Desktop/Github/amazon devpost hackathon",
    "dependencies": [
     "T12",
     "T13",
     "T14"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Fault injection: delay, out-of-order, dropout, expiry, partial windows, noisy input, floor change, reconnect"
    ],
    "expected_outputs": [
     "tests/fault"
    ],
-   "reviewer": null,
+   "reviewer": "qa-accessibility",
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Runs after relay rev 4 rework merges"
   },
   {
    "id": "T16",
