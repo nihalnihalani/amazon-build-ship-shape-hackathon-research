@@ -26,6 +26,7 @@ import {
   type OutboundType,
   parseIncoming,
   PhoneMessageFactory,
+  type PrecheckResultPayload,
   type TvStage,
   type Visibility,
   type WakeLockState,
@@ -562,13 +563,16 @@ export class PhoneController {
     this.enterConnected(null);
   }
 
-  private onAuthOk(payload: { role: string; generation: number; peer_connected: boolean; phone_paired: boolean }): void {
+  private onAuthOk(payload: { role: string; generation: number; peer_connected: boolean; phone_paired: boolean; next_credential: string }): void {
     if (payload.role !== 'phone' || this.credential === null || this.purpose !== 'resume') return;
     if (!payload.phone_paired) {
       this.unpair('revoked');
       return;
     }
     this.factory.setAuth(this.credential.roomId, payload.generation);
+    // A3-07: the credential just presented is consumed; the next resume must use the rotated one.
+    // Memory only, like the credential from join.accepted.
+    this.credential = { ...this.credential, credential: payload.next_credential };
     this.enterConnected(payload.peer_connected);
   }
 
@@ -874,8 +878,7 @@ export class PhoneController {
    */
   private noteSilentInput(kind: 'precheck' | 'window', payload: unknown): void {
     if (kind !== 'precheck') return;
-    const reason = (payload as { invalid_reason?: unknown }).invalid_reason;
-    const silent = reason === 'silent_input';
+    const silent = (payload as PrecheckResultPayload).invalid_reason === 'silent_input';
     if (silent !== (this.state.micNotice === 'silent_input')) this.patch({ micNotice: silent ? 'silent_input' : null });
   }
 
@@ -889,10 +892,12 @@ export class PhoneController {
     const linkUp = this.linkUp();
     const sent = !tvAway && this.sendAuthed(type, payload as never, ctx.ids);
     // Queue only when the link or the TV is away. A message the validators refused is dropped:
-    // retrying it would fail the same way.
+    // retrying it would fail the same way. Say so instead of failing silently.
     if (!sent && (tvAway || !linkUp)) {
       this.pendingResults.push({ type, payload, ids: ctx.ids });
       if (this.pendingResults.length > 4) this.pendingResults.shift();
+    } else if (!sent) {
+      this.patch({ notice: 'The phone could not report that measurement to the TV. Ask the TV to try again.' });
     }
   }
 

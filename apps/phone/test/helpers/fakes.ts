@@ -65,8 +65,10 @@ export const joinPending = (digits = '47'): string =>
   relayMsg('join.pending', { join_id: 'j_joinjoin0001', confirm_digits: digits, expires_at: Date.now() + 60000 });
 export const joinAccepted = (generation = 1): string =>
   relayMsg('join.accepted', { room_id: ROOM, phone_credential: CREDENTIAL, credential_expires_at: Date.now() + 1e7, generation });
-export const authOk = (generation = 2, peer = true): string =>
-  relayMsg('auth.ok', { role: 'phone', generation, peer_connected: peer, phone_paired: true });
+/** `next` is the rotated credential (revision 4: auth.ok always carries one). */
+export const NEXT_CREDENTIAL = 'N'.repeat(43);
+export const authOk = (generation = 2, peer = true, next: string = NEXT_CREDENTIAL): string =>
+  relayMsg('auth.ok', { role: 'phone', generation, peer_connected: peer, phone_paired: true, next_credential: next });
 
 export const SESSION_BEGIN = { family_mode: true, phrase_count: 4, cues_max: 3 };
 export const sessionBegin = (s = SESSION): string => tvMsg('session.begin', SESSION_BEGIN, { s });
@@ -100,39 +102,61 @@ export const attemptReveal = (w = WINDOW, a = ATTEMPT, s = SESSION): string =>
   tvMsg('attempt.reveal', {}, { s, w, a });
 export const sessionEnd = (s = SESSION): string => tvMsg('session.end', { reason: 'completed' }, { s });
 
-export const validPrecheck = (purpose: 'quiet_check' | 'pre_window' = 'quiet_check'): PrecheckResultPayload => ({
-  purpose,
-  valid: true,
-  invalid_reason: null,
-  floor_dbfs: -60,
-  p20_dbfs: -61,
-  p80_dbfs: -59,
-  p95_dbfs: -58,
-  frame_count: 100,
-  expected_frames: 100,
-  coverage: 1,
-  clipped_frames: 0,
-  nonfinite_frames: 0,
-  duration_ms: 5000,
+/** A consistent precheck.result (revision 4 invariants: duration near the purpose, ordered percentiles). */
+export const validPrecheck = (purpose: 'quiet_check' | 'pre_window' = 'quiet_check'): PrecheckResultPayload => {
+  const duration = purpose === 'quiet_check' ? 5000 : 2000;
+  return {
+    purpose,
+    valid: true,
+    invalid_reason: null,
+    floor_dbfs: -60,
+    p20_dbfs: -61,
+    p80_dbfs: -59,
+    p95_dbfs: -58,
+    frame_count: duration / 50,
+    expected_frames: duration / 50,
+    coverage: 1,
+    clipped_frames: 0,
+    nonfinite_frames: 0,
+    duration_ms: duration,
+  };
+};
+/** A precheck that found no signal at all (ordering holds with every percentile at the floor). */
+export const silentPrecheck = (purpose: 'quiet_check' | 'pre_window' = 'quiet_check'): PrecheckResultPayload => ({
+  ...validPrecheck(purpose),
+  valid: false,
+  invalid_reason: 'silent_input',
+  floor_dbfs: -140,
+  p20_dbfs: -140,
+  p80_dbfs: -140,
+  p95_dbfs: -140,
 });
-export const validWindow = (kind: 'calibration' | 'vowel' | 'phrase' = 'phrase'): WindowResultPayload => ({
-  kind,
-  valid: true,
-  invalid_reason: null,
-  frame_count: 160,
-  expected_frames: 160,
-  coverage: 1,
-  active_ms: 3000,
-  longest_active_ms: 3000,
-  segments: 1,
-  onset_ms: 500,
-  p50_active_dbfs: -30,
-  p95_active_dbfs: -25,
-  peak_dbfs: -20,
-  clipped_frames: 0,
-  nonfinite_frames: 0,
-  duration_ms: 8000,
-});
+/** A consistent window.result (revision 4 invariants) for a window of `durationMs`. */
+export const validWindow = (
+  kind: 'calibration' | 'vowel' | 'phrase' = 'phrase',
+  durationMs = kind === 'calibration' ? 6000 : kind === 'phrase' ? 8000 : 20000,
+): WindowResultPayload => {
+  const frames = Math.floor(durationMs / 50);
+  const active = Math.min(3000, durationMs - 500);
+  return {
+    kind,
+    valid: true,
+    invalid_reason: null,
+    frame_count: frames,
+    expected_frames: frames,
+    coverage: 1,
+    active_ms: active,
+    longest_active_ms: active,
+    segments: 1,
+    onset_ms: 500,
+    p50_active_dbfs: -30,
+    p95_active_dbfs: -25,
+    peak_dbfs: -20,
+    clipped_frames: 0,
+    nonfinite_frames: 0,
+    duration_ms: durationMs,
+  };
+};
 
 // ---- socket ------------------------------------------------------------------
 export class FakeSocket implements SocketLike {
@@ -284,7 +308,7 @@ export class FakeAudio implements AudioPort {
       result,
       stop: () => {
         if (run.ended) return;
-        run.resolve({ ...validWindow(request.kind), duration_ms: 1500 });
+        run.resolve(validWindow(request.kind, 1500));
         this.windowRun = null;
         if (this.snapshot.state === 'measuring') this.setState('open_idle');
       },

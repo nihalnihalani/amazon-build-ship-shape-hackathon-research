@@ -1,6 +1,6 @@
 # Phone companion: state machine and behaviour
 
-Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3, ADR-0001, 0002, 0003, 0004, 0006 and `docs/adr/AMENDMENTS-REV2.md` (rows owned by H: A2-01, A3-01, A3-07 (pending), A4-04, A5-02, A6-02, A8-03, PK-06; where it conflicts with an ADR it wins). Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
+Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 4, ADR-0001, 0002, 0003, 0004, 0006 and `docs/adr/AMENDMENTS-REV2.md` (rows owned by H: A2-01, A3-01, A3-07, A4-04, A5-02, A6-02, A8-03, PK-06; where it conflicts with an ADR it wins). Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
 
 ## Layers
 
@@ -50,7 +50,7 @@ Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3
 * Device label: default `Android Chrome` (Android + Chrome user agent) else `Browser`; 1-24 code points.
 * Relay: `wss://<this host>/ws`. `?relay=` (ws/wss only) is honoured in the **test build only**.
 * Not a secure context: a banner says the microphone cannot work here; Start is disabled; the port never calls `getUserMedia`.
-* Credentials (`phone_credential`, room id) are held in the controller object only; they are not part of observable state and never reach the DOM. A3-07 credential rotation (`auth.ok.next_credential`) is pending protocol revision 4.
+* Credentials (`phone_credential`, room id) are held in the controller object only; they are not part of observable state and never reach the DOM. A3-07 rotation: every `auth.ok` carries `next_credential`; the credential just presented is consumed, so the next `auth.resume` presents the rotated one (memory only; a refused resume does not rotate; Retry after `failed` uses the latest). An `auth.ok` without `next_credential` is invalid and ignored.
 
 ### Wire rules (PROTOCOL.md rev 2/3)
 
@@ -89,13 +89,25 @@ States are the protocol's `MicStatePayload.state`:
 | `measuring` | first frame of a run observed | Measuring | hidden |
 | `error` | insecure context, no `mediaDevices`, worklet failed, track ended, context suspended/closed | specific wording per `detail` | yes |
 
-A precheck that reports `invalid_reason: 'silent_input'` (no signal at all) shows "The microphone looks muted or blocked." (with a hint) in the microphone section and the status region until a later precheck is fine or the microphone is closed or restarted. Only prechecks set it; no window result or level is ever shown. Note: until `silent_input` exists in `@atr/protocol`'s `PrecheckInvalidReason`, the package validator refuses to build such a `precheck.result`, so the phone shows the notice but the TV does not receive that result.
+A precheck that reports `invalid_reason: 'silent_input'` (no signal at all) shows "The microphone looks muted or blocked." (with a hint) in the microphone section and the status region until a later precheck is fine or the microphone is closed or restarted. Only prechecks set it; no window result or level is ever shown. `silent_input` is a protocol reason since revision 4 and is sent to the TV like any other. For `pre_window` only `interrupted`, `nonfinite`, `low_coverage`, `silent_input`, `clipped`, `burst_noise` are valid; if the DSP ever returned `unstable_floor`/`too_loud` for it, the validator refuses to build the message, nothing is sent, and the phone says "The phone could not report that measurement to the TV. Ask the TV to try again."
+
+### Measurement numbers on the wire (PK-06)
+
+The DSP package owns the statistics, VAD and validity; the wire port only rounds, in `quantizeOutbound` inside `PhoneMessageFactory.build`: dB fields to 0.1 dB (`quantizeDb`), `coverage` to 0.001 (`quantizeCoverage`), `t_audio_ms`/`duration_ms`/`active_ms`/`longest_active_ms`/`onset_ms` to whole milliseconds. It never recomputes a value, flag or reason, is an exact no-op on values already on the grid (what the reworked package will emit), and rounding is monotone so the validators' orderings still hold.
+
+### Text safety (revision 4)
+
+Phrases, the cue word and the device name are checked with the package's rules, which now also reject text-direction controls and invisible separators, text that is blank to the eye, and runs of more than four combining marks. Each gets a plain message ("... contains a character that cannot be shown safely ...", "... has nothing visible in it ...", "... has more than 4 accent or combining marks in a row ..."); nothing unsafe is ever sent. The phone also trims leading/trailing whitespace including a byte order mark.
 
 Settings (`auto_gain_control`, `echo_cancellation`, `noise_suppression`, `sample_rate`, `channel_count`) are what the browser reports; `null` means unknown. `supported.*` is `null` when `getSupportedConstraints()` is unavailable (revision 3). The page says these are reports and "do not prove the audio is unprocessed".
 
 * Cancel during `permission_pending` returns to `off`; a stream that arrives later is stopped by the package. Because the package keeps the abandoned `open()` promise until the browser settles it (an ignored prompt never does), the port swaps in a fresh capture instance on cancel/close so Start works again immediately (regression-tested).
 * Start while a session is muted/suspended/failed first releases the old session, then opens a fresh one.
 * `mode` in `mic.state` is self-reported context: `fixture_replay` (test build), `same_host` (localhost, "Same-Mac microphone mode"), else `physical_phone`.
+
+## Window ids
+
+Each precheck and each capture has its own `window_id`; the precheck and capture of one attempt share the `attempt_id`. The phone treats every window id as single-use (a finished id is `ignored_stale/window_closed`), binds `level` and `window.result` to the capture's window id, and binds listener controls to the capture window plus the shared attempt. `window.cancel` and `attempt.reveal` for the attempt lock the listener controls whichever of its window ids they name.
 
 ## Screen wake lock ("Keep this screen on")
 

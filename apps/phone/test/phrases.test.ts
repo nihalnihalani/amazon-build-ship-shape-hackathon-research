@@ -5,15 +5,15 @@ import { checkText, codePointLength, normalizeUserText } from '../src/text.js';
 
 describe('text rules (PROTOCOL.md section 1)', () => {
   it('counts code points, not UTF-16 units', () => {
-    expect(codePointLength('😀')).toBe(1);
-    expect('😀'.length).toBe(2);
-    expect(codePointLength('😀'.repeat(60))).toBe(60);
+    expect(codePointLength('\u{1F600}')).toBe(1);
+    expect('\u{1F600}'.length).toBe(2);
+    expect(codePointLength('\u{1F600}'.repeat(60))).toBe(60);
   });
 
   it('NFC-normalizes before counting', () => {
-    const decomposed = 'é'; // 2 code points
+    const decomposed = 'e\u0301'; // 2 code points
     expect(codePointLength(decomposed)).toBe(2);
-    expect(normalizeUserText(decomposed)).toBe('é');
+    expect(normalizeUserText(decomposed)).toBe('\u00E9');
     expect(codePointLength(normalizeUserText(decomposed))).toBe(1);
   });
 
@@ -36,15 +36,15 @@ describe('validatePhrases', () => {
   });
 
   it('counts emoji as one character each (61 emoji is too long, 60 is fine)', () => {
-    expect(validatePhrases(['😀'.repeat(60)]).ok).toBe(true);
-    expect(validatePhrases(['😀'.repeat(61)]).ok).toBe(false);
+    expect(validatePhrases(['\u{1F600}'.repeat(60)]).ok).toBe(true);
+    expect(validatePhrases(['\u{1F600}'.repeat(61)]).ok).toBe(false);
   });
 
   it('measures the length AFTER NFC, so 60 decomposed letters fit', () => {
-    const decomposed = 'é'.repeat(60); // 120 code points before NFC, 60 after
+    const decomposed = 'e\u0301'.repeat(60); // 120 code points before NFC, 60 after
     const v = validatePhrases([decomposed]);
     expect(v.ok).toBe(true);
-    expect(v.phrases[0]).toBe('é'.repeat(60));
+    expect(v.phrases[0]).toBe('\u00E9'.repeat(60));
   });
 
   it('allows 1 to 10 phrases, rejects 0 and 11', () => {
@@ -79,7 +79,7 @@ describe('validatePhrases', () => {
   });
 
   it('does not reject non-control characters next to the control ranges', () => {
-    expect(validatePhrases(['a b', 'a¡b', 'a b']).ok).toBe(true); // NBSP, inverted !, space
+    expect(validatePhrases(['a\u00A0b', 'a\u00A1b', 'a b']).ok).toBe(true); // NBSP, inverted !, space
   });
 
   it('rejects unpaired surrogates', () => {
@@ -88,8 +88,8 @@ describe('validatePhrases', () => {
   });
 
   it('trims and normalizes the phrases it returns', () => {
-    const v = validatePhrases(['  hello  ', 'é']);
-    expect(v.phrases).toEqual(['hello', 'é']);
+    const v = validatePhrases(['  hello  ', 'e\u0301']);
+    expect(v.phrases).toEqual(['hello', '\u00E9']);
   });
 
   it('returns text that the package validator accepts as-is (it rejects un-normalized text)', () => {
@@ -117,7 +117,7 @@ describe('cue word', () => {
   it('NFC + trim, control characters rejected', () => {
     expect(validateCue('  Volume ').text).toBe('Volume');
     expect(validateCue('a\u0007b').ok).toBe(false);
-    expect(validateCue('é'.repeat(12)).ok).toBe(true);
+    expect(validateCue('e\u0301'.repeat(12)).ok).toBe(true);
   });
 });
 

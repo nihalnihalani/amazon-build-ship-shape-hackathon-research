@@ -523,11 +523,11 @@ describe('phrase editor', () => {
 
   it('counts emoji and decomposed letters the way the protocol does', async () => {
     await setup();
-    type('phrase-1', '😀'.repeat(60));
+    type('phrase-1', '\u{1F600}'.repeat(60));
     expect($<HTMLButtonElement>('save-phrases').disabled).toBe(false);
-    type('phrase-1', 'é'.repeat(60));
+    type('phrase-1', 'e\u0301'.repeat(60));
     expect($<HTMLButtonElement>('save-phrases').disabled).toBe(false);
-    type('phrase-1', 'é'.repeat(61));
+    type('phrase-1', 'e\u0301'.repeat(61));
     expect($<HTMLButtonElement>('save-phrases').disabled).toBe(true);
   });
 
@@ -569,17 +569,17 @@ describe('phrase editor', () => {
 
   it('Save sends phrases.update with the normalized text and shows exactly what was sent', async () => {
     await setup();
-    type('phrase-1', '  é test  ');
+    type('phrase-1', '  e\u0301 test  ');
     click('add-phrase');
     type('phrase-2', 'Second');
     click('save-phrases');
     const m = h.sockets.current.last('phrases.update');
-    expect(m.payload).toEqual({ phrases: ['é test', 'Second'] });
+    expect(m.payload).toEqual({ phrases: ['\u00E9 test', 'Second'] });
     expect(text('phrase-status')).toBe('Sent 2 phrases. Waiting for the TV to confirm.');
     h.sockets.current.receive(tvMsg('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, {}));
     expect(text('phrase-status')).toBe('The TV saved 2 phrases.');
     const items = [...document.querySelectorAll('#phrase-saved li')].map((li) => li.textContent);
-    expect(items).toEqual(['é test', 'Second']);
+    expect(items).toEqual(['\u00E9 test', 'Second']);
   });
 
   it('renders markup-looking phrases as plain text and never executes them', async () => {

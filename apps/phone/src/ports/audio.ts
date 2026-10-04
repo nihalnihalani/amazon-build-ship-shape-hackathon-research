@@ -26,15 +26,16 @@ import type {
   MicCapture,
   MicCaptureState,
   MicInterruptReason,
-  PrecheckResultPayload,
-  WindowResultPayload,
 } from '@atr/phone-mic-meter';
+// The port speaks the protocol's result types (a superset of what the DSP package returns).
 import type {
   MicMode,
   MicSettingsWire,
   MicStateName,
   MicSupportedWire,
+  PrecheckResultPayload,
   WindowKind,
+  WindowResultPayload,
 } from './wire.js';
 
 export type { MicMode, MicSettingsWire as MicSettings, MicStateName as MicState, MicSupportedWire as MicSupported };

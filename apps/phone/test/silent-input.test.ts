@@ -1,13 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mountView } from '../src/view.js';
-import { ATTEMPT2, flush, precheckStart, validPrecheck, validWindow, WINDOW2, windowStart } from './helpers/fakes.js';
+import { ATTEMPT2, flush, precheckStart, silentPrecheck, validPrecheck, validWindow, WINDOW2, windowStart } from './helpers/fakes.js';
 import { type Harness, readyHarness } from './helpers/harness.js';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
-const silent = (purpose: 'quiet_check' | 'pre_window' = 'quiet_check') =>
-  ({ ...validPrecheck(purpose), valid: false, invalid_reason: 'silent_input', floor_dbfs: -140 }) as never;
+const silent = silentPrecheck;
 
 async function finishPrecheck(h: Harness, payload: ReturnType<typeof validPrecheck>, w?: string): Promise<void> {
   h.sockets.current.receive(w ? precheckStart('quiet_check', w, ATTEMPT2) : precheckStart('quiet_check'));
@@ -40,7 +39,7 @@ describe('silent_input: "The microphone looks muted or blocked"', () => {
 
   it('other precheck failures do not show it', async () => {
     const h = await readyHarness();
-    await finishPrecheck(h, { ...validPrecheck(), valid: false, invalid_reason: 'too_loud', floor_dbfs: -20 });
+    await finishPrecheck(h, { ...validPrecheck(), valid: false, invalid_reason: 'too_loud', floor_dbfs: -20, p20_dbfs: -21, p80_dbfs: -19, p95_dbfs: -18 });
     expect(h.controller.getState().micNotice).toBeNull();
   });
 

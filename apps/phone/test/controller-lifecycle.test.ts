@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   authOk,
   CREDENTIAL,
+  NEXT_CREDENTIAL,
   flush,
   precheckStart,
   relayMsg,
@@ -326,7 +327,7 @@ describe('reconnect (ADR-0006)', () => {
     h.sockets.current.drop(1006);
     vi.advanceTimersByTime(500);
     h.sockets.current.open();
-    h.sockets.current.receive(relayMsg('auth.ok', { role: 'phone', generation: 2, peer_connected: true, phone_paired: false }));
+    h.sockets.current.receive(relayMsg('auth.ok', { role: 'phone', generation: 2, peer_connected: true, phone_paired: false, next_credential: NEXT_CREDENTIAL }));
     await flush();
     expect(h.controller.getState()).toMatchObject({ screen: 'join', unpairedReason: 'revoked' });
   });
