@@ -12,6 +12,7 @@
     "packages/protocol",
     "packages/phone-mic-meter",
     "packages/ten-foot-meter",
+    "packages/session-core",
     "services/relay",
     "apps/phone",
     "tests"
