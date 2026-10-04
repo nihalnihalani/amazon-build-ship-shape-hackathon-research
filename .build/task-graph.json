@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:39:58+05:30",
+ "updated_at": "2026-10-05T03:40:19+05:30",
  "states": [
   "pending",
   "ready",
@@ -172,7 +172,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": "B-002 physical Android phone; protocol being frozen by dsp"
+   "blocker": "B-002 physical Android phone; frozen protocol docs/evaluation/T04-protocol.md awaiting reviewer approval"
   },
   {
    "id": "T04A",
@@ -248,7 +248,7 @@
     "T05"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "Pure DSP functions with independent-expected-value tests covering ADR-0001 boundaries",
