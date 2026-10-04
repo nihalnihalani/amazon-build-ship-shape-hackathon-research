@@ -25,6 +25,7 @@ import {
 } from './constants.js';
 import type { ActionId, LinkView, RemoteKey, TvStage, TvView } from './contract.js';
 import { COPY } from './copy.js';
+import { safeLocalDate } from './dates.js';
 import { buildChoices } from './matching.js';
 import type { Core, DialogKind, Effect, Env, Event, InternalEvent, Paused, PausedFrom, Session, Sub, Win, WinKind } from './model.js';
 import type { AttemptRecord, EndReason, SessionRecord, VowelRecord } from './records.js';
@@ -1520,8 +1521,9 @@ export class Machine {
     }
     sess.cuesUsed += 1;
     s.cue = { text, expiresAt: s.now + CUE_CHIP_MS };
-    // The chip is visual; a hidden attempt waiting for reveal must not be interrupted by speech (A8-01).
-    if (this.quiet()) s.deferred.texts.push(COPY.cue(text));
+    // The chip is visual. Its text is queued and spoken once, after the screen's own text: between windows right
+    // away, for a hidden attempt waiting for its reveal only after the reveal (A8-01, QA-12).
+    s.deferred.texts.push(COPY.cue(text));
     if (s.settings.cueWord !== text) {
       s.settings = { ...s.settings, cueWord: text };
       this.persist({ op: 'settings', settings: s.settings });
@@ -1871,6 +1873,11 @@ export class Machine {
     }
   }
 
+  /** The clock's local date, validated; a clock that returns a non-date falls back to the UTC date and is counted. */
+  private localDateOf(epochMs: number): string {
+    return safeLocalDate(this.env.localDate, epochMs, () => this.bump('clock_date_invalid'));
+  }
+
   private recordOf(sess: Session, endReason: EndReason, forCheckpoint = false): SessionRecord {
     const now = this.s.now;
     const attempts = sess.attempts.map((a): AttemptRecord => {
@@ -1893,7 +1900,7 @@ export class Machine {
       sessionId: sess.sessionId,
       startedAt: sess.startedAt,
       endedAt: now,
-      localDate: this.env.localDate(now),
+      localDate: this.localDateOf(now),
       complete: endReason === 'completed' && !sess.resumed,
       endReason,
       resumed: sess.resumed,
@@ -2017,7 +2024,7 @@ export class Machine {
         attempts: cp.record.attempts.map((a) => ({ ...a })),
         vowels: cp.record.vowels.map((v) => ({ ...v })),
         endedAt: s.now,
-        localDate: this.env.localDate(s.now),
+        localDate: this.localDateOf(s.now),
         complete: false,
         endReason: 'discarded',
       };

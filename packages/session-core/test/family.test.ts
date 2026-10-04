@@ -186,7 +186,8 @@ describe('cue word', () => {
     h.setupToPhrases();
     h.cue('Volume');
     expect(h.view.cue).toEqual({ text: 'Volume', expiresAt: h.clock.now() + 3000 });
-    expect(h.view.announcement).toBe('Cue: Volume');
+    // the screen's own text first, then the cue (QA-12); the text stays for the rest of this stage
+    expect(h.view.announcement).toMatch(/^Phrase 1 of 10\..*Cue: Volume$/)
     expect(h.last('ack').payload).toMatchObject({ outcome: 'applied' });
     expect(h.last('session.state').payload).toMatchObject({ cues_used: 1 });
     h.advance(2999);
