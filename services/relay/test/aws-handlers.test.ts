@@ -135,6 +135,26 @@ describe('end to end through the Lambda adapter and the DynamoDB store model', (
     expect(rig.api.errors(phone.id)).toEqual(['replay']);
   });
 
+  it('concurrent invocations for one connection never forward a frame twice or accept a sequence twice', async () => {
+    const rig = make();
+    const tv = await rig.tvCreate();
+    const phone = await rig.pair(tv);
+    await rig.send(tv, 'session.begin');
+    rig.now += 2000; // fresh rate-limit window
+    const frames = Array.from({ length: 25 }, (_, i) =>
+      rig.build(phone, 'level', { payload: { frame_index: i, t_audio_ms: i * 50, dbfs: -40, active: true, clipped: false } }),
+    );
+    // each frame is delivered twice and all 50 invocations (inside the 60 per second burst) run concurrently, shuffled
+    const deliveries = [...frames, ...frames].sort(() => Math.random() - 0.5);
+    await Promise.all(deliveries.map((raw) => rig.message(phone.id, raw)));
+    const forwarded = rig.api.of(tv.id, 'level').map((m) => JSON.parse(m.raw).sequence as number);
+    expect(new Set(forwarded).size).toBe(forwarded.length); // no sequence forwarded twice
+    expect(forwarded.length).toBeGreaterThan(0);
+    expect(forwarded.length).toBeLessThanOrEqual(25);
+    // whatever was refused was refused as replay (out of order under concurrency), never anything else
+    expect(new Set(rig.api.errors(phone.id))).toEqual(new Set(rig.api.errors(phone.id).filter((e) => e === 'replay')));
+  });
+
   it('claims the single phone slot exactly once under concurrent confirms (conditional failure path)', async () => {
     const rig = make();
     const tv = await rig.tvCreate();

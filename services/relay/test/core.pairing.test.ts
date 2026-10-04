@@ -1,5 +1,15 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { CLOSE, LIMITS, MESSAGE_TYPES, specFor, type MessageType } from '../src/core/index.js';
+import {
+  CLOSE,
+  LIMITS,
+  MESSAGE_TYPES,
+  MemoryRoomStore,
+  RelayCore,
+  specFor,
+  type ClaimResult,
+  type MessageType,
+  type PhoneSlotClaim,
+} from '../src/core/index.js';
 import { VALID_PAYLOADS } from './helpers/fixtures.js';
 import {
   Client,
@@ -743,5 +753,37 @@ describe('unauthenticated deadline', () => {
     await rig.send(tv, 'ping');
     await rig.tick(5_001);
     expect(phone.closed?.code).toBe(CLOSE.UNAUTHENTICATED);
+  });
+});
+
+describe('phone vanishes during acceptance', () => {
+  it('releases the slot and keeps the code when the phone connection is gone at authentication time', async () => {
+    class Vanishing extends MemoryRoomStore {
+      override async claimPhoneSlot(roomId: string, claim: PhoneSlotClaim, now: number): Promise<ClaimResult> {
+        const r = await super.claimPhoneSlot(roomId, claim, now);
+        await this.deleteConnection(claim.connId); // the socket drops right after the claim
+        return r;
+      }
+    }
+    const store = new Vanishing();
+    const rig = new Rig();
+    // run this scenario on a store that loses the phone connection at the worst moment
+    Object.assign(rig, {
+      store,
+      core: new RelayCore({ store, config: { allowedOrigins: [PHONE_ORIGIN], hashPepper: 'p' } }),
+    });
+    const tv = await rig.tvCreate();
+    const code = tv.last('room.created').payload.pairing_code as string;
+    const phone = await joinWith(rig, code);
+    const joinId = tv.last('join.requested').payload.join_id as string;
+    await rig.send(tv, 'join.confirm', { payload: { join_id: joinId, decision: 'accept' } });
+    expect(phone.of('join.accepted')).toHaveLength(0);
+    expect(tv.last('join.expired').payload.join_id).toBe(joinId);
+    const room = await store.getRoom(tv.roomId as string);
+    expect(room?.phone).toBeNull();
+    expect(room?.codeHash).not.toBeNull();
+    // the code still works for a fresh phone
+    const again = await joinWith(rig, code, '203.0.113.200');
+    expect(again.of('join.pending')).toHaveLength(1);
   });
 });

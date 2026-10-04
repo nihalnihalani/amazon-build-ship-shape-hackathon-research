@@ -855,9 +855,7 @@ export class RelayCore {
       await closeOutJoin();
       return this.reject(c, conn, 'room_full', 'phone_slot_taken', info);
     }
-    // One use: the code can no longer resolve.
-    if (room.codeHash) await this.store.consumeCode(room.roomId, room.codeHash);
-    await this.store.patchConnection(phoneConn.connId, {
+    const authenticated = await this.store.patchConnection(phoneConn.connId, {
       authenticated: true,
       authDeadline: 0,
       roomId: room.roomId,
@@ -866,6 +864,15 @@ export class RelayCore {
       joinId: null,
       joinRoomId: null,
     });
+    if (!authenticated) {
+      // The phone vanished between the slot claim and its authentication: it never received a credential, so
+      // release the slot (the code stays unconsumed) and tell the TV the request lapsed.
+      await this.store.revokePhone(room.roomId, c.now);
+      await this.relaySend(c, conn.connId, room.roomId, 'join.expired', { join_id: join.joinId });
+      return;
+    }
+    // One use: the code can no longer resolve.
+    if (room.codeHash) await this.store.consumeCode(room.roomId, room.codeHash);
     this.metric(c, 'join_accepted');
     this.log(c, { event: 'join_accepted', role: 'phone', room: roomRef });
     await this.relaySend(c, phoneConn.connId, room.roomId, 'join.accepted', {
