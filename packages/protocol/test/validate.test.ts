@@ -129,16 +129,21 @@ const NINE = 'x'.repeat(9);
 const cases: Case[] = [
   // level
   ['level frame_index 0', 'level', 'payload.frame_index', 0, true],
-  ['level frame_index 700', 'level', 'payload.frame_index', 700, true],
+  ['level frame_index 700 needs a matching t_audio_ms (revision 4)', 'level', 'payload.frame_index', 700, false],
   ['level frame_index 701', 'level', 'payload.frame_index', 701, false],
   ['level frame_index -1', 'level', 'payload.frame_index', -1, false],
   ['level frame_index 1.5', 'level', 'payload.frame_index', 1.5, false],
   ['level frame_index string', 'level', 'payload.frame_index', '1', false],
-  ['level t_audio_ms 0', 'level', 'payload.t_audio_ms', 0, true],
+  ['level t_audio_ms 0 is before frame 12 (revision 4)', 'level', 'payload.t_audio_ms', 0, false],
+  ['level frame 0 t_audio_ms 0', 'level frame 0', 'payload.t_audio_ms', 0, true],
   ['level t_audio_ms 35000', 'level', 'payload.t_audio_ms', 35000, true],
+  ['level t_audio_ms 599 is allowed for frame 12 (one ms of slack)', 'level', 'payload.t_audio_ms', 599, true],
+  ['level t_audio_ms 598 is too early for frame 12', 'level', 'payload.t_audio_ms', 598, false],
   ['level t_audio_ms 35000.001', 'level', 'payload.t_audio_ms', 35000.001, false],
+  ['level t_audio_ms fractional (revision 4: integer)', 'level', 'payload.t_audio_ms', 600.5, false],
   ['level t_audio_ms negative', 'level', 'payload.t_audio_ms', -0.001, false],
   ['level dbfs -140', 'level', 'payload.dbfs', -140, true],
+  ['level dbfs not on the 0.1 grid', 'level', 'payload.dbfs', -42.25, false],
   ['level dbfs below -140', 'level', 'payload.dbfs', -140.01, false],
   ['level dbfs 20', 'level', 'payload.dbfs', 20, true],
   ['level dbfs above 20', 'level', 'payload.dbfs', 20.01, false],
@@ -170,10 +175,13 @@ const cases: Case[] = [
   ['phrase position 10', 'window.start phrase', 'payload.phrase_position', 10, true],
   ['phrase position 11', 'window.start phrase', 'payload.phrase_position', 11, false],
   ['phrase position 1.5', 'window.start phrase', 'payload.phrase_position', 1.5, false],
-  ['vad floor 0', 'window.start phrase', 'payload.vad_floor_dbfs', 0, true],
-  ['vad floor above 0', 'window.start phrase', 'payload.vad_floor_dbfs', 0.1, false],
-  ['vad floor -140', 'window.start phrase', 'payload.vad_floor_dbfs', -140, true],
-  ['vad floor below -140', 'window.start phrase', 'payload.vad_floor_dbfs', -140.1, false],
+  ['vad floor -30 (revision 4 upper bound)', 'window.start phrase', 'payload.vad_floor_dbfs', -30, true],
+  ['vad floor -29.9 above the range', 'window.start phrase', 'payload.vad_floor_dbfs', -29.9, false],
+  ['vad floor 0 above the range', 'window.start phrase', 'payload.vad_floor_dbfs', 0, false],
+  ['vad floor -110 (revision 4 lower bound)', 'window.start phrase', 'payload.vad_floor_dbfs', -110, true],
+  ['vad floor -110.1 below the range', 'window.start phrase', 'payload.vad_floor_dbfs', -110.1, false],
+  ['vad floor -140 below the range', 'window.start phrase', 'payload.vad_floor_dbfs', -140, false],
+  ['vad floor not on the 0.1 grid', 'window.start phrase', 'payload.vad_floor_dbfs', -50.05, false],
   ['window kind unknown', 'window.start phrase', 'payload.kind', 'sing', false],
   ['max_duration fractional', 'window.start vowel', 'payload.max_duration_ms', 6000.5, false],
   // listener.open
@@ -255,7 +263,8 @@ const cases: Case[] = [
   ['platform unknown', 'room.create vega', 'payload.client.platform', 'ios', false],
   ['platform test', 'room.create vega', 'payload.client.platform', 'test', true],
   // precheck.result and window.result
-  ['precheck coverage 0', 'precheck.result', 'payload.coverage', 0, true],
+  ['precheck coverage 0 (invalid precheck)', 'precheck.result invalid', 'payload.coverage', 0, true],
+  ['precheck coverage 0 on a valid precheck', 'precheck.result', 'payload.coverage', 0, false],
   ['precheck coverage 1', 'precheck.result', 'payload.coverage', 1, true],
   ['precheck coverage above 1', 'precheck.result', 'payload.coverage', 1.0001, false],
   ['precheck coverage negative', 'precheck.result', 'payload.coverage', -0.0001, false],
@@ -265,7 +274,8 @@ const cases: Case[] = [
   ['precheck valid with reason', 'precheck.result', 'payload.invalid_reason', 'clipped', false],
   ['precheck invalid without reason', 'precheck.result invalid', 'payload.invalid_reason', null, false],
   ['precheck reason from window list', 'precheck.result invalid', 'payload.invalid_reason', 'no_voice', false],
-  ['precheck floor null', 'precheck.result', 'payload.floor_dbfs', null, true],
+  ['precheck floor null (invalid precheck)', 'precheck.result invalid', 'payload.floor_dbfs', null, true],
+  ['precheck floor null on a valid precheck', 'precheck.result', 'payload.floor_dbfs', null, false],
   ['precheck floor -141', 'precheck.result', 'payload.floor_dbfs', -141, false],
   ['precheck p95 21', 'precheck.result', 'payload.p95_dbfs', 21, false],
   ['precheck duration negative', 'precheck.result', 'payload.duration_ms', -1, false],
@@ -273,7 +283,8 @@ const cases: Case[] = [
   ['window.result valid with reason', 'window.result', 'payload.invalid_reason', 'clipped', false],
   ['window.result invalid without reason', 'window.result invalid', 'payload.invalid_reason', null, false],
   ['window.result reason from precheck list', 'window.result invalid', 'payload.invalid_reason', 'burst_noise', false],
-  ['window.result onset null', 'window.result', 'payload.onset_ms', null, true],
+  ['window.result onset null with active_ms 3200', 'window.result', 'payload.onset_ms', null, false],
+  ['window.result onset null (no activity)', 'window.result invalid', 'payload.onset_ms', null, true],
   ['window.result onset negative', 'window.result', 'payload.onset_ms', -1, false],
   ['window.result segments fractional', 'window.result', 'payload.segments', 2.5, false],
   ['window.result kind unknown', 'window.result', 'payload.kind', 'cough', false],
@@ -328,6 +339,16 @@ const cases: Case[] = [
   ['auth.ok generation 2^31', 'auth.ok', 'payload.generation', 2 ** 31, false],
   ['auth.ok generation negative', 'auth.ok', 'payload.generation', -1, false],
   ['auth.ok peer_connected string', 'auth.ok', 'payload.peer_connected', 'true', false],
+  // revision 4 (A3-07): auth.ok carries the rotated credential
+  ['auth.ok next_credential 43 chars', 'auth.ok', 'payload.next_credential', CRED, true],
+  ['auth.ok next_credential 42 chars', 'auth.ok', 'payload.next_credential', CRED.slice(1), false],
+  ['auth.ok next_credential 44 chars', 'auth.ok', 'payload.next_credential', `${CRED}A`, false],
+  ['auth.ok next_credential plus sign', 'auth.ok', 'payload.next_credential', `${CRED.slice(1)}+`, false],
+  ['auth.ok next_credential padding', 'auth.ok', 'payload.next_credential', `${CRED.slice(1)}=`, false],
+  ['auth.ok next_credential null', 'auth.ok', 'payload.next_credential', null, false],
+  ['auth.ok next_credential number', 'auth.ok', 'payload.next_credential', 7, false],
+  ['auth.ok next_credential missing (revision 3 shape)', 'auth.ok', 'payload.next_credential', DELETE, false],
+  ['auth.ok next_credential empty', 'auth.ok', 'payload.next_credential', '', false],
   ['peer.state role unknown', 'peer.state', 'payload.role', 'speaker', false],
   ['unpaired reason unknown', 'unpaired', 'payload.reason', 'bored', false],
   ['unpaired reason room_closed', 'unpaired', 'payload.reason', 'room_closed', true],
@@ -402,7 +423,7 @@ describe('non-finite numbers (object entry point)', () => {
   }
 
   it('rejects 1e999 in JSON text (parses to Infinity)', () => {
-    const text = JSON.stringify(fixtureOf('level')).replace('"dbfs":-42.25', '"dbfs":1e999');
+    const text = JSON.stringify(fixtureOf('level')).replace('"dbfs":-42.3', '"dbfs":1e999');
     expect(text).toContain('1e999');
     const r = parseWireMessage(text, OPTS);
     expect(r.ok).toBe(false);
