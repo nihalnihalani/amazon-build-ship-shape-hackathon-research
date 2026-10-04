@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { CLOSE, LIMITS, MESSAGE_TYPES, TYPE_SPECS, type MessageType } from '../src/core/index.js';
+import { CLOSE, LIMITS, MESSAGE_TYPES, specFor, type MessageType } from '../src/core/index.js';
 import { VALID_PAYLOADS } from './helpers/fixtures.js';
 import {
   Client,
@@ -83,7 +83,7 @@ describe('room creation (ADR-0003 section 2)', () => {
 
 describe('auth bypass: protected messages before authentication', () => {
   const protectedTypes = MESSAGE_TYPES.filter((t) => {
-    const s = TYPE_SPECS[t];
+    const s = specFor(t);
     return s.auth === 'auth' && !s.senders.includes('relay');
   });
 
@@ -95,7 +95,7 @@ describe('auth bypass: protected messages before authentication', () => {
     tv.clear();
     phone.clear();
     const attacker = await rig.connect(PHONE_ORIGIN);
-    attacker.role = TYPE_SPECS[type].senders[0] ?? 'phone';
+    attacker.role = specFor(type).senders[0] ?? 'phone';
     attacker.roomId = tv.roomId; // knows the room id, has no credential
     attacker.generation = 1;
     await rig.send(attacker, type, { payload: VALID_PAYLOADS[type] ?? {} });
@@ -139,7 +139,7 @@ describe('pairing code brute force (ADR-0003 section 7)', () => {
     expect(a.errors()).toEqual(['not_found', 'not_found', 'not_found']);
     expect(a.closed?.code).toBe(CLOSE.RATE_LIMITED);
     expect(tv.of('join.requested')).toHaveLength(0);
-    expect(rig.metrics.filter((m) => m.name === 'JoinFailed')).toHaveLength(3);
+    expect(rig.metrics.filter((m) => m.name === 'join_failed')).toHaveLength(3);
   });
 
   it('limits failures per source across connections, even for a valid code', async () => {
@@ -190,7 +190,7 @@ describe('pairing code brute force (ADR-0003 section 7)', () => {
     c.role = 'phone';
     await rig.send(c, 'join.request', { payload: { pairing_code: 'abc123', device_label: 'x' } });
     expect(c.errors()).toEqual(['bad_schema']);
-    expect(rig.metrics.some((m) => m.name === 'JoinFailed')).toBe(false);
+    expect(rig.metrics.some((m) => m.name === 'join_failed')).toBe(false);
   });
 });
 
@@ -625,7 +625,7 @@ describe('origin policy (ADR-0003 section 8)', () => {
     const evil = await rig.connect(FOREIGN_ORIGIN);
     expect(evil.closed?.code).toBe(CLOSE.ORIGIN);
     expect(rig.store.connectionCount()).toBe(2);
-    expect(rig.metrics.filter((m) => m.name === 'OriginRejected')).toHaveLength(1);
+    expect(rig.metrics.filter((m) => m.name === 'origin_rejected')).toHaveLength(1);
   });
 
   it.each([

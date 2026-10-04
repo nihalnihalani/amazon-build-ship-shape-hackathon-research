@@ -30,7 +30,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "start:local": "npm run build && node dist/local/main.js",
+    "start:local": "npm run build --prefix ../.. -w @atr/protocol && npm run build && node dist/local/main.js",
     "bundle:lambda": "node scripts/bundle-lambda.mjs"
   },
   "dependencies": {

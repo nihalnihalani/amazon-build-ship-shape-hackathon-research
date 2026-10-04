@@ -1,11 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import {
-  CLOSE,
-  MESSAGE_TYPES,
-  TYPE_SPECS,
-  parseWireText,
-  type MessageType,
-} from '../src/core/index.js';
+import { CLOSE, MESSAGE_TYPES, parseWireText, specFor, type MessageType } from '../src/core/index.js';
 import { PHONE_FORWARD_TYPES, SECRET_CUE, SECRET_PHRASE, TV_FORWARD_TYPES, VALID_PAYLOADS } from './helpers/fixtures.js';
 import { PHONE_ORIGIN, Rig, assertAllRigsNoLeaks, uid, type Client } from './helpers/rig.js';
 
@@ -74,9 +68,9 @@ describe('forwarding', () => {
     const { rig, tv, phone } = await paired();
     await rig.send(phone, 'ping');
     await rig.send(tv, 'ping');
-    await rig.send(phone, 'level', { messageId: 'm_duplicateid000001' });
-    await rig.send(phone, 'level', { messageId: 'm_duplicateid000001' }); // duplicate ack
     await rig.send(phone, 'window.start' as MessageType); // forbidden direction error
+    await rig.send(phone, 'level', { seq: 0 }); // replay error
+    await rig.send(phone, 'level', { seq: 0 }); // replay error again
     for (const c of rig.clients.values()) {
       for (const m of c.inbox) {
         if (m.env.sender_role !== 'relay') continue;
@@ -156,7 +150,7 @@ describe('direction and role checks', () => {
         'peer.state': { role: 'tv', connected: true, generation: 1 },
         'auth.ok': { role: 'tv', generation: 1, peer_connected: true, phone_paired: true },
       };
-      await rig.send(phone, type, { payload: payloads[type] as Record<string, unknown>, roomId: phone.roomId });
+      await rig.send(phone, type, { payload: payloads[type] as Record<string, unknown>, roomId: phone.roomId, gen: 0 });
       expect(phone.errors()).toEqual(['forbidden_direction']);
       expect(tv.inbox).toEqual([]);
     },
@@ -166,8 +160,9 @@ describe('direction and role checks', () => {
     const { rig, tv, phone } = await paired();
     await rig.send(phone, 'level', { senderRole: 'tv' });
     expect(phone.errors()).toEqual(['unauthorized']);
-    await rig.send(phone, 'level', { senderRole: 'relay' });
-    expect(phone.errors()).toEqual(['unauthorized', 'forbidden_direction']);
+    await rig.send(phone, 'level', { senderRole: 'relay', gen: 0 });
+    await rig.send(phone, 'level', { senderRole: 'relay' }); // generation 1 is invalid for a relay envelope
+    expect(phone.errors()).toEqual(['unauthorized', 'forbidden_direction', 'bad_schema']);
     expect(tv.of('level')).toHaveLength(0);
   });
 
@@ -254,31 +249,30 @@ describe('room and session binding', () => {
   });
 });
 
-describe('duplicates and replay (ADR-0003 section 10)', () => {
-  it('acknowledges a duplicate message_id as duplicate and does not forward it again', async () => {
+describe('duplicates, stale generations and replay (PROTOCOL.md revision 2, ADR-0003 section 10)', () => {
+  it('drops a duplicate message_id silently: not forwarded, no error, no ack, metric counted', async () => {
     const { rig, tv, phone } = await paired();
     await rig.send(phone, 'level', { messageId: 'm_dupmessage0000001', seq: 1 });
+    phone.clear();
     await rig.send(phone, 'level', { messageId: 'm_dupmessage0000001', seq: 2 });
     expect(tv.of('level')).toHaveLength(1);
-    const ack = phone.last('ack');
-    expect(ack.payload).toEqual({
-      acked_message_id: 'm_dupmessage0000001',
-      outcome: 'ignored_stale',
-      detail: 'duplicate',
-    });
-    expect(ack.env.sender_role).toBe('relay');
-    expect(phone.errors()).toEqual([]);
+    expect(phone.inbox).toEqual([]);
+    expect(rig.metrics.filter((m) => m.name === 'duplicate_dropped')).toHaveLength(1);
   });
 
-  it('treats an exact retransmission (same id, same sequence) as a duplicate, idempotently', async () => {
+  it('checks the duplicate BEFORE generation and sequence: an exact retransmission is silent, not replay or stale', async () => {
     const { rig, tv, phone } = await paired();
     const raw = rig.buildMessage(phone, 'level', { messageId: 'm_retransmit000001', seq: 7 });
     await rig.sendRaw(phone, raw);
+    phone.clear();
+    await rig.sendRaw(phone, raw); // same id and sequence: duplicate wins over replay
     await rig.sendRaw(phone, raw);
-    await rig.sendRaw(phone, raw);
+    const wrongGen = JSON.parse(raw) as Record<string, unknown>;
+    wrongGen.producer_generation = 9; // same id, wrong generation: duplicate wins over stale
+    await rig.sendRaw(phone, JSON.stringify(wrongGen));
     expect(tv.of('level')).toHaveLength(1);
-    expect(phone.of('ack')).toHaveLength(2);
-    expect(phone.errors()).toEqual([]);
+    expect(phone.inbox).toEqual([]);
+    expect(rig.metrics.filter((m) => m.name === 'duplicate_dropped')).toHaveLength(3);
   });
 
   it('does not advance the sequence for a duplicate', async () => {
@@ -289,7 +283,21 @@ describe('duplicates and replay (ADR-0003 section 10)', () => {
     expect(phone.errors()).toEqual([]);
   });
 
-  it('rejects sequence <= last accepted as replay (fresh message ids)', async () => {
+  it('does not count duplicates against the rate limit twice or forward them after the window slides', async () => {
+    const { rig, tv, phone } = await paired();
+    await rig.send(phone, 'level', { messageId: 'm_dupwindow00000001', seq: 1 });
+    for (let i = 0; i < 1023; i += 1) {
+      rig.advance(100); // stay inside the rate limits
+      await rig.send(phone, 'level', { seq: 2 + i });
+    }
+    phone.clear();
+    rig.advance(100);
+    await rig.send(phone, 'level', { messageId: 'm_dupwindow00000001', seq: 5000 }); // still within the last 1024 ids
+    expect(phone.inbox).toEqual([]);
+    expect(tv.of('level')).toHaveLength(1024);
+  });
+
+  it('rejects sequence <= last accepted as replay when the message_id is new', async () => {
     const { rig, tv, phone } = await paired();
     await rig.send(phone, 'level', { seq: 5 });
     await rig.send(phone, 'level', { seq: 5 });
@@ -299,6 +307,17 @@ describe('duplicates and replay (ADR-0003 section 10)', () => {
     expect(tv.of('level')).toHaveLength(1);
     await rig.send(phone, 'level', { seq: 6 });
     expect(tv.of('level')).toHaveLength(2);
+  });
+
+  it('rejects a wrong producer generation as stale (older, newer and the reserved 0)', async () => {
+    const { rig, tv, phone } = await paired();
+    await rig.send(phone, 'level', { gen: 0, seq: 3 });
+    await rig.send(phone, 'level', { gen: phone.generation + 1, seq: 4 });
+    await rig.send(phone, 'level', { gen: 2 ** 31 - 1, seq: 5 });
+    expect(phone.errors()).toEqual(['stale', 'stale', 'stale']);
+    expect(tv.of('level')).toHaveLength(0);
+    await rig.send(phone, 'level', { seq: 3 }); // the sequence was not consumed by the stale attempts
+    expect(tv.of('level')).toHaveLength(1);
   });
 
   it('allows gaps in the sequence (strictly greater, not consecutive)', async () => {
@@ -317,7 +336,7 @@ describe('duplicates and replay (ADR-0003 section 10)', () => {
     expect(phone.of('window.stop')).toHaveLength(1);
   });
 
-  it('replayed unchanged message after the dedupe window falls back to sequence replay', async () => {
+  it('after the 1024-id window slides past an id, an old message falls back to sequence replay', async () => {
     const { rig, phone } = await paired();
     const first = rig.buildMessage(phone, 'level', { messageId: 'm_firstmessage0001', seq: 1 });
     await rig.sendRaw(phone, first);
@@ -328,6 +347,22 @@ describe('duplicates and replay (ADR-0003 section 10)', () => {
     phone.clear();
     await rig.sendRaw(phone, first);
     expect(phone.errors()).toEqual(['replay']);
+  });
+
+  it('a retried message is not lost when the peer was offline for the first attempt', async () => {
+    const { rig, tv, phone } = await paired();
+    await rig.exec(await rig.core.onDisconnect(tv.id, rig.now));
+    const raw = rig.buildMessage(phone, 'cue', { messageId: 'm_retryaftertv0001', seq: 1 });
+    await rig.sendRaw(phone, raw);
+    expect(phone.errors()).toEqual(['not_found']);
+    const tv2 = await rig.connect();
+    tv2.role = 'tv';
+    await rig.send(tv2, 'auth.resume', {
+      payload: { room_id: tv.roomId as string, role: 'tv', credential: tv.credential as string },
+    });
+    await rig.sendRaw(phone, raw); // same message_id and sequence: must be forwarded this time
+    expect(tv2.of('cue')).toHaveLength(1);
+    expect(phone.errors()).toEqual(['not_found']);
   });
 });
 
@@ -532,8 +567,8 @@ describe('cue limit', () => {
   it('does not count duplicate or replayed cues', async () => {
     const { rig, tv, phone } = await paired();
     await rig.send(phone, 'cue', { messageId: 'm_cueduplicate0001', seq: 1 });
-    await rig.send(phone, 'cue', { messageId: 'm_cueduplicate0001', seq: 2 });
-    await rig.send(phone, 'cue', { seq: 1 });
+    await rig.send(phone, 'cue', { messageId: 'm_cueduplicate0001', seq: 2 }); // dropped duplicate
+    await rig.send(phone, 'cue', { seq: 1 }); // replay
     await rig.send(phone, 'cue', { seq: 3 });
     await rig.send(phone, 'cue', { seq: 4 });
     expect(phone.errors()).toEqual(['replay']);
@@ -584,7 +619,7 @@ describe('peer presence', () => {
     phone.clear();
     for (let i = 0; i < 10; i += 1) await rig.send(phone, 'level');
     expect(phone.errors()).toEqual([]);
-    expect(rig.metrics.filter((m) => m.name === 'PeerOffline')).toHaveLength(10);
+    expect(rig.metrics.filter((m) => m.name === 'peer_offline')).toHaveLength(10);
   });
 
   it('notifies the peer when a connection drops and when it returns', async () => {
@@ -708,7 +743,7 @@ describe('kill switch', () => {
 describe('catalogue sanity', () => {
   it('every client-sendable type has a valid fixture payload accepted by the schema', () => {
     for (const t of MESSAGE_TYPES) {
-      const spec = TYPE_SPECS[t];
+      const spec = specFor(t);
       if (spec.senders.includes('relay')) continue;
       if (t === 'join.request' || t === 'auth.resume') continue; // payloads depend on live ids
       const payload = VALID_PAYLOADS[t];

@@ -5,11 +5,11 @@ import { describeStoreConformance, makeCode, makeConn, makeJoin, makeRoom } from
 describeStoreConformance('MemoryRoomStore', () => new MemoryRoomStore());
 
 describe('MemoryRoomStore specifics', () => {
-  it('bounds the message-id window to the last 1024 ids', async () => {
+  it('bounds the message-id window to the last 1024 ids (package MessageIdDedupe)', async () => {
     const s = new MemoryRoomStore();
     for (let i = 0; i < 1024; i += 1) await s.recordMessageId('r1', `m${i}`, 0);
-    expect(await s.recordMessageId('r1', 'm0', 0)).toBe('duplicate');
-    await s.recordMessageId('r1', 'm1024', 0); // evicts m0
+    await s.recordMessageId('r1', 'm1024', 0); // evicts m0, the least recently seen
+    expect(await s.recordMessageId('r1', 'm1', 0)).toBe('duplicate');
     expect(await s.recordMessageId('r1', 'm0', 0)).toBe('new');
   });
 

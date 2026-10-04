@@ -8,17 +8,18 @@ export type Action =
   | { kind: 'metric'; name: MetricName; value: number };
 
 export const METRIC_NAMES = [
-  'RoomsCreated',
-  'JoinRequested',
-  'JoinAccepted',
-  'JoinRejected',
-  'JoinFailed',
-  'AuthFailed',
-  'RateLimited',
-  'MessagesRejected',
-  'PeerOffline',
-  'Superseded',
-  'OriginRejected',
+  'rooms_created',
+  'join_requested',
+  'join_accepted',
+  'join_rejected',
+  'join_failed',
+  'auth_failed',
+  'rate_limited',
+  'messages_rejected',
+  'peer_offline',
+  'superseded',
+  'origin_rejected',
+  'duplicate_dropped',
 ] as const;
 export type MetricName = (typeof METRIC_NAMES)[number];
 

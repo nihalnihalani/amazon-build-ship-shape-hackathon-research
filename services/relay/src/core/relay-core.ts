@@ -25,9 +25,12 @@ import type { CloseReason, LogEvent } from './logger.js';
 import {
   LIMITS,
   buildRelayMessage,
+  forwardTarget,
+  isAllowedSender,
   isPreAuthType,
+  isPreOnlyType,
+  isRelayOriginated,
   parseWireText,
-  specOf,
   type ErrorCode,
   type MessageType,
   type ParsedMessage,
@@ -165,7 +168,7 @@ export class RelayCore {
     const hasOrigin = ctx.origin !== null && ctx.origin !== undefined;
     if (hasOrigin && !this.allowedOrigins.has(ctx.origin as string)) {
       this.log(c, { event: 'origin_rejected', code: 'origin_rejected' });
-      this.metric(c, 'OriginRejected');
+      this.metric(c, 'origin_rejected');
       c.out.push({ kind: 'close', connId, code: CLOSE.ORIGIN, reason: 'origin_rejected' });
       return c.out;
     }
@@ -321,7 +324,7 @@ export class RelayCore {
       await this.reject(c, conn, 'unauthenticated', 'authenticate_first', info);
       return;
     }
-    if (!specOf(msg.type).senders.includes(env.sender_role)) {
+    if (!isAllowedSender(msg.type, env.sender_role)) {
       await this.reject(c, conn, 'forbidden_direction', 'sender_role_not_allowed', info);
       return;
     }
@@ -343,7 +346,7 @@ export class RelayCore {
     // TV-role operation: a missing Origin is allowed (a present one was already checked at connect).
     const n = await this.store.incrementCounter(`rc:${conn.sourceHash}`, CREATE_WINDOW_MS, c.now);
     if (n > this.limits.roomCreatePerSourcePerHour) {
-      this.metric(c, 'RateLimited');
+      this.metric(c, 'rate_limited');
       this.log(c, { event: 'rate_limited', code: 'rate_limited', type: 'room.create' });
       await this.replyError(c, conn, 'rate_limited', 'room_create_limit', info, false);
       await this.drop(c, conn, CLOSE.RATE_LIMITED, 'rate_limited');
@@ -394,7 +397,7 @@ export class RelayCore {
       joinId: null,
       joinRoomId: null,
     });
-    this.metric(c, 'RoomsCreated');
+    this.metric(c, 'rooms_created');
     this.log(c, { event: 'room_created', role: 'tv', room: roomHashPrefix(roomId) });
     await this.relaySend(c, conn.connId, roomId, 'room.created', {
       room_id: roomId,
@@ -409,7 +412,7 @@ export class RelayCore {
   private async handleJoinRequest(c: Ctx, conn: ConnectionRecord, msg: ParsedMessage, info: MsgInfo): Promise<void> {
     // Phone-role operation: requires an allowlisted Origin.
     if (conn.originState !== 'allowed') {
-      this.metric(c, 'OriginRejected');
+      this.metric(c, 'origin_rejected');
       await this.replyError(c, conn, 'origin_rejected', 'origin_required', info, false);
       await this.drop(c, conn, CLOSE.ORIGIN, 'origin_rejected');
       return;
@@ -423,7 +426,7 @@ export class RelayCore {
       (await this.store.getCounter(failKey, FAIL_WINDOW_MS, c.now)) >= this.limits.joinFailPerSourcePer10Min ||
       conn.joinFailures >= this.limits.joinFailPerConnection
     ) {
-      this.metric(c, 'RateLimited');
+      this.metric(c, 'rate_limited');
       this.log(c, { event: 'rate_limited', code: 'rate_limited', type: 'join.request' });
       await this.replyError(c, conn, 'rate_limited', 'too_many_failed_joins', info, false);
       await this.drop(c, conn, CLOSE.RATE_LIMITED, 'rate_limited');
@@ -444,7 +447,7 @@ export class RelayCore {
     }
     if (room.phone && room.phone.credExpiresAt > c.now) {
       await this.relaySend(c, conn.connId, null, 'join.rejected', { reason: 'room_full' });
-      this.metric(c, 'JoinRejected');
+      this.metric(c, 'join_rejected');
       this.log(c, { event: 'join_rejected', code: 'room_full', room: roomHashPrefix(room.roomId) });
       return;
     }
@@ -466,7 +469,7 @@ export class RelayCore {
       joinRoomId: room.roomId,
       authDeadline: c.now + LIMITS.authDeadlineWhileJoinPendingMs,
     });
-    this.metric(c, 'JoinRequested');
+    this.metric(c, 'join_requested');
     this.log(c, { event: 'join_requested', role: 'phone', room: roomHashPrefix(room.roomId) });
     await this.relaySend(c, conn.connId, null, 'join.pending', {
       join_id: joinId,
@@ -491,7 +494,7 @@ export class RelayCore {
   ): Promise<void> {
     await this.store.incrementCounter(failKey, FAIL_WINDOW_MS, c.now);
     const n = await this.store.bumpConnectionCounter(conn.connId, 'joinFailures');
-    this.metric(c, 'JoinFailed');
+    this.metric(c, 'join_failed');
     this.log(c, { event: 'join_failed', code, type: 'join.request' });
     await this.replyError(c, conn, code, detail, info, false);
     if (n >= this.limits.joinFailPerConnection) await this.drop(c, conn, CLOSE.RATE_LIMITED, 'rate_limited');
@@ -507,7 +510,7 @@ export class RelayCore {
   ): Promise<void> {
     await this.store.incrementCounter(failKey, FAIL_WINDOW_MS, c.now);
     const n = await this.store.bumpConnectionCounter(conn.connId, 'joinFailures');
-    this.metric(c, 'AuthFailed');
+    this.metric(c, 'auth_failed');
     this.log(c, { event: 'auth_failed', code, type: 'auth.resume' });
     await this.replyError(c, conn, code, detail, info, false);
     if (n >= this.limits.joinFailPerConnection) await this.drop(c, conn, CLOSE.RATE_LIMITED, 'rate_limited');
@@ -520,7 +523,7 @@ export class RelayCore {
       return;
     }
     if (p.role === 'phone' && conn.originState !== 'allowed') {
-      this.metric(c, 'OriginRejected');
+      this.metric(c, 'origin_rejected');
       await this.replyError(c, conn, 'origin_rejected', 'origin_required', info, false);
       await this.drop(c, conn, CLOSE.ORIGIN, 'origin_rejected');
       return;
@@ -530,7 +533,7 @@ export class RelayCore {
       (await this.store.getCounter(failKey, FAIL_WINDOW_MS, c.now)) >= this.limits.authFailPerSourcePer10Min ||
       conn.joinFailures >= this.limits.joinFailPerConnection
     ) {
-      this.metric(c, 'RateLimited');
+      this.metric(c, 'rate_limited');
       this.log(c, { event: 'rate_limited', code: 'rate_limited', type: 'auth.resume' });
       await this.replyError(c, conn, 'rate_limited', 'too_many_failed_auth', info, false);
       await this.drop(c, conn, CLOSE.RATE_LIMITED, 'rate_limited');
@@ -574,7 +577,7 @@ export class RelayCore {
     if (bump.previousConnId && bump.previousConnId !== conn.connId) {
       const old = await this.store.getConnection(bump.previousConnId);
       if (old) {
-        this.metric(c, 'Superseded');
+        this.metric(c, 'superseded');
         this.log(c, { event: 'superseded', code: 'superseded', role: p.role, room: roomHashPrefix(room.roomId) });
         await this.replyError(c, old, 'superseded', 'newer_connection', { ref: null, type: null, bytes: 0 }, false);
         await this.drop(c, old, CLOSE.SUPERSEDED, 'superseded');
@@ -609,7 +612,6 @@ export class RelayCore {
     info: MsgInfo,
   ): Promise<void> {
     const env = msg.envelope;
-    const spec = specOf(msg.type);
     const role = conn.role as PeerRole;
     const roomId = conn.roomId as string;
 
@@ -637,26 +639,26 @@ export class RelayCore {
       return;
     }
     if (slot.generation !== conn.generation) {
-      this.metric(c, 'Superseded');
+      this.metric(c, 'superseded');
       await this.replyError(c, conn, 'superseded', 'newer_connection', info, false);
       await this.drop(c, conn, CLOSE.SUPERSEDED, 'superseded');
       return;
     }
 
     // Step 7: role, direction, room binding.
-    if (spec.route === 'originated' || env.sender_role === 'relay') {
+    if (isRelayOriginated(msg.type) || env.sender_role === 'relay') {
       return this.reject(c, conn, 'forbidden_direction', 'relay_only_type', info);
     }
     if (env.sender_role !== role) return this.reject(c, conn, 'unauthorized', 'sender_role', info);
-    if (!spec.senders.includes(role)) return this.reject(c, conn, 'forbidden_direction', 'direction', info);
-    if (spec.auth === 'pre') return this.reject(c, conn, 'unauthorized', 'already_authenticated', info);
+    if (!isAllowedSender(msg.type, role)) return this.reject(c, conn, 'forbidden_direction', 'direction', info);
+    if (isPreOnlyType(msg.type)) return this.reject(c, conn, 'unauthorized', 'already_authenticated', info);
     if (env.room_id !== null && env.room_id !== roomId) return this.reject(c, conn, 'unauthorized', 'room_id', info);
 
     // Rate limit. PROTOCOL.md section 4 lists this at step 9; counting happens here so that a flooding peer costs
     // two counter increments rather than several conditional writes. Only the precedence of simultaneous
     // violations differs.
     if (await this.isRateLimited(c, conn, role)) {
-      this.metric(c, 'RateLimited');
+      this.metric(c, 'rate_limited');
       this.log(c, { event: 'rate_limited', code: 'rate_limited', type: msg.type, role, room: roomHashPrefix(roomId) });
       await this.replyError(c, conn, 'rate_limited', 'rate_limited', info, false);
       const n = await this.store.bumpConnectionCounter(conn.connId, 'rateStrikes');
@@ -664,24 +666,26 @@ export class RelayCore {
       return;
     }
 
-    // Step 8: generation, session binding, peer presence, duplicate id, sequence.
-    if (env.producer_generation !== conn.generation) return this.reject(c, conn, 'stale', 'generation', info);
-
+    // Step 8 (PROTOCOL.md revision 2): session binding and peer presence consume no state, so a client may retry
+    // after them. Then the duplicate check comes BEFORE generation and sequence: a duplicate message_id inside the
+    // room's last 1024 ids is dropped silently (not forwarded, no error, no ack). Then generation (stale) and
+    // sequence (replay).
     if (
       this.bindSessions &&
       env.session_id !== null &&
-      spec.route === 'forward' &&
       msg.type !== 'ack' &&
       msg.type !== 'mic.state' &&
       msg.type !== 'session.begin' &&
+      forwardTarget(msg.type, role) !== null &&
       room.activeSessionId !== env.session_id
     ) {
       return this.reject(c, conn, 'stale', 'session', info);
     }
 
-    const peerConnId = spec.route === 'forward' ? peerConnOf(room, role) : null;
-    if (spec.route === 'forward' && !peerConnId) {
-      this.metric(c, 'PeerOffline');
+    const target = forwardTarget(msg.type, role);
+    const peerConnId = target === null ? null : target === 'tv' ? room.tv.connId : (room.phone?.connId ?? null);
+    if (target !== null && !peerConnId) {
+      this.metric(c, 'peer_offline');
       this.log(c, { event: 'peer_offline', code: 'not_found', type: msg.type, role, room: roomHashPrefix(roomId) });
       // Level frames are dropped silently: the TV cancels the window on link loss and an error storm at 20 Hz
       // would cost more than it helps. Everything else is told the peer is offline.
@@ -690,14 +694,10 @@ export class RelayCore {
     }
 
     if ((await this.store.recordMessageId(roomId, env.message_id, c.now)) === 'duplicate') {
-      // PROTOCOL.md `ack.outcome` has no duplicate value: duplicates are acknowledged as ignored_stale/duplicate.
-      await this.relaySend(c, conn.connId, roomId, 'ack', {
-        acked_message_id: env.message_id,
-        outcome: 'ignored_stale',
-        detail: 'duplicate',
-      });
+      this.metric(c, 'duplicate_dropped');
       return;
     }
+    if (env.producer_generation !== conn.generation) return this.reject(c, conn, 'stale', 'generation', info);
     const seq = await this.store.acceptSequence(roomId, role, env.producer_generation, env.sequence);
     if (seq === 'replay') return this.reject(c, conn, 'replay', 'sequence', info);
     if (seq === 'stale') return this.reject(c, conn, 'stale', 'generation', info);
@@ -708,7 +708,7 @@ export class RelayCore {
     }
 
     // Step 10: apply or forward.
-    if (spec.route === 'forward') {
+    if (target !== null) {
       await this.forward(c, conn, msg, room, peerConnId as string);
       return;
     }
@@ -824,7 +824,7 @@ export class RelayCore {
     if (p.decision === 'reject') {
       const r = await this.store.resolveJoin(room.roomId, join.joinId, 'rejected', c.now);
       if (r !== 'ok') return this.reject(c, conn, 'not_found', 'no_such_join', info);
-      this.metric(c, 'JoinRejected');
+      this.metric(c, 'join_rejected');
       this.log(c, { event: 'join_rejected', code: 'unauthorized', room: roomRef });
       if (phoneConn) await this.relaySend(c, phoneConn.connId, null, 'join.rejected', { reason: 'rejected' });
       await closeOutJoin();
@@ -849,7 +849,7 @@ export class RelayCore {
       c.now,
     );
     if (!claim.ok) {
-      this.metric(c, 'JoinRejected');
+      this.metric(c, 'join_rejected');
       this.log(c, { event: 'join_rejected', code: 'room_full', room: roomRef });
       await this.relaySend(c, phoneConn.connId, null, 'join.rejected', { reason: 'room_full' });
       await closeOutJoin();
@@ -866,7 +866,7 @@ export class RelayCore {
       joinId: null,
       joinRoomId: null,
     });
-    this.metric(c, 'JoinAccepted');
+    this.metric(c, 'join_accepted');
     this.log(c, { event: 'join_accepted', role: 'phone', room: roomRef });
     await this.relaySend(c, phoneConn.connId, room.roomId, 'join.accepted', {
       room_id: room.roomId,
@@ -992,7 +992,7 @@ export class RelayCore {
     info: MsgInfo,
     countRejection = true,
   ): Promise<void> {
-    if (countRejection) this.metric(c, 'MessagesRejected');
+    if (countRejection) this.metric(c, 'messages_rejected');
     this.log(c, {
       event: 'message_rejected',
       code,
@@ -1029,7 +1029,7 @@ export class RelayCore {
   }
 
   private async rejectParse(c: Ctx, conn: ConnectionRecord, f: ParseFailure): Promise<void> {
-    const info: MsgInfo = { ref: f.refMessageId, type: f.type, bytes: f.bytes };
+    const info: MsgInfo = { ref: f.refMessageId, type: null, bytes: f.bytes };
     if (f.code === 'payload_too_large') {
       await this.replyError(c, conn, f.code, f.detail, info, true);
       await this.drop(c, conn, CLOSE.TOO_BIG, 'payload_too_large');

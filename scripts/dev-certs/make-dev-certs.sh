@@ -136,7 +136,8 @@ echo "CA fingerprint (SHA-256), compare it on the phone when installing:"
 echo
 cat <<'NEXT'
 Next steps (see docs/operations/LOCAL_RELAY.md):
-  1. Start the relay:  ATR_TLS_CERT=certs/server.crt ATR_TLS_KEY=certs/server.key npm run start:local -w @atr/relay
+  1. Start the relay:  npm run start:local -w @atr/relay   (defaults to certs/server.crt and certs/server.key in the repo root;
+     for another --out directory set ATR_TLS_CERT and ATR_TLS_KEY to absolute paths)
   2. Physical phone: install and trust certs/ca.crt on the phone yourself (iOS: AirDrop/Files, then
      Settings > General > VPN & Device Management, then Settings > General > About > Certificate Trust Settings;
      Android: Settings > Security > Encryption & credentials > Install a certificate > CA certificate).

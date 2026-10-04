@@ -1,5 +1,5 @@
 import { createHash, randomBytes as nodeRandomBytes, timingSafeEqual } from 'node:crypto';
-import { PAIRING_ALPHABET, PAIRING_CODE_LENGTH } from './protocol-port.js';
+import { PAIRING_ALPHABET, PAIRING_CODE_LENGTH, createIdFactory } from './protocol-port.js';
 
 /** Injectable entropy source (tests use deterministic bytes; production uses node:crypto). */
 export type RandomBytes = (n: number) => Uint8Array;
@@ -16,12 +16,10 @@ export function newCredential(rb: RandomBytes): string {
   return base64url(bytes);
 }
 
-function newId(prefix: string, rb: RandomBytes): string {
-  return `${prefix}_${base64url(rb(16))}`;
-}
-export const newRoomId = (rb: RandomBytes): string => newId('r', rb);
-export const newJoinId = (rb: RandomBytes): string => newId('j', rb);
-export const newMessageId = (rb: RandomBytes): string => newId('m', rb);
+// Identifiers (prefix + 22 base64url characters from 16 random bytes) come from the protocol package.
+export const newRoomId = (rb: RandomBytes): string => createIdFactory(rb).room();
+export const newJoinId = (rb: RandomBytes): string => createIdFactory(rb).join();
+export const newMessageId = (rb: RandomBytes): string => createIdFactory(rb).message();
 export const newConnectionId = (rb: RandomBytes): string => base64url(rb(12));
 
 /**

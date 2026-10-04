@@ -9,7 +9,7 @@ import type {
   RoomRecord,
   SlotRecord,
 } from './types.js';
-import { LIMITS } from './protocol-port.js';
+import { LIMITS, MessageIdDedupe, SequenceTracker } from './protocol-port.js';
 
 const clone = <T>(v: T): T => structuredClone(v);
 
@@ -26,7 +26,9 @@ export class MemoryRoomStore implements RoomStore {
   private readonly codes = new Map<string, CodeRecord>();
   private readonly joins = new Map<string, JoinRecord>();
   private readonly connections = new Map<string, ConnectionRecord>();
-  private readonly messageIds = new Map<string, Set<string>>();
+  private readonly messageIds = new Map<string, MessageIdDedupe>();
+  /** Per (room, role) replay tracker, recreated whenever the slot's generation changes. */
+  private readonly trackers = new Map<string, SequenceTracker>();
   private readonly cues = new Map<string, number>();
   private readonly counters = new Map<string, { windowIndex: number; count: number }>();
 
@@ -130,6 +132,7 @@ export class MemoryRoomStore implements RoomStore {
       connId: claim.connId,
     };
     room.phone = slot;
+    this.trackers.delete(`${roomId}|phone`);
     room.phoneGeneration = generation;
     room.lastConnChange = now;
     return { ok: true, generation };
@@ -158,6 +161,7 @@ export class MemoryRoomStore implements RoomStore {
     slot.generation += 1;
     slot.lastSeq = -1;
     slot.connId = connId;
+    this.trackers.delete(`${roomId}|${role}`);
     if (role === 'phone') room.phoneGeneration = Math.max(room.phoneGeneration, slot.generation);
     room.lastConnChange = now;
     return { generation: slot.generation, previousConnId };
@@ -228,24 +232,24 @@ export class MemoryRoomStore implements RoomStore {
     const room = this.rooms.get(roomId);
     const slot = room ? (role === 'tv' ? room.tv : room.phone) : null;
     if (!slot || slot.generation !== generation) return 'stale';
-    if (sequence <= slot.lastSeq) return 'replay';
-    slot.lastSeq = sequence;
-    return 'ok';
+    const key = `${roomId}|${role}`;
+    let tracker = this.trackers.get(key);
+    if (!tracker) {
+      tracker = new SequenceTracker();
+      this.trackers.set(key, tracker);
+    }
+    const verdict = tracker.accept(generation, sequence);
+    if (verdict === 'ok') slot.lastSeq = sequence;
+    return verdict;
   }
 
   async recordMessageId(roomId: string, messageId: string, _now: number): Promise<'new' | 'duplicate'> {
     let ids = this.messageIds.get(roomId);
     if (!ids) {
-      ids = new Set();
+      ids = new MessageIdDedupe(LIMITS.dedupeWindow);
       this.messageIds.set(roomId, ids);
     }
-    if (ids.has(messageId)) return 'duplicate';
-    ids.add(messageId);
-    if (ids.size > LIMITS.dedupeWindow) {
-      const oldest = ids.values().next();
-      if (!oldest.done) ids.delete(oldest.value);
-    }
-    return 'new';
+    return ids.seen(messageId) ? 'duplicate' : 'new';
   }
 
   async consumeCue(roomId: string, sessionId: string, max: number, _now: number): Promise<'ok' | 'limit'> {
@@ -280,6 +284,8 @@ export class MemoryRoomStore implements RoomStore {
         this.rooms.delete(id);
         this.joins.delete(id);
         this.messageIds.delete(id);
+        this.trackers.delete(`${id}|tv`);
+        this.trackers.delete(`${id}|phone`);
         for (const k of this.cues.keys()) if (k.startsWith(`${id}|`)) this.cues.delete(k);
         n += 1;
       }
