@@ -1,6 +1,6 @@
 # Across the Room wire protocol v1
 
-Status: frozen for implementation (revision 2, 2026-10-05; revision 2 records the clarifications in §8 without changing any message shape). Owner: research-contracts. Changes require a revision note here, an ADR update when behaviour changes, and the lead's approval. The executable source of truth is `packages/protocol`; this document and that package must agree (a test enforces the message-type list).
+Status: frozen for implementation (revision 3, 2026-10-05; revision 2 records the clarifications in §8 without changing any message shape; revision 3 changes one field type, see §8). Owner: research-contracts. Changes require a revision note here, an ADR update when behaviour changes, and the lead's approval. The executable source of truth is `packages/protocol`; this document and that package must agree (a test enforces the message-type list).
 
 Transport: JSON text frames over WSS. Binary frames are rejected (close code 1003). Maximum serialized message size **8192 bytes** (UTF-8). All examples are illustrative.
 
@@ -103,7 +103,7 @@ Identity columns: S = session_id, W = window_id, A = attempt_id; ✓ required, �
     auto_gain_control: boolean | null, echo_cancellation: boolean | null,
     noise_suppression: boolean | null, sample_rate: number | null, channel_count: number | null
   },
-  supported: { auto_gain_control: boolean, echo_cancellation: boolean, noise_suppression: boolean },
+  supported: { auto_gain_control: boolean | null, echo_cancellation: boolean | null, noise_suppression: boolean | null },
   wake_lock: "held" | "released" | "unsupported" | "rejected" | "not_requested",
   visibility: "visible" | "hidden",
   mode: "physical_phone" | "same_host" | "fixture_replay"
@@ -198,3 +198,5 @@ Recorded after the protocol package review; the package already implements these
 4. `acked_message_id` and `ref_message_id` must match the `message_id` pattern; an unparsable offending id is reported as `null`.
 5. Ranges not stated in revision 1: result dBFS fields −140…20; frame counts 0…700; durations 0…35000 ms; `valid` is true exactly when `invalid_reason` is null; `sample_rate` 1…384000; `channel_count` integer 1…64; vowel `max_duration_ms` 1000…30000.
 6. §1 wording fix for control characters.
+
+Revision 3 (2026-10-05): `MicStatePayload.supported.{auto_gain_control, echo_cancellation, noise_suppression}` change from `boolean` to `boolean | null`, where `null` means `getSupportedConstraints()` was unavailable (never assume `false`). Requested by the audio-dsp owner; `packages/protocol` implements it.

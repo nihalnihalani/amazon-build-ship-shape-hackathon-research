@@ -260,10 +260,11 @@ export const PAYLOAD_CHECKS: Record<MessageType, Check> = {
       sample_rate: nullable(num(1, 384000)),
       channel_count: nullable(int(1, 64)),
     }),
+    // Revision 3: null = getSupportedConstraints() unavailable (never assume false).
     supported: obj({
-      auto_gain_control: bool,
-      echo_cancellation: bool,
-      noise_suppression: bool,
+      auto_gain_control: nullable(bool),
+      echo_cancellation: nullable(bool),
+      noise_suppression: nullable(bool),
     }),
     wake_lock: oneOf(WAKE_LOCK_STATES),
     visibility: oneOf(VISIBILITY_STATES),
