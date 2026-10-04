@@ -401,6 +401,8 @@ export interface LoadedData {
   staleCheckpointDiscarded: boolean;
   /** Removing expired summaries failed; they were kept. */
   pruneFailed: boolean;
+  /** A checkpoint for a session that already has a saved final record was dropped (QA-02). */
+  finishedCheckpointDropped: boolean;
 }
 
 const emptyLoaded = (): LoadedData => ({
@@ -415,6 +417,7 @@ const emptyLoaded = (): LoadedData => ({
   corruptKeys: 0,
   staleCheckpointDiscarded: false,
   pruneFailed: false,
+  finishedCheckpointDropped: false,
 });
 
 const isAtrKey = (k: string): boolean => k.startsWith(STORAGE_PREFIX);
@@ -510,6 +513,17 @@ export async function loadData(storage: StoragePort, now: number): Promise<Loade
     }
   }
   out.records = keep.sort((a, b) => a.endedAt - b.endedAt);
+  // QA-02: a crash between "record saved" and "checkpoint cleared" leaves a checkpoint for a finished session.
+  // A session that already has a complete record, or a record written after the checkpoint, is never offered for resume.
+  if (out.active !== null) {
+    const active = out.active;
+    const saved = out.records.find((r) => r.sessionId === active.record.sessionId);
+    if (saved && (saved.complete || saved.endedAt >= active.savedAt)) {
+      await storage.removeItem(KEYS.active);
+      out.active = null;
+      out.finishedCheckpointDropped = true;
+    }
+  }
   await writeIndex(storage, out.records);
   return out;
 }

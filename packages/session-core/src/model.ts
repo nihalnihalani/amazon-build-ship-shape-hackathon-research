@@ -147,7 +147,11 @@ export interface Core {
   win: Win | null;
   level: { relDb: number; active: boolean; at: number } | null;
   cue: { text: string; expiresAt: number } | null;
-  pendingCancels: Outbound[];
+  /**
+   * Must-deliver commands (window.cancel, session.end, unpair, room.close) that could not be sent while the link was
+   * down; flushed after auth.ok and when the phone is back (QA-03).
+   */
+  pendingOut: Outbound[];
   deleting: boolean;
   deleteRemaining: number;
   /** Outcome of the last delete: success is only ever claimed after the key listing verified it. */
@@ -177,6 +181,7 @@ export type InternalEvent =
   | { type: 'loaded'; data: LoadedData }
   | { type: 'load_failed' }
   | { type: 'storage_failed' }
+  | { type: 'record_not_saved' }
   | { type: 'send_failed' }
   | { type: 'delete_done'; result: DeleteResult };
 
@@ -186,6 +191,8 @@ export type PersistOp =
   | { op: 'settings'; settings: Settings }
   | { op: 'phrases'; phrases: string[] }
   | { op: 'session'; record: SessionRecord; all: SessionRecord[] }
+  /** Write the finished record, and only if that succeeded clear the checkpoint (QA-02, QA-07). */
+  | { op: 'finalize'; record: SessionRecord; all: SessionRecord[] }
   | { op: 'checkpoint'; checkpoint: Checkpoint }
   | { op: 'clear_checkpoint' };
 

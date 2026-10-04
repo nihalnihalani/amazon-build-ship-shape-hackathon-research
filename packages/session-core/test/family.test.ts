@@ -21,7 +21,7 @@ describe('family mode: listener response phase before reveal', () => {
     const open = h.last('listener.open');
     expect(open.payload).toEqual({ timeout_ms: 60000 });
     expect(open.attempt_id).toBe(h.last('window.start').attempt_id);
-    expect(h.last('session.state').payload).toMatchObject({ stage: 'response_pending', listener_open_attempt: open.attempt_id });
+    expect(h.last('session.state').payload).toMatchObject({ stage: 'phrase_active', listener_open_attempt: open.attempt_id });
     expect(h.of('attempt.reveal')).toHaveLength(0);
 
     h.listener('heard');
@@ -30,7 +30,7 @@ describe('family mode: listener response phase before reveal', () => {
     expect(h.view.result?.listener).toBe('Listener: heard');
     expect(h.last('attempt.reveal').attempt_id).toBe(open.attempt_id);
     expect(h.last('ack').payload).toMatchObject({ outcome: 'applied' });
-    expect(h.last('session.state').payload).toMatchObject({ stage: 'reveal', listener_open_attempt: null });
+    expect(h.last('session.state').payload).toMatchObject({ stage: 'phrase_active', listener_open_attempt: null });
   });
 
   it('a hidden attempt needs both the speaker rating and the listener, in either order', async () => {

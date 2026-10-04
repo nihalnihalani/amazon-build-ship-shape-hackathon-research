@@ -89,7 +89,7 @@ export function initialCore(env: Env): Core {
     win: null,
     level: null,
     cue: null,
-    pendingCancels: [],
+    pendingOut: [],
     deleting: false,
     deleteRemaining: 0,
     deleteOutcome: null,
@@ -266,13 +266,17 @@ export class Machine {
       s.stage === 'response_pending' && sess.familyMode && sess.listenerOpenSent && attempt && attempt.listener === null
         ? attempt.attemptId
         : null;
-    const sig = `${s.stage}|${position}|${sess.cuesUsed}|${listenerOpen ?? ''}`;
+    // QA-05: the phone never learns that an attempt was blind, so response_pending and reveal are not sent. From the
+    // capture start until the next phrase_ready or the summary it sees phrase_active; listener.open is the explicit
+    // signal that the listener may answer.
+    const phoneStage: TvStage = s.stage === 'response_pending' || s.stage === 'reveal' ? 'phrase_active' : s.stage;
+    const sig = `${phoneStage}|${position}|${sess.cuesUsed}|${listenerOpen ?? ''}`;
     if (sig === s.lastStateSig) return;
     s.lastStateSig = sig;
     this.send({
       type: 'session.state',
       ids: { sessionId: sess.sessionId },
-      payload: { stage: s.stage, phrase_position: position, cues_used: sess.cuesUsed, listener_open_attempt: listenerOpen },
+      payload: { stage: phoneStage, phrase_position: position, cues_used: sess.cuesUsed, listener_open_attempt: listenerOpen },
     });
   }
 
@@ -365,6 +369,10 @@ export class Machine {
         break;
       case 'send_failed':
         this.bump('send_errors');
+        break;
+      case 'record_not_saved':
+        // QA-07: the checkpoint was kept, so the work can be recovered on the next launch.
+        s.banner = { kind: 'error', text: COPY.banner.recordNotSaved };
         break;
       case 'storage_failed':
         if (s.banner === null) s.banner = { kind: 'warning', text: COPY.banner.storageFailed };
@@ -823,7 +831,7 @@ export class Machine {
     s.phonePaired = false;
     s.peerConnected = false;
     s.phoneGeneration = null;
-    s.pendingCancels = [];
+    s.pendingOut = [];
     s.mic = { state: null, mode: null };
     s.authed = false;
     this.fx.push({ kind: 'bind', roomId: null, generation: 0 });
@@ -919,11 +927,11 @@ export class Machine {
     s.mic = { state: null, mode: null };
     s.link = 'offline';
     s.generation = 0;
-    s.pendingCancels = [];
+    s.pendingOut = [];
     this.fx.push({ kind: 'bind', roomId: null, generation: 0 });
     this.fx.push({ kind: 'close', reason: code });
     if (s.win !== null) this.cancelWindow('link_lost');
-    s.pendingCancels = [];
+    s.pendingOut = [];
     const sess = s.session;
     const inFlow = sess !== null || s.stage === 'pairing';
     if (sess) {
@@ -941,17 +949,40 @@ export class Machine {
     s.banner = banner;
   }
 
-  private flushCancels(): void {
+  /** Commands for the phone are forwarded by the relay, so they wait for an authenticated link and a connected phone. */
+  private static readonly TO_PHONE = new Set(['window.cancel', 'session.end', 'window.stop', 'attempt.reveal']);
+
+  /**
+   * Sends a command that must reach the other side (it stops capture or ends something). If the link or the phone is
+   * not there it is queued, and flushed after auth.ok or when the phone returns (QA-03). The queue is bounded.
+   */
+  private deliver(message: Outbound): void {
     const s = this.s;
-    if (!linkUp(s) || !s.peerConnected || s.pendingCancels.length === 0) return;
-    for (const m of s.pendingCancels) this.send(m);
-    s.pendingCancels = [];
+    const needsPeer = Machine.TO_PHONE.has(message.type);
+    if (linkUp(s) && (!needsPeer || s.peerConnected)) {
+      this.send(message);
+      return;
+    }
+    const key = JSON.stringify([message.type, 'ids' in message ? message.ids : null]);
+    if (s.pendingOut.some((m) => JSON.stringify([m.type, 'ids' in m ? m.ids : null]) === key)) return;
+    if (s.pendingOut.length < 8) s.pendingOut.push(message);
+  }
+
+  private flushPending(): void {
+    const s = this.s;
+    if (!linkUp(s) || s.pendingOut.length === 0) return;
+    const keep: Outbound[] = [];
+    for (const m of s.pendingOut) {
+      if (Machine.TO_PHONE.has(m.type) && !s.peerConnected) keep.push(m);
+      else this.send(m);
+    }
+    s.pendingOut = keep;
   }
 
   private onPhoneConnected(): void {
     const s = this.s;
     s.lastStateSig = '';
-    this.flushCancels();
+    this.flushPending();
     if (s.stage !== 'pairing' || !s.peerConnected || !s.phonePaired) return;
     if (s.pairOnly || !s.session) {
       s.pairOnly = false;
@@ -1099,6 +1130,7 @@ export class Machine {
     s.phonePaired = m.payload.phone_paired;
     s.mic = { state: null, mode: s.mic.mode };
     s.lastStateSig = '';
+    this.flushPending(); // commands that could not be sent while the link was down (QA-03)
     if (s.peerConnected) this.onPhoneConnected();
   }
 
@@ -1711,9 +1743,8 @@ export class Machine {
 
   private sendCancel(w: Win, reason: 'user_cancel' | 'interrupted' | 'link_lost' | 'timeout' | 'session_end'): void {
     const s = this.s;
-    const message: Outbound = { type: 'window.cancel', ids: this.ids(w), payload: { reason } };
-    if (linkUp(s) && s.peerConnected) this.send(message);
-    else if (s.pendingCancels.length < 5) s.pendingCancels.push(message);
+    void s;
+    this.deliver({ type: 'window.cancel', ids: this.ids(w), payload: { reason } });
   }
 
   /**
@@ -1808,6 +1839,8 @@ export class Machine {
     if (!sess) return;
     const position = sess.phraseIdx + 1;
     if (!sess.skipped.includes(position)) sess.skipped.push(position);
+    // The cursor moved, so the bank is fixed for this session: a later phrases.update applies to the next session (QA-04).
+    sess.phraseStarted = true;
     this.advance();
   }
 
@@ -1894,13 +1927,14 @@ export class Machine {
     s.records = s.records.filter((r) => r.sessionId !== record.sessionId);
     s.records.push(record);
     s.records.sort((a, b) => a.endedAt - b.endedAt);
-    this.persist({ op: 'session', record, all: [...s.records] });
-    this.persist({ op: 'clear_checkpoint' });
+    // The record is written first and the checkpoint is cleared only after that write succeeded: a crash between the
+    // two leaves a checkpoint for a session that already has a saved record (dropped on launch), never the reverse.
+    this.persist({ op: 'finalize', record, all: [...s.records] });
   }
 
   private endWire(sess: Session, reason: 'completed' | 'user_exit' | 'discarded' | 'error'): void {
     if (sess.beginSent && sess.ended === null) {
-      this.send({ type: 'session.end', ids: { sessionId: sess.sessionId }, payload: { reason } });
+      this.deliver({ type: 'session.end', ids: { sessionId: sess.sessionId }, payload: { reason } });
     }
   }
 
@@ -1995,7 +2029,10 @@ export class Machine {
           a.borderline = false;
         }
       }
-      if (record.attempts.length > 0 || record.vowels.length > 0) this.saveRecord(record);
+      // A finished record is never overwritten as "discarded" (QA-02).
+      const existing = s.records.find((r) => r.sessionId === record.sessionId);
+      const finished = existing !== undefined && (existing.complete || existing.endedAt >= cp.savedAt);
+      if (!finished && (record.attempts.length > 0 || record.vowels.length > 0)) this.saveRecord(record);
       else this.persist({ op: 'clear_checkpoint' });
     }
     s.checkpoint = null;

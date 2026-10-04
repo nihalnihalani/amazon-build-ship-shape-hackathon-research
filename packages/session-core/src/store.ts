@@ -92,6 +92,16 @@ export function createSessionStore(deps: SessionStoreDeps): SessionStore {
         case 'session':
           await saveSessionRecord(storage, op.record, op.all);
           break;
+        case 'finalize':
+          // QA-02/QA-07: write the finished record, then clear the checkpoint, and never clear it if the write failed.
+          try {
+            await saveSessionRecord(storage, op.record, op.all);
+          } catch {
+            dispatchEvent({ kind: 'internal', event: { type: 'record_not_saved' } });
+            return;
+          }
+          await clearCheckpoint(storage);
+          break;
         case 'checkpoint':
           await saveCheckpoint(storage, op.checkpoint);
           break;

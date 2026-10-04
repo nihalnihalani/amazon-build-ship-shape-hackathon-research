@@ -350,7 +350,7 @@ describe('A4-03 no side doors between capture close and reveal', () => {
     });
     m.handle({ kind: 'internal', event: { type: 'loaded', data: {
       status: 'ok', futureVersion: null, settings: { familyMode: false, cueWord: null, measurementMode: 'relative_band', onboarded: true, qualification: 'not_run', quietLeadMs: null, quietLeadScreenReaderMs: null },
-      phrases: null, records: [], active: null, prunedSessions: 0, migratedFrom: null, corruptKeys: 0, staleCheckpointDiscarded: false, pruneFailed: false,
+      phrases: null, records: [], active: null, prunedSessions: 0, migratedFrom: null, corruptKeys: 0, staleCheckpointDiscarded: false, pruneFailed: false, finishedCheckpointDropped: false,
     } } });
     const sess = (m as unknown as { newSession(p: string[], f: boolean): { attempts: unknown[]; currentAttemptId: string | null; floorDbfs: number; calMarginDb: number } }).newSession(['a', 'b', 'c'], false);
     sess.floorDbfs = FLOOR;

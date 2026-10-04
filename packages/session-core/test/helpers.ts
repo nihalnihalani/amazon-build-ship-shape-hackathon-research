@@ -74,6 +74,10 @@ export class FakeTransport {
 export interface FlakyStorage extends StoragePort {
   dump(): Record<string, string>;
   failSetFor: Set<string>;
+  /** Fail every write whose key starts with this prefix. */
+  failSetPrefix: string | null;
+  /** After this key is written, every later write and removal is silently lost (a crash). */
+  dieAfterWriteOf: string | null;
   failMultiRemove: boolean;
   /** When true, multiRemove silently removes nothing (a lying store). */
   ignoreMultiRemove: boolean;
@@ -82,23 +86,31 @@ export interface FlakyStorage extends StoragePort {
 
 export function createFlakyStorage(initial?: Record<string, string>): FlakyStorage {
   const base = createMemoryStorage(initial);
+  let dead = false;
   const flaky: FlakyStorage = {
     failSetFor: new Set(),
+    failSetPrefix: null,
+    dieAfterWriteOf: null,
     failMultiRemove: false,
     ignoreMultiRemove: false,
     setCalls: [],
     dump: () => base.dump(),
     getItem: (k) => base.getItem(k),
     getAllKeys: () => base.getAllKeys(),
-    removeItem: (k) => base.removeItem(k),
+    removeItem: (k) => (dead ? Promise.resolve() : base.removeItem(k)),
     setItem: (k, v) => {
       flaky.setCalls.push(k);
-      if (flaky.failSetFor.has(k)) return Promise.reject(new Error('disk full'));
-      return base.setItem(k, v);
+      if (dead) return Promise.resolve();
+      if (flaky.failSetFor.has(k) || (flaky.failSetPrefix !== null && k.startsWith(flaky.failSetPrefix))) {
+        return Promise.reject(new Error('disk full'));
+      }
+      const done = base.setItem(k, v);
+      if (flaky.dieAfterWriteOf === k) dead = true;
+      return done;
     },
     multiRemove: (keys) => {
       if (flaky.failMultiRemove) return Promise.reject(new Error('remove failed'));
-      if (flaky.ignoreMultiRemove) return Promise.resolve();
+      if (flaky.ignoreMultiRemove || dead) return Promise.resolve();
       return base.multiRemove(keys);
     },
   };

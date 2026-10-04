@@ -327,6 +327,8 @@ export const COPY = {
     micUnknown: 'Phone state unknown.',
     micNotOpen: 'The phone microphone is not open. Start it on the phone.',
     storageFailed: 'Could not save to this TV. Practice can continue; this result may not be kept.',
+    recordNotSaved:
+      'Could not save this session to the TV. It is kept so you can recover it the next time the app starts.',
     deleteFailed: 'Some saved data could not be removed. Try again or restart the app.',
     deleted: 'All local practice data was deleted.',
     future: 'Data from a newer version is stored on this TV.',
