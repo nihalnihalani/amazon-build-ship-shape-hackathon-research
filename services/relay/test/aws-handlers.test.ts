@@ -395,4 +395,34 @@ describe('Lambda bundle (esbuild)', () => {
       if (saved.o !== undefined) process.env.ALLOWED_ORIGINS = saved.o;
     }
   });
+
+  it('also builds the deadline consumer (deadline.handler) from the same sources, with its own manifest entry', async () => {
+    execFileSync('node', ['scripts/bundle-lambda.mjs'], { cwd: root, stdio: 'pipe' });
+    const file = `${root}/dist-lambda/deadline.mjs`;
+    expect(existsSync(file)).toBe(true);
+    expect(statSync(file).size).toBeLessThan(5 * 1024 * 1024);
+    const manifest = readFileSync(`${root}/dist-lambda/MANIFEST.txt`, 'utf8');
+    expect(manifest).toContain('handler: deadline.handler');
+    expect(manifest.match(/sha256: [0-9a-f]{64}/g)).toHaveLength(2);
+    const saved = { t: process.env.TABLE_NAME, o: process.env.ALLOWED_ORIGINS };
+    delete process.env.TABLE_NAME;
+    delete process.env.ALLOWED_ORIGINS;
+    try {
+      const mod = (await import(/* @vite-ignore */ file)) as { handler: (e: unknown) => Promise<unknown> };
+      expect(typeof mod.handler).toBe('function');
+      await expect(mod.handler({ Records: [] })).rejects.toThrow(/TABLE_NAME/);
+    } finally {
+      if (saved.t !== undefined) process.env.TABLE_NAME = saved.t;
+      if (saved.o !== undefined) process.env.ALLOWED_ORIGINS = saved.o;
+    }
+  });
+
+  it('contains no credential, secret value or account id (a bundle is an artifact that gets uploaded)', () => {
+    execFileSync('node', ['scripts/bundle-lambda.mjs'], { cwd: root, stdio: 'pipe' });
+    for (const f of ['relay.mjs', 'deadline.mjs']) {
+      const text = readFileSync(`${root}/dist-lambda/${f}`, 'utf8');
+      expect(text, f).not.toMatch(/AKIA[0-9A-Z]{16}/);
+      expect(text, f).not.toMatch(/HASH_PEPPER/);
+    }
+  });
 });

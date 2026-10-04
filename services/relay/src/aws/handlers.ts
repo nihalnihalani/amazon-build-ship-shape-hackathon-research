@@ -141,6 +141,27 @@ function headerValue(event: WsEvent, name: string): string | null {
   return null;
 }
 
+const isNonEmptyString = (v: unknown, max: number): v is string => typeof v === 'string' && v.length > 0 && v.length <= max;
+
+/**
+ * Validates the body of a deadline message. Returns null for anything that is not exactly what the relay sends:
+ * a connection id, the API Gateway domain of this account's WebSocket API and the stage. The domain and stage are
+ * matched against strict patterns so that a forged queue message can never point the Management API client at
+ * another host.
+ */
+function parseDeadlineBody(raw: string): DeadlineMessage | null {
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
+  const { c, d, s } = body as Record<string, unknown>;
+  if (!isNonEmptyString(c, 128) || !isNonEmptyString(d, 253) || !RE_DOMAIN.test(d) || !isNonEmptyString(s, 128) || !RE_STAGE.test(s)) return null;
+  return { c, d, s };
+}
+
 /** Decoded size of a base64 string, computed from its length: a binary frame is never decoded. */
 export function base64DecodedLength(b64: string): number {
   const pad = b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0;
@@ -338,17 +359,10 @@ export function createRelayRuntime(opts: RelayHandlerOptions): RelayRuntime {
     flushAggregates();
     for (const rec of event.Records) {
       try {
-        const body = JSON.parse(rec.body) as Partial<DeadlineMessage>;
-        if (
-          typeof body.c !== 'string' ||
-          body.c.length === 0 ||
-          body.c.length > 128 ||
-          typeof body.d !== 'string' ||
-          !RE_DOMAIN.test(body.d) ||
-          typeof body.s !== 'string' ||
-          !RE_STAGE.test(body.s)
-        ) {
-          // A malformed message can never become valid: drop it instead of retrying forever.
+        const body = parseDeadlineBody(rec.body);
+        if (body === null) {
+          // A malformed message can never become valid: drop it instead of retrying it into the dead-letter queue.
+          // (Only this function and the relay function can send to the queue; this is defence in depth.)
           logger.log({ event: 'internal_error', code: 'internal' });
           continue;
         }

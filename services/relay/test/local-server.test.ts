@@ -5,6 +5,7 @@ import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { WebSocket } from 'ws';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ConfigError, createLocalServer, loadLocalConfig, type LocalConfig, type LocalServer } from '../src/local/index.js';
 import { assertNoLeaks } from './helpers/rig.js';
@@ -154,6 +155,16 @@ describe.skipIf(!hasOpenssl)('local HTTPS/WSS server', () => {
       expect(await WsClient.probe(wsUrl(), { ca, headers: { Origin: PHONE_ORIGIN } })).toBe(101);
       expect(await WsClient.probe(wsUrl(), { ca })).toBe(101); // missing Origin accepted at connect
       expect(await WsClient.probe(`wss://127.0.0.1:${port}/other`, { ca })).toBe(404);
+    });
+
+    it('never negotiates permessage-deflate over TLS either (A6-03, SEC-V07)', async () => {
+      const ws = new WebSocket(wsUrl(), { ca, headers: { Origin: PHONE_ORIGIN }, perMessageDeflate: true });
+      const extensionsHeader = await new Promise<string | undefined>((resolve, reject) => {
+        ws.once('upgrade', (res) => resolve(res.headers['sec-websocket-extensions'] as string | undefined));
+        ws.once('error', reject);
+      });
+      expect(extensionsHeader).toBeUndefined();
+      ws.close();
     });
 
     it('rejects an untrusted TLS certificate', async () => {

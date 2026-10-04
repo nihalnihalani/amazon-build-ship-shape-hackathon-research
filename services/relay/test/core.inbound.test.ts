@@ -71,7 +71,8 @@ describe('one inbound entry point: processInbound (PK-10, SEC-V02)', () => {
     expect(parsing).toEqual(['aws/handlers.ts']);
     const lines = src('aws/handlers.ts').split('\n').filter((l) => /JSON\.parse\(/.test(l));
     expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain('rec.body'); // the deadline queue message the relay itself wrote
+    // the deadline queue message the relay itself wrote, validated by parseDeadlineBody before use
+    expect(src('aws/handlers.ts')).toMatch(/function parseDeadlineBody[\s\S]*?JSON\.parse\(raw\)/);
   });
 
   it('adapters read the frame type before any decode: the binary marker carries only a size', () => {

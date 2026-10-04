@@ -122,6 +122,35 @@ describe('log redaction over a full scenario (ADR-0002)', () => {
     }
   });
 
+  it('writes zero per-message lines for a minute of 100 level frames and exactly one aggregate line (A2-04, SEC-P02)', async () => {
+    for (const store of ['memory', 'dynamo']) {
+      (globalThis as { __ATR_STORE?: string }).__ATR_STORE = store;
+      try {
+        const rig = new Rig();
+        const tv = await rig.tvCreate();
+        const phone = await rig.pair(tv);
+        await rig.startSession(tv);
+        rig.advance(60_000 - (rig.now % 60_000) + 1); // start of a fresh minute
+        await rig.send(tv, 'ping'); // flush anything older
+        rig.flushAggregates();
+        const before = rig.logs.length;
+        for (let i = 0; i < 100; i += 1) {
+          rig.advance(100);
+          await rig.send(phone, 'level', { payload: { ...(VALID_PAYLOADS.level as object), frame_index: i, t_audio_ms: i * 50 } });
+        }
+        expect(tv.of('level')).toHaveLength(100);
+        expect(rig.logs.length, `${store}: not a single line while the minute is open`).toBe(before);
+        rig.advance(60_000);
+        rig.flushAggregates();
+        const added = rig.logs.slice(before).map((l) => JSON.parse(l) as { event: string; code?: string; type?: string; count?: number });
+        expect(added).toEqual([{ event: 'minute_aggregate', code: 'forwarded', type: 'level', count: 100 }]);
+        rig.assertNoLeaks();
+      } finally {
+        delete (globalThis as { __ATR_STORE?: string }).__ATR_STORE;
+      }
+    }
+  });
+
   it('log-scan helper really detects leaks (guards against a vacuous test)', () => {
     expect(() => assertNoLeaks(['{"event":"connect","code":"expired"}'], ['expired'])).toThrow();
     expect(() => assertNoLeaks(['{"event":"connect","payload":{"text":"x"}}'], [])).toThrow();
