@@ -1,0 +1,296 @@
+{
+  "note": "Hand-derived expected values; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
+  "cases": [
+    {
+      "id": "vad-01-transient-100ms",
+      "description": "100 ms transient (2 candidate frames) is rejected.",
+      "session_floor_dbfs": -60,
+      "runs": [[-58,10],[-50,2],[-58,10]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Frames 10-11 are candidates (rel +10). 2 frames < 4: the segment is rejected when the 6th quiet frame ends it. No accepted segments."
+    },
+    {
+      "id": "vad-02-transient-150ms",
+      "description": "150 ms transient (3 candidate frames) is rejected.",
+      "session_floor_dbfs": -60,
+      "runs": [[-58,10],[-50,3],[-58,10]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1,
+        "last_segment_unterminated": false
+      },
+      "derivation": "3 candidate frames (150 ms) < 4: rejected."
+    },
+    {
+      "id": "vad-03-accept-200ms-backdated",
+      "description": "200 ms (4 frames) is accepted and the onset is backdated to the first candidate frame.",
+      "session_floor_dbfs": -60,
+      "runs": [[-58,10],[-50,4],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 10,
+            "end_frame": 13,
+            "onset_ms": 500,
+            "end_ms": 700,
+            "candidate_frames": 4
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Candidates are frames 10-13. Provisional onset = frame 10 = 500 ms (backdated: acceptance is only known at frame 13). End = end of frame 13 = 14*50 = 700 ms. Duration 200 ms."
+    },
+    {
+      "id": "vad-04-gap-5-bridged",
+      "description": "A gap of 5 non-candidate frames (250 ms) is bridged.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,4],[-58,5],[-50,2],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 10,
+            "onset_ms": 0,
+            "end_ms": 550,
+            "candidate_frames": 6
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Candidates 0-3, quiet 4-8 (5 frames, bridged: fewer than 6), candidates 9-10, then quiet. One segment, onset frame 0, last candidate frame 10, 6 candidate frames, end = 11*50 = 550 ms."
+    },
+    {
+      "id": "vad-05-gap-6-ends",
+      "description": "A gap of 6 non-candidate frames (300 ms) ends the segment.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,4],[-58,6],[-50,4],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 3,
+            "onset_ms": 0,
+            "end_ms": 200,
+            "candidate_frames": 4
+          },
+          {
+            "onset_frame": 10,
+            "end_frame": 13,
+            "onset_ms": 500,
+            "end_ms": 700,
+            "candidate_frames": 4
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Candidates 0-3; the 6th quiet frame (frame 9) ends the first segment at the end of frame 3 = 200 ms. Candidates 10-13 are a second segment [500, 700] ms."
+    },
+    {
+      "id": "vad-06-hangover-end-time",
+      "description": "The segment ends at its last candidate frame, not after the hangover.",
+      "session_floor_dbfs": -60,
+      "runs": [[-58,2],[-50,4],[-58,30]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 2,
+            "end_frame": 5,
+            "onset_ms": 100,
+            "end_ms": 300,
+            "candidate_frames": 4
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Candidates are frames 2-5: onset 100 ms, end = 6*50 = 300 ms. The 30 quiet frames add no duration (not 300 + 250 or + 300)."
+    },
+    {
+      "id": "vad-07-multiple-segments-longest-run",
+      "description": "Three segments; longest run and sum.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,4],[-58,8],[-50,10],[-58,7],[-50,6],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 3,
+            "onset_ms": 0,
+            "end_ms": 200,
+            "candidate_frames": 4
+          },
+          {
+            "onset_frame": 12,
+            "end_frame": 21,
+            "onset_ms": 600,
+            "end_ms": 1100,
+            "candidate_frames": 10
+          },
+          {
+            "onset_frame": 29,
+            "end_frame": 34,
+            "onset_ms": 1450,
+            "end_ms": 1750,
+            "candidate_frames": 6
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Seg A frames 0-3 [0,200]; 8 quiet frames (4-11) close it at the 6th. Seg B frames 12-21 [600,1100]; 7 quiet (22-28) close it at the 6th (frame 27). Seg C frames 29-34 [1450,1750]. Spans 200, 500, 300: longest 500, sum 1000."
+    },
+    {
+      "id": "vad-08-open-at-end",
+      "description": "A segment still open when the stream ends is closed at its last candidate frame.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 9,
+            "onset_ms": 0,
+            "end_ms": 500,
+            "candidate_frames": 10
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": true
+      },
+      "derivation": "10 candidate frames, no offset seen. At finish the segment ends at the end of frame 9 = 500 ms and is marked unterminated (no offset observed)."
+    },
+    {
+      "id": "vad-09-threshold-exactly-plus-6",
+      "description": "A frame exactly +6 dB above the floor is a candidate.",
+      "session_floor_dbfs": -60,
+      "runs": [[-58,5],[-54,4],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 5,
+            "end_frame": 8,
+            "onset_ms": 250,
+            "end_ms": 450,
+            "candidate_frames": 4
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "-54 - (-60) = +6.00 >= 6: candidate. 4 frames accepted: onset 250 ms, end 450 ms."
+    },
+    {
+      "id": "vad-10-threshold-just-below-plus-6",
+      "description": "A frame at +5.99 dB is not a candidate, so there is no segment at all.",
+      "session_floor_dbfs": -60,
+      "runs": [[-58,5],[-54.01,4],[-58,10]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "-54.01 - (-60) = +5.99 < 6: never a candidate, so no segment is even opened (rejected count stays 0)."
+    },
+    {
+      "id": "vad-11-nonfinite-inside-speech",
+      "description": "A single non-finite frame inside speech is a bridged gap.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,2],[null,1],[-50,3],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 5,
+            "onset_ms": 0,
+            "end_ms": 300,
+            "candidate_frames": 5
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Frames 0-1 candidates, frame 2 non-finite (non-candidate, gap of 1), frames 3-5 candidates. One segment frames 0-5 with 5 candidate frames, end = 6*50 = 300 ms."
+    },
+    {
+      "id": "vad-12-six-nonfinite-end-segment",
+      "description": "Six consecutive non-finite frames end the segment.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,4],[null,6],[-50,4],[-58,6]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 3,
+            "onset_ms": 0,
+            "end_ms": 200,
+            "candidate_frames": 4
+          },
+          {
+            "onset_frame": 10,
+            "end_frame": 13,
+            "onset_ms": 500,
+            "end_ms": 700,
+            "candidate_frames": 4
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "6 consecutive non-candidate (non-finite) frames end the first segment at 200 ms; the next 4 candidates are a second segment."
+    },
+    {
+      "id": "vad-13-missing-2-frames-bridged",
+      "description": "A dropout of 2 missing frames inside speech is bridged.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,4],["gap",2],[-50,2],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 7,
+            "onset_ms": 0,
+            "end_ms": 400,
+            "candidate_frames": 6
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Candidates at indices 0-3; indices 4-5 missing (count as non-candidates, gap of 2); candidates at indices 6-7. One segment, 6 candidate frames, end = 8*50 = 400 ms."
+    },
+    {
+      "id": "vad-14-missing-6-frames-ends",
+      "description": "A dropout of 6 missing frames ends the segment.",
+      "session_floor_dbfs": -60,
+      "runs": [[-50,4],["gap",6],[-50,4],[-58,10]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 0,
+            "end_frame": 3,
+            "onset_ms": 0,
+            "end_ms": 200,
+            "candidate_frames": 4
+          },
+          {
+            "onset_frame": 10,
+            "end_frame": 13,
+            "onset_ms": 500,
+            "end_ms": 700,
+            "candidate_frames": 4
+          }
+        ],
+        "rejected_segments": 0,
+        "last_segment_unterminated": false
+      },
+      "derivation": "Indices 4-9 are missing: 6 non-candidates end the first segment at 200 ms. Candidates at 10-13 start a second segment."
+    }
+  ]
+}
