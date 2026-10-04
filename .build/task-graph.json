@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:37:16+05:30",
+ "updated_at": "2026-10-05T03:37:42+05:30",
  "states": [
   "pending",
   "ready",
@@ -67,7 +67,7 @@
     "T00"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "docs/COMPATIBILITY.md lists SDK/RN/React/OS/native modules/starter commit/host arch/toolchain/backend runtime",
@@ -214,7 +214,7 @@
     "T02"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "packages/protocol implements PROTOCOL.md v1 with validators and tests",
