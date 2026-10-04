@@ -1,0 +1,4 @@
+samconfig.toml
+.aws-sam/
+packaged.yaml
+*.local.json

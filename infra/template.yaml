@@ -1,0 +1,668 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Across the Room relay: API Gateway WebSocket + one Lambda (nodejs24.x, arm64) + DynamoDB for room and connection
+  metadata, a private S3 bucket behind CloudFront (Origin Access Control) for the phone page, alarms, and a budget
+  alert. Prepared for an owner-authorized deploy; nothing in this repository has been deployed.
+
+# Controls that limit spend and abuse in this template (a budget alert is NOT a spending cap):
+#   1. Lambda reserved concurrency (parameter ReservedConcurrency)
+#   2. WebSocket stage default-route throttling (Mappings: StageSettings)
+#   3. The relay kill switch (parameter RelayDisabled=true, see docs/operations/RUNBOOK.md)
+#   4. Application rate limits inside the relay core (ADR-0003 section 7)
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label: { default: Deployment }
+        Parameters: [Stage, AllowedOrigins, RelayDisabled]
+      - Label: { default: Cost and abuse controls }
+        Parameters: [ReservedConcurrency, MonthlyBudgetUsd]
+      - Label: { default: Alerts }
+        Parameters: [AlarmEmail]
+      - Label: { default: Secrets }
+        Parameters: [HashPepper]
+
+Parameters:
+  Stage:
+    Type: String
+    Default: staging
+    AllowedValues: [staging, prod]
+    Description: Deployment stage. Used in resource names, the WebSocket stage name and the metric dimension.
+  AllowedOrigins:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^https?://[A-Za-z0-9.:\[\]-]+(,https?://[A-Za-z0-9.:\[\]-]+)*$'
+    Description: >-
+      Extra browser origins allowed to open a WebSocket, comma separated, exact scheme://host[:port], no spaces,
+      no wildcards (for example a TV web-preview origin). The CloudFront origin of this stack is always allowed.
+  AlarmEmail:
+    Type: String
+    AllowedPattern: '^[^@\s,]+@[^@\s,]+\.[^@\s,]+$'
+    Description: >-
+      Email address for CloudWatch alarm notifications and budget alerts. The SNS email subscription must be
+      confirmed by clicking the link in the message AWS sends; an unconfirmed subscription delivers nothing.
+  MonthlyBudgetUsd:
+    Type: Number
+    Default: 25
+    MinValue: 1
+    MaxValue: 100000
+    Description: >-
+      Monthly cost budget in USD for the whole account. Notifications at 50, 80 and 100 percent of actual cost and
+      100 percent of forecast. This is an alert, not a cap: AWS billing data lags, nothing is stopped automatically.
+  ReservedConcurrency:
+    Type: String
+    Default: '20'
+    AllowedPattern: '^(-1|[1-9][0-9]{0,2})$'
+    Description: >-
+      Lambda reserved concurrency (also the ceiling used by the concurrency alarm). Use -1 for no reservation
+      when the account concurrency quota is too low to reserve (a new account can have a quota of 10; reserving
+      requires the unreserved pool to stay at 100 or more). Without a reservation this control and its alarm are absent.
+  RelayDisabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['false', 'true']
+    Description: >-
+      Kill switch. 'true' makes $connect answer 503 and every message get an error and a disconnect. Takes effect
+      on new Lambda environments after a stack update (see docs/operations/RUNBOOK.md for faster levers).
+  HashPepper:
+    Type: String
+    NoEcho: true
+    Default: ''
+    AllowedPattern: '^$|^[A-Za-z0-9+/=_-]{16,128}$'
+    Description: >-
+      Optional secret mixed into pairing-code hashes (16 to 128 characters of A-Z a-z 0-9 + / = _ -). Strongly
+      recommended. NoEcho hides it from the console and CLI output, but it is still stored in the Lambda
+      environment configuration; it is defence in depth, not a vault secret.
+
+Mappings:
+  # Per-route throttle (requests per second) applied by API Gateway before Lambda is invoked. One measuring session
+  # sends about 20 level frames per second plus a few control messages, so 60 msg/s is roughly two to three concurrent
+  # sessions and 150 msg/s roughly six. This is the hard ceiling on message-driven spend: docs/operations/COST.md.
+  StageSettings:
+    staging:
+      ThrottleRate: 60
+      ThrottleBurst: 120
+    prod:
+      ThrottleRate: 150
+      ThrottleBurst: 300
+
+Conditions:
+  IsProd: !Equals [!Ref Stage, prod]
+  HasExtraOrigins: !Not [!Equals [!Ref AllowedOrigins, '']]
+  UseReservedConcurrency: !Not [!Equals [!Ref ReservedConcurrency, '-1']]
+
+Resources:
+  # ---------------------------------------------------------------------------------------------------------------
+  # Data: one DynamoDB table. Routing metadata only (ids, hashes, generations, sequences, expiries, counters).
+  # ---------------------------------------------------------------------------------------------------------------
+  RelayTable:
+    Type: AWS::DynamoDB::Table
+    # The table holds ephemeral routing metadata only (rooms expire within 12 hours), so replacing or deleting it
+    # loses nothing that matters. Production additionally has deletion protection (below).
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+      # TTL is physical cleanup only (deletion can lag by days); the relay checks logical expiry on every message.
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      DeletionProtectionEnabled: !If [IsProd, true, false]
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  # ---------------------------------------------------------------------------------------------------------------
+  # Function: one Lambda serves $connect, $disconnect and $default.
+  # ---------------------------------------------------------------------------------------------------------------
+  RelayLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/atr-relay-${Stage}'
+      RetentionInDays: 14
+
+  RelayFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                'aws:SourceAccount': !Ref AWS::AccountId
+      Policies:
+        - PolicyName: relay-least-privilege
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: WriteOwnLogsOnly
+                Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub '${RelayLogGroup.Arn}:*'
+              - Sid: TableAccessOnThisTable
+                Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem]
+                Resource: !GetAtt RelayTable.Arn
+              # ManageConnections covers the three @connections calls. The relay uses POST (deliver a message) and
+              # DELETE (close a connection it has decided to drop). It never needs GET.
+              - Sid: ManageConnectionsOfThisApiAndStage
+                Effect: Allow
+                Action: execute-api:ManageConnections
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${RelayApi}/${Stage}/POST/@connections/*'
+                  - !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${RelayApi}/${Stage}/DELETE/@connections/*'
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  RelayFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'atr-relay-${Stage}'
+      Description: Across the Room relay (API Gateway WebSocket handler)
+      # Pre-bundled by `npm run bundle:lambda -w @atr/relay` (esbuild, AWS SDK v3 included).
+      CodeUri: ../services/relay/dist-lambda/
+      Handler: relay.handler
+      Runtime: nodejs24.x
+      Architectures: [arm64]
+      MemorySize: 512
+      Timeout: 10
+      ReservedConcurrentExecutions: !If [UseReservedConcurrency, !Ref ReservedConcurrency, !Ref 'AWS::NoValue']
+      Role: !GetAtt RelayFunctionRole.Arn
+      # A published version and a stable alias give a fast rollback lever independent of CloudFormation.
+      AutoPublishAlias: live
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: !Ref RelayLogGroup
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RelayTable
+          ALLOWED_ORIGINS: !If
+            - HasExtraOrigins
+            - !Sub 'https://${PhoneDistribution.DomainName},${AllowedOrigins}'
+            - !Sub 'https://${PhoneDistribution.DomainName}'
+          RELAY_DISABLED: !Ref RelayDisabled
+          STAGE_NAME: !Ref Stage
+          HASH_PEPPER: !Ref HashPepper
+      Tags:
+        Project: across-the-room
+        Stage: !Ref Stage
+
+  # ---------------------------------------------------------------------------------------------------------------
+  # WebSocket API: every route goes to the one function. No authorizer: authentication is the first message.
+  # ---------------------------------------------------------------------------------------------------------------
+  RelayApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub 'atr-relay-${Stage}'
+      Description: Across the Room relay WebSocket API
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: '$request.body.action'
+      Tags:
+        Project: across-the-room
+        Stage: !Ref Stage
+
+  RelayIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref RelayApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Join
+        - ''
+        - - 'arn:'
+          - !Ref AWS::Partition
+          - ':apigateway:'
+          - !Ref AWS::Region
+          - ':lambda:path/2015-03-31/functions/'
+          - !Ref RelayFunction.Alias
+          - '/invocations'
+      TimeoutInMillis: 15000
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref RelayApi
+      RouteKey: $connect
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${RelayIntegration}'
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref RelayApi
+      RouteKey: $disconnect
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${RelayIntegration}'
+
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref RelayApi
+      RouteKey: $default
+      AuthorizationType: NONE
+      Target: !Sub 'integrations/${RelayIntegration}'
+
+  RelayDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn: [ConnectRoute, DisconnectRoute, DefaultRoute]
+    Properties:
+      ApiId: !Ref RelayApi
+
+  RelayStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref RelayApi
+      StageName: !Ref Stage
+      DeploymentId: !Ref RelayDeployment
+      # Per-route throttling bounds the message rate (and with it Lambda, DynamoDB and API Gateway cost).
+      # Execution and access logging are not enabled: they require an account-level API Gateway CloudWatch role,
+      # which is an account setting this template does not create. Standard API metrics are available regardless.
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: true
+        ThrottlingRateLimit: !FindInMap [StageSettings, !Ref Stage, ThrottleRate]
+        ThrottlingBurstLimit: !FindInMap [StageSettings, !Ref Stage, ThrottleBurst]
+      Tags:
+        Project: across-the-room
+        Stage: !Ref Stage
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref RelayFunction.Alias
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${RelayApi}/*/*'
+
+  # ---------------------------------------------------------------------------------------------------------------
+  # Phone page: private S3 bucket, CloudFront with Origin Access Control on the regular S3 REST origin
+  # (not the S3 website endpoint). HTTPS only, so getUserMedia has a secure origin.
+  # ---------------------------------------------------------------------------------------------------------------
+  PhoneBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-noncurrent-versions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 2
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  PhoneBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PhoneBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal: { Service: cloudfront.amazonaws.com }
+            Action: s3:GetObject
+            Resource: !Sub '${PhoneBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${PhoneDistribution}'
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt PhoneBucket.Arn
+              - !Sub '${PhoneBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+
+  PhoneOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub 'atr-phone-${Stage}-${AWS::StackName}'
+        Description: SigV4 signing of every CloudFront request to the private phone-page bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  PhoneCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub 'atr-phone-${Stage}-${AWS::StackName}'
+        Comment: Short TTL so a new phone build is visible within minutes without an invalidation
+        DefaultTTL: 300
+        MinTTL: 0
+        MaxTTL: 3600
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig: { CookieBehavior: none }
+          HeadersConfig: { HeaderBehavior: none }
+          QueryStringsConfig: { QueryStringBehavior: none }
+
+  PhoneResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub 'atr-phone-${Stage}-${AWS::StackName}'
+        Comment: Same policy as the local relay server, plus the relay wss origin in connect-src
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: false
+            Preload: false
+            Override: true
+          ContentSecurityPolicy:
+            Override: true
+            ContentSecurityPolicy: !Sub >-
+              default-src 'self';
+              connect-src 'self' wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix};
+              script-src 'self';
+              worker-src 'self' blob:;
+              base-uri 'none';
+              form-action 'none';
+              frame-ancestors 'none';
+              object-src 'none'
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: no-referrer
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: microphone=(self), camera=(), geolocation=()
+              Override: true
+
+  PhoneDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub 'Across the Room phone page (${Stage})'
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_All
+        Origins:
+          - Id: phone-bucket
+            DomainName: !GetAtt PhoneBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt PhoneOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: phone-bucket
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: !Ref PhoneCachePolicy
+          ResponseHeadersPolicyId: !Ref PhoneResponseHeadersPolicy
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  # ---------------------------------------------------------------------------------------------------------------
+  # Alerts. The alarms only prove that a notification is configured; delivery must be tested separately
+  # (confirm the SNS email subscription, then exercise an alarm) as described in docs/operations/RUNBOOK.md.
+  # ---------------------------------------------------------------------------------------------------------------
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Sub 'Across the Room relay alerts (${Stage})'
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  AlarmTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics: [!Ref AlarmTopic]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudWatchAlarmsOfThisAccount
+            Effect: Allow
+            Principal: { Service: cloudwatch.amazonaws.com }
+            Action: sns:Publish
+            Resource: !Ref AlarmTopic
+            Condition:
+              StringEquals:
+                'aws:SourceAccount': !Ref AWS::AccountId
+              ArnLike:
+                'aws:SourceArn': !Sub 'arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:*'
+
+  AlarmEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref AlarmTopic
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+
+  LambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-lambda-errors'
+      AlarmDescription: Relay Lambda reported 5 or more errors in 5 minutes. See docs/operations/RUNBOOK.md.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - { Name: FunctionName, Value: !Ref RelayFunction }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  LambdaThrottlesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-lambda-throttles'
+      AlarmDescription: Relay Lambda invocations were throttled (concurrency ceiling reached). See docs/operations/RUNBOOK.md.
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Dimensions:
+        - { Name: FunctionName, Value: !Ref RelayFunction }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  LambdaConcurrencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseReservedConcurrency
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-lambda-concurrency'
+      AlarmDescription: Peak concurrent executions reached 80 percent of the reserved concurrency. See docs/operations/RUNBOOK.md.
+      Metrics:
+        - Id: used
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: ConcurrentExecutions
+              Dimensions:
+                - { Name: FunctionName, Value: !Ref RelayFunction }
+            Period: 60
+            Stat: Maximum
+        - Id: percent
+          ReturnData: true
+          Label: Percent of reserved concurrency
+          Expression: !Sub 'used / ${ReservedConcurrency} * 100'
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  ApiIntegrationErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-apigw-integration-errors'
+      AlarmDescription: API Gateway saw 5 or more integration (Lambda) errors in 5 minutes. See docs/operations/RUNBOOK.md.
+      Namespace: AWS/ApiGateway
+      MetricName: IntegrationError
+      Dimensions:
+        - { Name: ApiId, Value: !Ref RelayApi }
+        - { Name: Stage, Value: !Ref Stage }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  ApiExecutionErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-apigw-execution-errors'
+      AlarmDescription: API Gateway reported 5 or more execution errors in 5 minutes. See docs/operations/RUNBOOK.md.
+      Namespace: AWS/ApiGateway
+      MetricName: ExecutionError
+      Dimensions:
+        - { Name: ApiId, Value: !Ref RelayApi }
+        - { Name: Stage, Value: !Ref Stage }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  JoinFailureBurstAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-join-failures'
+      AlarmDescription: >-
+        30 or more failed pairing attempts in 5 minutes (possible pairing-code guessing). Custom metric emitted by
+        the relay (name join_failed, no content). See docs/operations/RUNBOOK.md.
+      Namespace: AcrossTheRoom/Relay
+      MetricName: join_failed
+      Dimensions:
+        - { Name: Stage, Value: !Ref Stage }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 30
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  # ---------------------------------------------------------------------------------------------------------------
+  # Budget alert (account wide). It notifies; it does not stop anything and billing data lags by hours.
+  # Budgets "actions" for EC2/RDS cannot stop this serverless workload and are intentionally not configured.
+  # ---------------------------------------------------------------------------------------------------------------
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub 'atr-relay-${Stage}-${AWS::StackName}-monthly'
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUsd
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref AlarmEmail }
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref AlarmEmail }
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref AlarmEmail }
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - { SubscriptionType: EMAIL, Address: !Ref AlarmEmail }
+
+Outputs:
+  WebSocketUrl:
+    Description: Relay WebSocket URL for the phone and TV clients (wss, includes the stage)
+    Value: !Sub 'wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${Stage}'
+  PhonePageUrl:
+    Description: HTTPS URL of the phone page (a trustworthy origin for getUserMedia)
+    Value: !Sub 'https://${PhoneDistribution.DomainName}'
+  PhoneBucketName:
+    Description: Private S3 bucket that holds the phone page build (upload with the deploy steps in infra/README.md)
+    Value: !Ref PhoneBucket
+  PhoneDistributionId:
+    Description: CloudFront distribution id (for cache invalidation)
+    Value: !Ref PhoneDistribution
+  TableName:
+    Description: DynamoDB table with room and connection metadata
+    Value: !Ref RelayTable
+  FunctionName:
+    Description: Relay Lambda function name
+    Value: !Ref RelayFunction
+  AlarmTopicArn:
+    Description: SNS topic for alarms (the email subscription must be confirmed)
+    Value: !Ref AlarmTopic
