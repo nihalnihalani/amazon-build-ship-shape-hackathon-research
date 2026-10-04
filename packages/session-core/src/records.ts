@@ -4,6 +4,7 @@
  */
 
 import { HISTORY_DAYS } from './constants.js';
+import { isCalendarDate } from './dates.js';
 import type { HistoryDayView, SummaryView } from './contract.js';
 import { SUMMARY_COPY } from './copy.js';
 
@@ -249,6 +250,7 @@ export function summarizeRecord(record: SessionRecord): SummaryView {
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function parseDate(date: string): { y: number; m: number; d: number } | null {
+  if (!isCalendarDate(date)) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   if (!match) return null;
   return { y: Number(match[1]), m: Number(match[2]), d: Number(match[3]) };

@@ -90,7 +90,7 @@ describe('A8-01 banners and cue chips are visual only while the TV must be silen
     const h = await boot();
     h.setupToPhrases();
     h.cue('Volume');
-    expect(h.view.announcement).toBe('Cue: Volume');
+    expect(h.view.announcement).toMatch(/^Phrase 1 of 10\..*Cue: Volume$/);
   });
 
   it('while capturing, announcement is always null for every kind of window', async () => {

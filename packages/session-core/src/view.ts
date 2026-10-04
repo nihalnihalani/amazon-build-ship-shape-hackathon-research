@@ -48,11 +48,13 @@ import {
   METER_CAPTION,
   RESULT_COPY,
   UNQUALIFIED_SUFFIX,
+  plural,
   reasonText,
   secondsWords,
   speakScript,
 } from './copy.js';
 import type { Banner, Core, DialogKind, Env, Win } from './model.js';
+import { safeLocalDate } from './dates.js';
 import { deriveHistory, deriveSummary, summarizeRecord } from './records.js';
 import type { AttemptRecord, VowelRecord } from './records.js';
 import {
@@ -137,9 +139,10 @@ export function buildView(s: Core, env: Env): TvView {
     // A hidden attempt waiting for its reveal: the static stage text only. Cue and banner text is queued.
     v.announcement = announcement;
   } else {
-    const base = v.cue !== null ? COPY.cue(v.cue.text) : announcement;
+    // QA-12: the screen's own text is never replaced. A cue (and any held banner text) is appended, so the screen is
+    // announced first and the cue gets its turn after it; each queued text appears once and stays for this stage.
     const queued = s.deferred.texts;
-    v.announcement = queued.length > 0 ? `${base ?? ''} ${queued.join(' ')}`.trim() : base;
+    v.announcement = queued.length > 0 ? `${announcement ?? ''} ${queued.join(' ')}`.trim() : announcement;
   }
   // After a dialog closes, focus returns to the control that opened it.
   if (s.dialog === null && s.restoreFocus !== null && v.actions.some((a) => a.id === s.restoreFocus && a.disabled !== true)) {
@@ -334,6 +337,7 @@ function diagnosticsOf(s: Core, env: Env): Record<string, string> {
     heartbeats_answered: String(c.pongs ?? 0),
     duplicates_dropped: String(c.duplicates ?? 0),
     integrity_errors: String(c.integrity_errors ?? 0),
+    clock_date_invalid: String(c.clock_date_invalid ?? 0),
     join_mismatches: String(c.join_mismatches ?? 0),
     inputs_ignored: String(c.inputs_ignored ?? 0),
     cues_used: isBlindNow(s) ? 'redacted' : String(sess?.cuesUsed ?? 0),
@@ -388,7 +392,10 @@ function projectIdle(v: TvView, s: Core, env: Env): string {
   }
   v.screen = 'home';
   v.title = COPY.home.title;
-  const last = s.records.length > 0 ? s.records[s.records.length - 1] : undefined;
+  // A record dated after today (a clock that was wrong) is never shown as the last session.
+  const today = safeLocalDate(env.localDate, s.now);
+  const shown = s.records.filter((r) => r.localDate <= today);
+  const last = shown.length > 0 ? shown[shown.length - 1] : undefined;
   let lastLine: string = COPY.home.noSessions;
   if (last) {
     const sum = summarizeRecord(last);
@@ -396,7 +403,7 @@ function projectIdle(v: TvView, s: Core, env: Env): string {
     const scored = sum.scoredVisible + sum.scoredHidden;
     lastLine =
       scored === 0
-        ? `Last session, ${last.localDate}: ${sum.phrasesCompleted} phrases completed${last.complete ? '' : ' (incomplete)'}.`
+        ? `Last session, ${last.localDate}: ${plural(sum.phrasesCompleted, 'phrase')} completed${last.complete ? '' : ' (incomplete)'}.`
         : `Last session, ${last.localDate}: reached ${reached} of ${scored} scored${last.complete ? '' : ' (incomplete)'}.`;
   }
   v.body = [...COPY.home.body, lastLine];
@@ -938,7 +945,7 @@ function projectHistory(v: TvView, s: Core, env: Env): string {
   v.screen = 'history';
   v.title = COPY.history.title;
   v.body = [...COPY.history.body];
-  const days: HistoryDayView[] = deriveHistory(s.records, env.localDate(s.now));
+  const days: HistoryDayView[] = deriveHistory(s.records, safeLocalDate(env.localDate, s.now));
   v.history = days;
   v.actions = [act('done', COPY.history.done)];
   v.preferredAction = 'done';
@@ -952,7 +959,9 @@ function projectResume(v: TvView, s: Core): string {
   const lines: string[] = [];
   if (cp) {
     const attempted = new Set(cp.record.attempts.filter((a) => a.started).map((a) => a.position)).size;
-    lines.push(`A session from ${cp.record.localDate} was not finished. ${attempted} phrases were attempted.`);
+    lines.push(
+      `A session from ${cp.record.localDate} was not finished. ${plural(attempted, 'phrase')} ${attempted === 1 ? 'was' : 'were'} attempted.`,
+    );
     if (cp.record.attempts.some((a) => a.state === 'capturing' || a.state === 'capture_closed' || a.state === 'response_pending')) {
       lines.push(COPY.resume.interruptedNote);
     }
