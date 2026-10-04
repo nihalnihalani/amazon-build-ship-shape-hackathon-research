@@ -153,6 +153,8 @@ export class Harness {
   storage: FlakyStorage;
   store!: SessionStore;
   views: TvView[] = [];
+  /** Session floor the fake phone reports (dBFS). */
+  floor = FLOOR;
   private phoneSeq = 0;
   private relaySeq = 0;
   deps!: SessionStoreDeps;
@@ -349,7 +351,7 @@ export class Harness {
   }
 
   precheckPayload(purpose: 'quiet_check' | 'pre_window', o: Partial<Json> = {}, rise = 0): Json {
-    const floor = purpose === 'quiet_check' ? FLOOR : FLOOR + rise;
+    const floor = purpose === 'quiet_check' ? this.floor : this.floor + rise;
     return {
       purpose,
       valid: true,
@@ -389,13 +391,18 @@ export class Harness {
       longest_active_ms: o.longest ?? active,
       segments: 1,
       onset_ms: 200,
-      p50_active_dbfs: FLOOR + rel - 4,
-      p95_active_dbfs: o.p95 !== undefined ? o.p95 : FLOOR + rel,
-      peak_dbfs: FLOOR + rel + 2,
+      p50_active_dbfs: this.floor + rel - 4,
+      p95_active_dbfs: o.p95 !== undefined ? o.p95 : this.floor + rel,
+      peak_dbfs: this.floor + rel + 2,
       clipped_frames: 0,
       nonfinite_frames: 0,
       duration_ms: 8000,
     };
+  }
+
+  answerWindowWith(payload: Json, cmdIn?: Sent): void {
+    const cmd = cmdIn ?? this.last('window.start');
+    this.wire(this.envelope('window.result', 'phone', payload, this.ids(cmd)));
   }
 
   answerWindow(o: Parameters<Harness['windowPayload']>[1] = {}, cmdIn?: Sent): void {
@@ -440,6 +447,25 @@ export class Harness {
     this.micState('open_idle');
   }
 
+  /** Pair a phone from Home without starting a session (the relay room and the phone slot exist afterwards). */
+  pairOnly(): void {
+    this.ui('pair_phone');
+    this.transportState('connected');
+    this.roomCreated();
+    this.joinRequested();
+    this.ui('accept_join');
+    this.peerState(true);
+  }
+
+  /** From an already paired phone: start a session and get to the first phrase_ready with a 20 dB band. */
+  setupPairedToPhrases(): void {
+    this.ui('start_session');
+    this.micState('open_idle');
+    this.runQuiet();
+    this.runCalibration(20);
+    this.toPhrases();
+  }
+
   /** Press OK on a begin action and let the quiet lead elapse. */
   beginAndLead(action: ActionId): void {
     this.ui(action);
@@ -479,7 +505,7 @@ export class Harness {
     this.answerPrecheck({}, o.rise ?? 0);
     if (this.stage() !== 'phrase_active') return;
     const start = this.last('window.start');
-    this.level(0, FLOOR + 2, false);
+    this.level(0, this.floor + 2, false);
     this.advance(500);
     if (o.early) {
       this.ok();

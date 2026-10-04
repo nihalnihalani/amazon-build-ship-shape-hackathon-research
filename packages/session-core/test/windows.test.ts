@@ -243,7 +243,7 @@ describe('link loss and interruption', () => {
     const cancel = h.last('window.cancel');
     expect(cancel).toMatchObject({ window_id: start.window_id, attempt_id: start.attempt_id, producer_generation: 2 });
     expect(cancel.payload).toEqual({ reason: 'link_lost' });
-    expect(cancel.sequence).toBe(1);
+    expect(cancel.sequence).toBe(0); // the first authenticated message of the new generation
     expect(h.of('window.start')).toHaveLength(0); // never resumes capture on its own
     expect(h.view.stage).toBe('paused_or_invalid');
     expect(h.view.actions.find((a) => a.id === 'retry')?.disabled).toBe(true);

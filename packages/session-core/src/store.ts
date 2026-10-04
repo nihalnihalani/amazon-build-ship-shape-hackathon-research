@@ -6,7 +6,7 @@
  */
 
 import type { SessionStore, SessionStoreDeps, StoragePort, TvInput, TvView } from './contract.js';
-import { createIdGenerator } from './ids.js';
+import { createIdFactory } from '@atr/protocol';
 import { Machine } from './machine.js';
 import { createMemoryStorage } from './memory-storage.js';
 import type { Effect, Env, Event, PersistOp } from './model.js';
@@ -20,10 +20,20 @@ import {
   saveSettings,
 } from './storage.js';
 import { relaySocketUrl } from './urls.js';
-import { encodeOutbound, isPreAuth } from './wire.js';
+import { Outbox } from './wire.js';
 
 export function createSessionStore(deps: SessionStoreDeps): SessionStore {
-  const newId = createIdGenerator(deps.randomBytes);
+  const idFactory = createIdFactory(deps.randomBytes);
+  const newId = (prefix: string): string => {
+    switch (prefix) {
+      case 's_':
+        return idFactory.session();
+      case 'w_':
+        return idFactory.window();
+      default:
+        return idFactory.attempt();
+    }
+  };
   const env: Env = {
     now: () => deps.clock.now(),
     localDate: (ms) => deps.clock.localDate(ms),
@@ -42,7 +52,7 @@ export function createSessionStore(deps: SessionStoreDeps): SessionStore {
   let lastJson = JSON.stringify(lastView);
   let running = false;
   const queue: Event[] = [];
-  const sequence = { roomId: null as string | null, generation: -1, n: 0 };
+  const outbox = new Outbox({ idFactory, clock: () => deps.clock.now() });
   let chain: Promise<void> = Promise.resolve();
 
   function enqueueStorage(task: () => Promise<void>): void {
@@ -75,31 +85,17 @@ export function createSessionStore(deps: SessionStoreDeps): SessionStore {
 
   function execute(effect: Effect): void {
     switch (effect.kind) {
-      case 'send': {
-        const message = effect.message;
-        const pre = isPreAuth(message);
-        const generation = pre ? 0 : effect.generation;
-        const roomId = message.type === 'room.create' ? null : effect.roomId;
-        let seq = 0;
-        if (!pre) {
-          if (sequence.roomId !== effect.roomId || sequence.generation !== generation) {
-            sequence.roomId = effect.roomId;
-            sequence.generation = generation;
-            sequence.n = 0;
-          }
-          sequence.n += 1;
-          seq = sequence.n;
+      case 'send':
+        try {
+          deps.transport.send(outbox.encode(effect.message));
+        } catch {
+          // An invalid outbound message is a bug, never a reason to stop the session; it is counted.
+          dispatchEvent({ kind: 'internal', event: { type: 'send_failed' } });
         }
-        const serialized = encodeOutbound(message, {
-          messageId: newId('m_', 20),
-          roomId,
-          generation,
-          sequence: seq,
-          now: deps.clock.now(),
-        });
-        deps.transport.send(serialized);
         break;
-      }
+      case 'bind':
+        outbox.bind(effect.roomId, effect.generation);
+        break;
       case 'connect':
         deps.transport.connect(relaySocketUrl(deps.relayUrl));
         break;

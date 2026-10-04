@@ -228,10 +228,11 @@ describe('cue word', () => {
     expect(h.view.cue).toBeNull();
     h.back(); // cancels the quiet lead and returns to the ready screen
     expect(h.view.stage).toBe('phrase_ready');
-    for (const bad of ['', '   ', 'x'.repeat(13), 'bad\u0007cue', 42, null]) {
-      h.cue(bad);
-      expect(h.last('ack').payload).toMatchObject({ outcome: 'rejected', detail: 'invalid_cue' });
-    }
+    // text the shared validators reject never reaches the session: dropped at the wire boundary, not counted
+    const acks = h.of('ack').length;
+    for (const bad of ['', '   ', 'x'.repeat(13), 'bad\u0007cue', ' padded ', 42, null]) h.cue(bad);
+    expect(h.of('ack')).toHaveLength(acks);
+    expect(h.last('session.state').payload).toMatchObject({ cues_used: 0 });
     h.cue('Volume', 's_notmysession123');
     expect(h.last('ack').payload).toMatchObject({ outcome: 'ignored_stale' });
     h.cue('x'.repeat(12));

@@ -39,11 +39,13 @@ import { DEFAULT_SETTINGS } from './storage.js';
 import type { Checkpoint } from './storage.js';
 import { validateCue, validatePhraseBank } from './text.js';
 import { evaluateCalibration, evaluateGate, evaluateQuietCheck, evaluateWindow } from './verdict.js';
+import { MessageIdDedupe } from '@atr/protocol';
+import type { MessageOf } from '@atr/protocol';
 import { parseInbound } from './wire.js';
 import type { AckOutcome, Ids, Inbound, Outbound, PrecheckResultPayload, WindowResultPayload } from './wire.js';
 import { buildView } from './view.js';
 
-type Msg<T extends Inbound['type']> = Extract<Inbound, { type: T }>;
+type Msg<T extends Inbound['type']> = MessageOf<T>;
 
 export function initialCore(env: Env): Core {
   return {
@@ -85,7 +87,6 @@ export function initialCore(env: Env): Core {
     deleting: false,
     deleteRemaining: 0,
     lastStateSig: '',
-    seenIds: [],
     staleLevelAckWindow: null,
     counters: {},
   };
@@ -96,6 +97,8 @@ const IN_FLIGHT = ['capturing', 'capture_closed', 'response_pending'];
 export class Machine {
   readonly s: Core;
   private fx: Effect[] = [];
+  /** Recent message ids: a duplicate delivery is dropped silently (PROTOCOL.md section 8). */
+  private readonly dedupe = new MessageIdDedupe(SEEN_IDS_MAX);
 
   constructor(private readonly env: Env) {
     this.s = initialCore(env);
@@ -144,7 +147,7 @@ export class Machine {
 
   private send(message: Outbound): void {
     this.bump('sent');
-    this.fx.push({ kind: 'send', message, roomId: this.s.roomId, generation: this.s.generation });
+    this.fx.push({ kind: 'send', message });
   }
 
   private persist(op: Extract<Effect, { kind: 'persist' }>['op']): void {
@@ -174,8 +177,8 @@ export class Machine {
     if (outcome === 'rejected') this.bump('rejected');
     this.send({
       type: 'ack',
-      ids: { sessionId: m.sessionId, windowId: m.windowId, attemptId: m.attemptId },
-      payload: { acked_message_id: m.messageId, outcome, detail },
+      ids: { sessionId: m.session_id, windowId: m.window_id, attemptId: m.attempt_id },
+      payload: { acked_message_id: m.message_id, outcome, detail },
     });
   }
 
@@ -183,8 +186,8 @@ export class Machine {
     if (m.type === 'level') {
       // One ack per stale window: level frames arrive at 20 per second.
       this.bump('ignored_stale');
-      if (this.s.staleLevelAckWindow !== m.windowId) {
-        this.s.staleLevelAckWindow = m.windowId;
+      if (this.s.staleLevelAckWindow !== m.window_id) {
+        this.s.staleLevelAckWindow = m.window_id;
         this.ack(m, 'ignored_stale', '');
       }
       return;
@@ -294,6 +297,9 @@ export class Machine {
         s.booted = true;
         this.go('idle', 'ready', { kind: 'warning', text: COPY.banner.storageFailed });
         s.idleScreen = 'onboarding';
+        break;
+      case 'send_failed':
+        this.bump('send_errors');
         break;
       case 'storage_failed':
         if (s.banner === null) s.banner = { kind: 'warning', text: COPY.banner.storageFailed };
@@ -703,8 +709,12 @@ export class Machine {
     s.joinAccepted = false;
     s.mic = { state: null, mode: null };
     s.link = 'offline';
+    s.generation = 0;
+    s.pendingCancels = [];
+    this.fx.push({ kind: 'bind', roomId: null, generation: 0 });
     this.fx.push({ kind: 'close', reason: code });
     if (s.win !== null) this.cancelWindow('link_lost');
+    s.pendingCancels = [];
     s.banner = { kind: 'error', text: COPY.banner.pairingLost };
   }
 
@@ -753,20 +763,18 @@ export class Machine {
 
   private onWire(raw: unknown): void {
     const s = this.s;
-    const parsed = parseInbound(raw);
+    const parsed = parseInbound(raw, s.now);
     if (!parsed.ok) {
       this.bump('parse_errors');
       return;
     }
     const m = parsed.message;
     this.bump('received');
-    if (s.seenIds.includes(m.messageId)) {
+    if (this.dedupe.seen(m.message_id)) {
       this.bump('duplicates');
       return;
     }
-    s.seenIds.push(m.messageId);
-    if (s.seenIds.length > SEEN_IDS_MAX) s.seenIds.shift();
-    if (m.type !== 'room.created' && s.roomId !== null && m.roomId !== null && m.roomId !== s.roomId) {
+    if (m.type !== 'room.created' && s.roomId !== null && m.room_id !== null && m.room_id !== s.roomId) {
       this.bump('ignored_stale');
       return;
     }
@@ -775,15 +783,15 @@ export class Machine {
         this.onRoomCreated(m);
         break;
       case 'pairing.code':
-        s.code = m.payload.pairingCode;
-        s.codeExpiresAt = m.payload.codeExpiresAt;
+        s.code = m.payload.pairing_code;
+        s.codeExpiresAt = m.payload.code_expires_at;
         s.refreshRequested = false;
         break;
       case 'join.requested':
         this.onJoinRequested(m);
         break;
       case 'join.expired':
-        if (s.joinRequest !== null && s.joinRequest.joinId === m.payload.joinId) {
+        if (s.joinRequest !== null && s.joinRequest.joinId === m.payload.join_id) {
           s.joinRequest = null;
           s.banner = { kind: 'info', text: COPY.join.expired };
         }
@@ -826,15 +834,12 @@ export class Machine {
 
   private onRoomCreated(m: Msg<'room.created'>): void {
     const s = this.s;
-    if (m.roomId === null) {
-      this.bump('parse_errors');
-      return;
-    }
-    s.roomId = m.roomId;
-    s.credential = m.payload.credential;
+    s.roomId = m.payload.room_id;
+    s.credential = m.payload.tv_credential;
     s.generation = m.payload.generation;
-    s.code = m.payload.pairingCode;
-    s.codeExpiresAt = m.payload.codeExpiresAt;
+    this.fx.push({ kind: 'bind', roomId: s.roomId, generation: s.generation });
+    s.code = m.payload.pairing_code;
+    s.codeExpiresAt = m.payload.code_expires_at;
     s.refreshRequested = false;
     s.authed = true;
     s.lastStateSig = '';
@@ -845,18 +850,19 @@ export class Machine {
     const p = m.payload;
     if (s.stage !== 'pairing' || s.joinRequest !== null || s.joinAccepted) {
       // Not waiting for a phone: refuse rather than leave the phone hanging.
-      this.send({ type: 'join.confirm', payload: { join_id: p.joinId, decision: 'reject' } });
+      this.send({ type: 'join.confirm', payload: { join_id: p.join_id, decision: 'reject' } });
       return;
     }
-    s.joinRequest = { joinId: p.joinId, deviceLabel: p.deviceLabel, confirmDigits: p.confirmDigits, expiresAt: p.expiresAt };
+    s.joinRequest = { joinId: p.join_id, deviceLabel: p.device_label, confirmDigits: p.confirm_digits, expiresAt: p.expires_at };
   }
 
   private onAuthOk(m: Msg<'auth.ok'>): void {
     const s = this.s;
     s.authed = true;
     s.generation = m.payload.generation;
-    s.peerConnected = m.payload.peerConnected;
-    s.phonePaired = m.payload.phonePaired;
+    this.fx.push({ kind: 'bind', roomId: s.roomId, generation: s.generation });
+    s.peerConnected = m.payload.peer_connected;
+    s.phonePaired = m.payload.phone_paired;
     s.mic = { state: null, mode: s.mic.mode };
     s.lastStateSig = '';
     if (s.peerConnected) this.onPhoneConnected();
@@ -907,7 +913,7 @@ export class Machine {
     const w = s.win;
     const sess = s.session;
     if (!w || !sess) return null;
-    if (m.sessionId !== sess.sessionId || m.windowId !== w.windowId || m.attemptId !== w.attemptId) return null;
+    if (m.session_id !== sess.sessionId || m.window_id !== w.windowId || m.attempt_id !== w.attemptId) return null;
     return w;
   }
 
@@ -1129,11 +1135,11 @@ export class Machine {
   private onListenerResponse(m: Msg<'listener.response'>): void {
     const s = this.s;
     const sess = s.session;
-    if (!sess || sess.ended !== null || m.sessionId !== sess.sessionId || !sess.familyMode) {
+    if (!sess || sess.ended !== null || m.session_id !== sess.sessionId || !sess.familyMode) {
       this.stale(m);
       return;
     }
-    const a = sess.attempts.find((x) => x.attemptId === m.attemptId && x.windowId === m.windowId);
+    const a = sess.attempts.find((x) => x.attemptId === m.attempt_id && x.windowId === m.window_id);
     if (!a) {
       this.stale(m);
       return;
@@ -1159,7 +1165,7 @@ export class Machine {
   private onCue(m: Msg<'cue'>): void {
     const s = this.s;
     const sess = s.session;
-    if (!sess || sess.ended !== null || m.sessionId !== sess.sessionId) {
+    if (!sess || sess.ended !== null || m.session_id !== sess.sessionId) {
       this.stale(m);
       return;
     }

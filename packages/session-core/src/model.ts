@@ -137,7 +137,6 @@ export interface Core {
   deleteRemaining: number;
 
   lastStateSig: string;
-  seenIds: string[];
   staleLevelAckWindow: string | null;
   counters: Record<string, number>;
 }
@@ -146,6 +145,7 @@ export type InternalEvent =
   | { type: 'loaded'; data: LoadedData }
   | { type: 'load_failed' }
   | { type: 'storage_failed' }
+  | { type: 'send_failed' }
   | { type: 'delete_done'; result: DeleteResult };
 
 export type Event = TvInput | { kind: 'internal'; event: InternalEvent };
@@ -158,7 +158,9 @@ export type PersistOp =
   | { op: 'clear_checkpoint' };
 
 export type Effect =
-  | { kind: 'send'; message: Outbound; roomId: string | null; generation: number }
+  | { kind: 'send'; message: Outbound }
+  /** Tell the outbox the room and authenticated generation (restarts the sequence when either changes). */
+  | { kind: 'bind'; roomId: string | null; generation: number }
   | { kind: 'connect' }
   | { kind: 'close'; reason: string }
   | { kind: 'persist'; op: PersistOp }

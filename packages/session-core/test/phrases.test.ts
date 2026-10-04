@@ -65,50 +65,55 @@ describe('phrase text validation', () => {
 describe('phrases.update through the store', () => {
   it('replaces the starter bank and renders literal text', async () => {
     const h = await boot();
-    const bank = ['<script>alert(1)</script>', 'Café time', '  padded  '];
+    h.pairOnly();
+    const bank = ['<script>alert(1)</script>', 'Caf\u00e9 time', 'padded'];
     h.phrases(bank);
     expect(h.last('ack').payload).toMatchObject({ outcome: 'applied' });
-    h.setupToPhrases();
+    h.setupPairedToPhrases();
     expect(h.last('session.begin').payload.phrase_count).toBe(3);
     expect(h.view.phrase).toMatchObject({ position: 1, total: 3, text: '<script>alert(1)</script>' });
     h.runPhrase({});
     h.ui('next_phrase');
-    expect(h.view.phrase?.text).toBe('Café time');
+    expect(h.view.phrase?.text).toBe('Caf\u00e9 time');
     h.runPhrase({});
     h.ui('next_phrase');
     expect(h.view.phrase?.text).toBe('padded');
     await h.flush();
-    expect(JSON.parse(h.storage.dump()['atr:v1:phrases'] as string).phrases).toEqual([
-      '<script>alert(1)</script>',
-      'Café time',
-      'padded',
-    ]);
+    expect(JSON.parse(h.storage.dump()['atr:v1:phrases'] as string).phrases).toEqual(bank);
   });
 
-  it('rejects 61 characters, 11 phrases, empty lists, control characters and non-arrays and keeps the old bank', async () => {
+  it('text that the shared validators reject (61 characters, 11 phrases, empty list, control characters, not normalized) never reaches the bank', async () => {
     const h = await boot();
-    const cases: [unknown, string][] = [
-      [['a'.repeat(61)], 'invalid_phrase'],
-      [Array.from({ length: 11 }, (_, i) => `p${i}`), 'too_many'],
-      [[], 'too_few'],
-      [['ok', 'bad\u0000'], 'invalid_phrase'],
-      ['not a list', 'not_a_list'],
+    h.pairOnly();
+    const bad: unknown[] = [
+      ['a'.repeat(61)],
+      Array.from({ length: 11 }, (_, i) => `p${i}`),
+      [],
+      ['ok', 'bad\u0000'],
+      ['  padded  '],
+      ['Cafe\u0301'],
+      'not a list',
     ];
-    for (const [value, detail] of cases) {
-      h.phrases(value);
-      expect(h.last('ack').payload).toMatchObject({ outcome: 'rejected', detail });
-    }
-    h.setupToPhrases();
+    const acks = h.of('ack').length;
+    for (const value of bad) h.phrases(value);
+    expect(h.of('ack')).toHaveLength(acks); // dropped at the wire boundary, nothing applied
+    h.setupPairedToPhrases();
     expect(h.view.phrase?.text).toBe(STARTER_PHRASES[0]);
     expect(h.view.phrase?.total).toBe(10);
+    h.ui('finish_early');
+    h.ui('done');
+    h.ui('open_settings');
+    h.ui('open_diagnostics');
+    expect(Number(h.view.diagnostics?.messages_unparseable)).toBe(bad.length);
   });
 
   it('accepts exactly 60 characters and exactly 10 phrases', async () => {
     const h = await boot();
+    h.pairOnly();
     const bank = Array.from({ length: 10 }, (_, i) => String(i).repeat(60).slice(0, 60));
     h.phrases(bank);
     expect(h.last('ack').payload).toMatchObject({ outcome: 'applied' });
-    h.setupToPhrases();
+    h.setupPairedToPhrases();
     expect(h.view.phrase?.total).toBe(10);
     expect(h.view.phrase?.text).toHaveLength(60);
   });

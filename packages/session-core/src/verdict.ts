@@ -35,6 +35,11 @@ export {
 
 const finite = (v: number | null): v is number => v !== null && Number.isFinite(v);
 
+/** Non-finite frames must not exceed 5 % of frames received (docs/MEASUREMENT.md). */
+const NONFINITE_MAX_SHARE = 0.05;
+const tooManyNonFinite = (p: PrecheckResultPayload): boolean =>
+  p.frame_count > 0 && p.nonfinite_frames / p.frame_count > NONFINITE_MAX_SHARE + DB_EPSILON;
+
 /* ------------------------------------------------------------------ quiet check (ADR-0001 §2) */
 
 export type QuietCheckVerdict =
@@ -43,7 +48,8 @@ export type QuietCheckVerdict =
 
 /**
  * TV re-validation of the quiet-check aggregate: coverage >= 0.90, clipped_frames = 0,
- * p80 - p20 <= 6, p95 - floor <= 10, floor <= -30. The phone's own `valid` flag must also be true.
+ * p80 - p20 <= 6, p95 - floor <= 10, floor <= -30, non-finite frames <= 5 % of frames received, in the
+ * reason order of docs/MEASUREMENT.md. The phone's own `valid` flag must also be true.
  */
 export function evaluateQuietCheck(p: PrecheckResultPayload): QuietCheckVerdict {
   if (!p.valid) return { ok: false, reason: p.invalid_reason ?? 'interrupted' };
@@ -54,6 +60,7 @@ export function evaluateQuietCheck(p: PrecheckResultPayload): QuietCheckVerdict 
   if (p80 - p20 > QUIET_STABLE_MAX_DB + DB_EPSILON) return { ok: false, reason: 'unstable_floor' };
   if (p95 - floor > QUIET_BURST_MAX_DB + DB_EPSILON) return { ok: false, reason: 'burst_noise' };
   if (floor > QUIET_FLOOR_MAX_DBFS + DB_EPSILON) return { ok: false, reason: 'too_loud' };
+  if (tooManyNonFinite(p)) return { ok: false, reason: 'nonfinite' };
   return { ok: true, floorDbfs: floor, p20Dbfs: p20, p80Dbfs: p80, p95Dbfs: p95 };
 }
 
@@ -81,6 +88,7 @@ export function evaluateGate(
   if (p.coverage + DB_EPSILON < MIN_COVERAGE) return { pass: false, reason: 'low_coverage', riseDb: null };
   if (p.clipped_frames !== 0) return { pass: false, reason: 'clipped', riseDb: null };
   if (p95 - floor > QUIET_BURST_MAX_DB + DB_EPSILON) return { pass: false, reason: 'burst_noise', riseDb: null };
+  if (tooManyNonFinite(p)) return { pass: false, reason: 'nonfinite', riseDb: null };
   const rise = floor - sessionFloorDbfs;
   if (rise + DB_EPSILON >= GATE_RISE_MAX_DB) return { pass: false, reason: 'room_noisier', riseDb: rise };
   if (calMarginDb !== null && calMarginDb - rise + DB_EPSILON < GATE_SEPARATION_DB) {
