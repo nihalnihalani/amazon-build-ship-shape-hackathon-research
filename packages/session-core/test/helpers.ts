@@ -219,7 +219,7 @@ export class Harness {
   transportState(state: LinkView): void {
     this.store.dispatch({ kind: 'transport', state });
   }
-  wire(message: string | object): void {
+  wire(message: unknown): void {
     this.store.dispatch({ kind: 'wire', message });
   }
   /** Advance the clock, then tick the store (the app would tick every 100-250 ms). */
