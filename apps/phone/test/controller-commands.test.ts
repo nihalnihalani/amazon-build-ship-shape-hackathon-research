@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ATTEMPT,
   ATTEMPT2,
+  authOk,
   attemptReveal,
   flush,
   lastMessageId,
@@ -516,5 +517,96 @@ describe('getUserMedia is only reachable from startMic()', () => {
     h.audio.makeOpen();
     h.controller.startMic();
     expect(h.audio.openCalls).toHaveLength(0);
+  });
+});
+
+describe('acknowledgements of phone messages (TV rejects while a phrase window is open)', () => {
+  const ackMsg = (id: string, outcome: 'applied' | 'rejected' | 'ignored_stale', detail = '', ids: { s?: string; w?: string; a?: string } = {}) =>
+    tvMsg('ack', { acked_message_id: id, outcome, detail }, ids);
+
+  it('phrases.update: sending until the ack; applied = saved; rejected = shown, retry is manual', async () => {
+    const h = await ready();
+    h.controller.savePhrases(['One', 'Two']);
+    expect(h.controller.getState().phrases).toMatchObject({ status: 'sending', count: 2, saved: ['One', 'Two'] });
+    const first = h.sockets.current.last('phrases.update');
+    h.sockets.current.receive(ackMsg(first.message_id, 'rejected', 'window_open'));
+    expect(h.controller.getState().phrases).toMatchObject({ status: 'rejected', saved: [] });
+    expect(h.controller.getState().notice).toMatch(/Press Save again after the current phrase window/);
+    await flush();
+    expect(h.sockets.current.messages('phrases.update')).toHaveLength(1);
+    h.controller.savePhrases(['One', 'Two']);
+    const second = h.sockets.current.last('phrases.update');
+    h.sockets.current.receive(ackMsg(second.message_id, 'applied'));
+    expect(h.controller.getState().phrases).toMatchObject({ status: 'saved', saved: ['One', 'Two'] });
+    // a later refusal keeps showing the last list the TV confirmed
+    h.controller.savePhrases(['Three']);
+    h.sockets.current.receive(ackMsg(h.sockets.current.last('phrases.update').message_id, 'rejected'));
+    expect(h.controller.getState().phrases).toMatchObject({ status: 'rejected', saved: ['One', 'Two'] });
+  });
+
+  it('an ack for an older save is ignored once a newer one is pending', async () => {
+    const h = await ready();
+    h.controller.savePhrases(['A']);
+    const a = h.sockets.current.last('phrases.update');
+    h.controller.savePhrases(['B']);
+    h.sockets.current.receive(ackMsg(a.message_id, 'applied'));
+    expect(h.controller.getState().phrases.status).toBe('sending');
+  });
+
+  it('a save whose connection drops is reported as not sent instead of "sending" forever', async () => {
+    const h = await ready();
+    h.controller.savePhrases(['A']);
+    h.sockets.current.drop(1006);
+    expect(h.controller.getState().phrases.status).toBe('not_sent');
+  });
+
+  it('phrases are validated with the package rules before anything is sent', async () => {
+    const h = await ready();
+    const before = h.sockets.current.sent.length;
+    expect(h.controller.savePhrases(['a'.repeat(61)]).sent).toBe(false);
+    expect(h.controller.savePhrases(['ok', 'bad\tone']).sent).toBe(false);
+    expect(h.controller.savePhrases([]).sent).toBe(false);
+    expect(h.controller.savePhrases(Array.from({ length: 11 }, (_, i) => `p${i}`)).sent).toBe(false);
+    expect(h.sockets.current.sent.length).toBe(before);
+  });
+
+  it('cue refused while a window is open: the cue is given back with an explanation and is not resent', async () => {
+    const h = await ready();
+    h.sockets.current.receive(listenerOpen());
+    h.controller.sendCue();
+    const cue = h.sockets.current.last('cue');
+    h.sockets.current.receive(ackMsg(cue.message_id, 'rejected', 'window_open', { s: SESSION }));
+    expect(h.controller.getState().cue).toMatchObject({ used: 0, feedback: expect.stringMatching(/could not take the cue right now/) });
+    await flush();
+    expect(h.sockets.current.messages('cue')).toHaveLength(1);
+    h.controller.sendCue();
+    expect(h.sockets.current.messages('cue')).toHaveLength(2);
+  });
+
+  it('listener.response: rejected re-opens one tap, ignored_stale does not', async () => {
+    const h = await ready();
+    h.sockets.current.receive(listenerOpen());
+    h.controller.answer('heard');
+    const r1 = h.sockets.current.last('listener.response');
+    h.sockets.current.receive(ackMsg(r1.message_id, 'rejected', '', { s: SESSION, w: WINDOW, a: ATTEMPT }));
+    expect(h.controller.getState()).toMatchObject({ canAnswer: true });
+    h.controller.answer('not_heard');
+    const r2 = h.sockets.current.last('listener.response');
+    h.sockets.current.receive(ackMsg(r2.message_id, 'ignored_stale', '', { s: SESSION, w: WINDOW, a: ATTEMPT }));
+    expect(h.controller.getState().canAnswer).toBe(false);
+    expect(h.controller.getState().listener.feedback).toMatch(/Too late/);
+    expect(h.sockets.current.messages('listener.response')).toHaveLength(2);
+  });
+
+  it('a mic.state is sent right after join.accepted and right after auth.ok (the TV shows "Phone state unknown" until then)', async () => {
+    const h = await pairedHarness();
+    const afterJoin = h.sockets.current.messages().map((m) => m.type);
+    expect(afterJoin.slice(0, 2)).toEqual(['join.request', 'mic.state']);
+    h.sockets.current.drop(1006);
+    vi.advanceTimersByTime(500);
+    h.sockets.current.open();
+    h.sockets.current.receive(authOk());
+    const afterResume = h.sockets.current.messages().map((m) => m.type);
+    expect(afterResume).toEqual(['auth.resume', 'mic.state']);
   });
 });

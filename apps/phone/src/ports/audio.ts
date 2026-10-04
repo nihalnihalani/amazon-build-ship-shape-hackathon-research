@@ -156,7 +156,7 @@ interface ActiveRun {
 }
 
 class MeterAudioPort implements AudioPort {
-  private readonly capture: MicCapture;
+  private capture: MicCapture;
   private readonly listeners = new Set<(s: AudioSnapshot) => void>();
   private captureState: MicCaptureState;
   /** Failure found before the package was asked to open (no secure context, no mediaDevices). */
@@ -168,13 +168,24 @@ class MeterAudioPort implements AudioPort {
   private relaxNext = false;
 
   constructor(private readonly deps: AudioPortDeps) {
+    this.capture = this.makeCapture();
+    this.captureState = this.capture.getState();
+    this.snapshot = this.derive();
+  }
+
+  /**
+   * One package capture instance. Callbacks are ignored once the instance has been replaced
+   * (see abandonPendingOpen), so a stale instance can never move this port's state.
+   */
+  private makeCapture(): MicCapture {
+    const deps = this.deps;
     const synthetic = deps.inputOverride !== undefined;
     const real = deps.mediaDevices;
+    const supportedApi = real?.getSupportedConstraints
+      ? { getSupportedConstraints: () => real.getSupportedConstraints?.() as MediaTrackSupportedConstraints }
+      : {};
     const mediaDevices: MediaDevicesLike | null | undefined = synthetic
-      ? {
-          getUserMedia: () => (deps.inputOverride as () => Promise<MediaStream>)(),
-          ...(real?.getSupportedConstraints ? { getSupportedConstraints: () => real.getSupportedConstraints?.() as MediaTrackSupportedConstraints } : {}),
-        }
+      ? { getUserMedia: () => (deps.inputOverride as () => Promise<MediaStream>)(), ...supportedApi }
       : real
         ? {
             // "Browser defaults" is an explicit user choice after the requested settings failed.
@@ -185,10 +196,10 @@ class MeterAudioPort implements AudioPort {
               }
               return real.getUserMedia(constraints);
             },
-            ...(real.getSupportedConstraints ? { getSupportedConstraints: () => real.getSupportedConstraints?.() as MediaTrackSupportedConstraints } : {}),
+            ...supportedApi,
           }
         : real;
-    this.capture = createMicCapture({
+    const instance: MicCapture = createMicCapture({
       mediaDevices,
       AudioContextCtor: deps.AudioContextCtor,
       ...(deps.AudioWorkletNodeCtor ? { AudioWorkletNodeCtor: deps.AudioWorkletNodeCtor } : {}),
@@ -196,14 +207,34 @@ class MeterAudioPort implements AudioPort {
       ...(deps.loadWorklet ? { loadWorklet: deps.loadWorklet } : {}),
       isSecureContext: synthetic ? true : deps.isSecureContext,
       onState: (s) => {
+        if (this.capture !== instance) return;
         this.captureState = s;
         this.publish();
       },
-      onFrame: (f) => this.onFrame(f),
-      onInterrupt: (reason) => this.onInterrupt(reason),
+      onFrame: (f) => {
+        if (this.capture === instance) this.onFrame(f);
+      },
+      onInterrupt: (reason) => {
+        if (this.capture === instance) this.onInterrupt(reason);
+      },
     });
+    return instance;
+  }
+
+  /**
+   * Cancels an open() that is still waiting for the permission prompt. The package keeps that
+   * open() promise until getUserMedia settles, and an ignored prompt never settles, so a retry on
+   * the same instance would wait on it forever. The old instance is shut down (a stream that
+   * arrives later is stopped by the package) and a fresh one takes over immediately.
+   */
+  private abandonPendingOpen(): Promise<unknown> {
+    const old = this.capture;
+    const done = old.shutdown();
+    this.capture = this.makeCapture();
     this.captureState = this.capture.getState();
-    this.snapshot = this.derive();
+    this.frameObserved = false;
+    this.publish();
+    return done;
   }
 
   getSnapshot(): AudioSnapshot {
@@ -262,7 +293,7 @@ class MeterAudioPort implements AudioPort {
 
   cancelOpen(): void {
     if (this.captureState.state !== 'permission_pending') return;
-    void this.capture.shutdown();
+    void this.abandonPendingOpen();
   }
 
   async close(): Promise<void> {
@@ -272,7 +303,8 @@ class MeterAudioPort implements AudioPort {
       run.finish(null);
     }
     this.local = null;
-    await this.capture.shutdown();
+    if (this.captureState.state === 'permission_pending') await this.abandonPendingOpen();
+    else await this.capture.shutdown();
     this.frameObserved = false;
     this.publish();
   }

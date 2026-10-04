@@ -282,6 +282,44 @@ describe('opening the microphone', () => {
     expect(r.ctx().state).toBe('closed');
   });
 
+  it('after cancelling a prompt that is never answered, Start can be used again straight away (no wait on the dead request)', async () => {
+    const r = rig();
+    const lateStreams: Array<() => void> = [];
+    r.gum.mockImplementationOnce(
+      () =>
+        new Promise<MediaStream>((resolve) => {
+          lateStreams.push(() => resolve(r.stream as unknown as MediaStream));
+        }),
+    );
+    const firstOpen = r.port.open();
+    await tick();
+    expect(r.port.getSnapshot().state).toBe('permission_pending');
+    r.port.cancelOpen();
+    expect(r.port.getSnapshot().state).toBe('off');
+    // the first request is still dangling in the browser; a new tap must still work
+    await r.port.open();
+    expect(r.gum).toHaveBeenCalledTimes(2);
+    expect(r.port.getSnapshot().state).toBe('open_idle');
+    // if the abandoned prompt is finally answered, its stream is stopped and the live session is untouched
+    const liveStops = r.track.stopCalls;
+    lateStreams[0]?.();
+    await firstOpen;
+    await tick();
+    expect(r.track.stopCalls).toBeGreaterThan(liveStops); // the late stream (same fake track) was stopped by the package
+    r.track.stopCalls = 0;
+  });
+
+  it('close() during a pending prompt also leaves the port usable', async () => {
+    const r = rig();
+    r.gum.mockImplementationOnce(() => new Promise<MediaStream>(() => undefined)); // never answered
+    void r.port.open();
+    await tick();
+    await r.port.close();
+    expect(r.port.getSnapshot().state).toBe('off');
+    await r.port.open();
+    expect(r.port.getSnapshot().state).toBe('open_idle');
+  });
+
   it('synthetic input replaces getUserMedia (test build) and does not need a secure context', async () => {
     const r = rig({ synthetic: true, secure: false, noMediaDevices: true });
     await r.port.open();

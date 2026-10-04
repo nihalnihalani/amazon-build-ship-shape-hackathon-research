@@ -217,6 +217,7 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
   });
   const cueBtn = h('button', { id: 'cue', className: 'btn btn-listener', attrs: { type: 'button' } });
   const cueCount = h('p', { id: 'cue-count' });
+  const cueFeedback = h('p', { id: 'cue-feedback', className: 'field-msg' });
   const listenerState = h('p', { id: 'listener-state' });
   const listenerSection = h(
     'section',
@@ -226,6 +227,7 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     listenerState,
     h('div', { className: 'btn-col' }, heardBtn, notHeardBtn, cueBtn),
     cueCount,
+    cueFeedback,
   );
 
   // Phrase editor
@@ -406,8 +408,11 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     const touchedAny = rows.some((r) => r.touched || r.input.value !== '');
     setText(phraseMsg, validation.listMessage !== null && touchedAny ? validation.listMessage : '');
     let statusText = '';
+    const plural = `${s.phrases.count} phrase${s.phrases.count === 1 ? '' : 's'}`;
     if (s.phrasesLocked) statusText = 'Editing is paused while measuring.';
-    else if (s.phrases.status === 'sent') statusText = `Sent ${s.phrases.count} phrase${s.phrases.count === 1 ? '' : 's'} to the TV.`;
+    else if (s.phrases.status === 'sending') statusText = `Sent ${plural}. Waiting for the TV to confirm.`;
+    else if (s.phrases.status === 'saved') statusText = `The TV saved ${plural}.`;
+    else if (s.phrases.status === 'rejected') statusText = 'The TV could not save the phrases right now. It saves them after the current phrase window: press Save again then.';
     else if (s.phrases.status === 'not_sent') statusText = 'Not sent: not connected to the TV right now. Try again when it reconnects.';
     setText(phraseStatus, statusText);
     // Exactly what was sent, rendered as plain text (never as markup).
@@ -476,8 +481,8 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     if (s.link === 'reconnecting' || s.link === 'failed') {
       return s.link === 'failed' ? 'Cannot connect to the relay.' : 'Connection to the TV lost. Reconnecting.';
     }
-    if (s.canAnswer) return 'Listener controls are open. Choose Heard or Not heard.';
     if (s.notice) return s.notice;
+    if (s.canAnswer) return 'Listener controls are open. Choose Heard or Not heard.';
     return micLabel(s.mic.state, s.mic.detail).badge;
   };
 
@@ -580,13 +585,16 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
         : `TV step: ${s.session.stage ? stageLabel(s.session.stage) : 'Starting'}.`,
     );
     setText(cueCount, `Cues used: ${s.cue.used} of ${s.cue.max}`);
+    setText(cueFeedback, s.cue.feedback ?? '');
     setText(cueBtn, `Cue: ${s.cue.word}`);
     cueBtn.setAttribute('aria-label', `Send the cue word: ${s.cue.word}`);
     heardBtn.disabled = !s.canAnswer;
     notHeardBtn.disabled = !s.canAnswer;
     cueBtn.disabled = !s.canCue;
     let ls = 'Listener buttons are off until the TV opens them after a phrase.';
-    if (s.listener.open && s.listener.answered !== null) {
+    if (s.listener.feedback !== null && s.listener.open) {
+      ls = s.listener.feedback;
+    } else if (s.listener.open && s.listener.answered !== null) {
       ls = `Sent: ${s.listener.answered === 'heard' ? 'Heard' : 'Not heard'}.`;
     } else if (s.canAnswer) {
       ls = 'Choose Heard or Not heard.';

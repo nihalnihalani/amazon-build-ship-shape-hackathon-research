@@ -54,6 +54,8 @@ export interface ListenerBinding {
   windowId: string | null;
   attemptId: string | null;
   answered: 'heard' | 'not_heard' | null;
+  /** Plain-language note when the TV could not take the last answer. */
+  feedback: string | null;
 }
 
 export interface AppState {
@@ -80,8 +82,13 @@ export interface AppState {
   session: SessionInfo | null;
   run: { kind: 'precheck' | 'window'; windowId: string } | null;
   listener: ListenerBinding;
-  cue: { word: string; message: string | null; used: number; max: number };
-  phrases: { status: 'none' | 'sent' | 'not_sent' | 'locked'; count: number; saved: string[] };
+  cue: { word: string; message: string | null; used: number; max: number; feedback: string | null };
+  /**
+   * sending: transmitted, waiting for the TV's ack; saved: the TV acked applied; rejected: the TV
+   * refused it (for example a phrase window is open): the user presses Save again, nothing is
+   * resent automatically; not_sent: the link was down; locked: editing paused while measuring.
+   */
+  phrases: { status: 'none' | 'sending' | 'saved' | 'rejected' | 'not_sent' | 'locked'; count: number; saved: string[] };
   notice: string | null;
   /** Derived controls. */
   canStartMic: boolean;
@@ -185,6 +192,10 @@ export class PhoneController {
   private cueBase = 0;
   private cueNet = 0;
   private readonly pendingCues = new Set<string>();
+  private pendingResponse: string | null = null;
+  private pendingPhrases: { id: string; phrases: string[] } | null = null;
+  /** Phrases the TV has acknowledged as saved. */
+  private confirmedPhrases: string[] = [];
   private pairedOnce = false;
 
   constructor(private readonly deps: ControllerDeps) {
@@ -220,8 +231,8 @@ export class PhoneController {
       visibility: deps.visibility.get(),
       session: null,
       run: null,
-      listener: { open: false, sessionId: null, windowId: null, attemptId: null, answered: null },
-      cue: { word: DEFAULT_CUE_WORD, message: null, used: 0, max: LIMITS.cuesPerSession },
+      listener: { open: false, sessionId: null, windowId: null, attemptId: null, answered: null, feedback: null },
+      cue: { word: DEFAULT_CUE_WORD, message: null, used: 0, max: LIMITS.cuesPerSession, feedback: null },
       phrases: { status: 'none', count: 0, saved: [] },
       notice: null,
       canStartMic: false,
@@ -376,6 +387,13 @@ export class PhoneController {
     this.factory.clearAuth();
     this.lastMicKey = null;
     this.abortRun('interrupted');
+    if (this.pendingPhrases !== null) {
+      // No ack can arrive on the dead connection: say so instead of showing "sending" forever.
+      const count = this.pendingPhrases.phrases.length;
+      this.pendingPhrases = null;
+      this.patch({ phrases: { status: 'not_sent', count, saved: this.confirmedPhrases } });
+    }
+    this.pendingResponse = null;
     const attempt = this.state.reconnectAttempt;
     const delay = backoffDelay(attempt, RECONNECT_BACKOFF_MS);
     this.purpose = 'resume';
@@ -529,12 +547,50 @@ export class PhoneController {
     this.patch({ notice: `The relay refused a message (${code}).` });
   }
 
+  /** TV acknowledgements of phone messages: phrases.update, cue and listener.response. */
   private onAck(ackedId: string, outcome: AckOutcome, detail: string): void {
+    if (this.pendingPhrases !== null && this.pendingPhrases.id === ackedId) {
+      const pending = this.pendingPhrases;
+      this.pendingPhrases = null;
+      if (outcome === 'applied') {
+        this.confirmedPhrases = pending.phrases;
+        this.patch({ phrases: { status: 'saved', count: pending.phrases.length, saved: pending.phrases }, notice: null });
+      } else {
+        // Typically a phrase window is open on the TV. Show it and let the user retry; no resend loop.
+        this.patch({
+          phrases: { status: 'rejected', count: pending.phrases.length, saved: this.confirmedPhrases },
+          notice: 'The TV could not save the phrases right now. Press Save again after the current phrase window.',
+        });
+      }
+      return;
+    }
+    if (this.pendingResponse === ackedId) {
+      this.pendingResponse = null;
+      if (outcome === 'applied') return;
+      const l = this.state.listener;
+      if (outcome === 'rejected') {
+        // The TV could not take it right now: allow one more deliberate tap while the controls are open.
+        const feedback = 'The TV could not take that answer. Tap Heard or Not heard again.';
+        this.patch({ listener: { ...l, answered: null, feedback }, notice: feedback });
+      } else {
+        const feedback = 'Too late: the TV had already moved on, so that answer was not counted.';
+        this.patch({ listener: { ...l, feedback }, notice: feedback });
+      }
+      return;
+    }
     if (!this.pendingCues.has(ackedId)) return;
     this.pendingCues.delete(ackedId);
-    if (outcome === 'applied') return;
+    if (outcome === 'applied') {
+      if (this.state.cue.feedback !== null) this.patch({ cue: { ...this.state.cue, feedback: null } });
+      return;
+    }
     if (detail === 'cue_limit') this.markCueLimit();
     else this.cueNet = Math.max(0, this.cueNet - 1);
+    const feedback =
+      detail === 'cue_limit'
+        ? 'No cues are left for this session.'
+        : 'The TV could not take the cue right now (a phrase window may be open). Tap Cue to try again.';
+    this.patch({ cue: { ...this.state.cue, feedback }, notice: feedback });
     this.syncCues();
   }
 
@@ -793,7 +849,9 @@ export class PhoneController {
         windowId: ids.window_id,
         attemptId: ids.attempt_id,
         answered: same ? l.answered : null,
+        feedback: same ? l.feedback : null,
       },
+      notice: same ? this.state.notice : null,
     });
     this.ackFor(msg, 'applied');
   }
@@ -914,13 +972,17 @@ export class PhoneController {
   answer(response: 'heard' | 'not_heard'): void {
     const s = this.state;
     if (!s.canAnswer || !s.listener.sessionId || !s.listener.windowId || !s.listener.attemptId) return;
-    const sent = this.sendAuthed(
+    const id = this.sendAuthedWithId(
       'listener.response',
       { response },
       { session_id: s.listener.sessionId, window_id: s.listener.windowId, attempt_id: s.listener.attemptId },
     );
-    if (sent) this.patch({ listener: { ...s.listener, answered: response } });
-    else this.patch({ notice: 'Could not send. Waiting for the connection to the TV.' });
+    if (id !== null) {
+      this.pendingResponse = id;
+      this.patch({ listener: { ...s.listener, answered: response, feedback: null }, notice: null });
+    } else {
+      this.patch({ notice: 'Could not send. Waiting for the connection to the TV.' });
+    }
   }
 
   /** Sends the cue word. At most three per session (the TV and relay enforce it too). */
@@ -936,6 +998,7 @@ export class PhoneController {
     }
     this.pendingCues.add(env);
     this.cueNet += 1;
+    this.patch({ cue: { ...this.state.cue, feedback: null }, notice: null });
     this.syncCues();
   }
 
@@ -970,7 +1033,11 @@ export class PhoneController {
 
   // ---- phrases -------------------------------------------------------------
 
-  /** Validates and sends the phrase list. Editing is refused while measuring. */
+  /**
+   * Validates with the protocol's own rules, then sends the phrase list once. Editing is refused
+   * while measuring. The TV acks it: applied = saved; rejected (for example a phrase window is
+   * open) is shown and the user presses Save again; nothing is resent automatically.
+   */
   savePhrases(raw: readonly string[]): PhraseValidation & { sent: boolean } {
     const validation = validatePhrases(raw);
     if (this.state.phrasesLocked) {
@@ -978,15 +1045,18 @@ export class PhoneController {
       return { ...validation, sent: false };
     }
     if (!validation.ok) return { ...validation, sent: false };
-    const sent = this.sendAuthed('phrases.update', { phrases: validation.phrases });
+    const id = this.sendAuthedWithId('phrases.update', { phrases: validation.phrases });
+    if (id === null) {
+      this.pendingPhrases = null;
+      this.patch({ phrases: { status: 'not_sent', count: validation.phrases.length, saved: this.confirmedPhrases } });
+      return { ...validation, sent: false };
+    }
+    this.pendingPhrases = { id, phrases: validation.phrases };
     this.patch({
-      phrases: {
-        status: sent ? 'sent' : 'not_sent',
-        count: validation.phrases.length,
-        saved: sent ? validation.phrases : this.state.phrases.saved,
-      },
+      phrases: { status: 'sending', count: validation.phrases.length, saved: validation.phrases },
+      notice: null,
     });
-    return { ...validation, sent };
+    return { ...validation, sent: true };
   }
 
   // ---- unpair / shutdown -----------------------------------------------------
@@ -997,6 +1067,8 @@ export class PhoneController {
     this.credential = null;
     this.pendingResults.length = 0;
     this.lastMicKey = null;
+    this.pendingPhrases = null;
+    this.pendingResponse = null;
     this.resetCues();
     this.patch({ session: null });
     void this.shutdownCapture('discard');

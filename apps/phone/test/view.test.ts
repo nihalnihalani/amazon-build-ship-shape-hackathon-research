@@ -13,6 +13,7 @@ import {
   listenerOpen,
   relayMsg,
   sessionBegin,
+  tvMsg,
   validWindow,
   windowStart,
   windowStop,
@@ -91,6 +92,8 @@ describe('structure and accessibility', () => {
     expect(minHeight('.btn')).toBeGreaterThanOrEqual(64);
     expect(minHeight('.btn-listener')).toBeGreaterThanOrEqual(64);
     expect(css).toMatch(/:focus-visible\s*\{[^}]*outline/);
+    // Without this rule `.btn { display: inline-block }` would keep "hidden" buttons visible.
+    expect(css).toMatch(/\[hidden\]\s*\{\s*display:\s*none\s*!important/);
     expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
   });
 
@@ -435,6 +438,35 @@ describe('listener controls', () => {
     expect(text('listener-state')).toBe('Waiting for the connection to the TV.');
   });
 
+  it('a refused cue is explained, given back, and not resent by itself', async () => {
+    await afterWindow();
+    h.sockets.current.receive(listenerOpen());
+    click('cue');
+    const cue = h.sockets.current.last('cue');
+    h.sockets.current.receive(tvMsg('ack', { acked_message_id: cue.message_id, outcome: 'rejected', detail: 'window_open' }, { s: cue.session_id }));
+    expect(text('cue-feedback')).toMatch(/could not take the cue right now/);
+    expect(text('cue-count')).toBe('Cues used: 0 of 3');
+    expect($<HTMLButtonElement>('cue').disabled).toBe(false);
+    await flush();
+    expect(h.sockets.current.messages('cue')).toHaveLength(1);
+    click('cue');
+    const again = h.sockets.current.last('cue');
+    h.sockets.current.receive(tvMsg('ack', { acked_message_id: again.message_id, outcome: 'applied', detail: '' }, { s: again.session_id }));
+    expect(text('cue-feedback')).toBe('');
+    expect(text('cue-count')).toBe('Cues used: 1 of 3');
+  });
+
+  it('a refused answer re-opens that tap once, with an explanation', async () => {
+    await afterWindow();
+    h.sockets.current.receive(listenerOpen());
+    click('heard');
+    const lr = h.sockets.current.last('listener.response');
+    h.sockets.current.receive(tvMsg('ack', { acked_message_id: lr.message_id, outcome: 'rejected', detail: '' }, { s: lr.session_id, w: lr.window_id, a: lr.attempt_id }));
+    expect(text('listener-state')).toMatch(/could not take that answer/);
+    expect($<HTMLButtonElement>('heard').disabled).toBe(false);
+    expect(h.sockets.current.messages('listener.response')).toHaveLength(1);
+  });
+
   it('the cue word is editable in the settings panel, with live validation, and rendered literally', async () => {
     await afterWindow();
     type('cue-word', 'a'.repeat(13));
@@ -531,7 +563,9 @@ describe('phrase editor', () => {
     click('save-phrases');
     const m = h.sockets.current.last('phrases.update');
     expect(m.payload).toEqual({ phrases: ['é test', 'Second'] });
-    expect(text('phrase-status')).toBe('Sent 2 phrases to the TV.');
+    expect(text('phrase-status')).toBe('Sent 2 phrases. Waiting for the TV to confirm.');
+    h.sockets.current.receive(tvMsg('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, {}));
+    expect(text('phrase-status')).toBe('The TV saved 2 phrases.');
     const items = [...document.querySelectorAll('#phrase-saved li')].map((li) => li.textContent);
     expect(items).toEqual(['é test', 'Second']);
   });
@@ -571,6 +605,26 @@ describe('phrase editor', () => {
     await flush();
     expect($<HTMLInputElement>('phrase-1').disabled).toBe(false);
     expect($<HTMLButtonElement>('save-phrases').disabled).toBe(false);
+  });
+
+  it('a TV refusal (a phrase window is open) is explained and Save can be pressed again; nothing is resent by itself', async () => {
+    await setup();
+    type('phrase-1', 'Hello there');
+    click('save-phrases');
+    const first = h.sockets.current.last('phrases.update');
+    h.sockets.current.receive(tvMsg('ack', { acked_message_id: first.message_id, outcome: 'rejected', detail: 'window_open' }, {}));
+    expect(text('phrase-status')).toMatch(/could not save the phrases right now.*after the current phrase window/);
+    expect(text('status')).toMatch(/Press Save again after the current phrase window/);
+    expect([...document.querySelectorAll('#phrase-saved li')]).toHaveLength(0); // the TV does not have them
+    expect($<HTMLButtonElement>('save-phrases').disabled).toBe(false);
+    await flush();
+    expect(h.sockets.current.messages('phrases.update')).toHaveLength(1); // no automatic retry
+    click('save-phrases');
+    expect(h.sockets.current.messages('phrases.update')).toHaveLength(2);
+    const second = h.sockets.current.last('phrases.update');
+    h.sockets.current.receive(tvMsg('ack', { acked_message_id: second.message_id, outcome: 'applied', detail: '' }, {}));
+    expect(text('phrase-status')).toBe('The TV saved 1 phrase.');
+    expect([...document.querySelectorAll('#phrase-saved li')].map((li) => li.textContent)).toEqual(['Hello there']);
   });
 
   it('when the connection is down Save explains that nothing was sent', async () => {
