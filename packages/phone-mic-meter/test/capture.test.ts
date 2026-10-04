@@ -737,6 +737,76 @@ describe('shutdown', () => {
     expect(h.capture.getState().state).toBe('off');
   });
 
+  it('open() after a shutdown that cancelled a still-pending open() reaches getUserMedia again (no dangling promise)', async () => {
+    const h = harness();
+    // First request: the permission prompt is never answered (the promise stays pending).
+    let grantFirst: (s: FakeStream) => void = () => {};
+    h.getUserMedia.mockImplementationOnce(
+      () =>
+        new Promise<FakeStream>((resolve) => {
+          grantFirst = resolve;
+        }),
+    );
+    const firstOpen = h.capture.open();
+    await h.capture.shutdown(); // the user taps Cancel
+
+    // Second request must go to getUserMedia even though the first never settled.
+    const secondStream = new FakeStream([new FakeTrack({ autoGainControl: false })]);
+    h.getUserMedia.mockImplementationOnce(async () => secondStream);
+    const second = await Promise.race([
+      h.capture.open(),
+      new Promise<'hung'>((resolve) => setTimeout(() => resolve('hung'), 200)),
+    ]);
+    expect(second).not.toBe('hung');
+    expect(second).toMatchObject({ ok: true, state: 'open_idle' });
+    expect(h.getUserMedia).toHaveBeenCalledTimes(2);
+
+    // The abandoned first request finally resolves: its stream is stopped and the new session is untouched.
+    grantFirst(h.stream);
+    expect(await firstOpen).toMatchObject({ ok: false });
+    expect(h.track.stopCalls).toBe(1);
+    expect(secondStream.tracks[0]?.stopCalls).toBe(0);
+    expect(h.capture.getState().state).toBe('open_idle');
+    expect(FakeContext.instances).toHaveLength(2);
+    expect(FakeContext.instances[0]?.closeCalls).toBe(1);
+    expect(FakeContext.instances[1]?.closeCalls).toBe(0);
+
+    // And a further open() still shares the live session instead of starting another request.
+    expect((await h.capture.open()).ok).toBe(true);
+    expect(h.getUserMedia).toHaveBeenCalledTimes(2);
+  });
+
+  it('the cancelled open() settling late does not clear a newer in-flight open()', async () => {
+    const h = harness();
+    let grantFirst: (s: FakeStream) => void = () => {};
+    h.getUserMedia.mockImplementationOnce(
+      () =>
+        new Promise<FakeStream>((resolve) => {
+          grantFirst = resolve;
+        }),
+    );
+    const firstOpen = h.capture.open();
+    await h.capture.shutdown();
+
+    let grantSecond: (s: FakeStream) => void = () => {};
+    const secondStream = new FakeStream([new FakeTrack()]);
+    h.getUserMedia.mockImplementationOnce(
+      () =>
+        new Promise<FakeStream>((resolve) => {
+          grantSecond = resolve;
+        }),
+    );
+    const secondOpen = h.capture.open();
+    grantFirst(h.stream); // the stale request settles while the second is still waiting
+    await firstOpen;
+    const third = h.capture.open(); // must join the second request, not start a third
+    expect(h.getUserMedia).toHaveBeenCalledTimes(2);
+    grantSecond(secondStream);
+    expect((await secondOpen).ok).toBe(true);
+    expect((await third).ok).toBe(true);
+    expect(h.getUserMedia).toHaveBeenCalledTimes(2);
+  });
+
   it('the microphone can be opened again after shutdown with fresh resources', async () => {
     const h = harness();
     await h.capture.open();

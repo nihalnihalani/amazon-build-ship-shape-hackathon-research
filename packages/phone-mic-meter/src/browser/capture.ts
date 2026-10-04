@@ -552,10 +552,13 @@ export function createMicCapture(options: MicCaptureOptions): MicCapture {
         return Promise.resolve({ ok: usable, state: current.state, detail: current.detail });
       }
       if (opening !== null) return opening;
-      opening = doOpen().finally(() => {
-        opening = null;
+      // Only clear `opening` if it is still this attempt: a cancelled attempt that settles late
+      // (or never) must not leave a dangling promise or clear a newer attempt.
+      const attempt: Promise<MicOpenResult> = doOpen().finally(() => {
+        if (opening === attempt) opening = null;
       });
-      return opening;
+      opening = attempt;
+      return attempt;
     },
 
     startMeasurement(): boolean {
@@ -582,6 +585,9 @@ export function createMicCapture(options: MicCaptureOptions): MicCapture {
       generation += 1; // cancels an open() that is still waiting for the permission prompt
       session = null;
       pending = null;
+      // An unanswered permission prompt never settles, so the cancelled attempt must not stay
+      // registered: the next open() has to start a fresh request.
+      opening = null;
       if (s === null) {
         setState({ state: 'off', detail: null, settings: { ...NULL_SETTINGS } });
         return Promise.resolve(
