@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T04:04:21+05:30",
+ "updated_at": "2026-10-05T04:25:09+05:30",
  "states": [
   "pending",
   "ready",
@@ -439,7 +439,7 @@
     "R-I1"
    ],
    "owner": "lead",
-   "cwd": null,
+   "cwd": "/Users/nihalnihalani/Desktop/Github/amazon devpost hackathon",
    "dependencies": [
     "T07",
     "T08",
@@ -447,18 +447,20 @@
     "T11"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_review",
+   "attempts": 1,
    "acceptance_criteria": [
     "Full journey pair\u2192deletion over local relay with real phone page code and TV session core"
    ],
    "expected_outputs": [
     "tests/e2e"
    ],
-   "reviewer": null,
-   "evidence_refs": [],
-   "commit": null,
-   "blocker": null
+   "reviewer": "qa-accessibility",
+   "evidence_refs": [
+    "EV-0022"
+   ],
+   "commit": "9035535",
+   "blocker": "Review-driven rework (ADR rev 2) will rerun T12"
   },
   {
    "id": "T12H",
