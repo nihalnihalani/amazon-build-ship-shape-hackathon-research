@@ -1,8 +1,10 @@
 // Our own Metro configuration.
 //
-// Workspace packages (@atr/session-core, @atr/ten-foot-meter) are declared as file: dependencies, so
+// Workspace packages (@atr/protocol, @atr/session-core, @atr/ten-foot-meter) are declared as file: dependencies, so
 // node_modules/@atr/* are symlinks into ../../packages. Metro must watch the real location and resolve
-// them through their package.json (dist/ output), so run `npm run build:packages` before bundling.
+// them through their package.json (dist/ output), so run `npm run build:packages` before bundling (protocol
+// first: session-core imports it; protocol's dist targets ES2019 for Hermes). watchFolders covers the whole
+// ../../packages directory, which includes packages/protocol.
 // tsc and jest read the packages from source instead and need no build step.
 const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');

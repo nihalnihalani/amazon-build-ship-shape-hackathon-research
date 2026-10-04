@@ -8,6 +8,7 @@ module.exports = {
   // Resolves NodeNext-style "./file.js" imports inside ../../packages/*/src to the .ts sources.
   resolver: '<rootDir>/jest/resolver.js',
   moduleNameMapper: {
+    '^@atr/protocol$': '<rootDir>/../../packages/protocol/src/index.ts',
     '^@atr/session-core$': '<rootDir>/../../packages/session-core/src/index.ts',
     '^@atr/ten-foot-meter$': '<rootDir>/../../packages/ten-foot-meter/src/index.ts',
     '^@amazon-devices/react-native-kepler$': '<rootDir>/jest/mocks/react-native-kepler.tsx',

@@ -11,14 +11,18 @@
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "build:debug": "npm run build:packages && react-native build-kepler --build-type Debug",
-    "build:release": "npm run build:packages && react-native build-kepler --build-type Release",
-    "build:packages": "npm --prefix ../../packages/session-core run build && npm --prefix ../../packages/ten-foot-meter run build"
+    "build:debug": "npm run build:packages && react-native build-vega --build-type Debug",
+    "build:release": "npm run build:packages && react-native build-vega --build-type Release",
+    "build:packages": "npm --prefix ../../packages/protocol run build && npm --prefix ../../packages/session-core run build && npm --prefix ../../packages/ten-foot-meter run build",
+    "bundle:js": "react-native bundle --platform kepler --dev false --entry-file index.js --bundle-output build/farsidecheck.bundle",
+    "build:debug:legacy": "npm run build:packages && react-native build-kepler --build-type Debug",
+    "build:release:legacy": "npm run build:packages && react-native build-kepler --build-type Release"
   },
   "dependencies": {
     "@amazon-devices/kepler-a11y-settings-interface-turbo": "1.0.0",
     "@amazon-devices/react-native-kepler": "~4.0.0+rn0.83.0",
     "@amazon-devices/react-native-svg": "~3.0.0",
+    "@atr/protocol": "file:../../packages/protocol",
     "@atr/session-core": "file:../../packages/session-core",
     "@atr/ten-foot-meter": "file:../../packages/ten-foot-meter",
     "@react-native-async-storage/async-storage": "npm:@amazon-devices/react-native-async-storage__async-storage@~2.1.0",

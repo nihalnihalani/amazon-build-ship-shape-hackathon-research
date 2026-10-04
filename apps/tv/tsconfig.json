@@ -31,6 +31,7 @@
       "react-native": ["./node_modules/@amazon-devices/react-native-kepler/types/index.d.ts"],
       // Workspace packages are type-checked from source (no build step needed for tsc/jest).
       // Metro consumes their built dist/ output through the file: dependency symlinks.
+      "@atr/protocol": ["../../packages/protocol/src/index.ts"],
       "@atr/session-core": ["../../packages/session-core/src/index.ts"],
       "@atr/ten-foot-meter": ["../../packages/ten-foot-meter/src/index.ts"]
     }

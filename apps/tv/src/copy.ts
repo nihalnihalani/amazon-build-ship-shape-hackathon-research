@@ -1,7 +1,7 @@
 /**
  * UI-owned strings. Screen titles, bodies, button labels, results and the footer text come from the
  * session view (TvView); only fixed labels the UI itself must show live here, so one grep covers every
- * string this app authors. No program name, trademark, diagnosis or outcome claim may appear here
+ * string this app authors. No program name, trademark, condition or outcome claim may appear here
  * (checked by a unit test).
  */
 import type { LinkView, MicView } from '@atr/session-core';
