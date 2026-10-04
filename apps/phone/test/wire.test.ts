@@ -104,7 +104,7 @@ describe('PhoneMessageFactory (on @atr/protocol, revision 2)', () => {
     const f = factory();
     f.setAuth(ROOM, 1);
     expect(() => f.build('cue', { text: ' Volume ' }, { session_id: SESSION })).toThrow();
-    expect(() => f.build('cue', { text: 'é' }, { session_id: SESSION })).toThrow();
+    expect(() => f.build('cue', { text: 'e\u0301' }, { session_id: SESSION })).toThrow();
     expect(() => f.build('phrases.update', { phrases: ['  hi'] })).toThrow();
     expect(f.build('cue', { text: 'Volume' }, { session_id: SESSION }).payload.text).toBe('Volume');
   });
@@ -129,7 +129,7 @@ describe('PhoneMessageFactory (on @atr/protocol, revision 2)', () => {
   it('ten 60-code-point four-byte phrases still fit in one message', () => {
     const f = factory();
     f.setAuth(ROOM, 1);
-    const phrases = Array.from({ length: 10 }, () => '😀'.repeat(60));
+    const phrases = Array.from({ length: 10 }, () => '\u{1F600}'.repeat(60));
     const text = f.serialize(f.build('phrases.update', { phrases }));
     expect(new TextEncoder().encode(text).length).toBeLessThanOrEqual(8192);
   });

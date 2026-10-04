@@ -1,4 +1,4 @@
-import { HEARTBEAT_MS, LINK_DEAD_MS, RECONNECT_BACKOFF_MS } from './config.js';
+import { HEARTBEAT_MS, LINK_DEAD_MS, RECONNECT_BACKOFF_MS, RECONNECT_JITTER } from './config.js';
 
 /** The subset of WebSocket the transport uses (handlers are assigned as properties). */
 export interface SocketLike {
@@ -22,10 +22,20 @@ export interface TransportHandlers {
   onClose(info: { code: number | null; wasOpen: boolean; reason: 'closed' | 'link_dead' | 'error' }): void;
 }
 
-/** Delay for the nth consecutive reconnect (0-based): 0.5, 1, 2, 4, 8, 8, 8 ... seconds. */
-export function backoffDelay(attempt: number, schedule: readonly number[] = RECONNECT_BACKOFF_MS): number {
+/**
+ * Delay for the nth consecutive reconnect (0-based): 0.5, 1, 2, 4, 8, 8, 8 ... seconds, each
+ * multiplied by a jitter factor in [0.75, 1.25). `random()` returns a value in [0, 1); 0.5 gives
+ * exactly the nominal delay. Jitter spreads out many phones retrying after a relay restart.
+ */
+export function backoffDelay(
+  attempt: number,
+  schedule: readonly number[] = RECONNECT_BACKOFF_MS,
+  random: () => number = Math.random,
+): number {
   const i = Math.min(Math.max(0, attempt), schedule.length - 1);
-  return schedule[i] as number;
+  const base = schedule[i] as number;
+  const r = Math.min(Math.max(random(), 0), 1);
+  return Math.round(base * (1 - RECONNECT_JITTER + 2 * RECONNECT_JITTER * r));
 }
 
 /**

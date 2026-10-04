@@ -9,11 +9,20 @@
  */
 
 import { codePointLength, normalizeUserText } from './ports/wire.js';
-import type { PackageTextCheck } from './ports/wire.js';
+import type { PackageTextCheck, TextRejection } from './ports/wire.js';
 
 export { codePointLength, normalizeUserText };
 
-export type TextProblem = 'empty' | 'too_long' | 'invalid_characters';
+export type TextProblem =
+  | 'empty'
+  | 'too_long'
+  | 'invalid_characters'
+  /** Text-direction controls, line/paragraph separators, invisible operators, noncharacters. */
+  | 'unsafe_character'
+  /** Only whitespace or invisible filler characters: blank to the eye. */
+  | 'invisible'
+  /** More than four combining marks in a row. */
+  | 'combining_run';
 
 export interface TextCheck {
   ok: boolean;
@@ -24,12 +33,27 @@ export interface TextCheck {
 }
 
 /** Normalizes `raw`, then validates it with one of the package validators (phrase, cue, device label). */
+function problemFor(reason: TextRejection): TextProblem {
+  switch (reason) {
+    case 'too_short':
+      return 'empty';
+    case 'too_long':
+      return 'too_long';
+    case 'forbidden_char':
+      return 'unsafe_character';
+    case 'no_visible_content':
+      return 'invisible';
+    case 'combining_run':
+      return 'combining_run';
+    default:
+      return 'invalid_characters';
+  }
+}
+
 export function checkText(raw: string, validate: (value: unknown) => PackageTextCheck): TextCheck {
   const text = normalizeUserText(raw);
   const length = codePointLength(text);
   const result = validate(text);
   if (result.ok) return { ok: true, text, length, problem: null };
-  const problem: TextProblem =
-    result.reason === 'too_short' ? 'empty' : result.reason === 'too_long' ? 'too_long' : 'invalid_characters';
-  return { ok: false, text, length, problem };
+  return { ok: false, text, length, problem: problemFor(result.reason) };
 }

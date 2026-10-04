@@ -116,3 +116,6 @@ summary { min-height: 48px; display: flex; align-items: center; font-weight: 700
 
 .saved-list { margin: 0.5rem 0 0; counter-reset: saved; }
 .saved-list li { padding: 0.25rem 0; border-bottom: 1px solid #2c3744; overflow-wrap: anywhere; }
+
+.notice { background: #2a1d1a; border: 2px solid var(--danger); border-radius: 10px; padding: 0.5rem 1rem; margin: 0.75rem 0; }
+.notice h2 { margin-top: 0.5rem; }

@@ -34,7 +34,9 @@ class FakeStream {
 
 class FakeNode {
   disconnectCalls = 0;
+  connections: unknown[] = [];
   connect(target: unknown): unknown {
+    this.connections.push(target);
     return target;
   }
   disconnect(): void {
@@ -86,6 +88,7 @@ class FakeContext extends EventTarget {
   closeCalls = 0;
   destination = new FakeNode();
   workletNodes: FakeWorkletNode[] = [];
+  gains: Array<FakeNode & { gain: { value: number } }> = [];
   addModuleCalls: string[] = [];
   audioWorklet = {
     addModule: async (url: string): Promise<void> => {
@@ -107,7 +110,9 @@ class FakeContext extends EventTarget {
     return new FakeNode();
   }
   createGain(): FakeNode & { gain: { value: number } } {
-    return Object.assign(new FakeNode(), { gain: { value: 1 } });
+    const g = Object.assign(new FakeNode(), { gain: { value: 1 } });
+    this.gains.push(g);
+    return g;
   }
 }
 
@@ -325,6 +330,20 @@ describe('opening the microphone', () => {
     await r.port.open();
     expect(r.gum).not.toHaveBeenCalled();
     expect(r.port.getSnapshot()).toMatchObject({ state: 'open_idle', mode: 'fixture_replay' });
+  });
+});
+
+describe('A8-03: the page makes no sound', () => {
+  it('the microphone is never routed to the speakers: the only path to the destination is a zero-gain node', async () => {
+    const r = rig();
+    await r.port.open();
+    const ctx = r.ctx();
+    const node = r.node();
+    expect(ctx.gains).toHaveLength(1);
+    const gain = ctx.gains[0] as FakeNode & { gain: { value: number } };
+    expect(gain.gain.value).toBe(0);
+    expect(node.connections).toEqual([gain]); // worklet -> gain only
+    expect(gain.connections).toEqual([ctx.destination]); // gain -> destination
   });
 });
 

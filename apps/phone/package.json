@@ -14,7 +14,8 @@
     "e2e": "node e2e/smoke.mjs",
     "e2e:flow": "node e2e/flow.mjs",
     "e2e:production": "node e2e/production.mjs",
-    "e2e:all": "npm run build && npm run build:test && node e2e/smoke.mjs && node e2e/flow.mjs && node e2e/production.mjs"
+    "e2e:all": "npm run build && npm run build:test && node e2e/smoke.mjs && node e2e/flow.mjs && node e2e/production.mjs && node e2e/hostile-qr.mjs",
+    "e2e:hostile": "node e2e/hostile-qr.mjs"
   },
   "devDependencies": {
     "@atr/phone-mic-meter": "*",
