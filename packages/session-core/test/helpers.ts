@@ -529,7 +529,8 @@ export class Harness {
   /** Press OK on a begin action and let the quiet lead elapse. */
   beginAndLead(action: ActionId): void {
     this.ui(action);
-    this.advance(1500);
+    // the lead is 1500 ms, or longer with the screen reader on: wait exactly as long as the view says
+    this.advance(this.view.timer?.maxMs ?? 1500);
   }
 
   runQuiet(): void {

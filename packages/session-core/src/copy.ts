@@ -360,12 +360,18 @@ export const COPY = {
   },
 };
 
-const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+const NUMBER_WORDS = [
+  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
+];
 
-/** Seconds as a word for spoken scripts: 3000 ms is "three seconds". */
+/** Seconds as a word for spoken scripts: 3000 ms is "three seconds", 30000 ms is "thirty seconds". */
 export function secondsWords(ms: number): string {
   const seconds = Math.round(ms / 1000);
-  const word = seconds >= 0 && seconds < NUMBER_WORDS.length ? (NUMBER_WORDS[seconds] as string) : String(seconds);
+  let word: string;
+  if (seconds >= 0 && seconds < NUMBER_WORDS.length) word = NUMBER_WORDS[seconds] as string;
+  else if (seconds === 30) word = 'thirty';
+  else word = String(seconds);
   return seconds === 1 ? `${word} second` : `${word} seconds`;
 }
 
