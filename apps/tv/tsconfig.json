@@ -1,0 +1,40 @@
+{
+  // Standalone project (not a root workspace). Type-checks against the REAL installed
+  // @amazon-devices type definitions.
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022"],
+    "jsx": "react-jsx",
+    "strict": true,
+    // Off on purpose: @amazon-devices/react-native-kepler ships TypeScript SOURCE files
+    // (Libraries/**/*.ts) that tsc checks even with skipLibCheck, and
+    // Libraries/Utilities/KeplerBackHandler.ts fails under noUncheckedIndexedAccess
+    // (TS2722). Our own code is written to the same standard by review.
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["jest", "node"],
+    "baseUrl": ".",
+    "paths": {
+      // Vega's React Native fork is API compatible with RN 0.83 and adds props such as
+      // accessibilityDescribedBy and accessibilityOrientationText; type-check against its types.
+      "react-native": ["./node_modules/@amazon-devices/react-native-kepler/types/index.d.ts"],
+      // Workspace packages are type-checked from source (no build step needed for tsc/jest).
+      // Metro consumes their built dist/ output through the file: dependency symlinks.
+      "@atr/protocol": ["../../packages/protocol/src/index.ts"],
+      "@atr/session-core": ["../../packages/session-core/src/index.ts"],
+      "@atr/ten-foot-meter": ["../../packages/ten-foot-meter/src/index.ts"]
+    }
+  },
+  "include": ["src", "jest"]
+}

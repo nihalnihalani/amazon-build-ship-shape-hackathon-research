@@ -1,0 +1,58 @@
+{
+  "name": "@atr/tv",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Across the Room: the far-side check. TV display for Fire TV (React Native for Vega). Standalone project, not a root workspace.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "react-native start",
+    "test": "jest",
+    "typecheck": "tsc --noEmit",
+    "build:debug": "npm run build:packages && react-native build-vega --build-type Debug",
+    "build:release": "npm run build:packages && react-native build-vega --build-type Release",
+    "build:packages": "npm --prefix ../../packages/protocol run build && npm --prefix ../../packages/session-core run build && npm --prefix ../../packages/ten-foot-meter run build",
+    "bundle:js": "react-native bundle --platform kepler --dev false --entry-file index.js --bundle-output build/farsidecheck.bundle",
+    "build:debug:legacy": "npm run build:packages && react-native build-kepler --build-type Debug",
+    "build:release:legacy": "npm run build:packages && react-native build-kepler --build-type Release"
+  },
+  "dependencies": {
+    "@amazon-devices/kepler-a11y-settings-interface-turbo": "1.0.0",
+    "@amazon-devices/react-native-kepler": "~4.0.0+rn0.83.0",
+    "@amazon-devices/react-native-svg": "~3.0.0",
+    "@atr/protocol": "file:../../packages/protocol",
+    "@atr/session-core": "file:../../packages/session-core",
+    "@atr/ten-foot-meter": "file:../../packages/ten-foot-meter",
+    "@react-native-async-storage/async-storage": "npm:@amazon-devices/react-native-async-storage__async-storage@~2.1.0",
+    "qrcode-generator": "2.0.4",
+    "react": "19.2.0",
+    "react-native": "0.83.0"
+  },
+  "devDependencies": {
+    "@amazon-devices/kepler-cli-platform": "~0.22.0",
+    "@react-native-community/cli": "^20.0.0",
+    "@react-native/babel-preset": "0.83.0",
+    "@react-native/metro-config": "0.83.0",
+    "@testing-library/react-native": "^13.3.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-test-renderer": "^19.1.0",
+    "babel-jest": "^29.6.3",
+    "jest": "^29.7.0",
+    "react-test-renderer": "19.2.0",
+    "typescript": "5.8.3"
+  },
+  "overrides": {
+    "@react-native-async-storage/async-storage": "npm:@amazon-devices/react-native-async-storage__async-storage@~2.1.0"
+  },
+  "kepler": {
+    "projectType": "application",
+    "appName": "farsidecheck",
+    "targets": [
+      "tv"
+    ]
+  }
+}
