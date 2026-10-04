@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CATALOGUE,
+  CREDENTIAL_TTL_MS,
   CUES_PER_SESSION_MAX,
   CUE_LENGTH_MAX,
   DEVICE_LABEL_LENGTH_MAX,
@@ -19,6 +20,11 @@ import {
   PAIRING_ALPHABET,
   PAIRING_CODE_LENGTH,
   PHRASE_LENGTH_MAX,
+  PRECHECK_INVALID_REASONS,
+  PRE_WINDOW_INVALID_REASONS,
+  VAD_FLOOR_DBFS_MAX,
+  VAD_FLOOR_DBFS_MIN,
+  FRAME_MS,
   TV_STAGES,
   TRANSPORT_STATES,
   specFor,
@@ -175,6 +181,88 @@ describe('docs/PROTOCOL.md MicStatePayload block (revision 3)', () => {
   it('the revision 3 line is recorded in section 8 and the status line', () => {
     expect(doc).toMatch(/revision 3/);
     expect(doc).toContain('Revision 3 (2026-10-05): `MicStatePayload.supported');
+  });
+});
+
+describe('docs/PROTOCOL.md revision 4 versus the package', () => {
+  const minus = (n: number): string => `${n < 0 ? '\u2212' : ''}${Math.abs(n)}`;
+  const quoted = (line: string): string[] => [...line.matchAll(/"([a-z_]+)"/g)].map((m) => m[1] as string);
+  const ticked = (text: string): string[] => [...text.matchAll(/`([a-z_]+)`/g)].map((m) => m[1] as string);
+
+  it('the status line and section 8 record revision 4 with its thirteen items', () => {
+    expect(doc).toMatch(/^Status: frozen for implementation \(revision 4,/m);
+    const start = doc.indexOf('### Revision 4 (2026-10-05)');
+    expect(start).toBeGreaterThan(0);
+    const items = doc.slice(start).split('\n').filter((l) => /^\d+\. /.test(l));
+    expect(items.length).toBe(13);
+    expect(items.map((l) => l.split('.')[0])).toEqual(Array.from({ length: 13 }, (_, i) => String(i + 1)));
+  });
+
+  it('PrecheckResultPayload lists exactly PRECHECK_INVALID_REASONS (silent_input included)', () => {
+    const block = sectionBetween('#### PrecheckResultPayload', '#### WindowResultPayload');
+    const line = block.split('\n').find((l) => l.trim().startsWith('invalid_reason:'));
+    expect(line).toBeDefined();
+    expect(quoted(line as string)).toEqual([...PRECHECK_INVALID_REASONS]);
+    expect(quoted(line as string)).toContain('silent_input');
+  });
+
+  it('the per-purpose rule lists exactly PRE_WINDOW_INVALID_REASONS for pre_window', () => {
+    const block = sectionBetween('#### PrecheckResultPayload', '#### WindowResultPayload');
+    const bullet = block.split('\n').find((l) => l.startsWith('- Reasons per purpose'));
+    expect(bullet).toBeDefined();
+    const afterAllows = (bullet as string).slice((bullet as string).indexOf('allows only') + 'allows only'.length);
+    const listText = afterAllows.slice(0, afterAllows.indexOf('('));
+    expect(ticked(listText).sort()).toEqual([...PRE_WINDOW_INVALID_REASONS].sort());
+    expect(bullet).toContain('`unstable_floor` and `too_loud` apply to the quiet check only');
+  });
+
+  it('the window.start row states the vad floor range of the constants', () => {
+    const row = doc.split('\n').find((l) => l.startsWith('| `window.start` |'));
+    expect(row).toBeDefined();
+    expect(row).toContain(`vad_floor_dbfs: number(${minus(VAD_FLOOR_DBFS_MIN).replace('\u2212', '-')}..${minus(VAD_FLOOR_DBFS_MAX).replace('\u2212', '-')})`);
+    expect(doc).toContain(`${minus(VAD_FLOOR_DBFS_MIN)} \u2026 ${minus(VAD_FLOOR_DBFS_MAX)}`);
+  });
+
+  it('the level row has an integer t_audio_ms and the frame-time invariant', () => {
+    const row = doc.split('\n').find((l) => l.startsWith('| `level` |'));
+    expect(row).toBeDefined();
+    expect(row).toContain('t_audio_ms: int(0..35000)');
+    expect(row).toContain(`\u2265 ${FRAME_MS} \u00d7 \`frame_index\` \u2212 1`);
+  });
+
+  it('result blocks use integer time fields', () => {
+    const pre = sectionBetween('#### PrecheckResultPayload', '#### WindowResultPayload');
+    expect(pre).toContain('duration_ms: int');
+    const win = sectionBetween('#### WindowResultPayload', '### 3.4 Error codes');
+    for (const field of ['active_ms: int', 'longest_active_ms: int', 'onset_ms: int | null', 'duration_ms: int']) {
+      expect(win, field).toContain(field);
+    }
+  });
+
+  it('credential rotation: auth.ok carries next_credential and credentials live 2 h', () => {
+    const row = doc.split('\n').find((l) => l.startsWith('| `auth.ok` |'));
+    expect(row).toContain('next_credential: string(43)');
+    expect(CREDENTIAL_TTL_MS).toBe(2 * 3_600_000);
+    const credentials = doc.split('\n').find((l) => l.startsWith('| Credentials |'));
+    expect(credentials).toContain('2 h');
+    expect(credentials).not.toContain('12 h');
+  });
+
+  it('documents the busy join, the ack details, window identity, canonical forwarding and sender normalisation', () => {
+    expect(doc).toContain('receives only `join.rejected { reason: "busy" }`');
+    for (const detail of ['late', 'already_answered', 'window_open', 'cue_limit', 'next_session', 'already_closed']) {
+      expect(doc, detail).toContain(`\`${detail}\``);
+    }
+    expect(doc).toContain('`window_id` is **unique per measurement**');
+    expect(doc).toContain('shares the `attempt_id` of the capture window');
+    expect(doc).toContain('canonical re-serialisation of the validated message');
+    expect(doc).toContain('**Senders must normalise user text (NFC, then trim); receivers reject non-normalised text**');
+  });
+
+  it('section 4 states dedupe per (room, role), record after acceptance and the authoritative generation', () => {
+    expect(doc).toContain('**for that (room, role)**');
+    expect(doc).toContain('recorded only after the message has been accepted');
+    expect(doc).toContain('against the authoritative current generation');
   });
 });
 

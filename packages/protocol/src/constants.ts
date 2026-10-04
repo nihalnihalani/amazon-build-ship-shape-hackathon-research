@@ -36,8 +36,29 @@ export const LEVEL_FRAMES_PER_WINDOW_MAX = 700;
 export const T_AUDIO_MS_MAX = 35000;
 export const DBFS_MIN = -140;
 export const DBFS_MAX = 20;
-export const VAD_FLOOR_DBFS_MIN = -140;
-export const VAD_FLOOR_DBFS_MAX = 0;
+/** Revision 4: the vad floor lies between the silent-input line and the loud-room line (ADR-0001 A1-10). */
+export const VAD_FLOOR_DBFS_MIN = -110;
+export const VAD_FLOOR_DBFS_MAX = -30;
+
+// ---- Revision 4: measurement invariants and quantisation (PK-02, PK-06) ----
+/** Level frame length in milliseconds (ADR-0001). */
+export const FRAME_MS = 50;
+/** `precheck.result.duration_ms` must be within this many ms of the commanded duration. */
+export const PRECHECK_DURATION_TOLERANCE_MS = 50;
+/** A valid precheck or window needs at least this coverage. */
+export const MIN_VALID_COVERAGE = 0.9;
+/** `coverage` must equal (frame_count - nonfinite_frames) / expected_frames within this much. */
+export const COVERAGE_RECOMPUTE_TOLERANCE = 0.001;
+/** `expected_frames` must equal floor(duration_ms / 50) within this many frames. */
+export const EXPECTED_FRAMES_TOLERANCE = 1;
+/** dB fields are multiples of this step (0.1 dB). */
+export const DB_STEP = 0.1;
+/** `coverage` is a multiple of this step. */
+export const COVERAGE_STEP = 0.001;
+/** Tolerance for the multiple-of check: |x / step - round(x / step)| < this (applied to x * 10 or x * 1000). */
+export const QUANTIZATION_TOLERANCE = 1e-6;
+/** More than this many consecutive combining marks is rejected in display text (PK-03). */
+export const COMBINING_RUN_MAX = 4;
 
 export const PRECHECK_QUIET_CHECK_MS = 5000;
 export const PRECHECK_PRE_WINDOW_MS = 2000;
@@ -62,7 +83,8 @@ export const PAIRING_CODE_TTL_MS = 10 * 60_000;
 export const JOIN_REQUEST_TTL_MS = 60_000;
 /** 32 random bytes, base64url without padding. */
 export const CREDENTIAL_LENGTH = 43;
-export const CREDENTIAL_TTL_MS = 12 * 3_600_000;
+/** Revision 4 (A3-11): credentials live 2 h and are renewed by rotation on every successful `auth.resume`. */
+export const CREDENTIAL_TTL_MS = 2 * 3_600_000;
 export const ROOM_TTL_MS = 12 * 3_600_000;
 export const ROOM_IDLE_CLOSE_MS = 30 * 60_000;
 export const HEARTBEAT_INTERVAL_MS = 10_000;
@@ -223,7 +245,22 @@ export const PRECHECK_INVALID_REASONS = [
   'too_loud',
   'nonfinite',
   'interrupted',
+  'silent_input',
 ] as const;
+/**
+ * Revision 4 (ADR-0001 A1-06): `unstable_floor` and `too_loud` apply to the quiet check only.
+ * The pre-window check allows exactly these reasons.
+ */
+export const PRE_WINDOW_INVALID_REASONS = [
+  'interrupted',
+  'nonfinite',
+  'low_coverage',
+  'silent_input',
+  'clipped',
+  'burst_noise',
+] as const;
+/** Quiet-check reasons: every precheck reason. */
+export const QUIET_CHECK_INVALID_REASONS = PRECHECK_INVALID_REASONS;
 export const WINDOW_INVALID_REASONS = [
   'no_voice',
   'clipped',

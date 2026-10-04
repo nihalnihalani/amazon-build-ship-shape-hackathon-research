@@ -15,12 +15,15 @@ import {
   CUES_PER_SESSION_MAX,
   CUE_LENGTH_MAX,
   CUE_LENGTH_MIN,
+  COVERAGE_RECOMPUTE_TOLERANCE,
   DBFS_MAX,
   DBFS_MIN,
   DETAIL_LENGTH_MAX,
   DEVICE_LABEL_LENGTH_MAX,
   DEVICE_LABEL_LENGTH_MIN,
   ERROR_CODES,
+  EXPECTED_FRAMES_TOLERANCE,
+  FRAME_MS,
   JOIN_DECISIONS,
   JOIN_ID_RE,
   JOIN_REJECT_REASONS,
@@ -34,6 +37,7 @@ import {
   MESSAGE_ID_RE,
   MIC_MODES,
   MIC_STATES,
+  MIN_VALID_COVERAGE,
   PAIRING_ALPHABET,
   PAIRING_CODE_LENGTH,
   PHRASE_COUNT_MAX,
@@ -41,10 +45,12 @@ import {
   PHRASE_LENGTH_MAX,
   PHRASE_LENGTH_MIN,
   PLATFORMS,
+  PRECHECK_DURATION_TOLERANCE_MS,
   PRECHECK_INVALID_REASONS,
   PRECHECK_PRE_WINDOW_MS,
   PRECHECK_PURPOSES,
   PRECHECK_QUIET_CHECK_MS,
+  PRE_WINDOW_INVALID_REASONS,
   ROOM_ID_RE,
   SESSION_END_REASONS,
   TV_STAGES,
@@ -66,6 +72,9 @@ import {
 import {
   arrayOf,
   bool,
+  coverageNum,
+  dbNum,
+  displayStr,
   int,
   literal,
   nullable,
@@ -79,6 +88,7 @@ import {
 } from './schema.js';
 import type { Check } from './schema.js';
 import type {
+  LevelPayload,
   PrecheckResultPayload,
   PrecheckStartPayload,
   WindowResultPayload,
@@ -96,12 +106,27 @@ const credential = pattern(CREDENTIAL_RE);
 const roomId = pattern(ROOM_ID_RE);
 const joinId = pattern(JOIN_ID_RE);
 const confirmDigits = pattern(CONFIRM_DIGITS_RE);
-const dbfs = num(DBFS_MIN, DBFS_MAX);
+/** dB fields are multiples of 0.1 (revision 4, PK-06). */
+const dbfs = dbNum(DBFS_MIN, DBFS_MAX);
 const nullableDbfs = nullable(dbfs);
 const frames = int(0, LEVEL_FRAMES_PER_WINDOW_MAX);
-const durationMs = num(0, T_AUDIO_MS_MAX);
+/** Durations and times are integer milliseconds (revision 4, PK-06). */
+const durationMs = int(0, T_AUDIO_MS_MAX);
 const detail = str(0, DETAIL_LENGTH_MAX);
 const empty = obj({});
+
+/**
+ * Payload fields that are quantised (revision 4, PK-06). Before schema validation the validator
+ * replaces a value that is within tolerance of the grid by its canonical grid value, so the clean
+ * copy (and everything a relay forwards) carries no sub-grid precision. `db`: multiple of 0.1;
+ * `coverage`: multiple of 0.001.
+ */
+export const QUANTIZED_FIELDS: Partial<Record<MessageType, Record<string, 'db' | 'coverage'>>> = {
+  'window.start': { vad_floor_dbfs: 'db' },
+  'precheck.result': { floor_dbfs: 'db', p20_dbfs: 'db', p80_dbfs: 'db', p95_dbfs: 'db', coverage: 'coverage' },
+  level: { dbfs: 'db' },
+  'window.result': { coverage: 'coverage', p50_active_dbfs: 'db', p95_active_dbfs: 'db', peak_dbfs: 'db' },
+};
 
 const precheckStart = refine<PrecheckStartPayload>(
   obj({
@@ -120,7 +145,7 @@ const windowStart = refine<WindowStartPayload>(
     kind: oneOf(WINDOW_KINDS),
     phrase_position: nullable(int(1, PHRASE_COUNT_MAX)),
     max_duration_ms: int(WINDOW_VOWEL_MIN_MS, WINDOW_VOWEL_MAX_MS),
-    vad_floor_dbfs: num(VAD_FLOOR_DBFS_MIN, VAD_FLOOR_DBFS_MAX),
+    vad_floor_dbfs: dbNum(VAD_FLOOR_DBFS_MIN, VAD_FLOOR_DBFS_MAX),
   }),
   (v, p) => {
     if (v.kind === 'phrase') {
@@ -136,6 +161,17 @@ const windowStart = refine<WindowStartPayload>(
   },
 );
 
+/** Non-decreasing check over the non-null entries of an ordered list. */
+function nonDecreasing(values: ReadonlyArray<number | null>): boolean {
+  let last = -Infinity;
+  for (const v of values) {
+    if (v === null) continue;
+    if (v < last) return false;
+    last = v;
+  }
+  return true;
+}
+
 const precheckResult = refine<PrecheckResultPayload>(
   obj({
     purpose: oneOf(PRECHECK_PURPOSES),
@@ -147,12 +183,36 @@ const precheckResult = refine<PrecheckResultPayload>(
     p95_dbfs: nullableDbfs,
     frame_count: frames,
     expected_frames: frames,
-    coverage: num(0, 1),
+    coverage: coverageNum,
     clipped_frames: frames,
     nonfinite_frames: frames,
     duration_ms: durationMs,
   }),
-  (v, p) => (v.valid === (v.invalid_reason === null) ? null : `${p}.invalid_reason: conflicts with valid`),
+  (v, p) => {
+    if (v.valid !== (v.invalid_reason === null)) return `${p}.invalid_reason: conflicts with valid`;
+    // ADR-0001 A1-06: unstable_floor and too_loud belong to the quiet check only.
+    if (
+      v.purpose === 'pre_window' &&
+      v.invalid_reason !== null &&
+      !(PRE_WINDOW_INVALID_REASONS as readonly string[]).includes(v.invalid_reason)
+    ) {
+      return `${p}.invalid_reason: not allowed for pre_window`;
+    }
+    // PK-02: the check ran for the commanded duration.
+    const expectedDuration = v.purpose === 'quiet_check' ? PRECHECK_QUIET_CHECK_MS : PRECHECK_PRE_WINDOW_MS;
+    if (Math.abs(v.duration_ms - expectedDuration) > PRECHECK_DURATION_TOLERANCE_MS) {
+      return `${p}.duration_ms: not the commanded duration`;
+    }
+    if (!nonDecreasing([v.p20_dbfs, v.floor_dbfs, v.p80_dbfs, v.p95_dbfs])) {
+      return `${p}: percentiles out of order`;
+    }
+    if (v.valid) {
+      if (v.floor_dbfs === null) return `${p}.floor_dbfs: required when valid`;
+      if (v.clipped_frames !== 0) return `${p}.clipped_frames: must be 0 when valid`;
+      if (v.coverage < MIN_VALID_COVERAGE) return `${p}.coverage: too low for valid`;
+    }
+    return null;
+  },
 );
 
 const windowResult = refine<WindowResultPayload>(
@@ -162,7 +222,7 @@ const windowResult = refine<WindowResultPayload>(
     invalid_reason: nullable(oneOf(WINDOW_INVALID_REASONS)),
     frame_count: frames,
     expected_frames: frames,
-    coverage: num(0, 1),
+    coverage: coverageNum,
     active_ms: durationMs,
     longest_active_ms: durationMs,
     segments: frames,
@@ -174,7 +234,50 @@ const windowResult = refine<WindowResultPayload>(
     nonfinite_frames: frames,
     duration_ms: durationMs,
   }),
-  (v, p) => (v.valid === (v.invalid_reason === null) ? null : `${p}.invalid_reason: conflicts with valid`),
+  (v, p) => {
+    if (v.valid !== (v.invalid_reason === null)) return `${p}.invalid_reason: conflicts with valid`;
+    // PK-02 frame accounting.
+    if (v.frame_count > v.expected_frames + 1) return `${p}.frame_count: exceeds expected_frames`;
+    if (v.nonfinite_frames > v.frame_count) return `${p}.nonfinite_frames: exceeds frame_count`;
+    if (v.clipped_frames > v.frame_count) return `${p}.clipped_frames: exceeds frame_count`;
+    const ratio = v.expected_frames === 0 ? 0 : Math.min(1, (v.frame_count - v.nonfinite_frames) / v.expected_frames);
+    if (Math.abs(v.coverage - ratio) > COVERAGE_RECOMPUTE_TOLERANCE + 1e-9) {
+      return `${p}.coverage: does not match frame counts`;
+    }
+    if (Math.abs(v.expected_frames - Math.floor(v.duration_ms / FRAME_MS)) > EXPECTED_FRAMES_TOLERANCE) {
+      return `${p}.expected_frames: does not match duration_ms`;
+    }
+    // PK-02 activity accounting.
+    if (!(v.longest_active_ms <= v.active_ms && v.active_ms <= v.duration_ms)) {
+      return `${p}.active_ms: inconsistent durations`;
+    }
+    if ((v.segments === 0) !== (v.active_ms === 0) || (v.active_ms === 0) !== (v.onset_ms === null)) {
+      return `${p}.segments: inconsistent with active_ms and onset_ms`;
+    }
+    if (v.onset_ms !== null && v.onset_ms > v.duration_ms) return `${p}.onset_ms: after the end of the window`;
+    if (v.valid) {
+      if (v.coverage < MIN_VALID_COVERAGE) return `${p}.coverage: too low for valid`;
+      if (v.p50_active_dbfs === null || v.p95_active_dbfs === null || v.peak_dbfs === null) {
+        return `${p}: statistics required when valid`;
+      }
+      if (!(v.p50_active_dbfs <= v.p95_active_dbfs && v.p95_active_dbfs <= v.peak_dbfs)) {
+        return `${p}: statistics out of order`;
+      }
+    }
+    return null;
+  },
+);
+
+const levelPayload = refine<LevelPayload>(
+  obj({
+    frame_index: int(0, LEVEL_FRAME_INDEX_MAX),
+    t_audio_ms: durationMs,
+    dbfs,
+    active: bool,
+    clipped: bool,
+  }),
+  // PK-02: a frame cannot be reported before its audio time (one millisecond of slack).
+  (v, p) => (v.t_audio_ms >= FRAME_MS * v.frame_index - 1 ? null : `${p}.t_audio_ms: before the frame start`),
 );
 
 /** Payload check for every message type. */
@@ -182,7 +285,7 @@ export const PAYLOAD_CHECKS: Record<MessageType, Check> = {
   // 3.1 Connection, pairing and lifecycle
   'room.create': obj({
     client: obj({
-      app_version: str(APP_VERSION_LENGTH_MIN, APP_VERSION_LENGTH_MAX),
+      app_version: displayStr(APP_VERSION_LENGTH_MIN, APP_VERSION_LENGTH_MAX),
       platform: oneOf(PLATFORMS),
     }),
   }),
@@ -217,7 +320,14 @@ export const PAYLOAD_CHECKS: Record<MessageType, Check> = {
   'join.rejected': obj({ reason: oneOf(JOIN_REJECT_REASONS) }),
   'join.expired': obj({ join_id: joinId }),
   'auth.resume': obj({ room_id: roomId, role: clientRole, credential }),
-  'auth.ok': obj({ role: clientRole, generation, peer_connected: bool, phone_paired: bool }),
+  // Revision 4 (A3-07): every successful resume returns the rotated credential to use next time.
+  'auth.ok': obj({
+    role: clientRole,
+    generation,
+    peer_connected: bool,
+    phone_paired: bool,
+    next_credential: credential,
+  }),
   'peer.state': obj({ role: clientRole, connected: bool, generation }),
   unpair: empty,
   unpaired: obj({ reason: oneOf(UNPAIRED_REASONS) }),
@@ -271,13 +381,7 @@ export const PAYLOAD_CHECKS: Record<MessageType, Check> = {
     mode: oneOf(MIC_MODES),
   }),
   'precheck.result': precheckResult,
-  level: obj({
-    frame_index: int(0, LEVEL_FRAME_INDEX_MAX),
-    t_audio_ms: num(0, T_AUDIO_MS_MAX),
-    dbfs,
-    active: bool,
-    clipped: bool,
-  }),
+  level: levelPayload,
   'window.result': windowResult,
   'listener.response': obj({ response: oneOf(LISTENER_RESPONSES) }),
   cue: obj({ text: userText(CUE_LENGTH_MIN, CUE_LENGTH_MAX) }),
