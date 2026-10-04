@@ -28,6 +28,12 @@ export function micLabel(state: MicStateName, detail: string | null): MicLabel {
         help: 'No microphone was found on this device. Check that one is connected and enabled, then try again.',
       };
     case 'input_busy':
+      if (detail === 'track_muted') {
+        return {
+          badge: 'Microphone muted',
+          help: 'The browser or system muted the microphone (for example another app took it). Nothing is being measured. Unmute it, or tap Start microphone to try again.',
+        };
+      }
       return {
         badge: 'Microphone busy',
         help: 'The microphone could not be opened. Another app or tab may be using it. Close other apps that use the microphone, then try again.',
@@ -53,11 +59,12 @@ export function micLabel(state: MicStateName, detail: string | null): MicLabel {
             badge: 'Microphone unavailable here',
             help: 'This browser does not offer microphone access to this page. Try Chrome on Android over HTTPS.',
           };
-        case 'track_muted':
+        case 'context_suspended':
           return {
-            badge: 'Microphone muted',
-            help: 'The browser or system muted the microphone (for example another app took it). Nothing is being measured. Unmute it or tap Start microphone to try again.',
+            badge: 'Audio paused',
+            help: 'The browser paused audio processing on this page (for example the screen turned off). Nothing is being measured. Keep this page open and visible, then tap Start microphone again.',
           };
+        case 'context_closed':
         case 'track_ended':
           return {
             badge: 'Microphone stopped',

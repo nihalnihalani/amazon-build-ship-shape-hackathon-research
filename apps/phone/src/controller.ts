@@ -576,7 +576,8 @@ export class PhoneController {
       case 'attempt.reveal':
         return this.onReveal(msg);
       case 'session.end':
-        return this.onSessionEnd(msg);
+        void this.onSessionEnd(msg);
+        return;
     }
   }
 
@@ -809,11 +810,15 @@ export class PhoneController {
     this.ackFor(msg, 'applied', detail);
   }
 
-  private onSessionEnd(msg: Extract<Command, { type: 'session.end' }>): void {
+  /**
+   * Shutdown is awaited: "Mic off" is reported (and the command acknowledged) only once the
+   * port says every track, node and context it owned has been released.
+   */
+  private async onSessionEnd(msg: Extract<Command, { type: 'session.end' }>): Promise<void> {
     if (!this.matchesSession(msg)) return this.ackFor(msg, 'ignored_stale', 'unknown_session');
     this.patch({ session: null });
     this.resetCues();
-    this.shutdownCapture('discard');
+    await this.shutdownCapture('discard');
     this.publishMic(); // confirms "Mic off" even if the port was already off
     this.ackFor(msg, 'applied');
   }
@@ -834,18 +839,18 @@ export class PhoneController {
   /** User turned the microphone off. */
   stopMic(): void {
     if (!this.state.canStopMic) return;
-    this.shutdownCapture('interrupted');
+    void this.shutdownCapture('interrupted');
   }
 
   /**
    * Full capture shutdown: end any run, stop tracks, close the audio graph, release the
    * wake lock (unless the visible session still wants it), lock listener controls.
    */
-  private shutdownCapture(runReason: AbortReason): void {
+  private async shutdownCapture(runReason: AbortReason): Promise<void> {
     this.abortRun(runReason);
     this.lockListener();
     this.deps.audio.cancelOpen();
-    this.deps.audio.close();
+    await this.deps.audio.close();
     this.syncWakeLock();
   }
 
@@ -867,7 +872,7 @@ export class PhoneController {
     if (visibility === 'hidden') {
       // Background policy: invalidate anything open, then release the microphone completely.
       // Capture is never restarted automatically when the page returns.
-      this.shutdownCapture('interrupted');
+      void this.shutdownCapture('interrupted');
     }
     this.syncWakeLock();
     this.publishMic();
@@ -994,7 +999,7 @@ export class PhoneController {
     this.lastMicKey = null;
     this.resetCues();
     this.patch({ session: null });
-    this.shutdownCapture('discard');
+    void this.shutdownCapture('discard');
     this.patch({
       screen: 'unpaired',
       unpairedReason: reason,
@@ -1009,7 +1014,7 @@ export class PhoneController {
   /** Tear down everything (page unload, tests). */
   dispose(): void {
     this.transport.close();
-    this.shutdownCapture('discard');
+    void this.shutdownCapture('discard');
     for (const u of this.unsubs) u();
     this.unsubs.length = 0;
     this.listeners.clear();

@@ -245,7 +245,7 @@ export class FakeAudio implements AudioPort {
     this.cancelCalls += 1;
     if (this.snapshot.state === 'permission_pending') this.setState('off');
   }
-  close(): void {
+  async close(): Promise<void> {
     this.closeCalls += 1;
     this.precheckRun?.resolve(null);
     this.windowRun?.resolve(null);

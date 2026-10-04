@@ -500,7 +500,8 @@ describe('getUserMedia is only reachable from startMic()', () => {
     send(h, windowStart('phrase', WINDOW2, ATTEMPT2));
     send(h, listenerOpen());
     send(h, sessionState('quiet_check'));
-    send(h, sessionEnd());
+    h.sockets.current.receive(sessionEnd());
+    await flush();
     h.visibility.set('hidden');
     h.visibility.set('visible');
     expect(h.audio.openCalls).toHaveLength(0);

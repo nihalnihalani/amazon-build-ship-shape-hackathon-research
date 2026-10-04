@@ -61,14 +61,15 @@ function wakeLockText(state: WakeLockState): string {
   }
 }
 
-function settingsLines(s: MicSettingsWire, supportsAgc: boolean, micOpen: boolean): string[] {
+function settingsLines(s: MicSettingsWire, supportsAgc: boolean | null, micOpen: boolean): string[] {
   const lines = [
     `Browser reports gain control: ${tri(s.auto_gain_control)}`,
     `Browser reports echo cancellation: ${tri(s.echo_cancellation)}`,
     `Browser reports noise suppression: ${tri(s.noise_suppression)}`,
     `Browser reports sample rate: ${s.sample_rate === null ? 'unknown' : `${Math.round(s.sample_rate)} Hz`}`,
   ];
-  if (micOpen && !supportsAgc) lines.push('This browser does not report support for turning gain control off.');
+  if (micOpen && supportsAgc === false) lines.push('This browser does not report support for turning gain control off.');
+  if (micOpen && supportsAgc === null) lines.push('Whether this browser supports turning gain control off is unknown.');
   return lines;
 }
 

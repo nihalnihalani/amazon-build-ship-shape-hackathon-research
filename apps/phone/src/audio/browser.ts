@@ -1,26 +1,22 @@
-import workletUrl from './frame-reducer.worklet.js?url';
-import type { AudioContextLike, CaptureDeps, WorkletNodeLike } from './capture.js';
+import type { AudioPortDeps } from '../ports/audio.js';
 import type { MicMode } from '../ports/wire.js';
 
-/** The only place the real browser audio globals are touched. */
-export function browserCaptureDeps(options: {
+/**
+ * The only place the real browser audio globals are touched. The worklet module is a same-origin
+ * file written by the build (vite.config.ts), so the CSP stays `script-src 'self'`.
+ */
+export function browserAudioDeps(options: {
   mode: MicMode;
   inputOverride?: () => Promise<MediaStream>;
-}): CaptureDeps {
-  const deps: CaptureDeps = {
+}): AudioPortDeps {
+  const deps: AudioPortDeps = {
     mediaDevices: typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined,
-    createAudioContext: () => new AudioContext({ latencyHint: 'interactive' }) as unknown as AudioContextLike,
-    createWorkletNode: (context) =>
-      new AudioWorkletNode(context as unknown as AudioContext, 'atr-frame-reducer', {
-        numberOfInputs: 1,
-        numberOfOutputs: 1,
-        channelCount: 1,
-        outputChannelCount: [1],
-      }) as unknown as WorkletNodeLike,
-    workletUrl,
+    AudioContextCtor: typeof AudioContext !== 'undefined' ? AudioContext : undefined,
+    workletModuleUrl: __ATR_WORKLET_URL__,
     isSecureContext: typeof window !== 'undefined' && window.isSecureContext === true,
     mode: options.mode,
   };
+  if (typeof AudioWorkletNode !== 'undefined') deps.AudioWorkletNodeCtor = AudioWorkletNode;
   if (options.inputOverride) deps.inputOverride = options.inputOverride;
   return deps;
 }

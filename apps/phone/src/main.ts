@@ -1,7 +1,7 @@
 import './styles.css';
-import { browserCaptureDeps, detectMicMode } from './audio/browser.js';
-import { createAudioPort } from './audio/capture.js';
+import { browserAudioDeps, detectMicMode } from './audio/browser.js';
 import { defaultDeviceLabel, resolveRelayUrl } from './config.js';
+import { createAudioPort } from './ports/audio.js';
 import { PhoneController, type VisibilitySource } from './controller.js';
 import { consumeHashCode } from './pairing.js';
 import { type SocketLike } from './transport.js';
@@ -32,7 +32,7 @@ async function boot(): Promise<void> {
 
   const synthetic = inputOverride !== undefined;
   const audio = createAudioPort(
-    browserCaptureDeps({
+    browserAudioDeps({
       mode: detectMicMode(location.hostname, synthetic),
       ...(inputOverride ? { inputOverride } : {}),
     }),
