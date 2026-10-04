@@ -25,7 +25,6 @@ import {
 import type { ActionId, LinkView, RemoteKey, TvStage, TvView } from './contract.js';
 import { COPY } from './copy.js';
 import type { Core, DialogKind, Effect, Env, Event, InternalEvent, Paused, PausedFrom, Session, Sub, Win, WinKind } from './model.js';
-import { deriveSummary } from './records.js';
 import type { AttemptRecord, EndReason, SessionRecord, VowelRecord } from './records.js';
 import {
   attemptsAt,
@@ -1667,18 +1666,4 @@ export class Machine {
     this.go('idle');
     s.idleScreen = s.settings.onboarded ? 'home' : 'onboarding';
   }
-}
-
-/** Convenience for tests: summary of the live session using the same derivation as the view. */
-export function liveSummary(core: Core) {
-  const sess = core.session;
-  if (!sess) return null;
-  return deriveSummary({
-    attempts: sess.attempts,
-    vowels: sess.vowels,
-    skipped: sess.skipped,
-    complete: sess.ended === 'completed' && !sess.resumed,
-    calMarginDb: sess.calMarginDb,
-    familyMode: sess.familyMode,
-  });
 }
