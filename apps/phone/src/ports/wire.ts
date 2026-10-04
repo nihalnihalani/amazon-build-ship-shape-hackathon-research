@@ -21,6 +21,8 @@ import {
   MESSAGE_TYPES,
   MessageFactory as ProtocolMessageFactory,
   parseWireMessage,
+  quantizeCoverage,
+  quantizeDb,
   specFor,
 } from '@atr/protocol';
 import type {
@@ -32,6 +34,7 @@ import type {
 } from '@atr/protocol';
 
 export {
+  displaySafe,
   CUE_LENGTH_MAX,
   CUES_PER_SESSION_MAX,
   DEVICE_LABEL_LENGTH_MAX,
@@ -48,7 +51,7 @@ export {
   validateDeviceLabel,
   validatePhrase,
 } from '@atr/protocol';
-export type { TextCheck as PackageTextCheck } from '@atr/protocol';
+export type { DisplayVerdict, TextCheck as PackageTextCheck, TextRejection } from '@atr/protocol';
 
 export type {
   AckOutcome,
@@ -114,6 +117,57 @@ export type InboundMessage = MessageOf<InboundType>;
 export type Ids = MessageIds;
 
 // ---------------------------------------------------------------------------
+// Quantisation (revision 4, PK-06)
+// ---------------------------------------------------------------------------
+
+const roundMs = (x: number): number => (Number.isFinite(x) ? Math.round(x) : x);
+const dbOrNull = (x: number | null): number | null => (x === null ? null : quantizeDb(x));
+
+/**
+ * Puts outgoing measurement numbers on the protocol grid: dB values to 0.1 dB, coverage to 0.001,
+ * times to whole milliseconds. This ONLY rounds: it never recomputes a statistic, a flag or a
+ * validity decision, and it is an exact no-op for values that are already on the grid (which is
+ * what the DSP package emits once it quantises itself). Rounding is monotone, so the orderings
+ * the validators check (p20 <= floor <= p80 <= p95, p50 <= p95 <= peak) are preserved.
+ */
+export function quantizeOutbound<T extends OutboundType>(type: T, payload: OutboundPayloads[T]): OutboundPayloads[T] {
+  switch (type) {
+    case 'level': {
+      const p = payload as OutboundPayloads['level'];
+      return { ...p, t_audio_ms: roundMs(p.t_audio_ms), dbfs: quantizeDb(p.dbfs) } as OutboundPayloads[T];
+    }
+    case 'precheck.result': {
+      const p = payload as OutboundPayloads['precheck.result'];
+      return {
+        ...p,
+        floor_dbfs: dbOrNull(p.floor_dbfs),
+        p20_dbfs: dbOrNull(p.p20_dbfs),
+        p80_dbfs: dbOrNull(p.p80_dbfs),
+        p95_dbfs: dbOrNull(p.p95_dbfs),
+        coverage: quantizeCoverage(p.coverage),
+        duration_ms: roundMs(p.duration_ms),
+      } as OutboundPayloads[T];
+    }
+    case 'window.result': {
+      const p = payload as OutboundPayloads['window.result'];
+      return {
+        ...p,
+        coverage: quantizeCoverage(p.coverage),
+        active_ms: roundMs(p.active_ms),
+        longest_active_ms: roundMs(p.longest_active_ms),
+        onset_ms: p.onset_ms === null ? null : roundMs(p.onset_ms),
+        p50_active_dbfs: dbOrNull(p.p50_active_dbfs),
+        p95_active_dbfs: dbOrNull(p.p95_active_dbfs),
+        peak_dbfs: dbOrNull(p.peak_dbfs),
+        duration_ms: roundMs(p.duration_ms),
+      } as OutboundPayloads[T];
+    }
+    default:
+      return payload;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Building
 // ---------------------------------------------------------------------------
 
@@ -169,7 +223,7 @@ export class PhoneMessageFactory {
 
   build<T extends OutboundType>(type: T, payload: OutboundPayloads[T], ids: Ids = {}): MessageOf<T> {
     if (!this.authed && !PRE_AUTH.has(type)) throw new Error(`cannot send ${type} before authentication`);
-    return this.inner.next(type, payload as PayloadMap[T], ids);
+    return this.inner.next(type, quantizeOutbound(type, payload) as PayloadMap[T], ids);
   }
 
   /** JSON text of a built message, re-validated (size limit included). */

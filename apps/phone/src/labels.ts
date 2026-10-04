@@ -154,8 +154,9 @@ export function unpairedText(reason: string): string {
     case 'room_closed':
       return 'The TV closed this pairing.';
     case 'expired':
-    case 'revoked':
       return 'The pairing expired.';
+    case 'revoked':
+      return 'The TV withdrew this phone\u2019s pairing.';
     case 'superseded':
       return 'This phone was connected from another page, so this one was disconnected.';
     default:

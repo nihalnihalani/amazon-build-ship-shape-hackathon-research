@@ -136,26 +136,77 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     { id: 'pending', hidden: true },
     pendingHeading,
     h('p', {
-      text: 'If the TV shows the same number, choose Accept on the TV. If it shows a different number, choose Reject on the TV.',
+      text: 'Your TV shows three numbers. Pick the number shown above, using the TV remote. If your TV is not asking you to pick a number, tap Cancel.',
     }),
     cancelJoinBtn,
+  );
+  // A3-01: the relay said "accepted", but the phone cannot tell whose room it is. Ask the person.
+  const confirmHeading = h('h2', { id: 'confirm-heading', attrs: { tabindex: '-1' } });
+  const confirmYesBtn = h('button', {
+    id: 'confirm-yes',
+    className: 'btn',
+    text: 'Yes, that was me',
+    attrs: { type: 'button' },
+  });
+  const confirmNoBtn = h('button', {
+    id: 'confirm-no',
+    className: 'btn',
+    text: 'No, cancel',
+    attrs: { type: 'button' },
+  });
+  const confirmSelf = h(
+    'div',
+    { id: 'confirm-self', hidden: true },
+    confirmHeading,
+    h('p', {
+      text: 'Tap Yes only if you picked that number on your own TV just now. Until you do, this phone shares nothing with that TV: no microphone status and no phrases.',
+    }),
+    h('div', { className: 'btn-col' }, confirmYesBtn, confirmNoBtn),
+  );
+  const unpairedHeading = h('h2', {
+    id: 'unpaired-heading',
+    text: 'This phone is no longer paired',
+    attrs: { tabindex: '-1' },
+  });
+  const unpairedReason = h('p', { id: 'unpaired-reason' });
+  const unpairedNotice = h(
+    'div',
+    { id: 'unpaired-notice', className: 'notice', hidden: true },
+    unpairedHeading,
+    unpairedReason,
+    h('p', { text: 'The microphone is off. To pair again, enter a new code from the TV below.' }),
   );
   const joinHeading = h('h2', { id: 'join-heading', text: 'Join the TV', attrs: { tabindex: '-1' } });
   const joinSection = h(
     'section',
     { id: 'view-join', attrs: { 'aria-labelledby': 'join-heading' } },
+    unpairedNotice,
     joinHeading,
     h('p', { text: 'Enter the 6-character code shown on the TV.' }),
     joinForm,
     pending,
+    confirmSelf,
   );
 
   // Setup
   const setupHeading = h('h2', { id: 'setup-heading', text: 'Paired with the TV', attrs: { tabindex: '-1' } });
   const linkLine = h('p', { id: 'link' });
+  const retryBtn = h('button', {
+    id: 'retry',
+    className: 'btn',
+    text: 'Retry now',
+    hidden: true,
+    attrs: { type: 'button' },
+  });
   const micBadge = h('p', { id: 'mic-badge', className: 'badge' });
   const micHelp = h('p', { id: 'mic-help' });
   const modeLine = h('p', { id: 'mic-mode', hidden: true });
+  const micNotice = h('p', { id: 'mic-notice', className: 'notice', hidden: true });
+  const dndTip = h('p', {
+    id: 'dnd-tip',
+    className: 'small',
+    text: 'Tip: turn on Do Not Disturb on this phone so a call or notification sound does not interrupt a measurement. This page never plays a sound and never buzzes the phone.',
+  });
   const startBtn = h('button', {
     id: 'start-mic',
     className: 'btn btn-primary',
@@ -192,6 +243,8 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     h('h2', { id: 'mic-heading', text: 'Microphone' }),
     micBadge,
     micHelp,
+    micNotice,
+    dndTip,
     modeLine,
     h('div', { className: 'btn-row' }, startBtn, relaxedBtn, cancelMicBtn, stopBtn),
     h('h3', { text: 'What the browser reports' }),
@@ -291,32 +344,11 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     { id: 'view-setup', hidden: true },
     setupHeading,
     linkLine,
+    retryBtn,
     micSection,
     listenerSection,
     phraseSection,
     cueSettings,
-  );
-
-  // Unpaired
-  const unpairedHeading = h('h2', {
-    id: 'unpaired-heading',
-    text: 'This phone is no longer paired',
-    attrs: { tabindex: '-1' },
-  });
-  const unpairedReason = h('p', { id: 'unpaired-reason' });
-  const pairAgainBtn = h('button', {
-    id: 'pair-again',
-    className: 'btn btn-primary',
-    text: 'Pair again',
-    attrs: { type: 'button' },
-  });
-  const unpairedSection = h(
-    'section',
-    { id: 'view-unpaired', hidden: true, attrs: { 'aria-labelledby': 'unpaired-heading' } },
-    unpairedHeading,
-    unpairedReason,
-    h('p', { text: 'The microphone is off.' }),
-    pairAgainBtn,
   );
 
   const privacy = h('p', { id: 'privacy', className: 'privacy', text: PRIVACY_SENTENCE });
@@ -330,7 +362,6 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     status,
     joinSection,
     setupSection,
-    unpairedSection,
     h('footer', {}, privacy),
   );
   root.replaceChildren(main);
@@ -464,7 +495,9 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
   };
   cueInput.addEventListener('input', renderCueInput);
   renderCueInput();
-  pairAgainBtn.addEventListener('click', () => controller.pairAgain());
+  confirmYesBtn.addEventListener('click', () => controller.confirmPairing());
+  confirmNoBtn.addEventListener('click', () => controller.rejectPairing());
+  retryBtn.addEventListener('click', () => controller.retryNow());
 
   // ----- rendering -------------------------------------------------------------
   let lastScreen: AppState['screen'] | null = null;
@@ -472,18 +505,33 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
   let announced = '';
 
   const statusMessage = (s: AppState): string => {
-    if (s.screen === 'unpaired') return 'This phone is no longer paired.';
     if (s.screen === 'join') {
-      if (s.join.phase === 'pending' && s.join.confirmDigits) return `Check the TV: does it show ${s.join.confirmDigits}?`;
+      if (s.join.phase === 'pending' && s.join.confirmDigits) return `On your TV, pick ${s.join.confirmDigits}`;
+      if (s.join.phase === 'confirming' && s.join.confirmDigits) return `Did you just pick ${s.join.confirmDigits} on your TV?`;
       if (s.join.phase === 'connecting') return 'Connecting to the relay.';
+      if (s.unpairedReason) return `This phone is no longer paired. ${unpairedText(s.unpairedReason)}`;
       return s.join.message ?? '';
     }
     if (s.link === 'reconnecting' || s.link === 'failed') {
-      return s.link === 'failed' ? 'Cannot connect to the relay.' : 'Connection to the TV lost. Reconnecting.';
+      return s.link === 'failed'
+        ? 'Cannot connect to the relay. Automatic retries stopped. Tap Retry now.'
+        : 'Connection to the TV lost. Reconnecting.';
     }
     if (s.notice) return s.notice;
+    if (s.micNotice === 'silent_input') return 'The microphone looks muted or blocked.';
     if (s.canAnswer) return 'Listener controls are open. Choose Heard or Not heard.';
     return micLabel(s.mic.state, s.mic.detail).badge;
+  };
+
+  /** Sets "<before><strong>digits</strong><after>" without markup parsing. */
+  const setDigitsHeading = (el: HTMLElement, before: string, digits: string, after: string): void => {
+    const full = `${before}${digits}${after}`;
+    if (el.textContent === full) return;
+    el.textContent = '';
+    const strong = document.createElement('strong');
+    strong.className = 'digits';
+    strong.textContent = digits;
+    el.append(before, strong, after);
   };
 
   const render = (s: AppState): void => {
@@ -502,7 +550,6 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     // screens
     joinSection.hidden = s.screen !== 'join';
     setupSection.hidden = s.screen !== 'setup';
-    unpairedSection.hidden = s.screen !== 'unpaired';
 
     // join
     if (codeInput.value !== s.join.code) codeInput.value = s.join.code;
@@ -512,23 +559,21 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     setText(labelMsg, s.join.deviceLabelMessage ?? '');
     setText(joinMsg, s.join.message ?? '');
     const joining = s.join.phase !== 'idle';
-    joinForm.hidden = s.join.phase === 'pending';
+    const awaitingPick = s.join.phase === 'pending';
+    const awaitingYes = s.join.phase === 'confirming';
+    joinForm.hidden = awaitingPick || awaitingYes;
     joinBtn.disabled = joining;
     codeInput.disabled = joining;
     labelInput.disabled = joining;
-    setText(joinBtn, s.join.phase === 'connecting' ? 'Connecting…' : 'Join');
-    pending.hidden = s.join.phase !== 'pending';
+    setText(joinBtn, s.join.phase === 'connecting' ? 'Connecting\u2026' : 'Join');
+    pending.hidden = !awaitingPick;
+    confirmSelf.hidden = !awaitingYes;
     if (s.join.confirmDigits) {
-      const heading = `Check the TV: does it show ${s.join.confirmDigits}?`;
-      if (pendingHeading.textContent !== heading) {
-        pendingHeading.textContent = '';
-        pendingHeading.append('Check the TV: does it show ');
-        const strong = document.createElement('strong');
-        strong.className = 'digits';
-        strong.textContent = s.join.confirmDigits;
-        pendingHeading.append(strong, '?');
-      }
+      setDigitsHeading(pendingHeading, 'On your TV, pick ', s.join.confirmDigits, '');
+      setDigitsHeading(confirmHeading, 'Did you just pick ', s.join.confirmDigits, ' on your TV?');
     }
+    unpairedNotice.hidden = !(s.unpairedReason !== null && s.join.phase === 'idle');
+    setText(unpairedReason, s.unpairedReason ? unpairedText(s.unpairedReason) : '');
 
     // setup: link
     const tv = s.tvConnected === null ? 'TV connection unknown' : s.tvConnected ? 'TV connected' : 'TV not connected';
@@ -541,12 +586,13 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
         link = `Connection to the TV unknown: reconnecting (attempt ${s.reconnectAttempt}).`;
         break;
       case 'failed':
-        link = 'Cannot connect to the relay.';
+        link = 'Cannot reach the relay. Automatic retries stopped after 2 minutes. Tap Retry now.';
         break;
       default:
         link = 'Connecting…';
     }
     setText(linkLine, link);
+    retryBtn.hidden = !(s.link === 'reconnecting' || s.link === 'failed');
 
     // setup: microphone
     const label = micLabel(s.mic.state, s.mic.detail);
@@ -574,6 +620,12 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     if (settingsList.dataset['sig'] !== joined) {
       settingsList.dataset['sig'] = joined;
       settingsList.replaceChildren(...lines.map((t) => h('li', { text: t })));
+    }
+    if (s.micNotice === 'silent_input') {
+      setText(micNotice, 'The microphone looks muted or blocked. Check that nothing covers it and that it is not muted, then ask the TV to check again.');
+      micNotice.hidden = false;
+    } else {
+      micNotice.hidden = true;
     }
     setText(wakeLine, wakeLockText(s.wakeLock));
 
@@ -606,17 +658,15 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     // phrases
     renderPhrases(s);
 
-    // unpaired
-    setText(unpairedReason, s.unpairedReason ? unpairedText(s.unpairedReason) : '');
-
     // focus management on view changes
     if (lastScreen !== null && s.screen !== lastScreen) {
       if (s.screen === 'setup') setupHeading.focus();
-      else if (s.screen === 'unpaired') unpairedHeading.focus();
+      else if (s.unpairedReason !== null) unpairedHeading.focus();
       else joinHeading.focus();
     } else if (lastPhase !== null && s.join.phase !== lastPhase && s.screen === 'join') {
       if (s.join.phase === 'pending') pendingHeading.focus();
-      else if (lastPhase === 'pending') joinHeading.focus();
+      else if (s.join.phase === 'confirming') confirmHeading.focus();
+      else if (s.join.phase === 'idle' && (lastPhase === 'pending' || lastPhase === 'confirming')) joinHeading.focus();
     }
     lastScreen = s.screen;
     lastPhase = s.join.phase;
