@@ -124,6 +124,16 @@ QA-03 (must-deliver commands queued across link loss) and QA-04 (phrase bank sho
 | DEF-001 | TV sent no heartbeat; relay dropped it after 25 s idle | Fixed in session-core `24a5929` (ping after 10 s idle) | S |
 | DEF-002 | TV reused one `window_id` for the pre-window precheck and the capture window; phone treats window ids as single-use | **window_id is unique per measurement** (each precheck and each capture); precheck and capture share `attempt_id`. PROTOCOL.md rev 4. | S, P |
 
+## Measured outcomes of the DSP rework (2026-10-05)
+
+Recorded honestly; constants stay product assumptions pending T04.
+
+| Item | Measured (fixtures, seeded) | Decision |
+|---|---|---|
+| A1-01 burst acceptance | ≤ 100 ms never accepted; 200 ms always accepted at +20 dB but only 27/40 phases at +10 dB (the frame before the opening frame can never be a candidate); 250 ms always accepted at +10 and +20 dB | Wording corrected: "≤ 100 ms never; ≥ 250 ms always at +10 and +20 dB; 200 ms always at +20 dB and phase-dependent at +10 dB". No extra rule added. |
+| A1-03 false activity | P(active ≥ 1 segment \| silent 8 s window) < 1 % for noise spread ≤ 2.5 dB; 4.4 %, 3.5 % and 16.5 % for the three noisiest AR(1) models at the edge of quiet-check validity | Target not met for the noisiest admissible rooms. Kept the 10 dB open threshold (raising it would reject soft speakers before T04 data exists). Consequence is a silent window scored `below` instead of `no_voice`, never a false `reached` (that needs p95 ≥ margin − 1 ≥ 12 dB). Recorded as a limitation in MEASUREMENT.md; T04 re-tunes. |
+| PK-06 tie rounding | `quantizeDb` uses `Math.round` (ties toward +∞, e.g. −42.25 → −42.2) | Accepted: the protocol package is the single rounding authority; the DSP matches it. |
+
 ## Requirement wording
 
 R-M6 says "seven" inherited conflicts; the master prompt lists eight in §8 (the ADR-0001 context said four). Read R-M6 as "all inherited conflicts in master prompt §8". ADR_REVIEW.md §2 maps each to its resolution.
