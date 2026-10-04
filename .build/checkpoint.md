@@ -1,6 +1,6 @@
 # Checkpoint
 
-Updated: 2026-10-05 03:35 IST by Opus lead (claude-opus-5-5).
+Updated: 2026-10-05 05:30 IST by Opus lead (claude-opus-5-5).
 
 ## Resume instruction
 
@@ -18,21 +18,22 @@ T00–T02 (environment, compatibility, ADRs) → dispatching T05 (protocol), T06
 
 ## Active teammates
 
-(see table below; updated on every dispatch)
+| Name | Role | Task | Worktree | Branch | State |
+|---|---|---|---|---|---|
+| contracts | research-contracts | T05, T01, rev 3 | ../atr-worktrees/contracts | wt/contracts | done, merged |
+| dsp | audio-dsp | T06, T04 protocol doc | ../atr-worktrees/dsp | wt/dsp | done, merged |
+| tv | vega-tv | T09 code, ten-foot-meter, web preview | ../atr-worktrees/tv | wt/tv | done, merged (native blocked B-001) |
+| session | vega-tv core | session-core | ../atr-worktrees/session | wt/session | done, merged |
+| relay | relay-cloud | T07 + AWS adapter/IaC (not deployed) | ../atr-worktrees/relay | wt/relay | running |
+| phone | phone-companion | T08 | ../atr-worktrees/phone | wt/phone | running |
+| security | security-review | T02 review, threat model | ../atr-worktrees/security | wt/security | running |
+| qa | qa-accessibility | T11/T13/T14 review, T17 prep | ../atr-worktrees/qa | wt/qa | running |
 
-| Name | Role | Task | Worktree | Branch |
-|---|---|---|---|---|
-| contracts | research-contracts | T05 protocol package, T01 COMPATIBILITY/SOURCES | ../atr-worktrees/contracts | wt/contracts |
-| dsp | audio-dsp | T06 phone-mic-meter, T04 frozen protocol doc | ../atr-worktrees/dsp | wt/dsp |
-| session | vega-tv (core) | session-core reducer/view/storage logic | ../atr-worktrees/session | wt/session |
-| tv | vega-tv | T09 apps/tv RN-for-Vega code, ten-foot-meter, adapters | ../atr-worktrees/tv | wt/tv |
-| relay | relay-cloud | T07 relay core + local server; AWS adapter + SAM (not deployed) | ../atr-worktrees/relay | wt/relay |
-| phone | phone-companion | T08 phone page | ../atr-worktrees/phone | wt/phone |
-
-All dispatched from base `ea1eef8` on 2026-10-05 ~03:50 IST. Integration order planned: contracts → dsp → session → relay → phone → tv; after contracts merges, notify relay/phone/session to merge `build/across-the-room` and swap ports to `@atr/protocol`.
+Integration branch head after session/TV integration: see `git log -1 build/across-the-room`.
 
 ## Next lead actions
 
-1. On each handoff: review diff + rerun checks in the worktree, merge into `build/across-the-room`, regenerate lockfile, rerun root build/typecheck/test, append evidence, update graph.
-2. Build T12 harness in `tests/` (local relay + phone dist-test in system Chrome with synthetic audio + headless session-core TV driver).
-3. Spawn qa-accessibility, security-review, release-docs after integration.
+1. Merge relay and phone when they hand off; rerun root build/typecheck/test (relay/phone stubs currently have no tests, so root `npm test` fails until they land).
+2. Build T12: tests/e2e local journey (local relay with dev cert + phone dist-test in system Chrome with synthetic audio + headless TV driver tests/src/tv-driver.ts).
+3. Apply accepted findings from security (T02) and qa reviews as rework tasks.
+4. Spawn release-docs after T12.
