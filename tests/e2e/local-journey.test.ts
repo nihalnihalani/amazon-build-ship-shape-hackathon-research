@@ -20,7 +20,8 @@ import { startTv, type TvHarness } from '../src/tv-driver.js';
 const LOUD = -30; // dBFS synthetic tone: same level as calibration → reached
 const SOFT = -60; // 30 dB below calibration → below the band
 const HIDDEN = new Set([3, 6, 9]);
-const VERDICT_WORDS = /reached|below|band|loud|quiet|dB/i;
+// Result-specific wording. The neutral rating prompt ("How loud did that feel?") is allowed.
+const VERDICT_WORDS = /reached|below|band|not scored|\bdB\b|too (quiet|soft|loud)|no voice|clipp/i;
 
 let relay: RelayEnv;
 let phone: PhoneEnv;
@@ -50,6 +51,13 @@ describe('T12 local journey (relay + phone page + TV session core)', () => {
 
   it('runs the full session and produces the hand-derived summary', async () => {
     const { page } = phone;
+    const trace = () => {
+      const fmt = (m: Record<string, unknown>) => `${String(m.type)}${m.window_id ? ' ' + String(m.window_id).slice(0, 8) : ''}${m.type === 'ack' ? ' ' + JSON.stringify(m.payload) : ''}${m.type === 'window.result' || m.type === 'precheck.result' ? ' ' + JSON.stringify(m.payload).slice(0, 160) : ''}`;
+      const tvSent = tv.transport.sent.map((t) => JSON.parse(t) as Record<string, unknown>).filter((m) => m.type !== 'ping');
+      const phSent = phone.sent.filter((m) => m.type !== 'level' && m.type !== 'ping');
+      return `\nTV sent (last 8): ${tvSent.slice(-8).map(fmt).join(' | ')}\nPhone sent (last 8): ${phSent.slice(-8).map(fmt).join(' | ')}\nlevels sent: ${phone.sent.filter((m) => m.type === 'level').length}`;
+    };
+    try {
 
     // A. Onboarding, then enable family mode in Settings.
     if (tv.view().screen === 'onboarding') tv.act('continue');
@@ -233,6 +241,9 @@ describe('T12 local journey (relay + phone page + TV session core)', () => {
     await sleep(300);
     expect([...tv.storage.map.keys()].filter((k) => k.startsWith('atr:'))).toEqual([]);
     expect(tv.storage.map.get('foreign:key')).toBe('keep');
+    } catch (e) {
+      throw new Error(`${(e as Error).message}${trace()}`);
+    }
   }, 600_000);
 
   it('never leaked level or verdict during hidden first attempts', () => {
