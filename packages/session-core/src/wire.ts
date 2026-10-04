@@ -75,7 +75,10 @@ export type ParseResult =
  * (forwarded to the TV) or originated by the relay for the TV.
  */
 export function parseInbound(raw: unknown, now: number): ParseResult {
-  const result = typeof raw === 'string' ? parseWireMessage(raw, { now }) : validateMessageObject(raw, { now });
+  const plain =
+    typeof raw === 'object' && raw !== null && (Object.getPrototypeOf(raw) === Object.prototype || Object.getPrototypeOf(raw) === null);
+  // Text frames and plain decoded objects are validated; anything else (typed arrays, buffers, numbers) is binary.
+  const result = plain ? validateMessageObject(raw, { now }) : parseWireMessage(raw, { now });
   if (!result.ok) return { ok: false, code: result.code, detail: result.detail };
   const m = result.message;
   const role = m.sender_role;
