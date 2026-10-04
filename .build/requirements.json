@@ -1,0 +1,470 @@
+{
+ "schema_version": 1,
+ "project": "Across the Room: the far-side check",
+ "updated_at": "2026-10-05T03:20:00+05:30",
+ "source": "research/ACROSS_THE_ROOM_OPUS_5_5_MASTER_PROMPT.md (pasted mandate 2026-10-05)",
+ "requirements": [
+  {
+   "id": "R-A1",
+   "area": "A",
+   "text": "First launch explains phone mark, stationary phone, 2.5-3 m seat, TV as display, local processing, relative results with separate listener responses; remote-controlled start with visible focus",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-B1",
+   "area": "B",
+   "text": "TV shows short room code and optional QR; phone opens HTTPS page and enters/receives code",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-B2",
+   "area": "B",
+   "text": "TV confirms the intended phone before access (matching confirm digits); code is a locator only",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-B3",
+   "area": "B",
+   "text": "Expired-code, rejected-join, connection-loss and retry states on both clients",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-C1",
+   "area": "C",
+   "text": "Mic permission requested only after explicit phone action",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-C2",
+   "area": "C",
+   "text": "Distinct states: waiting, denied, no mic, busy, unsupported constraints, active, stopped, unknown",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-C3",
+   "area": "C",
+   "text": "Read actual track settings and supported constraints; never show Mic live before capture starts",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-D1",
+   "area": "D",
+   "text": "Five-second quiet-room check then one calibration phrase from seat; per-session calibration default",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-D2",
+   "area": "D",
+   "text": "Predeclared quality rule rejects unsuitable input with non-blaming next action; retry/cancel/skip",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-E1",
+   "area": "E",
+   "text": "Optional sustained-vowel window <=30 s with elapsed timer, qualified relative feedback, measured voice-activity duration, early stop, skip, rest, immediate remote cancel; no max-effort instruction",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-F1",
+   "area": "F",
+   "text": "Default ten original household phrases; household saves 1-10 phrases of 1-60 chars; trimmed Unicode, literal rendering",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-F2",
+   "area": "F",
+   "text": "Manual advancement with OK; large relative-level arc during valid capture; invalid/interrupted windows unscored",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-G1",
+   "area": "G",
+   "text": "Hidden meter at positions 3/6/9 when present; Felt loud/Felt normal/Skip rating; reveal after response phase",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-G2",
+   "area": "G",
+   "text": "No hidden-result leak via arc, colour, labels, accessible labels, announcements, phone display, notifications",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-G3",
+   "area": "G",
+   "text": "Only first attempt counts for hidden-meter; retries have unique IDs, show meter, distinguishable in summaries",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-H1",
+   "area": "H",
+   "text": "Listener controls Heard/Not heard/Cue on the same phone, enabled only after capture closes",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-H2",
+   "area": "H",
+   "text": "Cue 1-12 chars, max 3 per session enforced on both clients and authoritative TV state",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-H3",
+   "area": "H",
+   "text": "Family mode holds verdict until listener responds or speaker skips/continues; hidden attempts also need rating; timeout never invents a response",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-H4",
+   "area": "H",
+   "text": "Reveal locks the attempt; late responses marked late and excluded from primary denominator",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-I1",
+   "area": "I",
+   "text": "Summary: completed/attempted/skipped/invalid separately; relative-band results; voice-activity duration; hidden-meter responses; eligible listener responses; agreement with denominator split hidden/visible",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-I2",
+   "area": "I",
+   "text": "Seven-day dated history; missing days remain missing; seeded/fixture data visibly labelled; no incomplete-vs-complete silent comparison",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-J1",
+   "area": "J",
+   "text": "Settings: positioning, supported devices/measurement mode, reset calibration, delete local data, unpair, about/version/licenses, developer diagnostics outside practice flow",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-J2",
+   "area": "J",
+   "text": "Destructive actions confirm with Cancel focused by default; verify deletion and capture shutdown",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-X1",
+   "area": "exclusions",
+   "text": "No audio upload, saved recordings, cloud ASR, LLM scoring, clinical coaching, speaker ID, third listener phone",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-X2",
+   "area": "framing",
+   "text": "Not a medical device wording; no efficacy claims; relative level not SPL/comprehension/intelligibility/identity",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-P1",
+   "area": "platform",
+   "text": "React Native for Vega app on a single compatible SDK/RN/React/OS line with compatibility matrix",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-P2",
+   "area": "platform",
+   "text": "Official native Hello World proven before UI polish; vega project doctor and vpt validate with strict ABI",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-P3",
+   "area": "platform",
+   "text": "Manifest interactive component category com.amazon.category.main",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-P4",
+   "area": "platform",
+   "text": "Vega build toolchain isolated from supported GA Lambda runtime",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-P5",
+   "area": "platform",
+   "text": "Repository structure apps/tv, apps/phone, packages/protocol, packages/phone-mic-meter, packages/ten-foot-meter, services/relay/{local,aws}, infra, fixtures, tests, docs",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-L1",
+   "area": "local",
+   "text": "Local relay with same protocol; trustworthy HTTPS for physical phone; LAN http never presented as mic origin; modes distinguished (physical, same-Mac, fixture)",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-L2",
+   "area": "local",
+   "text": "No production polling fallback without separate ADR",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-S1",
+   "area": "security",
+   "text": "Versioned schemas with full envelope binding fields",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-S2",
+   "area": "security",
+   "text": "Typed messages for all listed commands/observations with sender direction rules",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-S3",
+   "area": "security",
+   "text": "Pairing: short-lived code, cryptographic credentials, atomic role claims, rate limits, TV confirmation, role-bound expiry, revocation, safe reconnect",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-S4",
+   "area": "security",
+   "text": "Browser WS auth via documented first-message auth; per-message authorization; exact Origin allowlist without blanket missing-Origin bypass",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-S5",
+   "area": "security",
+   "text": "Reject unknown types, wrong direction, raw audio/PCM/binary/base64 blobs, non-finite, impossible durations, oversized, invalid ids, stale/closed-window, cross-room/session",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-S6",
+   "area": "security",
+   "text": "Idempotent duplicate/replay handling; logical expiry on reads; handle GoneException, missed disconnects, connection lifetime, reconnect without invented results",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M1",
+   "area": "dsp",
+   "text": "Audio local and ephemeral; no MediaRecorder/uploads/persistence/ASR/analytics",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M2",
+   "area": "dsp",
+   "text": "Request AGC/EC/NS off; inspect supported constraints, settings, sample rate, track state; settings are not proof",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M3",
+   "area": "dsp",
+   "text": "Documented RMS/dBFS convention, epsilon floor, clipping; display smoothing separate from scoring",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M4",
+   "area": "dsp",
+   "text": "Defined and tested silence, non-finite, clipping, floor stability, VAD candidate/accepted/hangover, gaps, coverage, summaries, band boundaries",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M5",
+   "area": "dsp",
+   "text": "Actual capture timestamps; continuous local analysis adapter",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M6",
+   "area": "dsp",
+   "text": "Seven inherited design conflicts resolved explicitly (ADR-0001/2/8/9)",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M7",
+   "area": "dsp",
+   "text": "Bounded quiet precheck returns aggregate; level samples only during active valid windows; UI distinguishes Mic off/open not measuring/measuring/unknown",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-M8",
+   "area": "dsp",
+   "text": "Shutdown on end/cancel/unpair/expiry/background: stop tracks, release Wake Lock, cancel timers/worklets, close AudioContext, clear buffers, acknowledge",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-Q1",
+   "area": "qualification",
+   "text": "Per-session relative calibration default; cross-session comparisons disabled",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-Q2",
+   "area": "qualification",
+   "text": "Frozen experiment protocol before trials; randomized repeats; negative cases; full recording fields; failures recorded",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-Q3",
+   "area": "qualification",
+   "text": "Listener Edition fallback within same product if evidence fails",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-U1",
+   "area": "ux",
+   "text": "Explicit state machines for TV session, phone mic, transport, listener/reveal with required stages",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-U2",
+   "area": "ux",
+   "text": "Every TV action remote reachable; conspicuous focus; Back/cancel during measurement; duplicate OK cannot double-start; reconnect needs fresh start; resume/discard never invents completion; text/shape plus colour",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-U3",
+   "area": "a11y",
+   "text": "Supported Vega accessibility APIs; VoiceView order, UI scale, high contrast, announcements, modal focus, large phone controls, hidden-result leak tests",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-U4",
+   "area": "a11y",
+   "text": "Spoken output coordinated before capture; never disable accessibility service",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-ST1",
+   "area": "storage",
+   "text": "AsyncStorage unencrypted disclosed; minimized retention; credentials not persisted; verified deletion; migrations; crash resume",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-O1",
+   "area": "ops",
+   "text": "Versioned IaC with local/staging/production configs; least-privilege IAM; secrets outside repo/clients; exact CORS/origins; private S3 + CloudFront OAC + security headers",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-O2",
+   "area": "ops",
+   "text": "Bounded timeouts/retries; log redaction/retention; rate/concurrency controls; cost model; budget alerts; metrics; alarms+runbooks; rollback; recovery; tested disable procedure",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-O3",
+   "area": "ops",
+   "text": "Dependency/license inventory; artifact hashes/provenance; supported-device matrix; maintenance docs",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-O4",
+   "area": "ops",
+   "text": "Separate portable Linux CI from supported-host native Vega checks",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-V1",
+   "area": "verification",
+   "text": "Requirement-to-evidence matrix before readiness claims",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-V2",
+   "area": "verification",
+   "text": "Numerical, protocol/relay, browser, TV, end-to-end (local+AWS), fault, privacy/security and physical/operational tests as listed in master prompt §14",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-V3",
+   "area": "verification",
+   "text": "Evidence classes kept separate; frozen engineering targets with reviewer approval; every check recorded with full fields",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-R1",
+   "area": "release",
+   "text": "Separate readiness fields engineering_release_candidate / hackathon_ready / public_production_ready / public_production_launched",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-H-1",
+   "area": "hackathon",
+   "text": "Working Fire TV/Vega demo; public English video < 3 min; source + reproducible setup; license; description/architecture; limitations; work-in-window; tool feedback; genuine friction logs; track/challenge; judge access; AWS Builder evidence; optional OSS contribution",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-H-2",
+   "area": "hackathon",
+   "text": "Recheck official rules before submission; maintain judge access through 21 Nov 2026 01:30 IST; no publishing/invitations/attestations without authorization",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-T1",
+   "area": "team",
+   "text": "Lead claude-opus-5-5, teammates claude-sonnet-5-5 verified and reported; native team or documented limitation; independent review; worktrees or non-overlapping ownership",
+   "status": "open",
+   "evidence": []
+  },
+  {
+   "id": "R-T2",
+   "area": "team",
+   "text": "Durable .build files, loop, checkpoints, 3-attempt rule, no cancelled_optional for required work",
+   "status": "open",
+   "evidence": []
+  }
+ ]
+}

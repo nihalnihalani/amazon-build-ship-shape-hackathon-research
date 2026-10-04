@@ -1,0 +1,841 @@
+{
+ "schema_version": 1,
+ "project": "Across the Room: the far-side check",
+ "updated_at": "2026-10-05T03:20:00+05:30",
+ "states": [
+  "pending",
+  "ready",
+  "in_progress",
+  "in_review",
+  "verified",
+  "rework",
+  "blocked_external",
+  "cancelled_optional"
+ ],
+ "rules": {
+  "cancelled_optional_only_for_required_false": true,
+  "three_attempt_rule": "After three attempts with the same failure: diagnose, take a materially different documented recovery, or mark blocked_external with exact action",
+  "blocked_never_verified": true
+ },
+ "tasks": [
+  {
+   "id": "T00",
+   "title": "Environment, model access and native-team setup",
+   "requirement_ids": [
+    "R-T1",
+    "R-T2"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Environment inventory recorded with no secrets",
+    "Lead model resolved and reported",
+    "Teammate model resolution reported by each teammate",
+    "Native team capability or limitation recorded"
+   ],
+   "expected_outputs": [
+    "evidence entries",
+    "checkpoint"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T01",
+   "title": "Current rules and compatibility matrix",
+   "requirement_ids": [
+    "R-P1",
+    "R-H-2"
+   ],
+   "owner": "research-contracts",
+   "cwd": null,
+   "dependencies": [
+    "T00"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "docs/COMPATIBILITY.md lists SDK/RN/React/OS/native modules/starter commit/host arch/toolchain/backend runtime",
+    "docs/SOURCES.md with fetched-date URLs",
+    "Official rules dates rechecked"
+   ],
+   "expected_outputs": [
+    "docs/COMPATIBILITY.md",
+    "docs/SOURCES.md"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T02",
+   "title": "Product scope and corrective ADRs",
+   "requirement_ids": [
+    "R-M6",
+    "R-X1",
+    "R-X2",
+    "R-L2",
+    "R-Q1"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T01"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "ADR-0001..0009 accepted",
+    "Seven inherited conflicts resolved"
+   ],
+   "expected_outputs": [
+    "docs/adr/*"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T03",
+   "title": "Actual Vega Hello World, input and network spike",
+   "requirement_ids": [
+    "R-P2",
+    "R-P3"
+   ],
+   "owner": "vega-tv",
+   "cwd": null,
+   "dependencies": [
+    "T01"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Official Hello World built and launched on VVD",
+    "vega project doctor exit 0",
+    "remote input logged",
+    "WSS connect from VVD"
+   ],
+   "expected_outputs": [
+    "evidence real_VVD"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T04",
+   "title": "Physical Android microphone experiment",
+   "requirement_ids": [
+    "R-Q2",
+    "R-M2"
+   ],
+   "owner": "audio-dsp",
+   "cwd": null,
+   "dependencies": [
+    "T02"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Frozen protocol executed on a physical Android phone",
+    "Results recorded honestly including failures"
+   ],
+   "expected_outputs": [
+    "docs/evaluation/T04-*.md"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T04A",
+   "title": "Evidence-based measurement-mode decision",
+   "requirement_ids": [
+    "R-Q1",
+    "R-Q3"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T04",
+    "T02"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Mode decision ADR referencing T04 evidence"
+   ],
+   "expected_outputs": [
+    "docs/adr/0010-*"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T05",
+   "title": "Versioned protocol and state machines",
+   "requirement_ids": [
+    "R-S1",
+    "R-S2",
+    "R-U1"
+   ],
+   "owner": "research-contracts",
+   "cwd": null,
+   "dependencies": [
+    "T02"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "packages/protocol implements PROTOCOL.md v1 with validators and tests",
+    "State machine type names exported",
+    "Doc/code type-list consistency test"
+   ],
+   "expected_outputs": [
+    "packages/protocol"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T06",
+   "title": "Deterministic DSP package",
+   "requirement_ids": [
+    "R-M1",
+    "R-M3",
+    "R-M4",
+    "R-M5",
+    "R-M7"
+   ],
+   "owner": "audio-dsp",
+   "cwd": null,
+   "dependencies": [
+    "T05"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Pure DSP functions with independent-expected-value tests covering ADR-0001 boundaries",
+    "AudioWorklet frame adapter with sample-clock timestamps",
+    "No MediaRecorder or network in package"
+   ],
+   "expected_outputs": [
+    "packages/phone-mic-meter"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T07",
+   "title": "Secure local relay",
+   "requirement_ids": [
+    "R-S3",
+    "R-S4",
+    "R-S5",
+    "R-S6",
+    "R-L1"
+   ],
+   "owner": "relay-cloud",
+   "cwd": null,
+   "dependencies": [
+    "T05"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Shared relay core + local HTTPS/WSS adapter",
+    "Security tests: bypass, wrong role/room, brute force, competing claims, expiry, revocation, duplicates, replay, generations, invalid/oversized, missed disconnect"
+   ],
+   "expected_outputs": [
+    "services/relay"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T08",
+   "title": "Phone companion",
+   "requirement_ids": [
+    "R-B1",
+    "R-C1",
+    "R-C2",
+    "R-C3",
+    "R-H1",
+    "R-H2",
+    "R-M8",
+    "R-F1"
+   ],
+   "owner": "phone-companion",
+   "cwd": null,
+   "dependencies": [
+    "T05",
+    "T06",
+    "T07"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "HTTPS phone page with pairing, permission states, mic badge, listener controls, phrase/cue editor, shutdown",
+    "Browser tests with fake media"
+   ],
+   "expected_outputs": [
+    "apps/phone"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T09",
+   "title": "Native TV shell and focus",
+   "requirement_ids": [
+    "R-A1",
+    "R-U2",
+    "R-U3",
+    "R-P1"
+   ],
+   "owner": "vega-tv",
+   "cwd": null,
+   "dependencies": [
+    "T03",
+    "T05"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "RN for Vega app with screens, focus, Back handling, scaling",
+    "Type-checks against pinned @amazon-devices packages",
+    "Native render on VVD"
+   ],
+   "expected_outputs": [
+    "apps/tv"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T10",
+   "title": "Authorized AWS staging relay",
+   "requirement_ids": [
+    "R-O1"
+   ],
+   "owner": "relay-cloud",
+   "cwd": null,
+   "dependencies": [
+    "T05",
+    "T07"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "SAM template validated",
+    "Owner-authorized staging deploy",
+    "Hosted security checks"
+   ],
+   "expected_outputs": [
+    "infra/",
+    "services/relay/aws"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T11",
+   "title": "Local storage, migrations, resume and deletion",
+   "requirement_ids": [
+    "R-ST1",
+    "R-J2"
+   ],
+   "owner": "vega-tv",
+   "cwd": null,
+   "dependencies": [
+    "T05",
+    "T09"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Namespaced storage, migrations, resume/discard, verified deletion tests"
+   ],
+   "expected_outputs": [
+    "apps/tv/src/storage"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T12",
+   "title": "Complete local session integration",
+   "requirement_ids": [
+    "R-D1",
+    "R-D2",
+    "R-E1",
+    "R-F2",
+    "R-I1"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T07",
+    "T08",
+    "T09",
+    "T11"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Full journey pair\u2192deletion over local relay with real phone page code and TV session core"
+   ],
+   "expected_outputs": [
+    "tests/e2e"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T12H",
+   "title": "Complete hosted session integration",
+   "requirement_ids": [
+    "R-V2"
+   ],
+   "owner": "relay-cloud",
+   "cwd": null,
+   "dependencies": [
+    "T12",
+    "T10"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Full journey over authorized AWS staging"
+   ],
+   "expected_outputs": [
+    "evidence hosted"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T13",
+   "title": "Hidden-meter checks",
+   "requirement_ids": [
+    "R-G1",
+    "R-G2",
+    "R-G3"
+   ],
+   "owner": "vega-tv",
+   "cwd": null,
+   "dependencies": [
+    "T12"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Positions 3/6/9 hidden first attempts; leak tests (visual, a11y, phone)"
+   ],
+   "expected_outputs": [
+    "tests"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T14",
+   "title": "Listener, cue and reveal phase",
+   "requirement_ids": [
+    "R-H1",
+    "R-H2",
+    "R-H3",
+    "R-H4"
+   ],
+   "owner": "vega-tv",
+   "cwd": null,
+   "dependencies": [
+    "T12"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Response phase, timeout choice, late marking, cue limits, agreement denominators"
+   ],
+   "expected_outputs": [
+    "tests"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T15",
+   "title": "Failure recovery",
+   "requirement_ids": [
+    "R-B3",
+    "R-S6",
+    "R-U2"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T12",
+    "T13",
+    "T14"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Fault injection: delay, out-of-order, dropout, expiry, partial windows, noisy input, floor change, reconnect"
+   ],
+   "expected_outputs": [
+    "tests/fault"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T16",
+   "title": "Security and privacy gate",
+   "requirement_ids": [
+    "R-S3",
+    "R-S4",
+    "R-S5",
+    "R-X1",
+    "R-M1"
+   ],
+   "owner": "security-review",
+   "cwd": null,
+   "dependencies": [
+    "T08",
+    "T10",
+    "T11",
+    "T15"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Threat model, adversarial tests, network/storage/log audit, privacy copy matches transmitted data"
+   ],
+   "expected_outputs": [
+    "docs/security/*"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T17",
+   "title": "Remote, accessibility and scale gate",
+   "requirement_ids": [
+    "R-U2",
+    "R-U3",
+    "R-U4"
+   ],
+   "owner": "qa-accessibility",
+   "cwd": null,
+   "dependencies": [
+    "T13",
+    "T14",
+    "T15"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Remote-only journey, focus, VoiceView, UI scale, contrast, leak checks"
+   ],
+   "expected_outputs": [
+    "docs/evaluation/a11y-*"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T18",
+   "title": "Automated integration and clean-build gate",
+   "requirement_ids": [
+    "R-V1",
+    "R-V2",
+    "R-O4"
+   ],
+   "owner": "qa-accessibility",
+   "cwd": null,
+   "dependencies": [
+    "T06",
+    "T07",
+    "T15",
+    "T16",
+    "T17"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Clean clone install/build/test passes; CI workflow; requirement-evidence matrix"
+   ],
+   "expected_outputs": [
+    "evidence automated"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T19",
+   "title": "Actual phone/VVD acoustic and latency gate",
+   "requirement_ids": [
+    "R-V2",
+    "R-Q2"
+   ],
+   "owner": "qa-accessibility",
+   "cwd": null,
+   "dependencies": [
+    "T04A",
+    "T12H",
+    "T18"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Physical phone + VVD session; camera latency >=20 events; acoustic checks"
+   ],
+   "expected_outputs": [
+    "evidence real_phone real_VVD"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T20",
+   "title": "Operations, rollback and spending controls",
+   "requirement_ids": [
+    "R-O1",
+    "R-O2",
+    "R-O3"
+   ],
+   "owner": "relay-cloud",
+   "cwd": null,
+   "dependencies": [
+    "T10",
+    "T16",
+    "T18"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Alarms with delivery proof, budget, disable/recovery drill, rollback"
+   ],
+   "expected_outputs": [
+    "docs/operations/*"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T21",
+   "title": "Independent release review",
+   "requirement_ids": [
+    "R-V3"
+   ],
+   "owner": "security-review",
+   "cwd": null,
+   "dependencies": [
+    "T19",
+    "T20"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Adversarial independent review of release evidence"
+   ],
+   "expected_outputs": [
+    "docs/release/review.md"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T22",
+   "title": "Engineering release candidate",
+   "requirement_ids": [
+    "R-R1"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T21"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Tagged integrated commit with artifacts and hashes"
+   ],
+   "expected_outputs": [
+    "release"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T23",
+   "title": "Hackathon package and judge access",
+   "requirement_ids": [
+    "R-H-1",
+    "R-H-2"
+   ],
+   "owner": "release-docs",
+   "cwd": null,
+   "dependencies": [
+    "T22"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Submission package prepared; publication only after authorization"
+   ],
+   "expected_outputs": [
+    "docs/submission/*"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T24",
+   "title": "Physical Fire TV and production readiness",
+   "requirement_ids": [
+    "R-R1"
+   ],
+   "owner": "qa-accessibility",
+   "cwd": null,
+   "dependencies": [
+    "T22"
+   ],
+   "required": true,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Physical Fire TV evidence; distribution requirements"
+   ],
+   "expected_outputs": [
+    "evidence physical_Fire_TV"
+   ],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T25",
+   "title": "Optional stretch, followed by affected checks",
+   "requirement_ids": [],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T22"
+   ],
+   "required": false,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Stretch items rerun affected gates"
+   ],
+   "expected_outputs": [],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  },
+  {
+   "id": "T26",
+   "title": "Optional owner-authorized public launch",
+   "requirement_ids": [
+    "R-R1"
+   ],
+   "owner": "lead",
+   "cwd": null,
+   "dependencies": [
+    "T24"
+   ],
+   "required": false,
+   "status": "pending",
+   "attempts": 0,
+   "acceptance_criteria": [
+    "Owner authorization, accepted distribution, verified rollout"
+   ],
+   "expected_outputs": [],
+   "reviewer": null,
+   "evidence_refs": [],
+   "commit": null,
+   "blocker": null
+  }
+ ]
+}

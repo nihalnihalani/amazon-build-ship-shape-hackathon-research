@@ -1,0 +1,10 @@
+{
+  "name": "@atr/tests",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "echo 'integration tests are added in T12' && exit 0"
+  }
+}

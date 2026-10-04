@@ -1,0 +1,29 @@
+{
+  "name": "across-the-room",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Across the Room: the far-side check. Fire TV (Vega) practice display with a phone microphone at the far side of the room.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/protocol",
+    "packages/phone-mic-meter",
+    "packages/ten-foot-meter",
+    "services/relay",
+    "apps/phone",
+    "tests"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  }
+}

@@ -4,3 +4,17 @@
 research/_working/exec_part1.md
 research/_working/exec_part2.md
 __pycache__/
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+certs/
+test-results/
+playwright-report/
+apps/tv/build/
+apps/tv/generated/
+.aws-sam/
+.build/tmp/
