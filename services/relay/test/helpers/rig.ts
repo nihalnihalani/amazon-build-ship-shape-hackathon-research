@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+import { DynamoDbRoomStore } from '../../src/aws/dynamo-store.js';
 import {
   MemoryRoomStore,
   RelayCore,
@@ -8,10 +9,12 @@ import {
   type MessageType,
   type RelayConfig,
   type RandomBytes,
+  type RoomStore,
   type RawFrame,
   type Role,
 } from '../../src/core/index.js';
 import { buildEnvelope, uid, type SendOptions } from './envelope.js';
+import { FakeDynamo } from './fake-dynamo.js';
 
 export { uid, type SendOptions };
 
@@ -69,7 +72,12 @@ export function assertAllRigsNoLeaks(extraSecrets: string[] = []): void {
 
 export class Rig {
   now = T0;
-  readonly store = new MemoryRoomStore();
+  /**
+   * The store under test. Test files that import a suite after setting `globalThis.__ATR_STORE = 'dynamo'` run the
+   * identical scenarios against DynamoDbRoomStore on top of the strict FakeDynamo model.
+   */
+  readonly fake: FakeDynamo | null;
+  readonly store: RoomStore;
   readonly logs: string[] = [];
   readonly metrics: { name: string; value: number }[] = [];
   readonly clients = new Map<string, Client>();
@@ -85,6 +93,13 @@ export class Rig {
     options: { randomBytes?: RandomBytes } = {},
   ) {
     allRigs.push(this);
+    if ((globalThis as { __ATR_STORE?: string }).__ATR_STORE === 'dynamo') {
+      this.fake = new FakeDynamo();
+      this.store = new DynamoDbRoomStore(this.fake, 'relay-test');
+    } else {
+      this.fake = null;
+      this.store = new MemoryRoomStore();
+    }
     this.core = new RelayCore({
       store: this.store,
       config: {
@@ -102,6 +117,10 @@ export class Rig {
   }
 
   /** Opens a connection. `origin: null` means the Origin header is absent. */
+  async connectionCount(): Promise<number> {
+    return (await this.store.listConnections()).length;
+  }
+
   async connect(origin: string | null = null, source = '198.51.100.7'): Promise<Client> {
     this.connCounter += 1;
     const c = new Client(`conn-${this.connCounter}`, this);

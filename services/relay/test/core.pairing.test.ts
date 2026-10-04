@@ -624,7 +624,7 @@ describe('origin policy (ADR-0003 section 8)', () => {
     expect(preview.closed).toBeNull();
     const evil = await rig.connect(FOREIGN_ORIGIN);
     expect(evil.closed?.code).toBe(CLOSE.ORIGIN);
-    expect(rig.store.connectionCount()).toBe(2);
+    expect(await rig.connectionCount()).toBe(2);
     expect(rig.metrics.filter((m) => m.name === 'origin_rejected')).toHaveLength(1);
   });
 
@@ -697,7 +697,7 @@ describe('unauthenticated deadline', () => {
     await rig.tick(2);
     expect(c.closed?.code).toBe(CLOSE.UNAUTHENTICATED);
     expect(c.closed?.reason).toBe('auth_deadline');
-    expect(rig.store.connectionCount()).toBe(0);
+    expect(await rig.connectionCount()).toBe(0);
   });
 
   it('closes a message that arrives after the deadline even without a tick', async () => {

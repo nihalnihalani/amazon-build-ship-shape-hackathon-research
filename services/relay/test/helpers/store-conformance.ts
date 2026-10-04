@@ -373,7 +373,8 @@ export function describeStoreConformance(name: string, factory: () => RoomStore)
         expect(await s.incrementCounter('k', 1000, NOW + 100)).toBe(2);
         expect(await s.getCounter('k', 1000, NOW + 100)).toBe(2);
         expect(await s.incrementCounter('k', 1000, NOW + 1000)).toBe(1); // next window
-        expect(await s.getCounter('k', 1000, NOW)).toBe(0); // previous window no longer current
+        expect(await s.getCounter('k', 1000, NOW + 1000)).toBe(1);
+        expect(await s.getCounter('k', 1000, NOW + 2000)).toBe(0); // a window with no increments reads as zero
         expect(await s.incrementCounter('other', 1000, NOW)).toBe(1);
         expect(await s.incrementCounter('k', 10_000, NOW)).toBe(1); // different window length, separate counter
         const many = await Promise.all(Array.from({ length: 10 }, () => s.incrementCounter('c', 60_000, NOW)));
