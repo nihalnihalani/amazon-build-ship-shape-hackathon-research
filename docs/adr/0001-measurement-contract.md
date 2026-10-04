@@ -2,6 +2,7 @@
 
 - Status: accepted (frozen for implementation, revision 1)
 - Date: 2026-10-05
+- Amended: revision 2 decisions in [AMENDMENTS-REV2.md](AMENDMENTS-REV2.md) override conflicting text below (2026-10-05)
 - Deciders: Opus lead
 - Supersedes: `research/_working/spec_FTV-4.md` §5.3 formulas where they conflict
 
