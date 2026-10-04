@@ -13,7 +13,7 @@
 ### Hidden-meter positions
 
 - Phrase positions 3, 6 and 9 (1-based) are hidden when they exist in the selected bank (a 4-phrase bank has only position 3 hidden).
-- Only the **first attempt** at a hidden position is hidden. Retries show the meter and are marked `meter_visibility: visible_retry`.
+- Only the **first attempt** at a hidden position is hidden. Retries show the meter and are identified as retries by `attemptNumber > 1` and their own `attempt_id` (amended, QA-01).
 - During a hidden capture the TV renders **no** arc, no band tick, no colour change, no result text and no accessible label or announcement that depends on level. The level stream is still received and validated but not rendered or announced. The phone never displays levels or verdicts at all and is never told which positions are hidden.
 
 ### Response phase (after capture closes)
