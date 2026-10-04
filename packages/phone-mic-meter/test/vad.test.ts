@@ -3,12 +3,14 @@ import { VoiceActivityTracker } from '../src/vad.js';
 import { dbFrame, nonfiniteFrame, runs } from './helpers.js';
 
 /**
- * Session floor -60 dBFS. Candidate level C = -50 (rel +10 dB). Quiet level Q = -58 (rel +2 dB).
+ * Session floor -60 dBFS. Open level C = -50 (rel +10 dB, exactly the open threshold).
+ * Quiet level Q = -58 (rel +2 dB). Mid level M = -54 (rel +6 dB, exactly the continuation threshold).
  * One frame is 50 ms, so n candidate frames = 50n ms.
  */
 const FLOOR = -60;
 const C = -50;
 const Q = -58;
+const M = -54;
 
 function run(levels: ReadonlyArray<number>): VoiceActivityTracker {
   const vad = new VoiceActivityTracker(FLOOR);
@@ -16,12 +18,54 @@ function run(levels: ReadonlyArray<number>): VoiceActivityTracker {
   return vad;
 }
 
-describe('candidate threshold (rel >= 6 dB)', () => {
-  it('exactly +6 dB is a candidate, +5.99 dB is not', () => {
+describe('hysteresis: opens at +10 dB, continues at +6 dB (A1-03)', () => {
+  it('exactly +10 dB opens a segment; +9.9 dB does not', () => {
+    const opens = new VoiceActivityTracker(FLOOR);
+    expect(opens.push(dbFrame(0, -50)).candidate).toBe(true);
+    const below = new VoiceActivityTracker(FLOOR);
+    expect(below.push(dbFrame(0, -50.1)).candidate).toBe(false);
+  });
+
+  it('while closed, a frame at +6 .. +9.9 dB is not a candidate and opens nothing', () => {
+    const vad = run(runs([[M, 20], [-50.1, 5], [-52, 5]]));
+    expect(vad.finish()).toEqual([]);
+    expect(vad.rejectedSegments).toBe(0); // no segment was ever opened
+  });
+
+  it('once open, exactly +6 dB continues and +5.9 dB does not', () => {
     const vad = new VoiceActivityTracker(FLOOR);
-    expect(vad.push(dbFrame(0, -54)).candidate).toBe(true);
-    expect(vad.push(dbFrame(1, -54.01)).candidate).toBe(false);
-    expect(vad.push(dbFrame(2, -53.99)).candidate).toBe(true);
+    expect(vad.push(dbFrame(0, C)).candidate).toBe(true);
+    expect(vad.push(dbFrame(1, M)).candidate).toBe(true); // +6.0 continues
+    expect(vad.push(dbFrame(2, -54.1)).candidate).toBe(false); // +5.9 does not
+    expect(vad.push(dbFrame(3, M)).candidate).toBe(true); // still inside the bridged gap, so +6.0 continues
+  });
+
+  it('frames before the opening frame are not candidates, even at +6 .. +9.9 dB', () => {
+    // two +6 frames, then an opening frame, then five +6 frames: the segment starts at the opening frame
+    const vad = run([M, M, C, M, M, M, M, M, ...runs([[Q, 10]])]);
+    const segs = vad.finish();
+    expect(segs).toHaveLength(1);
+    expect(segs[0]).toEqual({
+      onsetFrame: 2,
+      endFrame: 7,
+      onset_ms: 100,
+      end_ms: 400,
+      candidateFrames: 6,
+      longestCandidateRun: 6,
+    });
+  });
+
+  it('a loud room at +6 .. +9.9 dB never produces a segment', () => {
+    const vad = run(runs([[-52, 100]])); // +8 dB for 5 s
+    expect(vad.finish()).toEqual([]);
+    expect(vad.rejectedSegments).toBe(0);
+  });
+
+  it('after a segment closes, +6 dB frames no longer count until another frame at +10 dB', () => {
+    const vad = run([C, C, C, C, ...runs([[Q, 6]]), M, M, M, M, M]);
+    const segs = vad.finish();
+    expect(segs).toHaveLength(1);
+    expect(segs[0]?.candidateFrames).toBe(4);
   });
 
   it('a non-finite frame is never a candidate', () => {
@@ -34,21 +78,20 @@ describe('candidate threshold (rel >= 6 dB)', () => {
   });
 });
 
-describe('minimum accepted duration: 200 ms of candidate activity', () => {
+describe('acceptance: >= 4 candidate frames in total AND a run of >= 3 consecutive (A1-01, A1-02)', () => {
   it('100 ms (2 frames) transient is rejected', () => {
     const vad = run([...runs([[Q, 10]]), C, C, ...runs([[Q, 10]])]);
     expect(vad.finish()).toEqual([]);
     expect(vad.rejectedSegments).toBe(1);
   });
 
-  it('150 ms (3 frames) transient is rejected', () => {
+  it('150 ms (3 frames) aligned burst is rejected: 3 candidate frames < 4', () => {
     const vad = run([...runs([[Q, 10]]), C, C, C, ...runs([[Q, 10]])]);
     expect(vad.finish()).toEqual([]);
     expect(vad.rejectedSegments).toBe(1);
   });
 
-  it('200 ms (4 frames) is accepted and its onset is backdated to the first candidate frame', () => {
-    // frames 10..13 are candidates: provisional onset at frame 10 = 500 ms, accepted only at frame 13.
+  it('200 ms (4 frames) is accepted and its onset is the opening frame', () => {
     const vad = run([...runs([[Q, 10]]), C, C, C, C, ...runs([[Q, 10]])]);
     const segs = vad.finish();
     expect(segs).toHaveLength(1);
@@ -58,8 +101,35 @@ describe('minimum accepted duration: 200 ms of candidate activity', () => {
       onset_ms: 500,
       end_ms: 700,
       candidateFrames: 4,
+      longestCandidateRun: 4,
     });
     expect(segs[0]!.end_ms - segs[0]!.onset_ms).toBe(200);
+  });
+
+  it('four isolated clicks 100 ms apart are rejected: 4 candidates but the longest run is 1', () => {
+    const vad = run([...runs([[Q, 5]]), C, Q, C, Q, C, Q, C, ...runs([[Q, 10]])]);
+    expect(vad.finish()).toEqual([]);
+    expect(vad.rejectedSegments).toBe(1);
+  });
+
+  it('two pairs of clicks (run of 2, 4 candidates in total) are rejected', () => {
+    const vad = run([...runs([[Q, 5]]), C, C, Q, C, C, ...runs([[Q, 10]])]);
+    expect(vad.finish()).toEqual([]);
+    expect(vad.rejectedSegments).toBe(1);
+  });
+
+  it('a run of 3 plus one more candidate (4 in total) is accepted', () => {
+    const vad = run([...runs([[Q, 5]]), C, C, C, Q, C, ...runs([[Q, 10]])]);
+    const segs = vad.finish();
+    expect(segs).toHaveLength(1);
+    expect(segs[0]).toMatchObject({
+      onsetFrame: 5,
+      endFrame: 9,
+      onset_ms: 250,
+      end_ms: 500,
+      candidateFrames: 4,
+      longestCandidateRun: 3,
+    });
   });
 
   it('a rejected transient does not extend or merge with a later accepted segment', () => {
@@ -85,6 +155,7 @@ describe('hangover: gaps of 5 are bridged, the 6th non-candidate frame ends the 
       onset_ms: 0,
       end_ms: 550, // end of frame 10 (the last candidate frame)
       candidateFrames: 6,
+      longestCandidateRun: 4,
     });
   });
 
@@ -121,6 +192,12 @@ describe('hangover: gaps of 5 are bridged, the 6th non-candidate frame ends the 
     expect(segs).toHaveLength(1);
     expect(segs[0]!.end_ms).toBe(200);
     expect(vad.lastSegmentUnterminated).toBe(true);
+  });
+
+  it('a gap breaks the run: runs are counted over consecutive candidate frames only', () => {
+    // C C . C C : 4 candidates, longest run 2 -> rejected even though the gap is bridged
+    const vad = run([C, C, Q, C, C, ...runs([[Q, 10]])]);
+    expect(vad.finish()).toEqual([]);
   });
 });
 
@@ -179,6 +256,7 @@ describe('non-finite frames and dropouts', () => {
     const segs = vad.finish();
     expect(segs).toHaveLength(1);
     expect(segs[0]!.candidateFrames).toBe(5);
+    expect(segs[0]!.longestCandidateRun).toBe(3);
     expect(segs[0]!.end_ms).toBe(300);
   });
 
@@ -216,10 +294,11 @@ describe('non-finite frames and dropouts', () => {
 });
 
 describe('provisional candidate flag', () => {
-  it('is true exactly on candidate frames, including the ones later rejected', () => {
+  it('is true on opening and continuation frames, including the ones later rejected', () => {
     const vad = new VoiceActivityTracker(FLOOR);
-    const flags = [Q, C, C, Q, Q, Q, Q, Q, Q].map((db, i) => vad.push(dbFrame(i, db)).candidate);
-    expect(flags).toEqual([false, true, true, false, false, false, false, false, false]);
-    expect(vad.finish()).toEqual([]);
+    const flags = [Q, M, C, M, Q, Q, Q, Q, Q, Q].map((db, i) => vad.push(dbFrame(i, db)).candidate);
+    // Q (closed): no. M (+6, closed): no. C opens: yes. M (open): yes. Quiet frames: no.
+    expect(flags).toEqual([false, false, true, true, false, false, false, false, false, false]);
+    expect(vad.finish()).toEqual([]); // only 2 candidate frames
   });
 });

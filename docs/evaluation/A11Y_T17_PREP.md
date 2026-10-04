@@ -67,7 +67,7 @@ Files: `tests/a11y/tv-web-preview.e2e.ts`, `tests/a11y/helpers.ts`, `tests/a11y/
 
 jest render suite (`apps/tv`, `npx jest --silent`): 18 suites, 374 tests, exit 0. It already asserts, with mock Pressables: preferred focus and Cancel-first dialogs, labels equal text, no arc/path for hidden attempts, silent live region while capturing, no controls during a window, UI-scale geometry, remote key routing (key down only, Back via BackHandler only). Gaps it cannot cover: real layout overflow at scale (react-test-renderer has no layout engine, so A11Y-03 is invisible to it), react-native-web/Vega `disabled` semantics (A11Y-01), the missing dialog name (A11Y-02), and fixture/core drift (OBS-A1).
 
-## 5. Commands run
+## 5. Commands run (original review at `4d4ef1e`; the current head is in section 7a)
 
 UTC, 2026-10-04T22:55Z to 23:15Z (2026-10-05 04:25 to 04:45 IST), commit `4d4ef1e`. Chrome 154.0.8037.97 (system, headless), playwright-core 1.63.0, vite 8.3.2 (`build` + `preview`), axe-core 4.13.0, Node v25.2.1, macOS.
 
@@ -89,15 +89,15 @@ Repeat: `cd tests && node a11y/run-a11y.mjs` (builds, serves on 5179 or a free p
 
 | File | SHA-256 |
 |---|---|
-| `report.json` | `368f4a38a7d9b354d904221b5835798e2a1da15045e148df36ded420b2607198` |
-| `manifest.json` | `f32220fcf091a5ba20165a7fd2b427d854ced7854b0ab1cb10f2474d3569ac55` |
-| `committed/home.png` | `131f8334c39150f744bdd5c5384c1bff81ee7fdd900318eff90e1f1bbdf161b7` |
+| `report.json` | `0ceb0f7dd2dd5e7da0cf083229bfd34f6ce402db64cc0af7f35fe1c1fdf3641a` |
+| `manifest.json` | `94aecc9e9566fed7d5daffae9eee8b9fe7c94395acd1995d2d94751770e3e430` |
+| `committed/home.png` | `d6aa91d283bdf304895411489ccb0b13283ccdbb42b2a1dae1e768acecb075cc` |
 | `committed/confirm_dialog_destructive.png` | `4e1eb7801c0a7a0709c69f328392e8b4c56c308e9c46e9ec023562ea64ec80be` |
 | `committed/phrase_active_hidden.png` | `898cc5f3945cf7e430e21cf696e56cd7a29489f6538cec7028f1b3117c6d5e79` |
 | `committed/response_rating.png` | `0583d48858d1ab4f34bee909a129a32834f85cff8dbffb176854bd8d56143946` |
-| `committed/reveal_below.png` | `51cd488d1f9fdc1856046cb3df35e56878cd8910887f6e366b4d61b380c63969` |
+| `committed/reveal_below.png` | `a07f1c479d8707c58ebb7c870fd66e4f9ec36419205d526879ca04cc98dd77fe` |
 | `committed/history.png` | `1803fb2adf4bdc83e0a4818c1ee08c048b5de08eff5e5ef8e22ff281ee3364b9` |
-| `committed/store_p3_blind_capture.png` | `36e0bf522f46d0ed5c26c6d06fa5b8f2de4f082bf68d672b0e837b60c40900ad` |
+| `committed/store_p3_blind_capture.png` | `d87711e29b5244d44422f4058e1fbec39fdf0d7f550aec4bc52aabdf06445862` |
 | `committed/store_summary.png` | `fb4f7e9db208e637d145e51555bb0d9b32c141a1883f30d6a521e58064a561ed` |
 
 ## 7. Limitations
@@ -106,6 +106,28 @@ Repeat: `cd tests && node a11y/run-a11y.mjs` (builds, serves on 5179 or a free p
 - The store-mode journey uses a scripted relay and phone (Playwright `routeWebSocket` + `@atr/protocol`), with no real microphone or relay. It exercises the real session core and real screens.
 - Colour contrast was measured for the focus ring only; axe `color-contrast` returned no violation but is unreliable on a CSS-scaled canvas, and high-contrast mode was not observed.
 - axe covers only what exists in the web DOM, not Vega's accessibility tree.
+
+## 7a. Update: protocol revision 4 follow-up
+
+`tests/a11y/scripted-phone.ts` now speaks revision 4 (frames built with `quantizeDb` / `quantizeCoverage`, integer milliseconds, `auth.resume` answered with `auth.ok.next_credential` rotation, an optional `silent_input` first quiet check). Three tests were added in group D2 and the suite is now **48 tests: 44 pass + 4 expected-fail repros** (A11Y-01, A11Y-02, A11Y-03 and the browser twin of QA-09). `QA_STRICT=1` fails exactly those four, each for its intended reason.
+
+- `silent_input` in the real UI: the quiet check fails, "Try again" is focused, the footer stays, nothing is captured, a good check recovers. Observation OBS-A8: the screen says "The window could not be scored." (QA-08 in `QA_REVIEW_T11_T13_T14.md`).
+- Link loss on the quiet-check screen: warning banner, mic chip "Phone state unknown" (never "off"), nothing starts by itself, the first `auth.resume` presents the `room.created` credential, the mic chip recovers after the reconnect and the banner clears.
+- DEFECT QA-09 in the browser: the real TV code presents the original credential again on its second reconnect (`credential_trail`: 2 resumes, `secondIsRotated: false`).
+- **OBS-A9**: during a reconnect the quiet-check screen's preferred "Begin" is disabled, so focus moves to "Cancel" (`link_loss_focus`: active `action-cancel`) and returns when the link recovers. OK on Cancel only opens the Stay/Leave dialog, so it is safe, but VoiceView and the real focus engine must be observed for this focus jump (checklist item 7 and 12).
+
+Commands (UTC 2026-10-04T23:15Z to 23:30Z): `npm run test:a11y -w @atr/tests` exit 0, 48 tests; `QA_STRICT=1 npm run test:a11y -w @atr/tests` exit 1, 4 fail / 44 pass.
+
+## 7b. Update: contract revision 2 (wave 2), T17-prep browser re-review deferred
+
+The session-core rework removed `accept_join` (number matching: `pick_choice_1..3` plus Reject, Reject preferred) and changed the wire input to raw text. The TV rework that renders it is not merged yet, so at this head the preview's join screen still has the old controls.
+
+- `tests/a11y/scripted-phone.ts` is rev 2 ready: raw text frames only, `requestJoin(digits)` exposes `confirmDigits`, and the e2e picks the choice whose label contains the digits with arrow keys and Enter (`pickMatchingChoice`); a new store-mode test checks that a wrong pick rejects and burns the code, that Reject and Back reject, and that the right pick pairs.
+- The store-mode groups (D and D2: the real store through the real screens, silent_input, link loss and rotation, the wrong-pick test and the A11Y-01 repro) are gated by `TV_UI_REV2=1` and skipped by default until the tv rework lands. `QA-09` in the browser is now a regular test (the rotation fix is in session-core) and is part of the gated group.
+- Ungated result at `7785c45` (`npm run test:a11y -w @atr/tests`, exit 0): 49 tests, 42 pass (including the expected-fail repros A11Y-02 and A11Y-03) and 7 skipped. `QA_STRICT=1` fails exactly A11Y-02 and A11Y-03. The artifacts in `tests/a11y/artifacts/` are from the last full run (revision 4 head), not regenerated, because a partial run would overwrite the store-mode evidence.
+- OBS-A2 (default focus Accept on a join request) is resolved by the contract (Reject is preferred); it still has to be confirmed in the rendered UI after the tv merge.
+
+The full T17-prep re-review (all groups, `TV_UI_REV2=1`) waits for the tv rework.
 
 ## 8. Checklist for the VVD / VoiceView / UI-scale session (all `pending_external` until done)
 

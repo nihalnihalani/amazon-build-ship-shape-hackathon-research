@@ -36,7 +36,7 @@ import {
   sha256Text,
 } from './helpers.js';
 import type { AxeViolation, ControlInfo, Overflow, ScreenInfo } from './helpers.js';
-import { ScriptedPhone } from './scripted-phone.js';
+import { CREDENTIAL, ScriptedPhone } from './scripted-phone.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS = join(here, 'artifacts');
@@ -465,7 +465,27 @@ describe('C. UI-scale layout gate (web_preview ?scale=; the shim applies one mul
 
 /* ================================================================== D. store mode */
 
-describe('D. store mode: real session store, scripted phone, keyboard only', () => {
+/**
+ * Number matching (A3-06, contract rev 2): the join screen offers three two-digit choices and Reject. Press the one
+ * that equals the digits the phone shows, using only the arrow keys and Enter. Returns the test id that was pressed.
+ */
+async function pickMatchingChoice(page: Page, digits: string, wrong = false): Promise<string> {
+  const picks = await page.$$eval('[data-testid^="action-pick_choice_"]', (els) =>
+    els.map((e) => ({ id: e.getAttribute('data-testid') ?? '', name: e.getAttribute('aria-label') ?? (e as HTMLElement).innerText })),
+  );
+  expect(picks.length, 'three number choices on the join screen').toBe(3);
+  const target = picks.find((p) => (wrong ? !p.name.includes(digits) : p.name.includes(digits)));
+  expect(target, `a choice that ${wrong ? 'differs from' : 'matches'} ${digits}`).toBeDefined();
+  await navigateTo(page, (target as { id: string }).id);
+  await press(page, 'Enter');
+  return (target as { id: string }).id;
+}
+
+/** Store-mode groups drive the real session store through the number-matching join UI, which the tv rework delivers. */
+const storeDescribe = process.env['TV_UI_REV2'] === '1' ? describe : describe.skip;
+
+
+storeDescribe('D. store mode: real session store, scripted phone, keyboard only', () => {
   it('home -> settings -> Delete dialog: Cancel focused, Back restores focus, history shows "No session" for every day, nothing written to localStorage', async () => {
     const page = await context.newPage();
     await page.addInitScript(LIVE_LOG_INIT);
@@ -565,7 +585,9 @@ describe('D. store mode: real session store, scripted phone, keyboard only', () 
     await wait('join_confirm');
     const joinInfo = await inspect(page);
     storeShots['join_confirm_preferred'] = joinInfo.controls.find((c) => c.preferred)?.testId ?? null;
-    await press(page, 'Enter'); // focus is on Accept in the real store view
+    expect(storeShots['join_confirm_preferred']).toBe('action-reject_join'); // A3-06: Reject is the safe default
+    expect(await activeId(page)).toBe('action-reject_join');
+    await pickMatchingChoice(page, phone.confirmDigits);
     await wait('quiet_check', 15_000);
     expect(await activeId(page)).toBe('action-begin_quiet_check');
     // The phone's bank must be applied before any window opens (an update during a window is rejected).
@@ -730,6 +752,133 @@ describe('D. store mode: real session store, scripted phone, keyboard only', () 
       // Correct behaviour: either announced as disabled or removed from the focus order.
       expect(c?.ariaDisabled === 'true' || (c?.tabIndex ?? 0) < 0, `${c?.testId} must be disabled for assistive tech or unfocusable`).toBe(true);
     }
+  });
+});
+
+/* ================================================================== D2. revision 4 flows in store mode */
+
+/** Polls a condition in Node until it holds (the preview runs in real time). */
+async function waitUntil(cond: () => boolean | Promise<boolean>, timeoutMs = 15_000, what = 'condition'): Promise<void> {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    if (await cond()) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error(`timed out waiting for ${what}`);
+}
+
+/** Onboarding -> Start session -> pair with the scripted phone -> quiet-check ready screen, keyboard only. */
+async function pairToQuiet(page: Page, phone: ScriptedPhone): Promise<void> {
+  await page.goto(`${PREVIEW_URL}/?mode=store`);
+  await page.waitForSelector('[data-testid="screen-onboarding"]');
+  await press(page, 'Enter');
+  await page.waitForSelector('[data-testid="screen-home"]');
+  await press(page, 'Enter');
+  await page.waitForSelector('[data-testid="screen-pairing"]');
+  phone.requestJoin();
+  await page.waitForSelector('[data-testid="screen-join_confirm"]');
+  await pickMatchingChoice(page, phone.confirmDigits);
+  await page.waitForSelector('[data-testid="screen-quiet_check"]', { timeout: 15_000 });
+  await page.waitForSelector('[data-testid="action-begin_quiet_check"]');
+}
+
+const micChip = (page: Page): Promise<string> => page.$eval('[data-testid="status-mic"]', (e) => e.getAttribute('aria-label') ?? '');
+
+storeDescribe('D2. protocol revision 4 and contract revision 2 in the real UI (scripted phone)', () => {
+  it('a wrong number pick rejects the phone, burns the code and says so; Reject and Back also reject; the right pick then pairs', async () => {
+    const page = await context.newPage();
+    const phone = new ScriptedPhone(page, {});
+    await phone.install();
+    await page.goto(`${PREVIEW_URL}/?mode=store`);
+    await page.waitForSelector('[data-testid="screen-onboarding"]');
+    await press(page, 'Enter');
+    await page.waitForSelector('[data-testid="screen-home"]');
+    await press(page, 'Enter');
+    await page.waitForSelector('[data-testid="screen-pairing"]');
+    phone.requestJoin();
+    await page.waitForSelector('[data-testid="screen-join_confirm"]');
+    const join = await inspect(page);
+    expect(join.bodyText).toContain('Name the phone gave: QA scripted phone');
+    expect(join.bodyText).not.toMatch(/confirm digits/i);
+    await pickMatchingChoice(page, phone.confirmDigits, true); // a decoy
+    await page.waitForSelector('[data-testid="screen-pairing"]');
+    expect(phone.last('join.confirm')?.payload['decision']).toBe('reject');
+    expect(await page.$eval('[data-testid="banner"]', (e) => e.getAttribute('aria-label'))).toContain('That number did not match. Pair again.');
+    expect(await page.$('[data-testid="pairing-code"]')).toBeNull(); // the burned code is not shown
+    // Back on the next request rejects as well.
+    phone.requestJoin();
+    await page.waitForSelector('[data-testid="screen-join_confirm"]');
+    await press(page, 'Escape');
+    await page.waitForSelector('[data-testid="screen-pairing"]');
+    expect(phone.last('join.confirm')?.payload['decision']).toBe('reject');
+    phone.requestJoin();
+    await page.waitForSelector('[data-testid="screen-join_confirm"]');
+    await pickMatchingChoice(page, phone.confirmDigits);
+    await page.waitForSelector('[data-testid="screen-quiet_check"]', { timeout: 15_000 });
+    expect(phone.last('join.confirm')?.payload['decision']).toBe('accept');
+    await page.close();
+  });
+
+  it('silent_input: the quiet check fails with Try again focused, the footer stays, and a good check recovers', async () => {
+    const page = await context.newPage();
+    const phone = new ScriptedPhone(page, { silentFirstQuietCheck: true });
+    await phone.install();
+    await pairToQuiet(page, phone);
+    await press(page, 'Enter', 60); // Begin quiet check
+    await page.waitForSelector('text=Quiet check did not pass', { timeout: 15_000 });
+    const failed = await inspect(page);
+    expect(failed.controls.map((c) => c.name)).toEqual(['Try again', 'Cancel']);
+    expect(await activeId(page)).toBe('action-retry');
+    expect(failed.footer).toBe(FOOTER_TEXT);
+    expect(phone.count('window.start')).toBe(0);
+    report.store['silent_input_quiet_check_text'] = failed.bodyText; // copy finding: see DEFECT QA-08 in the vitest review
+    await press(page, 'Enter'); // Try again
+    await page.waitForSelector('[data-testid="action-begin_quiet_check"]');
+    await press(page, 'Enter', 60);
+    await page.waitForSelector('[data-testid="screen-calibration"]', { timeout: 15_000 });
+    expect(phone.count('precheck.start')).toBe(2);
+    await page.close();
+  });
+
+  it('link loss on the quiet-check screen: warning banner, mic "Phone state unknown" (never off), nothing starts; reconnect resumes with the original credential', async () => {
+    const page = await context.newPage();
+    const phone = new ScriptedPhone(page, {});
+    await phone.install();
+    await pairToQuiet(page, phone);
+    await waitUntil(async () => (await micChip(page)).includes('Microphone open'), 10_000, 'mic open chip');
+    phone.dropLink();
+    await page.waitForSelector('[data-testid="banner"]', { timeout: 5_000 });
+    expect(await page.$eval('[data-testid="banner"]', (e) => e.getAttribute('aria-label'))).toMatch(/link lost|Reconnecting|not reachable/i);
+    const during = await inspect(page);
+    const chip = await micChip(page);
+    expect(chip).toContain('Phone state unknown');
+    expect(chip).not.toMatch(/off/i);
+    expect(during.footer).toBe(FOOTER_TEXT);
+    report.store['link_loss_focus'] = { active: during.activeTestId, controls: during.controls.map((c) => c.testId) };
+    await waitUntil(() => phone.resumed.length >= 1, 15_000, 'auth.resume');
+    expect(phone.resumed[0]).toBe(CREDENTIAL); // the first resume presents the credential from room.created
+    await waitUntil(async () => (await micChip(page)).includes('Microphone open'), 10_000, 'mic reported again after reconnect');
+    expect(phone.count('precheck.start')).toBe(0); // nothing started by itself
+    expect(await page.$('[data-testid="banner"]')).toBeNull();
+    expect(await ringCount(page)).toBe(1);
+    await page.close();
+  });
+
+  it('QA-09 (fixed in wave 2): after auth.ok rotates the credential, the second reconnect presents the rotated credential', async () => {
+    const page = await context.newPage();
+    const phone = new ScriptedPhone(page, {});
+    await phone.install();
+    await pairToQuiet(page, phone);
+    await waitUntil(async () => (await micChip(page)).includes('Microphone open'), 10_000, 'mic open chip');
+    phone.dropLink();
+    await waitUntil(() => phone.resumed.length >= 1, 15_000, 'first auth.resume');
+    await waitUntil(async () => (await micChip(page)).includes('Microphone open'), 10_000, 'recovered');
+    phone.dropLink();
+    await waitUntil(() => phone.resumed.length >= 2, 15_000, 'second auth.resume');
+    report.store['credential_trail'] = { resumedCount: phone.resumed.length, secondIsRotated: phone.resumed[1] === phone.rotated[0] };
+    await page.close();
+    expect(phone.resumed[1]).toBe(phone.rotated[0]);
+    expect(phone.resumed[0]).toBe(CREDENTIAL);
   });
 });
 

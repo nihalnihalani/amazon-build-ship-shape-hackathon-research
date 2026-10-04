@@ -1,0 +1,308 @@
+{
+  "note": "Sample-level click trains (A1-02). Same closed-form signal model as vad-phase-sweep.json.",
+  "cases": [
+    {
+      "id": "click-period-100ms-x4",
+      "description": "4 isolated clicks 100 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 64800,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[29988,24,0.5],[34788,24,0.5],[39588,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 2 frames leave 1 quiet frame(s) between clicks: fewer than 6, so all 4 clicks are bridged into ONE segment with 4 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-100ms-x8",
+      "description": "8 isolated clicks 100 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 84000,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[29988,24,0.5],[34788,24,0.5],[39588,24,0.5],[44388,24,0.5],[49188,24,0.5],[53988,24,0.5],[58788,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 2 frames leave 1 quiet frame(s) between clicks: fewer than 6, so all 8 clicks are bridged into ONE segment with 8 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-100ms-x20",
+      "description": "20 isolated clicks 100 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 141600,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[29988,24,0.5],[34788,24,0.5],[39588,24,0.5],[44388,24,0.5],[49188,24,0.5],[53988,24,0.5],[58788,24,0.5],[63588,24,0.5],[68388,24,0.5],[73188,24,0.5],[77988,24,0.5],[82788,24,0.5],[87588,24,0.5],[92388,24,0.5],[97188,24,0.5],[101988,24,0.5],[106788,24,0.5],[111588,24,0.5],[116388,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 2 frames leave 1 quiet frame(s) between clicks: fewer than 6, so all 20 clicks are bridged into ONE segment with 20 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-150ms-x4",
+      "description": "4 isolated clicks 150 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 72000,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[32388,24,0.5],[39588,24,0.5],[46788,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 3 frames leave 2 quiet frame(s) between clicks: fewer than 6, so all 4 clicks are bridged into ONE segment with 4 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-150ms-x8",
+      "description": "8 isolated clicks 150 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 100800,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[32388,24,0.5],[39588,24,0.5],[46788,24,0.5],[53988,24,0.5],[61188,24,0.5],[68388,24,0.5],[75588,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 3 frames leave 2 quiet frame(s) between clicks: fewer than 6, so all 8 clicks are bridged into ONE segment with 8 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-150ms-x20",
+      "description": "20 isolated clicks 150 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 187200,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[32388,24,0.5],[39588,24,0.5],[46788,24,0.5],[53988,24,0.5],[61188,24,0.5],[68388,24,0.5],[75588,24,0.5],[82788,24,0.5],[89988,24,0.5],[97188,24,0.5],[104388,24,0.5],[111588,24,0.5],[118788,24,0.5],[125988,24,0.5],[133188,24,0.5],[140388,24,0.5],[147588,24,0.5],[154788,24,0.5],[161988,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 3 frames leave 2 quiet frame(s) between clicks: fewer than 6, so all 20 clicks are bridged into ONE segment with 20 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-200ms-x4",
+      "description": "4 isolated clicks 200 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 79200,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[34788,24,0.5],[44388,24,0.5],[53988,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 4 frames leave 3 quiet frame(s) between clicks: fewer than 6, so all 4 clicks are bridged into ONE segment with 4 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-200ms-x8",
+      "description": "8 isolated clicks 200 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 117600,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[34788,24,0.5],[44388,24,0.5],[53988,24,0.5],[63588,24,0.5],[73188,24,0.5],[82788,24,0.5],[92388,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 4 frames leave 3 quiet frame(s) between clicks: fewer than 6, so all 8 clicks are bridged into ONE segment with 8 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-200ms-x20",
+      "description": "20 isolated clicks 200 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 232800,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[34788,24,0.5],[44388,24,0.5],[53988,24,0.5],[63588,24,0.5],[73188,24,0.5],[82788,24,0.5],[92388,24,0.5],[101988,24,0.5],[111588,24,0.5],[121188,24,0.5],[130788,24,0.5],[140388,24,0.5],[149988,24,0.5],[159588,24,0.5],[169188,24,0.5],[178788,24,0.5],[188388,24,0.5],[197988,24,0.5],[207588,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 4 frames leave 3 quiet frame(s) between clicks: fewer than 6, so all 20 clicks are bridged into ONE segment with 20 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-250ms-x4",
+      "description": "4 isolated clicks 250 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 86400,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[37188,24,0.5],[49188,24,0.5],[61188,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 5 frames leave 4 quiet frame(s) between clicks: fewer than 6, so all 4 clicks are bridged into ONE segment with 4 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-250ms-x8",
+      "description": "8 isolated clicks 250 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 134400,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[37188,24,0.5],[49188,24,0.5],[61188,24,0.5],[73188,24,0.5],[85188,24,0.5],[97188,24,0.5],[109188,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 5 frames leave 4 quiet frame(s) between clicks: fewer than 6, so all 8 clicks are bridged into ONE segment with 8 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-250ms-x20",
+      "description": "20 isolated clicks 250 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 278400,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[37188,24,0.5],[49188,24,0.5],[61188,24,0.5],[73188,24,0.5],[85188,24,0.5],[97188,24,0.5],[109188,24,0.5],[121188,24,0.5],[133188,24,0.5],[145188,24,0.5],[157188,24,0.5],[169188,24,0.5],[181188,24,0.5],[193188,24,0.5],[205188,24,0.5],[217188,24,0.5],[229188,24,0.5],[241188,24,0.5],[253188,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 5 frames leave 4 quiet frame(s) between clicks: fewer than 6, so all 20 clicks are bridged into ONE segment with 20 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-300ms-x4",
+      "description": "4 isolated clicks 300 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 93600,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[39588,24,0.5],[53988,24,0.5],[68388,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 6 frames leave 5 quiet frame(s) between clicks: fewer than 6, so all 4 clicks are bridged into ONE segment with 4 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-300ms-x8",
+      "description": "8 isolated clicks 300 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 151200,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[39588,24,0.5],[53988,24,0.5],[68388,24,0.5],[82788,24,0.5],[97188,24,0.5],[111588,24,0.5],[125988,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 6 frames leave 5 quiet frame(s) between clicks: fewer than 6, so all 8 clicks are bridged into ONE segment with 8 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-300ms-x20",
+      "description": "20 isolated clicks 300 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 324000,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[39588,24,0.5],[53988,24,0.5],[68388,24,0.5],[82788,24,0.5],[97188,24,0.5],[111588,24,0.5],[125988,24,0.5],[140388,24,0.5],[154788,24,0.5],[169188,24,0.5],[183588,24,0.5],[197988,24,0.5],[212388,24,0.5],[226788,24,0.5],[241188,24,0.5],[255588,24,0.5],[269988,24,0.5],[284388,24,0.5],[298788,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Clicks every 6 frames leave 5 quiet frame(s) between clicks: fewer than 6, so all 20 clicks are bridged into ONE segment with 20 candidate frames but a longest run of 1 < 3: rejected (rejected count 1)."
+    },
+    {
+      "id": "click-period-350ms-x6",
+      "description": "6 clicks 350 ms apart.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 134400,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[41988,24,0.5],[58788,24,0.5],[75588,24,0.5],[92388,24,0.5],[109188,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 6
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). 6 quiet frames separate the clicks, which ends each segment at the 6th: 6 separate segments with 1 candidate frame each: all rejected (rejected count 6)."
+    },
+    {
+      "id": "click-pairs-x4",
+      "description": "4 pairs of clicks in adjacent frames, 1 quiet frame between pairs.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 76800,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[27588,24,0.5],[32388,24,0.5],[34788,24,0.5],[39588,24,0.5],[41988,24,0.5],[46788,24,0.5],[49188,24,0.5]],
+      "expected": {
+        "segments": [],
+        "rejected_segments": 1
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Pairs: candidate frames 10-11, 13-14, 16-17, 19-20: 8 candidate frames, longest run 2 < 3: rejected."
+    },
+    {
+      "id": "click-run-of-3-positive-control",
+      "description": "Positive control: clicks in 3 adjacent frames then 1 quiet frame, twice.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 67200,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[27588,24,0.5],[29988,24,0.5],[34788,24,0.5],[37188,24,0.5],[39588,24,0.5]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 10,
+            "end_frame": 16,
+            "onset_ms": 500,
+            "end_ms": 850,
+            "candidate_frames": 6,
+            "longest_run": 3
+          }
+        ],
+        "rejected_segments": 0
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Frames 10-12 and 14-16 are clicks, frame 13 is quiet (bridged): 6 candidate frames with a longest run of 3: ACCEPTED. One segment, onset 10*50 = 500 ms, end 17*50 = 850 ms."
+    },
+    {
+      "id": "click-4-adjacent-frames-positive-control",
+      "description": "Positive control: a click in each of 4 adjacent frames.",
+      "sample_rate": 48000,
+      "frame_samples": 2400,
+      "total_samples": 60000,
+      "floor_dbfs": -60,
+      "background_amplitude": 0.001,
+      "events": [[25188,24,0.5],[27588,24,0.5],[29988,24,0.5],[32388,24,0.5]],
+      "expected": {
+        "segments": [
+          {
+            "onset_frame": 10,
+            "end_frame": 13,
+            "onset_ms": 500,
+            "end_ms": 700,
+            "candidate_frames": 4,
+            "longest_run": 4
+          }
+        ],
+        "rejected_segments": 0
+      },
+      "derivation": "A click is 24 samples (0.5 ms) of amplitude 0.5 in the middle of a 2400-sample frame: frame power = (24 * 0.25 + 2376 * 1e-6) / 2400 = 0.002501 -> -26.02 dBFS, i.e. about +33.98 dB over the -60 dBFS floor: a candidate (and an opening frame). All other frames are background (rel 0). Frames 10-13: 4 candidate frames, run 4: accepted (a click in every frame is indistinguishable from a continuous sound by level alone)."
+    }
+  ]
+}

@@ -10,7 +10,7 @@
  * Evidence class of anything produced through this rig: automated (pure state machine). It says nothing
  * about microphone validity, Vega behaviour or a deployed relay.
  */
-import { createIdFactory, MessageFactory } from '@atr/protocol';
+import { createIdFactory, MessageFactory, quantizeCoverage, quantizeDb } from '@atr/protocol';
 import type { MessageType, PayloadMap } from '@atr/protocol';
 import { createSessionStore } from '@atr/session-core';
 import type {
@@ -113,6 +113,8 @@ export class Disk implements StoragePort {
   failSetPrefix: string | null = null;
   /** Simulated process death: after this key is written every later write and removal is lost. */
   dieAfterWriteOf: string | null = null;
+  /** Same, matching by key prefix (for keys that carry a generated id). */
+  dieAfterWritePrefix: string | null = null;
   dead = false;
   constructor(initial: Record<string, string> = {}) {
     for (const [k, v] of Object.entries(initial)) this.map.set(k, v);
@@ -125,7 +127,7 @@ export class Disk implements StoragePort {
     if (this.failSetPrefix !== null && key.startsWith(this.failSetPrefix)) return Promise.reject(new Error('disk full'));
     this.writes.push(key);
     this.map.set(key, value);
-    if (this.dieAfterWriteOf === key) this.dead = true;
+    if (this.dieAfterWriteOf === key || (this.dieAfterWritePrefix !== null && key.startsWith(this.dieAfterWritePrefix))) this.dead = true;
     return Promise.resolve();
   }
   removeItem(key: string): Promise<void> {
@@ -146,6 +148,7 @@ export class Disk implements StoragePort {
   revive(): this {
     this.dead = false;
     this.dieAfterWriteOf = null;
+    this.dieAfterWritePrefix = null;
     return this;
   }
   atrKeys(): string[] {
@@ -166,7 +169,26 @@ export class Disk implements StoragePort {
 export const ROOM = 'r_qareviewroom00001';
 export const CREDENTIAL = 'QACRED0123456789'.padEnd(43, 'x');
 export const PAIRING_CODE = 'ACDEFH';
+/** Two digits the relay sends in join.requested and the phone shows; the TV offers them among two decoys (A3-06). */
+export const CONFIRM_DIGITS = '42';
 export const FLOOR = -50;
+
+/** Settings and meta keys for a disk that should boot straight to Home (onboarded), with optional overrides. */
+export function seededSettings(over: Record<string, unknown> = {}): Record<string, string> {
+  return {
+    'atr:v1:meta': JSON.stringify({ schema_version: 1, created_at: START }),
+    'atr:v1:settings': JSON.stringify({
+      familyMode: false,
+      cueWord: null,
+      measurementMode: 'relative_band',
+      onboarded: true,
+      qualification: 'not_run',
+      quietLeadMs: null,
+      quietLeadScreenReaderMs: null,
+      ...over,
+    }),
+  };
+}
 export const BAND_MARGIN = 20;
 /** Reached when p95_active - floor >= margin - 1. With margin 20 the edge is 19 dB above the floor. */
 export const EDGE_REL = BAND_MARGIN - 1;
@@ -288,6 +310,11 @@ export class Rig {
   ok(): void {
     this.key('ok');
   }
+  /** Screen reader state read from the platform (A8-02): lengthens the quiet lead and adds the spoken script. */
+  screenReader(on: boolean): void {
+    this.store.dispatch({ kind: 'a11y', screenReader: on });
+    this.snap(`a11y:${on}`);
+  }
   back(): void {
     this.key('back');
   }
@@ -328,13 +355,27 @@ export class Rig {
     this.snap(`relay:${type}`);
   }
 
+  /** A relay frame delivered as a parsed OBJECT instead of the raw text frame (PK-09: the TV must refuse it). */
+  relayObject<T extends MessageType>(type: T, payload: PayloadMap[T]): void {
+    const parsed = JSON.parse(this.relay.serialize(this.relay.next(type, payload))) as unknown;
+    this.store.dispatch({ kind: 'wire', message: parsed as unknown as string });
+    this.snap(`relay-object:${type}`);
+  }
+
+  /** Same idea for a binary frame. */
+  relayBinary<T extends MessageType>(type: T, payload: PayloadMap[T]): void {
+    const bytes = new TextEncoder().encode(this.relay.serialize(this.relay.next(type, payload)));
+    this.store.dispatch({ kind: 'wire', message: bytes as unknown as string });
+    this.snap(`relay-binary:${type}`);
+  }
+
   roomCreated(): void {
     this.relaySend('room.created', {
       room_id: ROOM,
       pairing_code: PAIRING_CODE,
       code_expires_at: this.clock.now() + 600_000,
       tv_credential: CREDENTIAL,
-      credential_expires_at: this.clock.now() + 12 * 3_600_000,
+      credential_expires_at: this.clock.now() + 2 * 3_600_000,
       generation: 1,
     });
   }
@@ -342,15 +383,46 @@ export class Rig {
     this.relaySend('join.requested', {
       join_id: 'j_qareview0000001',
       device_label: 'QA phone',
-      confirm_digits: '42',
+      confirm_digits: CONFIRM_DIGITS,
       expires_at: this.clock.now() + 60_000,
     });
   }
-  peer(connected: boolean): void {
-    this.relaySend('peer.state', { role: 'phone', connected, generation: 1 });
+  /** The three choices on the join screen, in display order (the view never says which is right). */
+  choices(): [string, string, string] {
+    const c = this.view.pairing?.joinRequest?.choices;
+    if (c === undefined) throw new Error(`no join request on screen (stage ${this.view.stage}, screen ${this.view.screen})`);
+    return c;
   }
-  authOk(peerConnected = true): void {
-    this.relaySend('auth.ok', { role: 'tv', generation: 2, peer_connected: peerConnected, phone_paired: true });
+  /** Number matching: press the choice that equals the digits the relay sent (what the phone shows). */
+  pickJoin(digits: string = CONFIRM_DIGITS): void {
+    const index = this.choices().indexOf(digits);
+    if (index < 0) throw new Error(`the real digits ${digits} are not among ${this.choices().join(', ')}`);
+    this.ui(`pick_choice_${index + 1}` as ActionId);
+  }
+  /** A wrong pick: the first choice that is not the real digits. */
+  pickWrong(digits: string = CONFIRM_DIGITS): void {
+    const index = this.choices().findIndex((c) => c !== digits);
+    this.ui(`pick_choice_${index + 1}` as ActionId);
+  }
+  peer(connected: boolean, generation = 1): void {
+    this.relaySend('peer.state', { role: 'phone', connected, generation });
+  }
+  relayError(code: PayloadMap['error']['code']): void {
+    this.relaySend('error', { code, ref_message_id: null, detail: '' });
+  }
+  /** Rotated TV credentials handed out by auth.ok (revision 4): NEXT0001..., 43 base64url characters each. */
+  rotated: string[] = [];
+  /** auth.ok carries the rotated credential the TV must present on its NEXT auth.resume. */
+  authOk(peerConnected = true, next?: string): void {
+    const credential = next ?? `NEXT${String(this.rotated.length + 1).padStart(4, '0')}`.padEnd(43, 'y');
+    this.rotated.push(credential);
+    this.relaySend('auth.ok', {
+      role: 'tv',
+      generation: 2,
+      peer_connected: peerConnected,
+      phone_paired: true,
+      next_credential: credential,
+    });
   }
 
   /* ----------------------------- phone frames (P -> T) */
@@ -386,6 +458,31 @@ export class Rig {
     this.snap(`phone:${type}x2`);
   }
 
+  private forged = 0;
+  /**
+   * A phone frame built by hand, for values the MessageFactory refuses to build (off-grid numbers, missing
+   * fields). The TV validates it exactly as a relay would; it must drop it without changing state.
+   */
+  forge(type: string, payload: Record<string, unknown>, ids: { s?: string | null; w?: string | null; a?: string | null } = {}): void {
+    this.forged += 1;
+    this.rawFrame(
+      JSON.stringify({
+        protocol_version: 1,
+        type,
+        message_id: `m_forged${String(this.forged).padStart(8, '0')}abcd`,
+        room_id: ROOM,
+        session_id: ids.s ?? null,
+        window_id: ids.w ?? null,
+        attempt_id: ids.a ?? null,
+        sender_role: 'phone',
+        producer_generation: 1,
+        sequence: 10_000 + this.forged,
+        event_timestamp: this.clock.now(),
+        payload,
+      }),
+    );
+  }
+
   /** Raw frame, for messages the factory would refuse to build. */
   rawFrame(frame: string): void {
     this.store.dispatch({ kind: 'wire', message: frame });
@@ -407,10 +504,17 @@ export class Rig {
     return { s: cmd.session_id, w: cmd.window_id, a: cmd.attempt_id };
   }
 
-  precheckResult(rise = 0, over: Partial<PayloadMap['precheck.result']> = {}, cmd?: Sent): void {
+  /** Revision 4 grid: dB fields are multiples of 0.1, coverage of 0.001, times are integers (quantizeDb / quantizeCoverage). */
+  precheckResult(
+    rise = 0,
+    over: Partial<PayloadMap['precheck.result']> = {},
+    cmd?: Sent,
+    /** Take the envelope ids from another command (to test per-measurement window binding). */
+    idsFrom?: Sent,
+  ): void {
     const start = cmd ?? this.last('precheck.start');
     const purpose = start.payload['purpose'] as 'quiet_check' | 'pre_window';
-    const floor = FLOOR + (purpose === 'quiet_check' ? 0 : rise);
+    const floor = quantizeDb(FLOOR + (purpose === 'quiet_check' ? 0 : rise));
     const frames = purpose === 'quiet_check' ? 100 : 40;
     this.phoneSend(
       'precheck.result',
@@ -419,18 +523,34 @@ export class Rig {
         valid: true,
         invalid_reason: null,
         floor_dbfs: floor,
-        p20_dbfs: floor - 1,
-        p80_dbfs: floor + 1,
-        p95_dbfs: floor + 3,
+        p20_dbfs: quantizeDb(floor - 1),
+        p80_dbfs: quantizeDb(floor + 1),
+        p95_dbfs: quantizeDb(floor + 3),
         frame_count: frames,
         expected_frames: frames,
-        coverage: 1,
+        coverage: quantizeCoverage(1),
         clipped_frames: 0,
         nonfinite_frames: 0,
         duration_ms: purpose === 'quiet_check' ? 5000 : 2000,
         ...over,
       },
-      this.idsOf(start),
+      this.idsOf(idsFrom ?? start),
+    );
+  }
+
+  /** A muted or blocked microphone: floor below -110 dBFS, reason silent_input (revision 4, A1-05). */
+  silentPrecheck(cmd?: Sent): void {
+    this.precheckResult(
+      0,
+      {
+        valid: false,
+        invalid_reason: 'silent_input',
+        floor_dbfs: -130,
+        p20_dbfs: -131,
+        p80_dbfs: -129,
+        p95_dbfs: -128,
+      },
+      cmd,
     );
   }
 
@@ -438,23 +558,27 @@ export class Rig {
     const valid = o.valid !== false;
     const rel = o.rel ?? 25;
     const active = o.activeMs ?? 2500;
+    // The TV re-checks timing (A1-09): a window may not report more than the commanded maximum (+500 ms), and the
+    // frame counts must agree with the duration. Calibration is commanded for 6000 ms, phrase and vowel report 8000.
+    const durationMs = kind === 'calibration' ? 6000 : 8000;
+    const frames = Math.floor(durationMs / 50);
     return {
       kind,
       valid,
       invalid_reason: valid ? null : (o.reason ?? 'no_voice'),
-      frame_count: 160,
-      expected_frames: 160,
-      coverage: o.coverage ?? 1,
-      active_ms: active,
-      longest_active_ms: active,
+      frame_count: frames,
+      expected_frames: frames,
+      coverage: quantizeCoverage(o.coverage ?? 1),
+      active_ms: Math.round(active),
+      longest_active_ms: Math.round(active),
       segments: 1,
       onset_ms: 200,
-      p50_active_dbfs: FLOOR + rel - 4,
-      p95_active_dbfs: valid ? FLOOR + rel : null,
-      peak_dbfs: FLOOR + rel + 2,
+      p50_active_dbfs: quantizeDb(FLOOR + rel - 4),
+      p95_active_dbfs: valid ? quantizeDb(FLOOR + rel) : null,
+      peak_dbfs: quantizeDb(FLOOR + rel + 2),
       clipped_frames: 0,
       nonfinite_frames: 0,
-      duration_ms: 8000,
+      duration_ms: durationMs,
     };
   }
 
@@ -468,7 +592,7 @@ export class Rig {
     const start = cmd ?? this.last('window.start');
     this.phoneSend(
       'level',
-      { frame_index: frameIndex, t_audio_ms: frameIndex * 50, dbfs, active, clipped },
+      { frame_index: frameIndex, t_audio_ms: frameIndex * 50, dbfs: quantizeDb(dbfs), active, clipped },
       this.idsOf(start),
     );
   }
@@ -501,7 +625,7 @@ export class Rig {
     this.link('connected');
     this.roomCreated();
     this.joinRequested();
-    this.ui('accept_join');
+    this.pickJoin();
     this.peer(true);
     this.mic('permission_pending');
     this.mic('open_idle');
