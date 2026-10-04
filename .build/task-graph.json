@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:20:00+05:30",
+ "updated_at": "2026-10-05T03:11:06+05:30",
  "states": [
   "pending",
   "ready",
@@ -26,11 +26,11 @@
     "R-T2"
    ],
    "owner": "lead",
-   "cwd": null,
+   "cwd": "/Users/nihalnihalani/Desktop/Github/amazon devpost hackathon",
    "dependencies": [],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Environment inventory recorded with no secrets",
     "Lead model resolved and reported",
@@ -42,7 +42,14 @@
     "checkpoint"
    ],
    "reviewer": null,
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0001",
+    "EV-0002",
+    "EV-0003",
+    "EV-0004",
+    "EV-0005",
+    "EV-0006"
+   ],
    "commit": null,
    "blocker": null
   },
@@ -53,14 +60,14 @@
     "R-P1",
     "R-H-2"
    ],
-   "owner": "research-contracts",
-   "cwd": null,
+   "owner": "contracts",
+   "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/contracts",
    "dependencies": [
     "T00"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "docs/COMPATIBILITY.md lists SDK/RN/React/OS/native modules/starter commit/host arch/toolchain/backend runtime",
     "docs/SOURCES.md with fetched-date URLs",
@@ -70,8 +77,11 @@
     "docs/COMPATIBILITY.md",
     "docs/SOURCES.md"
    ],
-   "reviewer": null,
-   "evidence_refs": [],
+   "reviewer": "lead",
+   "evidence_refs": [
+    "EV-0007",
+    "EV-0008"
+   ],
    "commit": null,
    "blocker": null
   },
@@ -91,7 +101,7 @@
     "T01"
    ],
    "required": true,
-   "status": "pending",
+   "status": "in_review",
    "attempts": 0,
    "acceptance_criteria": [
     "ADR-0001..0009 accepted",
@@ -100,10 +110,10 @@
    "expected_outputs": [
     "docs/adr/*"
    ],
-   "reviewer": null,
+   "reviewer": "security-review",
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Independent review of ADRs pending (security-review + qa)"
   },
   {
    "id": "T03",
@@ -118,7 +128,7 @@
     "T01"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "Official Hello World built and launched on VVD",
@@ -132,7 +142,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "B-001 Rosetta/Vega SDK; owner action required"
   },
   {
    "id": "T04",
@@ -147,7 +157,7 @@
     "T02"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "Frozen protocol executed on a physical Android phone",
@@ -159,7 +169,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "B-002 physical Android phone; protocol being frozen by dsp"
   },
   {
    "id": "T04A",
@@ -196,14 +206,14 @@
     "R-S2",
     "R-U1"
    ],
-   "owner": "research-contracts",
-   "cwd": null,
+   "owner": "contracts",
+   "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/contracts",
    "dependencies": [
     "T02"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "packages/protocol implements PROTOCOL.md v1 with validators and tests",
     "State machine type names exported",
@@ -212,7 +222,7 @@
    "expected_outputs": [
     "packages/protocol"
    ],
-   "reviewer": null,
+   "reviewer": "lead",
    "evidence_refs": [],
    "commit": null,
    "blocker": null
@@ -227,14 +237,14 @@
     "R-M5",
     "R-M7"
    ],
-   "owner": "audio-dsp",
-   "cwd": null,
+   "owner": "dsp",
+   "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/dsp",
    "dependencies": [
     "T05"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Pure DSP functions with independent-expected-value tests covering ADR-0001 boundaries",
     "AudioWorklet frame adapter with sample-clock timestamps",
@@ -243,7 +253,7 @@
    "expected_outputs": [
     "packages/phone-mic-meter"
    ],
-   "reviewer": null,
+   "reviewer": "lead",
    "evidence_refs": [],
    "commit": null,
    "blocker": null
@@ -258,14 +268,14 @@
     "R-S6",
     "R-L1"
    ],
-   "owner": "relay-cloud",
-   "cwd": null,
+   "owner": "relay",
+   "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/relay",
    "dependencies": [
     "T05"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Shared relay core + local HTTPS/WSS adapter",
     "Security tests: bypass, wrong role/room, brute force, competing claims, expiry, revocation, duplicates, replay, generations, invalid/oversized, missed disconnect"
@@ -273,7 +283,7 @@
    "expected_outputs": [
     "services/relay"
    ],
-   "reviewer": null,
+   "reviewer": "security-review",
    "evidence_refs": [],
    "commit": null,
    "blocker": null
@@ -291,16 +301,16 @@
     "R-M8",
     "R-F1"
    ],
-   "owner": "phone-companion",
-   "cwd": null,
+   "owner": "phone",
+   "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/phone",
    "dependencies": [
     "T05",
     "T06",
     "T07"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "HTTPS phone page with pairing, permission states, mic badge, listener controls, phrase/cue editor, shutdown",
     "Browser tests with fake media"
@@ -308,7 +318,7 @@
    "expected_outputs": [
     "apps/phone"
    ],
-   "reviewer": null,
+   "reviewer": "qa-accessibility",
    "evidence_refs": [],
    "commit": null,
    "blocker": null
@@ -322,15 +332,15 @@
     "R-U3",
     "R-P1"
    ],
-   "owner": "vega-tv",
-   "cwd": null,
+   "owner": "tv",
+   "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/tv",
    "dependencies": [
     "T03",
     "T05"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "RN for Vega app with screens, focus, Back handling, scaling",
     "Type-checks against pinned @amazon-devices packages",
@@ -339,10 +349,10 @@
    "expected_outputs": [
     "apps/tv"
    ],
-   "reviewer": null,
+   "reviewer": "lead",
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Native render part blocked by B-001; code + typecheck + jest proceeding"
   },
   {
    "id": "T10",
@@ -357,7 +367,7 @@
     "T07"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "SAM template validated",
@@ -371,7 +381,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "B-003 root credentials + spend authorization; IaC can be prepared"
   },
   {
    "id": "T11",
