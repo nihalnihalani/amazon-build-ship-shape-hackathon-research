@@ -1,0 +1,577 @@
+{
+  "note": "Hand-derived expected values; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
+  "cases": [
+    {
+      "id": "win-01-clean-phrase",
+      "description": "Clean 1 s phrase.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,130]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "Speech frames 10-29 at -45 (rel +15). Onset 10*50 = 500 ms, end 30*50 = 1500 ms, active 1000 ms. 20 active frames all -45: p50 = p95 = -45. Peak = -45. 160 frames = duration 8000 ms: coverage 1."
+    },
+    {
+      "id": "win-02-silence",
+      "description": "Silence only.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,160]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "no_voice",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 0,
+        "longest_active_ms": 0,
+        "segments": 0,
+        "onset_ms": null,
+        "p50_active_dbfs": null,
+        "p95_active_dbfs": null,
+        "peak_dbfs": -62,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "No candidate frame, so no segment: no_voice. Statistics over accepted-active frames are null. Peak is the loudest finite frame, -62."
+    },
+    {
+      "id": "win-03-transient-150ms",
+      "description": "150 ms transient only.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,3],[-62,147]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "no_voice",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 0,
+        "longest_active_ms": 0,
+        "segments": 0,
+        "onset_ms": null,
+        "p50_active_dbfs": null,
+        "p95_active_dbfs": null,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "3 candidate frames < 4: rejected, contributes nothing: no_voice. Peak still reports -45 (whole window)."
+    },
+    {
+      "id": "win-04-phrase-350ms",
+      "description": "350 ms is accepted by the VAD but too short for a phrase.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,7],[-62,143]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "no_voice",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 350,
+        "longest_active_ms": 350,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "7 candidate frames >= 4: accepted segment of 7*50 = 350 ms. active_ms 350 < 400 for phrase: no_voice (fields still filled)."
+    },
+    {
+      "id": "win-05-phrase-400ms",
+      "description": "400 ms is the phrase minimum.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,8],[-62,142]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 400,
+        "longest_active_ms": 400,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "8 candidate frames = 400 ms >= 400: valid."
+    },
+    {
+      "id": "win-06-vowel-200ms",
+      "description": "A vowel window needs only one accepted segment.",
+      "kind": "vowel",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,4],[-62,146]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "vowel",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 200,
+        "longest_active_ms": 200,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "The 400 ms minimum applies to calibration and phrase only. 4 candidate frames = one accepted segment of 200 ms: valid for a vowel window."
+    },
+    {
+      "id": "win-07-coverage-exactly-0.90",
+      "description": "Coverage boundary: 144 of 160 frames.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,114]],
+      "finish": {
+        "reason": "complete",
+        "duration_ms": 8000
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 144,
+        "expected_frames": 160,
+        "coverage": 0.9,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "Duration 8000 ms, expected_frames = 160. 144 finite frames: 144/160 = 0.90 >= 0.90: valid."
+    },
+    {
+      "id": "win-08-coverage-0.89375",
+      "description": "Coverage boundary: 143 of 160 frames.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,113]],
+      "finish": {
+        "reason": "complete",
+        "duration_ms": 8000
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "low_coverage",
+        "frame_count": 143,
+        "expected_frames": 160,
+        "coverage": 0.89375,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "143/160 = 0.89375 < 0.90: low_coverage."
+    },
+    {
+      "id": "win-09-clipped-2pct-valid",
+      "description": "1 clipped frame in 50 active frames (2.0 %) is valid.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,10],[-45,1,"clipped"],[-45,39],[-62,100]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 2500,
+        "longest_active_ms": 2500,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 1,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "Active frames 10-59 = 50. 1 clipped / 50 = 2.0 %, not > 2 %: valid. clipped_frames = 1."
+    },
+    {
+      "id": "win-10-clipped-4pct-invalid",
+      "description": "2 clipped frames in 50 active frames (4.0 %) are invalid.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,10],[-45,2,"clipped"],[-45,38],[-62,100]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "clipped",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 2500,
+        "longest_active_ms": 2500,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 2,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "2 / 50 = 4.0 % > 2 %: clipped."
+    },
+    {
+      "id": "win-11-nonfinite-5pct-valid",
+      "description": "8 of 160 frames non-finite (5.0 %) is valid.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,90],[null,8],[-62,32]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 0.95,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 8,
+        "duration_ms": 8000
+      },
+      "derivation": "Coverage 152/160 = 0.95 >= 0.90. Non-finite 8/160 = 0.05, not > 0.05: valid."
+    },
+    {
+      "id": "win-12-nonfinite-5.6pct-invalid",
+      "description": "9 of 160 frames non-finite (5.625 %) is invalid.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,90],[null,9],[-62,31]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "nonfinite",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 0.94375,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 9,
+        "duration_ms": 8000
+      },
+      "derivation": "Coverage 151/160 = 0.94375 passes; non-finite 9/160 = 0.05625 > 0.05: nonfinite."
+    },
+    {
+      "id": "win-13-continuous-phrase",
+      "description": "Speech for the whole phrase window is continuous_sound.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-45,160]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "continuous_sound",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 8000,
+        "longest_active_ms": 8000,
+        "segments": 1,
+        "onset_ms": 0,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "One segment open from frame 0 to the end (no offset). active_ms 8000 / 8000 = 1.00 > 0.95: continuous_sound."
+    },
+    {
+      "id": "win-14-continuous-ok-for-calibration",
+      "description": "The same signal is valid for a calibration window.",
+      "kind": "calibration",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-45,160]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "calibration",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 8000,
+        "longest_active_ms": 8000,
+        "segments": 1,
+        "onset_ms": 0,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "continuous_sound applies to phrase windows only."
+    },
+    {
+      "id": "win-15-continuous-exactly-95pct",
+      "description": "Exactly 95.0 % with no offset is valid.",
+      "kind": "phrase",
+      "max_duration_ms": 2000,
+      "session_floor_dbfs": -60,
+      "runs": [[-45,38],[-62,2]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 40,
+        "expected_frames": 40,
+        "coverage": 1.0,
+        "active_ms": 1900,
+        "longest_active_ms": 1900,
+        "segments": 1,
+        "onset_ms": 0,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 2000
+      },
+      "derivation": "Window 2000 ms = 40 frames. 38 speech frames = 1900 ms; 1900/2000 = 0.95, not > 0.95: valid."
+    },
+    {
+      "id": "win-16-continuous-97.5pct",
+      "description": "97.5 % with no offset is continuous_sound.",
+      "kind": "phrase",
+      "max_duration_ms": 2000,
+      "session_floor_dbfs": -60,
+      "runs": [[-45,39],[-62,1]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "continuous_sound",
+        "frame_count": 40,
+        "expected_frames": 40,
+        "coverage": 1.0,
+        "active_ms": 1950,
+        "longest_active_ms": 1950,
+        "segments": 1,
+        "onset_ms": 0,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 2000
+      },
+      "derivation": "39 speech frames = 1950 ms; 1950/2000 = 0.975 > 0.95 and only 1 quiet frame follows (no 6-frame offset): continuous_sound."
+    },
+    {
+      "id": "win-17-long-activity-with-offset",
+      "description": "Over 95 % active, but the offset (6 quiet frames) was observed.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-45,153],[-62,7]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 7650,
+        "longest_active_ms": 7650,
+        "segments": 1,
+        "onset_ms": 0,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "153 speech frames = 7650 ms (95.6 %), but the 6th quiet frame closed the segment (a real offset), so continuous_sound does not apply: valid."
+    },
+    {
+      "id": "win-18-interrupted",
+      "description": "Interrupted capture is invalid whatever the data.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,130]],
+      "finish": {
+        "reason": "interrupted"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "interrupted",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "Same data as win-01 but the capture was interrupted: invalid_reason interrupted."
+    },
+    {
+      "id": "win-19-gap-frames-inside-span",
+      "description": "Bridged gap frames are part of the accepted-active frames.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,5],[-45,4],[-61,5],[-40,6],[-62,20]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 40,
+        "expected_frames": 40,
+        "coverage": 1.0,
+        "active_ms": 750,
+        "longest_active_ms": 750,
+        "segments": 1,
+        "onset_ms": 250,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -40,
+        "peak_dbfs": -40,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 2000
+      },
+      "derivation": "Frames 5-8 at -45, frames 9-13 at -61 (5 quiet frames: bridged), frames 14-19 at -40, then quiet. Span = frames 5-19 = 15 frames; onset 250 ms, end 20*50 = 1000 ms, active 750 ms. Sorted active levels: 5 x -61, 4 x -45, 6 x -40 (n = 15). p50 = sorted[ceil(7.5)-1 = 7] = -45. p95 = sorted[ceil(14.25)-1 = 14] = -40. Duration = 40 frames = 2000 ms."
+    }
+  ]
+}
