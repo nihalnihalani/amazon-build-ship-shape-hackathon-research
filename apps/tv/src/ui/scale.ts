@@ -12,8 +12,12 @@ import { useScalingMultiplier } from '@amazon-devices/kepler-a11y-settings-inter
  *   space() items of type "low_downscale"   (padding and gaps shrink at higher scales)
  */
 export interface UiScale {
-  text(base: number): number;
-  size(base: number): number;
+  /** The text multiplier (1 = default). Layout code uses it only to choose a denser arrangement at large scales. */
+  readonly factor: number;
+  /** Scaled text size. `max` (px) caps display-size text (counters, the code) so it cannot outgrow the screen. */
+  text(base: number, max?: number): number;
+  /** Scaled graphic size. `max` (px) caps large graphics (dial, QR) at high scales. */
+  size(base: number, max?: number): number;
   space(base: number): number;
 }
 
@@ -26,10 +30,15 @@ export function sanitizeMultiplier(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 1;
 }
 
+function capped(value: number, max: number | undefined): number {
+  return max === undefined ? value : Math.min(value, Math.max(max, 0));
+}
+
 export function makeUiScale(text: number, size: number, space: number): UiScale {
   return {
-    text: (base) => Math.round(base * text),
-    size: (base) => Math.round(base * size),
+    factor: text,
+    text: (base, max) => capped(Math.round(base * text), max),
+    size: (base, max) => capped(Math.round(base * size), max),
     space: (base) => Math.round(base * space),
   };
 }

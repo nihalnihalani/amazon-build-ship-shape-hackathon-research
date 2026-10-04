@@ -1,3 +1,4 @@
+import { setUiScaleMock } from '../../jest/mocks/kepler-a11y';
 import { historyDays, history } from '../__fixtures__/views';
 import { dayAccessibleLabel, dayCaption, dayFraction } from '../screens/HistoryScreen';
 import { allStrings, renderView } from './testUtils';
@@ -58,6 +59,16 @@ describe('history: 7 bars with weekday labels', () => {
   it('handles an absent history array without crashing', () => {
     const screen = renderView({ ...history, history: null });
     expect(screen.getByTestId('footer')).toBeTruthy();
+  });
+});
+
+describe('history bars at large UI scales', () => {
+  it('are 220 px tall up to scale 1.25 and 180 px from 1.4 on (they never grow with the scale)', () => {
+    for (const [scale, expected] of [[1, 220], [1.25, 220], [1.4, 180], [1.5, 180], [2, 180]] as const) {
+      setUiScaleMock(scale);
+      const screen = renderView(history);
+      expect(heightOf(screen.getByTestId('history-bar-2026-10-01'))).toBeCloseTo(expected * 0.9, 5); // 9 of 10
+    }
   });
 });
 

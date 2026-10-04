@@ -5,25 +5,26 @@ import { renderView } from './testUtils';
 describe('summary: all counts with denominators', () => {
   const lines = summaryLines(summaryData);
 
-  it('shows completion, skipped and unscored counts with reasons', () => {
+  it('shows completion, skipped and unscored counts with reasons on compact lines', () => {
     expect(lines).toContain('Session complete');
-    expect(lines).toContain('Phrases completed: 8 of 10 attempted');
-    expect(lines).toContain('Phrases skipped: 2');
-    expect(lines).toContain('Attempts not scored: 3');
-    expect(lines).toContain('  clipped: 1');
-    expect(lines).toContain('  room too noisy: 2');
+    expect(lines).toContain('Phrases completed: 8 of 10 attempted, 2 skipped');
+    expect(lines).toContain('Attempts not scored: 3 (clipped 1, room too noisy 2)');
   });
 
-  it('shows reached counts for blind and other positions with their denominators', () => {
-    expect(lines).toContain('Reached the far side, blind checks: 1 of 3');
-    expect(lines).toContain('Reached the far side, other phrases: 5 of 7');
+  it('omits the reason list when nothing was unscored', () => {
+    expect(summaryLines({ ...summaryData, attemptsInvalid: 0, invalidReasons: {} })).toContain('Attempts not scored: 0');
   });
 
-  it('shows the longest steady sound, ratings and late responses', () => {
+  it("uses the ADR-0001 wording for reached counts: today's relative level band, with denominators", () => {
+    expect(lines).toContain("Reached today's relative level band, blind checks: 1 of 3");
+    expect(lines).toContain("Reached today's relative level band, other phrases: 5 of 7");
+    expect(lines.join('\n')).not.toMatch(/far side|loud enough|heard/i);
+  });
+
+  it('shows the longest steady sound, ratings, late responses and borderline results', () => {
     expect(lines).toContain('Longest steady sound: 14.2 s');
     expect(lines).toContain('Blind check ratings (3): felt loud 1, felt normal 1, skipped 1');
-    expect(lines).toContain('Late listener responses (not counted in agreement): 1');
-    expect(lines).toContain('Borderline results: 2');
+    expect(lines).toContain('Late listener responses (not counted in agreement): 1. Borderline results: 2');
   });
 
   it('shows agreement as agree of eligible, and words when nothing is eligible (never 0 of 0)', () => {
@@ -44,15 +45,19 @@ describe('summary: all counts with denominators', () => {
   it('labels an incomplete session and does not compare it', () => {
     expect(summaryLines(summaryIncomplete.summary!)[0]).toBe('Incomplete session. It is not compared with completed sessions.');
   });
+
+  it('keeps the summary short enough for one screen at UI scales up to 1.25: at most 11 statistic lines', () => {
+    expect(lines.length).toBeLessThanOrEqual(11);
+  });
 });
 
 describe('summary screen', () => {
-  it('renders every line, the position rule and the core notes', () => {
+  it('renders every statistic line and the notes the core provides', () => {
     const screen = renderView(summary);
     const rendered = screen.getAllByTestId('summary-line').map((node) => node.props.children as string);
-    expect(rendered.sort()).toEqual([...summaryLines(summaryData)].sort());
-    expect(screen.getByTestId('summary-rule').props.children).toContain('first valid attempt');
+    expect(rendered).toEqual(summaryLines(summaryData));
     expect(screen.getByTestId('summary-notes')).toBeTruthy();
+    expect(summaryData.lines.length).toBeGreaterThan(0);
   });
 
   it('renders without a summary object', () => {

@@ -1,6 +1,6 @@
 import { isHiddenFromAccessibility } from '@testing-library/react-native';
 import { Path } from '@amazon-devices/react-native-svg';
-import { phraseActiveHidden, phraseActiveVisible, makeView } from '../__fixtures__/views';
+import { makeView, phraseActiveHidden, phraseActiveVisible, phraseLead } from '../__fixtures__/views';
 import { allStrings, renderView } from './testUtils';
 
 /**
@@ -38,9 +38,16 @@ describe('hidden first attempt (view.meter === null while capturing)', () => {
     expect(screen.getByTestId('screen-title').props.role).toBeUndefined();
   });
 
-  it('has no controls to steal focus during the window', () => {
+  it('offers only the two emergency controls during the window (Stop now, Cancel window), with no level or verdict wording', () => {
     const screen = renderView(phraseActiveHidden);
+    expect(screen.queryAllByRole('button').map((n) => n.props.testID)).toEqual(['action-stop_early', 'action-cancel']);
+    for (const s of allStrings(screen.toJSON())) expect(s).not.toMatch(LEAK);
+  });
+
+  it('has no controls at all during the quiet lead and the precheck (Back cancels)', () => {
+    const screen = renderView(phraseLead);
     expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(screen.queryByTestId('arc-meter')).toBeNull();
   });
 
   it('shows the arc for a visible attempt, so the guarantee comes from the view and not from a missing screen', () => {

@@ -12,7 +12,7 @@ export function Footer({ text }: { text: string }): React.ReactElement {
   return (
     <View
       testID="footer-bar"
-      style={{ borderTopWidth: 2, borderTopColor: colors.arcTrack, paddingTop: ui.space(16), marginTop: ui.space(16) }}
+      style={{ borderTopWidth: 2, borderTopColor: colors.arcTrack, paddingTop: ui.space(10), marginTop: ui.space(10) }}
     >
       <AppText testID="footer" kind="footer">
         {shown}

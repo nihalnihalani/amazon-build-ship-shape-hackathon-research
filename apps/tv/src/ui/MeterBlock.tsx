@@ -10,11 +10,13 @@ export function MeterBlock({
   view,
   radius,
   layout,
+  growth,
 }: {
   view: TvView;
   radius?: number;
   layout?: 'stacked' | 'side';
+  growth?: number;
 }): React.ReactElement | null {
   if (view.meter === null) return null;
-  return <ArcMeter meter={view.meter} capturing={view.capturing} radius={radius} layout={layout} />;
+  return <ArcMeter meter={view.meter} capturing={view.capturing} radius={radius} layout={layout} growth={growth} labels={view.labels} />;
 }

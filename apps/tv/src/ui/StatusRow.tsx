@@ -30,6 +30,7 @@ function Chip({
         borderWidth: 2,
         borderColor: color,
         borderRadius: ui.size(12),
+        flexShrink: 1,
         paddingHorizontal: ui.space(20),
         paddingVertical: ui.space(8),
         marginRight: ui.space(24),
@@ -48,7 +49,7 @@ export function StatusRow({ mic, link, capturing = false }: { mic: MicView; link
   const micColor = mic === 'measuring' ? colors.reached : mic === 'not_paired' || mic === 'off' ? colors.neutral : colors.below;
   const linkColor = link === 'connected' ? colors.reached : link === 'offline' ? colors.neutral : colors.below;
   return (
-    <View testID="status-row" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+    <View testID="status-row" style={{ flexDirection: 'row', flexWrap: 'wrap', flexShrink: 1 }}>
       <Chip id="status-mic" label={text.statusPhoneMic} value={micText(mic)} color={micColor} capturing={capturing} />
       <Chip id="status-link" label={text.statusRelay} value={linkText(link)} color={linkColor} capturing={capturing} />
     </View>

@@ -37,14 +37,18 @@ export function makeView(overrides: Partial<TvView> & { screen: ScreenId; stage:
   };
 }
 
+const JOIN_PICK_HINT = 'Choose this number only if it is the number shown on the phone.';
+const BEGIN_HINT = 'Starts a short check, then the window';
+const STOP_HINT = 'Press OK to stop early. Back cancels this window.';
+
 const PHRASE = { position: 3, total: 10, text: 'Buy Bobby a puppy', attemptNumber: 1 };
 
 export const onboarding = makeView({
   screen: 'onboarding',
   stage: 'idle',
-  title: 'Welcome',
+  title: 'Welcome to Across the Room',
   body: ['This is practice support for the loudness exercises you already do.', 'It is not a medical device.'],
-  actions: [action('continue', 'I understand', { hint: 'Continues to the home screen' })],
+  actions: [action('continue', 'I understand')],
   preferredAction: 'continue',
 });
 
@@ -55,7 +59,7 @@ export const home = makeView({
   body: ['Yesterday: 6 of 10 reached.'],
   announcement: 'Home. Start session is selected.',
   actions: [
-    action('start_session', 'Start session', { hint: 'Begins a new practice session' }),
+    action('start_session', 'Start session'),
     action('open_history', 'History'),
     action('open_settings', 'Settings'),
     action('pair_phone', 'Pair phone'),
@@ -76,7 +80,7 @@ export const pairing = makeView({
     qrPayload: 'https://relay.example.test/join?c=ACDEFH',
     joinRequest: null,
   },
-  actions: [action('cancel', 'Cancel'), action('refresh_code', 'Refresh code')],
+  actions: [action('refresh_code', 'New code'), action('cancel', 'Cancel')],
   preferredAction: 'cancel',
 });
 
@@ -93,9 +97,9 @@ export const joinConfirm = makeView({
     joinRequest: { deviceLabel: 'Pixel 8', choices: ['42', '17', '86'] },
   },
   actions: [
-    action('pick_choice_1', 'Number 42'),
-    action('pick_choice_2', 'Number 17'),
-    action('pick_choice_3', 'Number 86'),
+    action('pick_choice_1', '42', { hint: JOIN_PICK_HINT }),
+    action('pick_choice_2', '17', { hint: JOIN_PICK_HINT }),
+    action('pick_choice_3', '86', { hint: JOIN_PICK_HINT }),
     action('reject_join', 'Reject'),
   ],
   preferredAction: 'reject_join',
@@ -104,8 +108,8 @@ export const joinConfirm = makeView({
 export const permissionPending = makeView({
   screen: 'permission_pending',
   stage: 'permission_pending',
-  title: 'Allow the microphone on the phone',
-  body: ['The phone is asking for microphone permission.'],
+  title: 'Start the microphone on the phone',
+  body: ['On the phone, tap Start microphone and allow access.'],
   mic: 'waiting_for_permission',
   link: 'connected',
   actions: [action('cancel', 'Cancel')],
@@ -115,14 +119,15 @@ export const permissionPending = makeView({
 export const quietCheck = makeView({
   screen: 'quiet_check',
   stage: 'quiet_check',
-  title: 'Quiet please',
-  body: ['Stay quiet for 5 seconds.'],
+  title: 'Quiet check',
+  body: ['Quiet please, 5 seconds', 'Press Back to cancel this window.'],
   capturing: true,
   mic: 'measuring',
   link: 'connected',
-  timer: { elapsedMs: 1800, maxMs: 5000, label: 'Quiet check' },
-  actions: [action('cancel', 'Cancel', { hint: 'Stops the check' })],
-  preferredAction: 'cancel',
+  timer: { elapsedMs: 1800, maxMs: 5000, label: 'Quiet please, 5 seconds' },
+  // The real core exposes no controls during the quiet check: Back cancels.
+  actions: [],
+  preferredAction: null,
 });
 
 export const calibration = makeView({
@@ -147,7 +152,11 @@ export const vowelReady = makeView({
   announcement: 'Say ahh, as long and loud as you can. Press OK to begin.',
   mic: 'open_not_measuring',
   link: 'connected',
-  actions: [action('begin_vowel', 'Begin'), action('skip_vowel', 'Skip')],
+  actions: [
+    action('begin_vowel', 'Begin', { hint: BEGIN_HINT }),
+    action('skip_vowel', 'Skip this step'),
+    action('open_settings', 'Settings'),
+  ],
   preferredAction: 'begin_vowel',
 });
 
@@ -160,7 +169,7 @@ export const vowelActive = makeView({
   link: 'connected',
   timer: { elapsedMs: 4200, maxMs: null, label: 'Steady sound' },
   meter: { levelRelDb: 14, bandRelDb: 8, active: true, caption: 'Relative level, this session only' },
-  actions: [action('stop_early', 'Stop')],
+  actions: [action('stop_early', 'Stop now', { hint: STOP_HINT }), action('cancel', 'Cancel window')],
   preferredAction: 'stop_early',
 });
 
@@ -172,7 +181,7 @@ export const vowelResult = makeView({
   mic: 'open_not_measuring',
   link: 'connected',
   result: { label: 'Longest steady sound: 14.2 s', tone: 'neutral', detail: null, borderline: false, listener: null, speakerRating: null },
-  actions: [action('continue', 'Continue'), action('retry', 'Redo')],
+  actions: [action('continue', 'Continue to phrases'), action('rest', 'Rest, then try again')],
   preferredAction: 'continue',
 });
 
@@ -185,7 +194,12 @@ export const phraseReady = makeView({
   mic: 'open_not_measuring',
   link: 'connected',
   phrase: PHRASE,
-  actions: [action('begin_phrase', 'Begin'), action('skip_phrase', 'Skip phrase')],
+  actions: [
+    action('begin_phrase', 'Begin', { hint: BEGIN_HINT }),
+    action('skip_phrase', 'Skip phrase'),
+    action('finish_early', 'Finish early'),
+    action('open_settings', 'Settings'),
+  ],
   preferredAction: 'begin_phrase',
 });
 
@@ -201,6 +215,8 @@ export const phraseActiveVisible = makeView({
   timer: { elapsedMs: 3000, maxMs: 30000, label: 'Phrase window' },
   meter: { levelRelDb: 12.5, bandRelDb: 9, active: true, caption: 'Relative level, this session only' },
   labels: ['Relative level, this session only'],
+  actions: [action('stop_early', 'Stop now', { hint: STOP_HINT }), action('cancel', 'Cancel window')],
+  preferredAction: 'stop_early',
 });
 
 /** A visible attempt with a banner and a cue chip arriving during the window: both must be visual only (A8-01). */
@@ -217,7 +233,7 @@ export const phraseCapturingBannerAndCue = makeView({
   meter: { levelRelDb: 12.5, bandRelDb: 9, active: true, caption: 'Relative level, this session only' },
   banner: { kind: 'warning', text: 'The room is getting noisy' },
   cue: { text: 'Louder', expiresAt: Date.now() + 60_000 },
-  actions: [action('stop_early', 'Stop'), action('cancel', 'Cancel')],
+  actions: [action('stop_early', 'Stop now', { hint: STOP_HINT }), action('cancel', 'Cancel window')],
   preferredAction: 'stop_early',
   labels: ['Relative level, this session only'],
 });
@@ -235,14 +251,32 @@ export const phraseActiveHidden = makeView({
   labels: ['Blind check: the meter is hidden for this phrase'],
   meter: null,
   result: null,
+  actions: [action('stop_early', 'Stop now', { hint: STOP_HINT }), action('cancel', 'Cancel window')],
+  preferredAction: 'stop_early',
+});
+
+/** Quiet lead and precheck of a window: the real core exposes no controls; Back cancels. */
+export const phraseLead = makeView({
+  screen: 'phrase',
+  stage: 'phrase_active',
+  title: 'Phrase 3 of 10',
+  body: ['Get ready', 'Press Back to cancel this window.'],
+  capturing: true,
+  mic: 'measuring',
+  link: 'connected',
+  phrase: PHRASE,
+  timer: { elapsedMs: 500, maxMs: 1500, label: 'Get ready' },
+  labels: ['Blind check: the meter is hidden for this phrase'],
+  actions: [],
+  preferredAction: null,
 });
 
 export const responseRating = makeView({
   screen: 'response',
   stage: 'response_pending',
-  title: 'How loud did that feel?',
-  body: ['Choose how that phrase felt. The meter stays hidden until you answer.'],
-  announcement: 'How loud did that feel?',
+  title: 'How did that feel?',
+  body: ['Choose how loud that phrase felt to you. You can skip the rating.'],
+  announcement: 'How did that feel?',
   mic: 'open_not_measuring',
   link: 'connected',
   phrase: PHRASE,
@@ -251,7 +285,7 @@ export const responseRating = makeView({
     action('rate_felt_normal', 'Felt normal'),
     action('rate_skip', 'Skip rating'),
   ],
-  preferredAction: 'rate_felt_normal',
+  preferredAction: 'rate_felt_loud',
 });
 
 export const responseListenerWaiting = makeView({
@@ -271,17 +305,17 @@ export const revealReached = makeView({
   screen: 'reveal',
   stage: 'reveal',
   title: 'Result',
-  announcement: 'Reached the far side.',
+  announcement: "Reached today's relative level band.",
   mic: 'open_not_measuring',
   link: 'connected',
   phrase: PHRASE,
   result: {
-    label: 'Reached the far side',
+    label: "Reached today's relative level band",
     tone: 'reached',
-    detail: 'Above today\'s band',
+    detail: null,
     borderline: false,
-    listener: 'Heard',
-    speakerRating: 'Felt normal',
+    listener: 'Listener: heard',
+    speakerRating: 'You felt: normal',
   },
   actions: [action('next_phrase', 'Next phrase'), action('try_again', 'Try again'), action('finish_early', 'Finish early')],
   preferredAction: 'next_phrase',
@@ -293,7 +327,7 @@ export const revealUnqualified = makeView({
   title: 'Result',
   phrase: PHRASE,
   result: {
-    label: 'Reached the far side (unqualified phone)',
+    label: "Reached today's relative level band (unqualified phone)",
     tone: 'reached',
     detail: null,
     borderline: false,
@@ -309,7 +343,14 @@ export const revealBelow = makeView({
   stage: 'reveal',
   title: 'Result',
   phrase: PHRASE,
-  result: { label: 'Did not reach the far side', tone: 'below', detail: 'Below today\'s band', borderline: true, listener: 'Not heard', speakerRating: null },
+  result: {
+    label: "Below today's relative level band",
+    tone: 'below',
+    detail: "Borderline: within 1 dB of today's band edge. The result is kept.",
+    borderline: true,
+    listener: 'Listener: not heard',
+    speakerRating: null,
+  },
   actions: [action('next_phrase', 'Next phrase'), action('try_again', 'Try again')],
   preferredAction: 'try_again',
 });
@@ -319,7 +360,7 @@ export const revealNotScored = makeView({
   stage: 'reveal',
   title: 'Result',
   phrase: PHRASE,
-  result: { label: 'Not scored', tone: 'not_scored', detail: 'The room was too noisy', borderline: false, listener: null, speakerRating: null },
+  result: { label: 'Not scored', tone: 'not_scored', detail: 'A sudden sound was picked up. Try again when the room is quiet.', borderline: false, listener: null, speakerRating: null },
   actions: [action('try_again', 'Try again'), action('next_phrase', 'Next phrase')],
   preferredAction: 'try_again',
 });
@@ -342,7 +383,7 @@ export const summaryData: SummaryView = {
   lateListenerResponses: 1,
   borderlineCount: 2,
   calibrationMarginDb: 9,
-  lines: ['Bands are relative to this session only.'],
+  lines: ['Reached counts use the best valid attempt for each phrase. Blind checks use the first valid attempt.'],
 };
 
 export const summary = makeView({
@@ -379,7 +420,7 @@ export const historyDays: HistoryDayView[] = [
 export const history = makeView({
   screen: 'history',
   stage: 'history',
-  title: 'History',
+  title: 'Last 7 days',
   history: historyDays,
   actions: [action('done', 'Done')],
   preferredAction: 'done',
@@ -388,12 +429,19 @@ export const history = makeView({
 export const pausedOrInvalid = makeView({
   screen: 'paused_or_invalid',
   stage: 'paused_or_invalid',
-  title: 'Phone link lost',
-  body: ['The phone stopped responding. Phone state unknown. Nothing was scored.'],
+  title: 'Paused',
+  body: [
+    'The link to the phone was lost, so the window was not scored. Start again when the phone is back.',
+    'Available when the phone is connected and its microphone is open.',
+  ],
   mic: 'unknown',
   link: 'reconnecting',
   banner: { kind: 'warning', text: 'Reconnecting to the relay' },
-  actions: [action('retry', 'Pair again'), action('cancel', 'End session')],
+  actions: [
+    action('retry', 'Try again', { hint: 'Available when the phone is connected and its microphone is open.', disabled: true }),
+    action('skip_phrase', 'Skip phrase'),
+    action('finish_early', 'Finish early'),
+  ],
   preferredAction: 'retry',
 });
 
@@ -410,30 +458,41 @@ export const settings = makeView({
   screen: 'settings',
   stage: 'idle',
   title: 'Settings',
-  body: ['Practice data stays on this TV.'],
+  body: ['Family mode: off.'],
   actions: [
-    action('toggle_family_mode', 'Family mode: Off'),
-    action('reset_calibration', 'Reset today\'s band'),
-    action('unpair_phone', 'Unpair phone'),
-    action('delete_local_data', 'Delete local practice data', { destructive: true }),
+    action('toggle_family_mode', 'Family mode'),
+    action('reset_calibration', 'Reset today\'s band', {
+      disabled: true,
+      hint: 'Clears the band for this session only. Needs a session with a band.',
+    }),
+    action('delete_local_data', 'Delete local practice data', {
+      destructive: true,
+      hint: 'Removes everything this app saved on the TV. Not available during a session.',
+    }),
+    action('unpair_phone', 'Unpair phone', { disabled: true, hint: 'Revokes the phone. Not available during a session.' }),
     action('open_about', 'About'),
-    action('open_diagnostics', 'Diagnostics'),
+    action('open_diagnostics', 'Diagnostics (developer)'),
+    action('back', 'Back'),
   ],
-  preferredAction: 'toggle_family_mode',
+  // The real core leaves the preferred action empty here; the UI then focuses the first enabled control.
+  preferredAction: null,
 });
 
 export const confirmDialogDestructive = makeView({
   screen: 'confirm_dialog',
   stage: 'idle',
-  title: 'Delete local practice data?',
-  body: [],
+  title: 'Delete all practice data?',
+  body: ['This removes every phrase, setting and session summary this app saved on the TV. It cannot be undone.'],
   dialog: {
-    title: 'Delete local practice data?',
-    body: 'This removes every saved session from this TV. It cannot be undone.',
-    confirm: action('confirm_destructive', 'Delete', { destructive: true }),
+    title: 'Delete all practice data?',
+    body: 'This removes every phrase, setting and session summary this app saved on the TV. It cannot be undone.',
+    confirm: action('confirm_destructive', 'Delete data', { destructive: true }),
     cancel: action('cancel_destructive', 'Cancel'),
     preferred: 'cancel',
   },
+  // The real core lists both dialog controls in view.actions as well; the UI renders the dialog's own.
+  actions: [action('cancel_destructive', 'Cancel'), action('confirm_destructive', 'Delete data', { destructive: true })],
+  preferredAction: 'cancel_destructive',
 });
 
 /** A buggy view that asks for the destructive control to be preferred; the UI must still start on Cancel. */
@@ -484,7 +543,10 @@ export const disabledAction = makeView({
   preferredAction: 'start_session',
 });
 
-/** Every screen id with at least one fixture. */
+/**
+ * The screens the web preview lists. The accessibility gate (tests/a11y) asserts this exact list, so a new name
+ * here must be added there too.
+ */
 export const allScreens: ReadonlyArray<readonly [string, TvView]> = [
   ['onboarding', onboarding],
   ['home', home],
@@ -499,11 +561,9 @@ export const allScreens: ReadonlyArray<readonly [string, TvView]> = [
   ['phrase_ready', phraseReady],
   ['phrase_active_visible', phraseActiveVisible],
   ['phrase_active_hidden', phraseActiveHidden],
-  ['phrase_capturing_banner_cue', phraseCapturingBannerAndCue],
   ['response_rating', responseRating],
   ['response_listener_waiting', responseListenerWaiting],
   ['reveal_reached', revealReached],
-  ['reveal_unqualified', revealUnqualified],
   ['reveal_below', revealBelow],
   ['reveal_not_scored', revealNotScored],
   ['summary', summary],
@@ -518,3 +578,13 @@ export const allScreens: ReadonlyArray<readonly [string, TvView]> = [
   ['about', about],
   ['diagnostics', diagnostics],
 ];
+
+/** Extra fixtures for jest and for ?screen= in the preview. They are not in the listed set above. */
+export const extraScreens: ReadonlyArray<readonly [string, TvView]> = [
+  ['phrase_lead', phraseLead],
+  ['reveal_unqualified', revealUnqualified],
+  ['phrase_capturing_banner_cue', phraseCapturingBannerAndCue],
+];
+
+/** Everything jest sweeps. */
+export const everyScreen: ReadonlyArray<readonly [string, TvView]> = [...allScreens, ...extraScreens];

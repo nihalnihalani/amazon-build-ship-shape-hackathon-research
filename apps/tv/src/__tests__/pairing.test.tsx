@@ -18,7 +18,7 @@ describe('pairing screen', () => {
 
   it('offers only Cancel and Refresh (no other focusable) and makes one of them preferred', () => {
     const screen = renderView(pairing);
-    expect(screen.queryAllByRole('button').map((n) => n.props.testID)).toEqual(['action-cancel', 'action-refresh_code']);
+    expect(screen.queryAllByRole('button').map((n) => n.props.testID)).toEqual(['action-refresh_code', 'action-cancel']);
   });
 
   it('says it is getting a code while there is none', () => {

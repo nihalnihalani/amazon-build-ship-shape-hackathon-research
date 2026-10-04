@@ -48,7 +48,7 @@ describe('confirmation dialog', () => {
 
   it('shows title and body, and both controls carry button role and labels', () => {
     const screen = renderView(confirmDialogDestructive);
-    expect(screen.getByTestId('dialog-title').props.children).toBe('Delete local practice data?');
+    expect(screen.getByTestId('dialog-title').props.children).toBe('Delete all practice data?');
     expect(screen.getByTestId('dialog-body').props.children).toContain('cannot be undone');
     for (const id of ['cancel_destructive', 'confirm_destructive']) {
       const control = pressableFor(screen, id);

@@ -49,18 +49,20 @@ export interface FittedPhrase {
 
 /**
  * Picks the largest phrase size (96, 88, 80, 72) that fits in two lines. `textScale` is the current UI text
- * multiplier, so the fit accounts for the enlarged glyphs. Text is never truncated: if nothing fits in two
+ * multiplier (or a base-to-pixel function), so the fit accounts for the enlarged glyphs. Text is never truncated: if nothing fits in two
  * lines the smallest size is used and `fitsTwoLines` is false.
  */
 export function fitPhrase(
   text: string,
   widthPx: number,
-  textScale: number,
+  /** UI text multiplier, or a function from a base size to the pixel size it will really be drawn at (caps included). */
+  textScale: number | ((baseSize: number) => number),
   sizes: readonly number[] = PHRASE_FONT_SIZES,
 ): FittedPhrase {
+  const pixels = typeof textScale === 'number' ? (base: number): number => base * textScale : textScale;
   let lastLines = 1;
   for (const baseSize of sizes) {
-    lastLines = estimateLines(text, baseSize * textScale, widthPx);
+    lastLines = estimateLines(text, pixels(baseSize), widthPx);
     if (lastLines <= 2) return { baseSize, lines: lastLines, fitsTwoLines: true };
   }
   const smallest = sizes[sizes.length - 1] ?? 72;

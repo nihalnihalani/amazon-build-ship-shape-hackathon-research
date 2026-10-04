@@ -46,7 +46,7 @@ export function QuietCheckScreen(props: ScreenProps): React.ReactElement {
     <ScreenFrame {...props}>
       <SideBySide>
         {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-        <MeterBlock view={view} radius={layout.arcRadiusMedium} />
+        <MeterBlock view={view} radius={layout.arcRadiusMedium} growth={1} />
       </SideBySide>
     </ScreenFrame>
   );
@@ -59,7 +59,7 @@ export function CalibrationScreen(props: ScreenProps): React.ReactElement {
     <ScreenFrame {...props}>
       <SideBySide>
         {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-        <MeterBlock view={view} radius={layout.arcRadiusMedium} />
+        <MeterBlock view={view} radius={layout.arcRadiusMedium} growth={1} />
       </SideBySide>
     </ScreenFrame>
   );
@@ -72,7 +72,7 @@ export function VowelScreen(props: ScreenProps): React.ReactElement {
     <ScreenFrame {...props}>
       <SideBySide>
         {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-        <MeterBlock view={view} radius={layout.arcRadiusMedium} />
+        <MeterBlock view={view} radius={layout.arcRadiusMedium} growth={1} />
       </SideBySide>
       {view.result !== null ? <ResultBadge result={view.result} /> : null}
     </ScreenFrame>
@@ -104,7 +104,7 @@ export function PhraseScreen(props: ScreenProps): React.ReactElement {
         </View>
         {view.phrase !== null ? <PhraseText phrase={view.phrase.text} /> : null}
       </View>
-      <MeterBlock view={view} radius={layout.arcRadiusCompact} layout="side" />
+      <MeterBlock view={view} radius={layout.arcRadiusCompact} layout="side" growth={1} />
       {view.result !== null ? <ResultBadge result={view.result} /> : null}
     </ScreenFrame>
   );

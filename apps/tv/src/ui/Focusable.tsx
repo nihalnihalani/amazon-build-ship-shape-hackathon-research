@@ -1,9 +1,11 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable } from 'react-native';
+import type { View } from 'react-native';
 import type { ActionId, ViewAction } from '@atr/session-core';
 import { colors, layout } from '../theme';
 import { AppText } from './AppText';
+import { useFocusScrollApi } from './FocusScroll';
 import { useUiScale } from './scale';
 
 export interface FocusableProps {
@@ -26,6 +28,8 @@ export interface FocusableProps {
 export function Focusable({ action, preferred, onPress, describedBy, text, large = false }: FocusableProps): React.ReactElement {
   const ui = useUiScale();
   const [focused, setFocused] = useState(false);
+  const ref = useRef<View>(null);
+  const scroll = useFocusScrollApi();
   const disabled = action.disabled === true;
   const ring = ui.size(layout.focusRing);
   return (
@@ -35,21 +39,29 @@ export function Focusable({ action, preferred, onPress, describedBy, text, large
       aria-label={action.label}
       accessibilityHint={action.hint}
       accessibilityDescribedBy={describedBy}
+      // A11Y-01: all three, because platforms honour different ones. The Vega Pressable derives `focusable` from
+      // `focusable`, `disabled` and `aria-disabled`; react-native-web ignores `focusable` and builds aria-disabled
+      // and tabindex from `disabled`.
+      disabled={disabled}
       aria-disabled={disabled}
       focusable={!disabled}
       hasTVPreferredFocus={preferred && !disabled}
-      onFocus={() => setFocused(true)}
+      ref={ref}
+      onFocus={() => {
+        setFocused(true);
+        scroll?.onControlFocus(ref.current);
+      }}
       onBlur={() => setFocused(false)}
       onPress={() => {
         if (!disabled) onPress(action.id);
       }}
       style={{
         minWidth: ui.size(large ? 280 : 320),
-        minHeight: ui.size(large ? 180 : 104),
+        minHeight: ui.size(large ? 180 : 80),
         paddingHorizontal: ui.space(40),
-        paddingVertical: ui.space(20),
+        paddingVertical: ui.space(12),
         marginRight: ui.space(32),
-        marginBottom: ui.space(24),
+        marginBottom: ui.space(16),
         justifyContent: 'center',
         borderRadius: ui.size(16),
         borderWidth: ring,
@@ -62,6 +74,7 @@ export function Focusable({ action, preferred, onPress, describedBy, text, large
       <AppText
         kind="label"
         baseSize={large ? 96 : undefined}
+        maxSize={large ? 120 : undefined}
         bold={large}
         center
         color={action.destructive === true ? colors.danger : colors.text}

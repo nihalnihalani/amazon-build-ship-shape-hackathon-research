@@ -49,11 +49,20 @@ describe('arc geometry as rendered by the component (scale 1.0: radius 300, stro
     expect(renderFullSize(5, 45).getByTestId('arc-legend').props.children).toContain('above the scale');
   });
 
-  it('scales the whole dial with the UI scale (1.5: radius 450, centre 504)', () => {
-    setUiScaleMock(1.5);
+  it('scales the whole dial with the UI scale (1.2: radius 360, stroke 43, centre 403)', () => {
+    setUiScaleMock(1.2);
     const paths = svgElements(renderFullSize(10, 10).UNSAFE_root, 'Path');
-    expect(paths[0]?.props.d).toBe('M 54 504 A 450 450 0 0 1 954 504');
-    expect(paths[0]?.props.strokeWidth).toBe(54);
+    expect(paths[0]?.props.d).toBe('M 43 403 A 360 360 0 0 1 763 403');
+    expect(paths[0]?.props.strokeWidth).toBe(43);
+  });
+
+  it('caps the dial at 1.25x at larger scales (1.5 and 2.0: radius 375, stroke 45, centre 420)', () => {
+    for (const scale of [1.5, 2]) {
+      setUiScaleMock(scale);
+      const paths = svgElements(renderFullSize(10, 10).UNSAFE_root, 'Path');
+      expect(paths[0]?.props.d).toBe('M 45 420 A 375 375 0 0 1 795 420');
+      expect(paths[0]?.props.strokeWidth).toBe(45);
+    }
   });
 });
 
@@ -63,7 +72,12 @@ describe('dial on the sustained-sound, calibration and quiet-check screens (radi
     ['vowel', 'vowel_active'],
     ['calibration', 'calibration'],
     ['quiet_check', 'quiet_check'],
-  ] as const)('%s draws the radius 240 dial', (screenId, stage) => {
+  ] as const)('%s draws the radius 240 dial, which does not grow with the UI scale', (screenId, stage) => {
+    setUiScaleMock(1.5);
+    expect(svgElements(renderView(makeView({ screen: screenId, stage, meter })).UNSAFE_root, 'Path')[0]?.props.d).toBe(
+      'M 36 276 A 240 240 0 0 1 516 276',
+    );
+    setUiScaleMock(1);
     const screen = renderView(makeView({ screen: screenId, stage, meter }));
     const paths = svgElements(screen.UNSAFE_root, 'Path');
     expect(paths[0]?.props.d).toBe('M 36 276 A 240 240 0 0 1 516 276');
@@ -73,7 +87,7 @@ describe('dial on the sustained-sound, calibration and quiet-check screens (radi
   });
 });
 
-describe('compact dial on the phrase card (radius 180, stroke 36, centre 216,216)', () => {
+describe('compact dial on the phrase card (radius 160, stroke 36, centre 196,196)', () => {
   it('draws a smaller dial so phrase, dial and timer fit one screen', () => {
     const view = makeView({
       screen: 'phrase',
@@ -82,10 +96,30 @@ describe('compact dial on the phrase card (radius 180, stroke 36, centre 216,216
     });
     const screen = renderView(view);
     const paths = svgElements(screen.UNSAFE_root, 'Path');
-    expect(paths[0]?.props.d).toBe('M 36 216 A 180 180 0 0 1 396 216');
-    expect(screen.getByTestId('arc-fill').props.d).toBe('M 36 216 A 180 180 0 0 1 216 36');
-    // inner radius 144 -> y 72, outer radius 216 -> y 0
-    expect(screen.getByTestId('arc-band-tick').props.d).toBe('M 216 72 L 216 0');
+    expect(paths[0]?.props.d).toBe('M 36 196 A 160 160 0 0 1 356 196');
+    expect(screen.getByTestId('arc-fill').props.d).toBe('M 36 196 A 160 160 0 0 1 196 36');
+    // inner radius 124 -> y 72, outer radius 196 -> y 0
+    expect(screen.getByTestId('arc-band-tick').props.d).toBe('M 196 72 L 196 0');
+  });
+});
+
+describe('phrase-card dial at large scales', () => {
+  const meter = { levelRelDb: 10, bandRelDb: 10, active: true, caption: 'Relative level, this session only' };
+
+  it('does not grow with the UI scale (radius stays 160, stroke 36)', () => {
+    for (const scale of [1, 1.5, 2]) {
+      setUiScaleMock(scale);
+      const screen = renderView(makeView({ screen: 'phrase', stage: 'phrase_active', meter }));
+      expect(svgElements(screen.UNSAFE_root, 'Path')[0]?.props.d).toBe('M 36 196 A 160 160 0 0 1 356 196');
+    }
+  });
+
+  it('does not repeat a caption that is already shown as a persistent label, but keeps it in the accessible label', () => {
+    const withLabel = renderView(makeView({ screen: 'phrase', stage: 'phrase_active', meter, labels: [meter.caption] }));
+    expect(withLabel.queryByTestId('arc-caption')).toBeNull();
+    expect(withLabel.getByTestId('arc-meter').props.accessibilityLabel ?? withLabel.getByTestId('arc-meter').props['aria-label']).toContain(meter.caption);
+    const without = renderView(makeView({ screen: 'phrase', stage: 'phrase_active', meter }));
+    expect(without.getByTestId('arc-caption').props.children).toBe(meter.caption);
   });
 });
 
