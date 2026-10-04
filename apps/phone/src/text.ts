@@ -1,46 +1,35 @@
 /**
- * User-text rules from PROTOCOL.md section 1: NFC-normalize, trim, then count Unicode
- * code points. Control characters (U+0000-U+001F, U+007F-U+009F) and unpaired
- * surrogates are rejected. Text is always rendered literally (textContent only).
+ * User-text checks for the phone UI. The rules themselves (NFC + trim, code point counting,
+ * control characters, lone surrogates, per-field lengths) come from `@atr/protocol` through the
+ * wire port; this file only classifies the outcome for plain-language messages.
+ *
+ * The package validators REJECT text that is not already normalized, so every value sent on the
+ * wire is the `text` returned here (= normalizeUserText(input)). Text is always rendered
+ * literally (textContent only).
  */
 
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARS = /[\u0000-\u001F\u007F-\u009F]/;
-const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+import { codePointLength, normalizeUserText } from './ports/wire.js';
+import type { PackageTextCheck } from './ports/wire.js';
 
-export function normalizeText(raw: string): string {
-  return raw.normalize('NFC').trim();
-}
-
-export function codePointLength(text: string): number {
-  let n = 0;
-  for (const _ of text) {
-    void _;
-    n += 1;
-  }
-  return n;
-}
-
-/** True when the (already normalized) text contains characters that must not be sent. */
-export function hasForbiddenCharacters(text: string): boolean {
-  return CONTROL_CHARS.test(text) || LONE_SURROGATE.test(text);
-}
+export { codePointLength, normalizeUserText };
 
 export type TextProblem = 'empty' | 'too_long' | 'invalid_characters';
 
 export interface TextCheck {
   ok: boolean;
-  /** NFC + trim of the input (what would be sent when ok). */
+  /** NFC + trim of the input: exactly what is sent when ok. */
   text: string;
   length: number;
   problem: TextProblem | null;
 }
 
-export function checkText(raw: string, maxCodePoints: number): TextCheck {
-  const text = normalizeText(raw);
+/** Normalizes `raw`, then validates it with one of the package validators (phrase, cue, device label). */
+export function checkText(raw: string, validate: (value: unknown) => PackageTextCheck): TextCheck {
+  const text = normalizeUserText(raw);
   const length = codePointLength(text);
-  if (hasForbiddenCharacters(text)) return { ok: false, text, length, problem: 'invalid_characters' };
-  if (length === 0) return { ok: false, text, length, problem: 'empty' };
-  if (length > maxCodePoints) return { ok: false, text, length, problem: 'too_long' };
-  return { ok: true, text, length, problem: null };
+  const result = validate(text);
+  if (result.ok) return { ok: true, text, length, problem: null };
+  const problem: TextProblem =
+    result.reason === 'too_short' ? 'empty' : result.reason === 'too_long' ? 'too_long' : 'invalid_characters';
+  return { ok: false, text, length, problem };
 }

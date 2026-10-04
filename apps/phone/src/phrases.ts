@@ -1,4 +1,5 @@
 import { LIMITS } from './config.js';
+import { validateCue as protocolValidateCue, validateDeviceLabel as protocolValidateLabel, validatePhrase } from './ports/wire.js';
 import { checkText, type TextProblem } from './text.js';
 
 export interface PhraseIssue {
@@ -34,7 +35,7 @@ export function validatePhrases(rawList: readonly string[]): PhraseValidation {
   const issues: PhraseIssue[] = [];
   const phrases: string[] = [];
   rawList.forEach((raw, index) => {
-    const check = checkText(raw, LIMITS.phraseMaxCodePoints);
+    const check = checkText(raw, validatePhrase);
     phrases.push(check.text);
     if (!check.ok && check.problem !== null) {
       issues.push({ index, problem: check.problem, message: rowMessage(index, check.problem, check.length) });
@@ -57,7 +58,7 @@ export interface CueValidation {
 
 /** Cue word: 1-12 code points after NFC + trim, literal text, control characters rejected. */
 export function validateCue(raw: string): CueValidation {
-  const check = checkText(raw, LIMITS.cueMaxCodePoints);
+  const check = checkText(raw, protocolValidateCue);
   if (check.ok) return { ok: true, text: check.text, message: null };
   switch (check.problem) {
     case 'empty':
@@ -74,7 +75,7 @@ export function validateCue(raw: string): CueValidation {
 }
 
 export function validateDeviceLabel(raw: string): CueValidation {
-  const check = checkText(raw, LIMITS.deviceLabelMax);
+  const check = checkText(raw, protocolValidateLabel);
   if (check.ok) return { ok: true, text: check.text, message: null };
   if (check.problem === 'too_long') {
     return {

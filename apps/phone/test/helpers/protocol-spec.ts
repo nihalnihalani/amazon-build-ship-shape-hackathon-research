@@ -1,9 +1,11 @@
 /**
  * Independent restatement of PROTOCOL.md v1 (sections 1 and 3) for the messages the phone
- * SENDS. Written from the document tables, not from src/ports/wire.ts, so a mistake in the
- * builder cannot hide behind a copy of the same mistake. When @atr/protocol is merged the
- * lead can additionally run these messages through parseWireMessage.
+ * SENDS. Written from the document tables (and the revision 2 clarifications), not from
+ * src/ports/wire.ts, so a mistake in the builder cannot hide behind a copy of the same mistake.
+ * Every message is additionally run through the package's parseWireMessage, so the two
+ * independent statements of the protocol must agree.
  */
+import { parseWireMessage } from '@atr/protocol';
 import { expect } from 'vitest';
 
 const ENVELOPE = [
@@ -35,7 +37,7 @@ type Binding = 'none' | 'S' | 'SWA' | 'S-optional' | 'ack';
 const SPEC: Record<string, { binding: Binding; preAuth: boolean; keys: string[] }> = {
   'join.request': { binding: 'none', preAuth: true, keys: ['pairing_code', 'device_label'] },
   'auth.resume': { binding: 'none', preAuth: true, keys: ['room_id', 'role', 'credential'] },
-  ping: { binding: 'none', preAuth: false, keys: [] },
+  ping: { binding: 'none', preAuth: false, keys: [] }, // allowed before and after authentication
   'mic.state': { binding: 'S-optional', preAuth: false, keys: ['state', 'settings', 'supported', 'wake_lock', 'visibility', 'mode'] },
   'precheck.result': {
     binding: 'SWA',
@@ -109,11 +111,23 @@ export function assertPhoneMessage(text: string): WireMessage {
     case 'ack':
       break;
   }
+  // Revision 2: pre-auth messages carry generation 0 and sequence 0; join.request has room null
+  // (auth.resume may carry the room it repeats in its payload); authenticated messages carry the
+  // room from join.accepted and a generation that starts at 1.
   if (spec.preAuth) {
-    expect(m.room_id).toBeNull();
     expect(m.producer_generation).toBe(0);
     expect(m.sequence).toBe(0);
+    if (m.type === 'join.request') expect(m.room_id).toBeNull();
+    if (m.type === 'auth.resume' && m.room_id !== null) expect(m.room_id).toBe(m.payload['room_id']);
+  } else if (m.type === 'ping' && m.room_id === null) {
+    expect(m.producer_generation).toBe(0);
+  } else {
+    expect(m.room_id).not.toBeNull();
+    expect(m.producer_generation).toBeGreaterThanOrEqual(1);
   }
+  // The package validator must accept exactly what this independent checker accepts.
+  const viaPackage = parseWireMessage(text, { now: m.event_timestamp });
+  expect(viaPackage.ok, viaPackage.ok ? '' : `${viaPackage.code}: ${viaPackage.detail}`).toBe(true);
   // numbers must be finite wherever they appear
   const walk = (v: unknown): void => {
     if (typeof v === 'number') expect(finite(v)).toBe(true);

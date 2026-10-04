@@ -27,6 +27,9 @@ export const CREDENTIAL = 'C'.repeat(43);
 export const CODE = 'ACDEFH';
 
 let seq = 0;
+/** PROTOCOL.md section 1 room rule: null for these relay replies, required for the rest (ping/pong/error optional). */
+const ROOM_NULL_TYPES = new Set(['join.pending', 'join.rejected']);
+const ROOM_OPTIONAL_TYPES = new Set(['pong', 'error']);
 function envelope(
   type: string,
   role: 'tv' | 'relay',
@@ -34,16 +37,17 @@ function envelope(
   ids: { s?: string | null; w?: string | null; a?: string | null } = {},
 ): string {
   seq += 1;
+  const roomNull = role === 'relay' && (ROOM_NULL_TYPES.has(type) || ROOM_OPTIONAL_TYPES.has(type));
   return JSON.stringify({
     protocol_version: 1,
     type,
     message_id: `m_${String(seq).padStart(16, '0')}`,
-    room_id: role === 'tv' ? ROOM : null,
+    room_id: roomNull ? null : ROOM,
     session_id: ids.s ?? null,
     window_id: ids.w ?? null,
     attempt_id: ids.a ?? null,
     sender_role: role,
-    producer_generation: 1,
+    producer_generation: role === 'relay' ? 0 : 1,
     sequence: seq,
     event_timestamp: Date.now(),
     payload,

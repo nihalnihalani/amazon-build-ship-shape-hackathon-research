@@ -18,19 +18,18 @@ import { type PhraseValidation, validateCue, validateDeviceLabel, validatePhrase
 import type { AbortReason, AudioPort, AudioSnapshot, PrecheckRun, WindowRun } from './ports/audio.js';
 import {
   type AckOutcome,
-  type Envelope,
   type ErrorCode,
   type Ids,
   type InboundMessage,
   type InboundType,
-  MessageFactory,
   type OutboundPayloads,
   type OutboundType,
   parseIncoming,
-  serialize,
+  PhoneMessageFactory,
   type TvStage,
   type Visibility,
   type WakeLockState,
+  type WireMessage,
 } from './ports/wire.js';
 import { backoffDelay, type SocketFactory, Transport } from './transport.js';
 import type { WakeLockController } from './wake-lock.js';
@@ -104,7 +103,7 @@ export interface ControllerDeps {
   relayUrl: string;
   secureContext: boolean;
   visibility: VisibilitySource;
-  factory?: MessageFactory;
+  factory?: PhoneMessageFactory;
   defaultDeviceLabel: string;
   /** Test builds only. */
   banner?: string | null;
@@ -165,7 +164,7 @@ type Listener = (state: AppState) => void;
 export class PhoneController {
   private state: AppState;
   private readonly listeners = new Set<Listener>();
-  private readonly factory: MessageFactory;
+  private readonly factory: PhoneMessageFactory;
   private readonly transport: Transport;
   private readonly unsubs: Array<() => void> = [];
 
@@ -189,7 +188,7 @@ export class PhoneController {
   private pairedOnce = false;
 
   constructor(private readonly deps: ControllerDeps) {
-    this.factory = deps.factory ?? new MessageFactory();
+    this.factory = deps.factory ?? new PhoneMessageFactory();
     this.transport = new Transport(
       deps.createSocket,
       {
@@ -339,6 +338,7 @@ export class PhoneController {
 
   private onSocketOpen(): void {
     this.patch({ link: 'authenticating' });
+    this.factory.beginConnection(); // pre-auth phase: room null, generation 0, sequence 0
     if (this.purpose === 'join') {
       const { code, deviceLabel } = this.state.join;
       const label = validateDeviceLabel(deviceLabel).text;
@@ -396,6 +396,8 @@ export class PhoneController {
     const parsed = parseIncoming(text);
     if (!parsed.ok) return;
     const msg = parsed.message;
+    // Once paired, a message that names another room is not for this phone.
+    if (this.credential !== null && msg.room_id !== null && msg.room_id !== this.credential.roomId) return;
     switch (msg.type) {
       case 'join.pending':
         if (this.credential === null && this.state.join.phase !== 'idle') {
@@ -468,9 +470,14 @@ export class PhoneController {
   /** Authenticated (join.accepted or auth.ok): start heartbeat, publish state, flush queued results. */
   private enterConnected(tvConnected: boolean | null): void {
     this.patch({ link: 'connected', reconnectAttempt: 0, tvConnected, notice: null });
-    this.transport.startHeartbeat(() =>
-      this.factory.authenticated ? serialize(this.factory.build('ping', {})) : null,
-    );
+    this.transport.startHeartbeat(() => {
+      if (!this.factory.authenticated) return null;
+      try {
+        return this.factory.serialize(this.factory.build('ping', {}));
+      } catch {
+        return null;
+      }
+    });
     this.lastMicKey = null;
     this.publishMic();
     this.flushPending();
@@ -1014,8 +1021,12 @@ export class PhoneController {
 
   // ---- sending -------------------------------------------------------------
 
-  private sendRaw(envelope: Envelope): boolean {
-    return this.transport.send(serialize(envelope));
+  private sendRaw(message: WireMessage): boolean {
+    try {
+      return this.transport.send(this.factory.serialize(message));
+    } catch {
+      return false;
+    }
   }
 
   /** Sends an authenticated message; false when the link is not up. */
@@ -1026,7 +1037,12 @@ export class PhoneController {
   /** Returns the message_id when sent, otherwise null. */
   private sendAuthedWithId<T extends OutboundType>(type: T, payload: OutboundPayloads[T], ids: Ids = {}): string | null {
     if (this.state.link !== 'connected' || !this.factory.authenticated || !this.transport.isOpen) return null;
-    const envelope = this.factory.build(type, payload, ids);
-    return this.transport.send(serialize(envelope)) ? envelope.message_id : null;
+    try {
+      const message = this.factory.build(type, payload, ids);
+      return this.transport.send(this.factory.serialize(message)) ? message.message_id : null;
+    } catch {
+      // The factory validates every message; an invalid one is never sent.
+      return null;
+    }
   }
 }

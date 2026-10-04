@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateCue, validateDeviceLabel, validatePhrases } from '../src/phrases.js';
-import { checkText, codePointLength, normalizeText } from '../src/text.js';
+import { validatePhrase } from '../src/ports/wire.js';
+import { checkText, codePointLength, normalizeUserText } from '../src/text.js';
 
 describe('text rules (PROTOCOL.md section 1)', () => {
   it('counts code points, not UTF-16 units', () => {
@@ -12,13 +13,13 @@ describe('text rules (PROTOCOL.md section 1)', () => {
   it('NFC-normalizes before counting', () => {
     const decomposed = 'é'; // 2 code points
     expect(codePointLength(decomposed)).toBe(2);
-    expect(normalizeText(decomposed)).toBe('é');
-    expect(codePointLength(normalizeText(decomposed))).toBe(1);
+    expect(normalizeUserText(decomposed)).toBe('é');
+    expect(codePointLength(normalizeUserText(decomposed))).toBe(1);
   });
 
   it('trims before checking', () => {
-    expect(checkText('  hi  ', 5).text).toBe('hi');
-    expect(checkText('   ', 5).problem).toBe('empty');
+    expect(checkText('  hi  ', validatePhrase).text).toBe('hi');
+    expect(checkText('   ', validatePhrase).problem).toBe('empty');
   });
 });
 
@@ -89,6 +90,13 @@ describe('validatePhrases', () => {
   it('trims and normalizes the phrases it returns', () => {
     const v = validatePhrases(['  hello  ', 'é']);
     expect(v.phrases).toEqual(['hello', 'é']);
+  });
+
+  it('returns text that the package validator accepts as-is (it rejects un-normalized text)', () => {
+    expect(validatePhrase('  hi  ').ok).toBe(false); // the package never "fixes" text
+    expect(validatePhrase('e\u0301').ok).toBe(false);
+    const v = validatePhrases(['  hi  ', 'e\u0301']);
+    for (const p of v.phrases) expect(validatePhrase(p).ok).toBe(true);
   });
 
   it('keeps markup-looking text unchanged (it is literal)', () => {

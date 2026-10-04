@@ -92,7 +92,7 @@ describe('join flow', () => {
     expect(mic).toMatchObject({
       room_id: ROOM,
       producer_generation: 1,
-      sequence: 1,
+      sequence: 0, // revision 2: the sequence restarts at 0 for each generation
       session_id: null,
       payload: { state: 'off', visibility: 'visible', mode: 'physical_phone', wake_lock: 'not_requested' },
     });

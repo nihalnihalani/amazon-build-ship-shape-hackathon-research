@@ -1,24 +1,36 @@
 /** Constants from PROTOCOL.md, ADR-0002/0003/0004/0006. Product wording lives here too. */
 
-export const PROTOCOL_VERSION = 1;
+import {
+  CUE_LENGTH_MAX,
+  CUES_PER_SESSION_MAX,
+  DEVICE_LABEL_LENGTH_MAX,
+  LEVEL_FRAMES_PER_WINDOW_MAX,
+  MAX_MESSAGE_BYTES,
+  PAIRING_ALPHABET,
+  PAIRING_CODE_LENGTH,
+  PHRASE_COUNT_MAX,
+  PHRASE_COUNT_MIN,
+  PHRASE_LENGTH_MAX,
+} from './ports/wire.js';
 
 /** ADR-0002: exact phone UI privacy wording. Do not paraphrase. */
 export const PRIVACY_SENTENCE =
   'Audio stays on this phone and is never saved or uploaded. Only levels, typed phrases, listener responses, and connection details are sent to the relay and TV.';
 
 /** PROTOCOL.md section 7 / ADR-0003: pairing code alphabet (22 characters, 6 long). */
-export const CODE_ALPHABET = 'ACDEFHJKMNPRTUVWXY3479';
-export const CODE_LENGTH = 6;
+export const CODE_ALPHABET: string = PAIRING_ALPHABET;
+export const CODE_LENGTH: number = PAIRING_CODE_LENGTH;
 
+/** Limits come from @atr/protocol (via the wire port); nothing is restated here. */
 export const LIMITS = {
-  deviceLabelMax: 24,
-  phrasesMin: 1,
-  phrasesMax: 10,
-  phraseMaxCodePoints: 60,
-  cueMaxCodePoints: 12,
-  cuesPerSession: 3,
-  levelFramesMax: 700,
-  messageMaxBytes: 8192,
+  deviceLabelMax: DEVICE_LABEL_LENGTH_MAX,
+  phrasesMin: PHRASE_COUNT_MIN,
+  phrasesMax: PHRASE_COUNT_MAX,
+  phraseMaxCodePoints: PHRASE_LENGTH_MAX,
+  cueMaxCodePoints: CUE_LENGTH_MAX,
+  cuesPerSession: CUES_PER_SESSION_MAX,
+  levelFramesMax: LEVEL_FRAMES_PER_WINDOW_MAX,
+  messageMaxBytes: MAX_MESSAGE_BYTES,
 } as const;
 
 export const DEFAULT_CUE_WORD = 'Volume';

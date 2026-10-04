@@ -1,5 +1,5 @@
 import { PhoneController } from '../../src/controller.js';
-import { MessageFactory } from '../../src/ports/wire.js';
+import { PhoneMessageFactory } from '../../src/ports/wire.js';
 import { WakeLockController } from '../../src/wake-lock.js';
 import {
   authOk,
@@ -28,9 +28,9 @@ export function makeHarness(opts: { secureContext?: boolean; wakeSupported?: boo
   const visibility = new FakeVisibility();
   let t = 1_700_000_000_000;
   let counter = 0;
-  const factory = new MessageFactory({
-    now: () => (t += 1),
-    randomBytes: (n) => {
+  const factory = new PhoneMessageFactory({
+    clock: () => (t += 1),
+    randomBytes: (n: number) => {
       counter += 1;
       const b = new Uint8Array(n);
       for (let i = 0; i < n; i++) b[i] = i < 3 ? (counter >> (8 * i)) & 255 : 65 + (i % 26);
