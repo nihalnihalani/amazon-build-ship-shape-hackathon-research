@@ -25,6 +25,7 @@ import type {
   Verdict,
   VowelRecord,
 } from './records.js';
+import { isCalendarDate } from './dates.js';
 import { validatePhraseBank, validateText } from './text.js';
 
 export type MeasurementMode = 'relative_band' | 'listener_edition';
@@ -213,7 +214,6 @@ const numOrNull = (v: unknown, min: number, max: number): number | null | undefi
   v === null || v === undefined ? null : isNumber(v) && v >= min && v <= max ? v : undefined;
 const reasonOrNull = (v: unknown): string | null | undefined =>
   v === null || v === undefined ? null : typeof v === 'string' && v.length <= 64 ? v : undefined;
-const LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ID_LIKE = /^[A-Za-z0-9_-]{1,64}$/;
 
 const ATTEMPT_STATES: readonly AttemptState[] = [
@@ -293,7 +293,7 @@ function parseVowel(v: unknown): VowelRecord | null {
 export function parseRecord(v: unknown): SessionRecord | null {
   if (!isObject(v)) return null;
   if (typeof v.sessionId !== 'string' || !ID_LIKE.test(v.sessionId)) return null;
-  if (typeof v.localDate !== 'string' || !LOCAL_DATE.test(v.localDate)) return null;
+  if (!isCalendarDate(v.localDate)) return null; // a calendar-invalid date such as 2026-13-45 is corrupt (QA-11)
   if (!isNumber(v.startedAt) || !isNumber(v.endedAt) || v.startedAt < 0 || v.endedAt < 0) return null;
   if (!Array.isArray(v.attempts) || v.attempts.length > 200) return null;
   const attempts: AttemptRecord[] = [];
@@ -489,7 +489,7 @@ export async function loadData(storage: StoragePort, now: number): Promise<Loade
     if (activeRaw !== null) {
       const parsed = parseCheckpoint(safeJson(activeRaw));
       if (!parsed) out.corruptKeys += 1;
-      else if (now - parsed.savedAt > CHECKPOINT_MAX_AGE_MS) {
+      else if (now - parsed.savedAt > CHECKPOINT_MAX_AGE_MS || parsed.savedAt - now > DAY_MS) {
         // A5-03: older than the room lifetime, so it is never offered for resume.
         await storage.removeItem(KEYS.active);
         out.staleCheckpointDiscarded = true;
@@ -501,7 +501,12 @@ export async function loadData(storage: StoragePort, now: number): Promise<Loade
   const cutoff = now - RETENTION_DAYS * DAY_MS;
   const keep: SessionRecord[] = [];
   const drop: SessionRecord[] = [];
-  for (const record of out.records) (record.endedAt < cutoff ? drop : keep).push(record);
+  // QA-10: older than the retention window, or implausibly far in the future (a clock that was wrong and then
+  // corrected, or a tampered record): both go. A day of slack allows for time zones and small clock errors.
+  const horizon = now + DAY_MS;
+  for (const record of out.records) {
+    (record.endedAt < cutoff || record.endedAt > horizon || record.startedAt > horizon ? drop : keep).push(record);
+  }
   if (drop.length > 0) {
     try {
       await storage.multiRemove(drop.map((r) => sessionKey(r.sessionId)));

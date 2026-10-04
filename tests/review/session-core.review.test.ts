@@ -2935,7 +2935,7 @@ describe('(m7) A5 storage: contents, checkpoint age, validation, write order, de
     expect(rig.wire.dropped.filter((m) => m.type === 'unpair' || m.type === 'room.close')).toEqual([]);
   });
 
-  defect('QA-10', 'a session record dated in the far future (a TV clock set wrong, then corrected, or a tampered record) is never pruned by the 8-day retention', async () => {
+  it('QA-10 fixed: a session record dated in the far future (a TV clock set wrong, then corrected, or a tampered record) is never pruned by the 8-day retention', async () => {
     const disk = new Disk({ ...seededSettings(), 'atr:v1:session:s_future001': record('s_future001', { startedAt: START + 399 * DAY, endedAt: START + 400 * DAY, localDate: '2027-11-09' }) });
     const rig = await new Rig({ disk, seed: 743 }).boot();
     await rig.settle();
@@ -2943,7 +2943,7 @@ describe('(m7) A5 storage: contents, checkpoint age, validation, write order, de
     expect(disk.atrKeys().some((k) => k === 'atr:v1:session:s_future001')).toBe(false);
   });
 
-  defect('QA-11', 'a record with a calendar-invalid localDate (2026-13-45) is accepted and shown on Home as "Last session, 2026-13-45"', async () => {
+  it('QA-11 fixed: a record with a calendar-invalid localDate (2026-13-45) is accepted and shown on Home as "Last session, 2026-13-45"', async () => {
     const disk = new Disk({ ...seededSettings(), 'atr:v1:session:s_baddate01': record('s_baddate01', { localDate: '2026-13-45' }) });
     const rig = await new Rig({ disk, seed: 744 }).boot();
     expect(rig.view.body.join(' ')).not.toContain('2026-13-45');
@@ -3046,7 +3046,7 @@ describe('(m9) A8-01 announcements are held while a window or a blind attempt is
     expect(rig.view.announcement).toMatch(/zebra/);
   });
 
-  defect('QA-12', 'while a cue chip (3 s) is showing, the announcement of the next screen is REPLACED by "Cue: ..." instead of the cue being added', async () => {
+  it('QA-12 fixed: while a cue chip (3 s) is showing, the announcement of the next screen is REPLACED by "Cue: ..." instead of the cue being added', async () => {
     const rig = await new Rig({ seed: 813 }).boot();
     await rig.setupToPhrases({ bank: PHRASES.slice(0, 3) });
     rig.attempt({ rel: 25 });
@@ -3057,7 +3057,7 @@ describe('(m9) A8-01 announcements are held while a window or a blind attempt is
     expect(rig.view.announcement).toContain('Phrase 2 of 3');
   });
 
-  defect('QA-12b', 'a cue held during a blind attempt is announced twice at the reveal (the chip text plus the queued copy)', async () => {
+  it('QA-12b fixed: a cue held during a blind attempt is announced twice at the reveal (the chip text plus the queued copy)', async () => {
     const { rig } = await blindToPrompt({ seed: 814, family: false, result: { rel: 25 } });
     rig.cue('zebra');
     rig.ui('rate_skip');
@@ -3148,7 +3148,7 @@ describe('(m10) remaining wave 2 checks: continue-without ordering, resume clamp
     expect((phrase?.text ?? '').length).toBeGreaterThan(0);
   });
 
-  defect('QA-13', 'the resume prompt says "1 phrases were attempted" (no singular form)', async () => {
+  it('QA-13 fixed: the resume prompt says "1 phrases were attempted" (no singular form)', async () => {
     const disk = new Disk();
     const first = await new Rig({ disk, seed: 825 }).boot();
     await first.setupToPhrases({ bank: PHRASES.slice(0, 3) });
