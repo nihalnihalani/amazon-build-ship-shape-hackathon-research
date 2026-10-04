@@ -1,0 +1,50 @@
+# TV session machine
+
+Authoritative state machine of `@atr/session-core` (revision 1, matches `src/machine.ts`). Product basis: master prompt journey A to J, ADR-0001, 0004, 0005, 0008, 0009 and `docs/PROTOCOL.md` revision 2. Evidence class of everything below: automated tests of a pure state machine. It says nothing about microphone validity, Vega behaviour, or the deployed relay.
+
+## Shape
+
+- Input: `TvInput` (`remote`, `ui`, `timer`, `transport`, `wire`, `app`). The store owns no timers: the app ticks `{ kind: 'timer', now }` every 100 to 250 ms. All time comes from the event or `deps.clock`; all identifiers come from `@atr/protocol`'s `createIdFactory(deps.randomBytes)`.
+- Output: `TvView` (projection in `src/view.ts`) plus effects (`send`, `bind`, `connect`, `close`, `persist`, `delete_all`) run by `src/store.ts`.
+- `remote ok` runs `view.preferredAction` if it is enabled; `remote back` and `ui back` are the same input. A `ui` action that is not in `view.actions` (or is disabled) is ignored, which is what makes a repeated OK harmless.
+- The wire boundary is `src/wire.ts`, a thin wrapper over `@atr/protocol` (`parseWireMessage`, `MessageFactory` with role `tv`, `MessageIdDedupe`). Inbound messages are accepted only when the shared validators pass and the sender is the phone or the relay.
+
+## Stages
+
+Screens outside the 16 stages (`onboarding`, `home`, `settings`, `about`, `diagnostics`, `confirm_dialog`, `join_confirm`) are projections: `onboarding` and `home` are `idle`; `join_confirm` is `pairing`; `settings`, `about`, `diagnostics` and `confirm_dialog` overlay the stage underneath and Back restores it.
+
+| Stage (screen) | Entry | Exit | Controls (preferred first) | Wire sent / accepted | Recovery |
+|---|---|---|---|---|---|
+| `idle` (`onboarding`) | first launch (no saved settings) | I understand | `continue` | none | n/a |
+| `idle` (`home`) | launch, Done, leave, discard | Start session, Pair phone, History, Settings | `start_session`, `open_history`, `open_settings`, `pair_phone`; Back ignored | none | newer-version data banner; delete in Settings |
+| `pairing` | start with no live phone; pair-only | phone connected and accepted; Cancel | `cancel` (preferred), `refresh_code`; `join_confirm`: `accept_join` (preferred), `reject_join` | sent `room.create`, `auth.resume`, `pairing.refresh`, `join.confirm`; accepted `room.created`, `pairing.code`, `join.requested`, `join.expired`, `auth.ok`, `peer.state`, `error` | expired code refreshed once per expiry; relay failure shows Try again; a revoked pairing clears the room |
+| `permission_pending` | phone connected, `session.begin` sent | `mic.state` `open_idle` or `measuring` | `cancel` | sent `session.begin`; accepted `mic.state` | denied/no input/busy/unsupported/error shown from the phone state |
+| `quiet_check` | mic open | accepted aggregate to `calibration`; invalid shows reason with Retry | ready: `begin_quiet_check`, `cancel`; running: none; failed: `retry`, `cancel` | `precheck.start` (quiet_check, 5000 after the 1500 ms lead); accepted `precheck.result` | link loss or timeout pauses (`paused_or_invalid`) |
+| `calibration` | quiet floor accepted | accepted band or Continue to `vowel_ready` | ready: `begin_calibration`, `skip_calibration` (only if this session already has a band), `cancel`; running: none; result: `continue`, `retry` (failed: `retry`, `continue` = keep band or go without a band, `cancel`) | `window.start` calibration 6000 (no pre-window gate); accepted `level`, `window.result` | cancel returns to ready |
+| `vowel_ready` | calibration continue/keep | Begin, Skip, Settings | `begin_vowel`, `skip_vowel`, `open_settings` | none | n/a |
+| `vowel_active` | begin | result; cancel; interruption | capture phase: `stop_early`, `cancel`; before and after: none (Back cancels) | `precheck.start` pre_window 2000 (only when a band exists), `window.start` vowel 30000, `window.stop`, `window.cancel` | cancel returns to `vowel_ready`; link loss pauses |
+| `vowel_result` | `window.result` | Continue, Rest | `continue`, `rest` (back to `vowel_ready`) | none | invalid shows "Not scored" and the reason |
+| `phrase_ready` | skip vowel/continue; next; try again; retry | Begin, Skip, Finish early | `begin_phrase`, `skip_phrase`, `finish_early`, `open_settings` | none | n/a |
+| `phrase_active` | begin | `window.result` to `response_pending`/`reveal`; cancel; interruption | capture phase: `stop_early` (OK), `cancel`; lead/precheck/closing: none | sent `precheck.start` pre_window 2000 after 1500 ms, `window.start` phrase 8000, `window.stop`, `window.cancel`; accepted `precheck.result`, `level`, `window.result` | gate blocked, link loss, mic stop, timeout: `paused_or_invalid`; Back: unscored reveal |
+| `response_pending` | valid result, and (hidden first attempt or family mode) | every required input present or skipped | `rate_felt_loud`, `rate_felt_normal`, `rate_skip`; after 20 s `keep_waiting` (preferred), `continue_without_listener` | sent `listener.open`; accepted `listener.response` | no timer on the speaker rating; missing listener is recorded as missing |
+| `reveal` | all inputs in, or invalid/cancelled attempt | next, retry, skip, finish | scored: `next_phrase`, `try_again`, `finish_early`; unscored: `try_again`, `skip_phrase`, `finish_early` | sent `attempt.reveal` (scored attempts); late `listener.response` stored with `late` | none |
+| `summary` | last phrase or Finish early | Done | `done`, `open_history` | sent `session.end` | checkpoint cleared, record saved |
+| `history` | History | Done/Back | `done` | none | returns to `home` or `summary` |
+| `paused_or_invalid` | gate blocked, link lost, mic stopped, timeout, interruption | Retry (returns to the ready screen), skip, cancel | `retry` (needs link, phone and open mic), `skip_phrase`/`skip_vowel`, `finish_early`/`cancel` | sent `window.cancel` (queued while the link is down, flushed after `auth.ok`) | never auto-resumes capture |
+| `resume_or_discard` | launch with `atr:v1:active` | Resume or Discard | `resume_session` (preferred), `discard_session` | none | Back ignored |
+
+## Rules
+
+- **Quiet lead.** After OK on any begin action, the first command is sent after `QUIET_LEAD_MS` = 1500 ms. During the lead, precheck and capture the view is `capturing`, announcements are null, and (before capture) no control is focusable so a repeated OK cannot press Cancel. Back cancels at every phase.
+- **Quiet check re-validation** (`verdict.ts`): phone `valid`, coverage at least 0.90, no clipped frames, `p80 - p20` at most 6, `p95 - floor` at most 10, `floor` at most -30, non-finite at most 5 % of frames, in the reason order of `docs/MEASUREMENT.md`.
+- **Calibration:** accepted when the window is valid, `active_ms` at least 400 and margin (`p95_active - session floor`) at least 13 dB. Decision recorded: Skip calibration is offered only when this session already has a band; if no band could be set, Continue without a band runs the phrases unscored, labelled "No band set: results not scored", and the listener check still works. A failed retry keeps an earlier band.
+- **Gate** (before each phrase window and, when a band exists, before the vowel): block when rise at least 6 dB, or margin minus rise below 10 dB, or the precheck is invalid. A blocked attempt is recorded unscored (`room_noisier`), never started, and does not count as the blind attempt.
+- **Verdict:** reached when `p95_active - floor >= margin - 1`; borderline when within 1 dB of that edge. Wording is "Reached today's relative level band" or "Below today's relative level band".
+- **Hidden:** positions 3, 6, 9 when present, first captured attempt only. Meter and result are absent from the view (not flagged), no string depends on level or verdict, level frames are validated but not stored, and `capturing` implies `announcement === null`. A retry is visible and marked as a retry (new `window_id` and `attempt_id`, `attemptNumber + 1`).
+- **Response phase:** listener opened when a valid capture closes in family mode; reveal sends `attempt.reveal` and locks the attempt. A response after reveal is stored late, shown as "late, not counted", and listed in `lateListenerResponses` only.
+- **Cues:** at most 3 per session (4th: ack `rejected`, no chip); rejected while a window is open; chip for 3 s; `session.state` carries `cues_used`.
+- **Phrases:** `phrases.update` is validated by the shared validators (text must already be NFC-trimmed) and again by `validatePhraseBank`. It replaces the bank for the current session until the first phrase window begins, otherwise for the next session (`applied`, detail `next_session`). `session.begin.phrase_count` reflects the bank at that moment.
+- **Link loss** (`reconnecting`, `offline`, `failed`, peer gone): mic view `unknown` until the phone reports again (never `off`), any open window is cancelled and unscored, a fresh explicit begin is required.
+- **Back from a session** asks to confirm leaving (Cancel preferred) once practice has begun. Dialogs for delete, reset and unpair always prefer Cancel; closing a dialog returns focus to the control that opened it.
+- **Storage** (`atr:v1:*`): meta, settings, phrases, per-session records, index, active checkpoint (after capture starts and after each reveal or phrase change, with no held verdict and no credentials), 30-day pruning on launch, pure v0 to v1 migration, unknown future versions are never overwritten (persistence is disabled and Settings offers delete). Delete removes only `atr:` keys and verifies through `getAllKeys`. Fixture mode swaps in an in-memory store and labels every screen "Fixture replay".
+- **Summary and history:** counts, hidden/visible agreement with denominators, late responses and borderline count are structured fields; `lines` holds notes only. A day with any incomplete session is flagged incomplete; there is no comparison or trend between days.
