@@ -22,8 +22,10 @@ import {
   TV_STAGES,
   TRANSPORT_STATES,
   specFor,
+  validateMessageObject,
 } from '../src/index.js';
 import type { Direction, MessageType } from '../src/index.js';
+import { NOW as base_now, VALID_FIXTURES } from './fixtures.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docPath = resolve(here, '../../../docs/PROTOCOL.md');
@@ -135,6 +137,44 @@ describe('docs/PROTOCOL.md section 3 versus catalogue.ts', () => {
       const toTv = dirs.includes('P->T');
       expect(spec.forwardTo).toBe(toPhone && toTv ? 'peer' : toPhone ? 'phone' : toTv ? 'tv' : null);
     }
+  });
+});
+
+describe('docs/PROTOCOL.md MicStatePayload block (revision 3)', () => {
+  const block = sectionBetween('#### MicStatePayload', '#### PrecheckResultPayload');
+  const supportedLine = block.split('\n').find((l) => l.trim().startsWith('supported:'));
+
+  it('declares supported.* as boolean | null', () => {
+    expect(supportedLine).toBeDefined();
+    const fields = [...(supportedLine as string).matchAll(/([a-z_]+): ([a-z |]+?)(?:,|\s*\})/g)].map((m) => [m[1], (m[2] as string).trim()]);
+    expect(fields).toEqual([
+      ['auto_gain_control', 'boolean | null'],
+      ['echo_cancellation', 'boolean | null'],
+      ['noise_suppression', 'boolean | null'],
+    ]);
+  });
+
+  it('the validator accepts null and rejects non-booleans for exactly the documented fields', () => {
+    const names = [...(supportedLine as string).matchAll(/([a-z_]+): boolean \| null/g)].map((m) => m[1] as string);
+    expect(names.length).toBe(3);
+    for (const name of names) {
+      const base = JSON.parse(JSON.stringify(VALID_FIXTURES.find((f) => f.name === 'mic.state no session')?.message)) as {
+        payload: { supported: Record<string, unknown> };
+      };
+      for (const ok of [null, true, false]) {
+        base.payload.supported[name] = ok;
+        expect(validateMessageObject(base, { now: base_now }).ok, `${name}=${String(ok)}`).toBe(true);
+      }
+      for (const bad of ['true', 'null', 0, 1, {}, []]) {
+        base.payload.supported[name] = bad;
+        expect(validateMessageObject(base, { now: base_now }).ok, `${name}=${JSON.stringify(bad)}`).toBe(false);
+      }
+    }
+  });
+
+  it('the revision 3 line is recorded in section 8 and the status line', () => {
+    expect(doc).toMatch(/revision 3/);
+    expect(doc).toContain('Revision 3 (2026-10-05): `MicStatePayload.supported');
   });
 });
 

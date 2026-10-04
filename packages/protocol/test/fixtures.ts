@@ -183,6 +183,10 @@ export const VALID_FIXTURES: Fixture[] = [
   // 3.3 Phone observations (phone to TV)
   fx('mic.state no session', phone('mic.state', micState)),
   fx('mic.state with session', phone('mic.state', { ...micState, state: 'permission_denied', settings: { auto_gain_control: null, echo_cancellation: null, noise_suppression: null, sample_rate: null, channel_count: null } }, { session: SESSION })),
+  fx(
+    'mic.state supported unavailable',
+    phone('mic.state', { ...micState, supported: { auto_gain_control: null, echo_cancellation: null, noise_suppression: null } }),
+  ),
   fx('precheck.result', phone('precheck.result', precheckResult, SWA)),
   fx(
     'precheck.result invalid',
