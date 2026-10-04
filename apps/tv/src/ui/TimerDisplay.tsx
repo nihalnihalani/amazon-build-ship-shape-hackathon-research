@@ -23,12 +23,22 @@ export function remainingSeconds(timer: TimerView): number {
  * counts up (sustained sound). Hidden from the screen-reader tree while a window is open so it never talks
  * over the measurement.
  */
-export function TimerDisplay({ timer, capturing }: { timer: TimerView; capturing: boolean }): React.ReactElement {
+export function TimerDisplay({
+  timer,
+  capturing,
+  compact = false,
+}: {
+  timer: TimerView;
+  capturing: boolean;
+  /** One-line readout (40 px) for screens that also carry a phrase and a dial. The default is the 160 px counter. */
+  compact?: boolean;
+}): React.ReactElement {
   const ui = useUiScale();
   const countdown = timer.maxMs !== null;
   const shown = countdown ? String(remainingSeconds(timer)) : formatSeconds(timer.elapsedMs);
   const fraction = countdown && timer.maxMs !== null && timer.maxMs > 0 ? Math.min(1, Math.max(0, 1 - timer.elapsedMs / timer.maxMs)) : 0;
-  const barWidth = ui.size(480);
+  const barWidth = ui.size(compact ? 420 : 480);
+  const barHeight = ui.size(compact ? 12 : 16);
   return (
     <View
       testID="timer"
@@ -39,25 +49,32 @@ export function TimerDisplay({ timer, capturing }: { timer: TimerView; capturing
       importantForAccessibility={capturing ? 'no-hide-descendants' : 'auto'}
       style={{ alignItems: 'center' }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-        <AppText testID="timer-value" kind="counter">
+      <View style={{ flexDirection: 'row', alignItems: compact ? 'center' : 'flex-end' }}>
+        <AppText testID="timer-value" kind={compact ? 'label' : 'counter'} bold>
           {shown}
         </AppText>
-        <AppText kind="label" style={{ marginLeft: ui.space(12), marginBottom: ui.space(20) }}>
+        <AppText kind="label" style={{ marginLeft: ui.space(12), marginBottom: compact ? 0 : ui.space(20) }}>
           {text.timerSeconds}
         </AppText>
+        {compact ? (
+          <AppText testID="timer-label" kind="muted" style={{ marginLeft: ui.space(24) }}>
+            {timer.label + (countdown ? ' (' + text.timerRemaining + ')' : '')}
+          </AppText>
+        ) : null}
       </View>
-      <AppText testID="timer-label" kind="muted" center>
-        {timer.label + (countdown ? ' (' + text.timerRemaining + ')' : '')}
-      </AppText>
+      {compact ? null : (
+        <AppText testID="timer-label" kind="muted" center>
+          {timer.label + (countdown ? ' (' + text.timerRemaining + ')' : '')}
+        </AppText>
+      )}
       {countdown ? (
         <View
           testID="timer-bar"
-          style={{ width: barWidth, height: ui.size(16), marginTop: ui.space(12), backgroundColor: colors.arcTrack, borderRadius: ui.size(8) }}
+          style={{ width: barWidth, height: barHeight, marginTop: ui.space(compact ? 6 : 12), backgroundColor: colors.arcTrack, borderRadius: ui.size(8) }}
         >
           <View
             testID="timer-bar-fill"
-            style={{ width: Math.round(barWidth * fraction), height: ui.size(16), backgroundColor: colors.arcFill, borderRadius: ui.size(8) }}
+            style={{ width: Math.round(barWidth * fraction), height: barHeight, backgroundColor: colors.arcFill, borderRadius: ui.size(8) }}
           />
         </View>
       ) : null}

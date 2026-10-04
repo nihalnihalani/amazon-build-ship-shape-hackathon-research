@@ -14,6 +14,8 @@ export interface ArcMeterProps {
   meter: MeterView;
   /** While a window is open the arc is hidden from the screen-reader tree. */
   capturing: boolean;
+  /** Base radius (px at UI scale 1.0). Defaults to the full-size dial. */
+  radius?: number;
 }
 
 /**
@@ -21,10 +23,10 @@ export interface ArcMeterProps {
  * a meter (`view.meter !== null`): hidden first attempts have no meter in the view, so this component is not
  * in the tree at all and has no accessible label or announcement that depends on level.
  */
-export function ArcMeter({ meter, capturing }: ArcMeterProps): React.ReactElement {
+export function ArcMeter({ meter, capturing, radius: baseRadius = layout.arcRadius }: ArcMeterProps): React.ReactElement {
   const ui = useUiScale();
   const smoothed = useSmoothedLevel(meter.levelRelDb);
-  const radius = ui.size(layout.arcRadius);
+  const radius = ui.size(baseRadius);
   const stroke = ui.size(layout.arcStroke);
   const pad = stroke;
   const width = 2 * (radius + pad);

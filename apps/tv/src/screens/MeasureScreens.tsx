@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { View } from 'react-native';
 import { micText } from '../copy';
+import { layout } from '../theme';
 import { AppText } from '../ui/AppText';
 import { CueChip } from '../ui/CueChip';
 import { MeterBlock } from '../ui/MeterBlock';
@@ -11,6 +12,21 @@ import { ScreenFrame } from '../ui/ScreenFrame';
 import type { ScreenProps } from '../ui/ScreenFrame';
 import { TimerDisplay } from '../ui/TimerDisplay';
 import { useUiScale } from '../ui/scale';
+
+/** Timer and dial next to each other so a 160 px counter and a full dial both fit one 1080 px screen. */
+function SideBySide({ children }: { children: React.ReactNode }): React.ReactElement {
+  const ui = useUiScale();
+  const items = React.Children.toArray(children);
+  return (
+    <View testID="side-by-side" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+      {items.map((child, index) => (
+        <View key={index} style={{ marginHorizontal: ui.space(48) }}>
+          {child}
+        </View>
+      ))}
+    </View>
+  );
+}
 
 /** Waiting for the phone to grant the microphone: the state is spelled out, never "off" without the phone's say-so. */
 export function PermissionPendingScreen(props: ScreenProps): React.ReactElement {
@@ -28,8 +44,10 @@ export function QuietCheckScreen(props: ScreenProps): React.ReactElement {
   const { view } = props;
   return (
     <ScreenFrame {...props}>
-      {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-      <MeterBlock view={view} />
+      <SideBySide>
+        {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
+        <MeterBlock view={view} />
+      </SideBySide>
     </ScreenFrame>
   );
 }
@@ -39,8 +57,10 @@ export function CalibrationScreen(props: ScreenProps): React.ReactElement {
   const { view } = props;
   return (
     <ScreenFrame {...props}>
-      {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-      <MeterBlock view={view} />
+      <SideBySide>
+        {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
+        <MeterBlock view={view} />
+      </SideBySide>
     </ScreenFrame>
   );
 }
@@ -50,8 +70,10 @@ export function VowelScreen(props: ScreenProps): React.ReactElement {
   const { view } = props;
   return (
     <ScreenFrame {...props}>
-      {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-      <MeterBlock view={view} />
+      <SideBySide>
+        {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
+        <MeterBlock view={view} />
+      </SideBySide>
       {view.result !== null ? <ResultBadge result={view.result} /> : null}
     </ScreenFrame>
   );
@@ -72,9 +94,13 @@ export function PhraseScreen(props: ScreenProps): React.ReactElement {
           <PhraseText phrase={view.phrase.text} />
         </View>
       ) : null}
-      <MeterBlock view={view} />
-      {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-      {view.cue !== null ? <CueChip cue={view.cue} /> : null}
+      <SideBySide>
+        <MeterBlock view={view} radius={layout.arcRadiusCompact} />
+        <View style={{ alignItems: 'center' }}>
+          {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} compact /> : null}
+          {view.cue !== null ? <CueChip cue={view.cue} /> : null}
+        </View>
+      </SideBySide>
       {view.result !== null ? <ResultBadge result={view.result} /> : null}
     </ScreenFrame>
   );

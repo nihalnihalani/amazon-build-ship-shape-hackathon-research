@@ -38,9 +38,13 @@ export const PHRASE_FONT_SIZES: readonly number[] = [96, 88, 80, 72];
 
 export const layout = {
   pagePadding: 80,
+  pageVerticalPadding: 48,
   focusRing: 6,
   focusScale: 1.05,
+  /** Full-size dial (sustained sound, calibration). */
   arcRadius: 300,
+  /** Compact dial used on the phrase card so phrase, dial and timer fit one 1080 px screen. */
+  arcRadiusCompact: 180,
   arcStroke: 36,
   qrSize: 320,
   historyBarMax: 220,

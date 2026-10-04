@@ -49,7 +49,12 @@ export function ScreenFrame({
     <View
       testID={'screen-' + view.screen}
       accessibilityOrientationText={orientation}
-      style={{ flex: 1, backgroundColor: colors.background, padding: ui.space(layout.pagePadding) }}
+      style={{
+        flex: 1,
+        backgroundColor: colors.background,
+        paddingHorizontal: ui.space(layout.pagePadding),
+        paddingVertical: ui.space(layout.pageVerticalPadding),
+      }}
     >
       <AppText testID="screen-title" nativeID="atr-title" kind="title" role={view.capturing ? undefined : 'heading'}>
         {view.title}
@@ -90,7 +95,7 @@ export function ScreenFrame({
           </AppText>
         ))}
       </View>
-      <View testID="content" style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View testID="content" style={{ flex: 1, minHeight: 0, justifyContent: 'center', alignItems: 'center' }}>
         {children}
       </View>
       {hideActions ? null : (

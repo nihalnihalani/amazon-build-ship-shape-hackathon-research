@@ -1,6 +1,6 @@
 import * as ReactNative from 'react-native';
 import { estimateLines, fitPhrase } from '../layout/fitPhrase';
-import { phraseActiveHidden, phraseActiveVisible, phraseReady } from '../__fixtures__/views';
+import { phraseActiveHidden, phraseActiveVisible, phraseReady, vowelActive } from '../__fixtures__/views';
 import { setUiScaleMock } from '../../jest/mocks/kepler-a11y';
 import { renderView } from './testUtils';
 
@@ -88,6 +88,11 @@ describe('phrase screen text sizes', () => {
     expect(fontSizeOf(screen.getByTestId('footer'))).toBe(28);
     expect(fontSizeOf(screen.getByTestId('timer-label'))).toBeGreaterThanOrEqual(32);
     expect(fontSizeOf(screen.getByTestId('arc-cue-text'))).toBe(40);
+    expect(fontSizeOf(screen.getByTestId('timer-value'))).toBe(40); // compact readout on the phrase card
+  });
+
+  it('keeps the 160 px counter on the sustained-sound screen', () => {
+    const screen = renderView(vowelActive);
     expect(fontSizeOf(screen.getByTestId('timer-value'))).toBe(160);
   });
 

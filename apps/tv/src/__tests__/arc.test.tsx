@@ -6,8 +6,8 @@ import { renderView, svgElements } from './testUtils';
 
 function viewWithMeter(levelRelDb: number | null, bandRelDb: number | null, capturing = false, active = true) {
   return makeView({
-    screen: 'phrase',
-    stage: 'phrase_active',
+    screen: 'vowel',
+    stage: 'vowel_active',
     capturing,
     meter: { levelRelDb, bandRelDb, active, caption: 'Relative level, this session only' },
   });
@@ -50,6 +50,22 @@ describe('arc geometry as rendered (scale 1.0: radius 300, stroke 36, centre 336
     const paths = svgElements(screen.UNSAFE_root, 'Path');
     expect(paths[0]?.props.d).toBe('M 54 504 A 450 450 0 0 1 954 504');
     expect(paths[0]?.props.strokeWidth).toBe(54);
+  });
+});
+
+describe('compact dial on the phrase card (radius 180, stroke 36, centre 216,216)', () => {
+  it('draws a smaller dial so phrase, dial and timer fit one screen', () => {
+    const view = makeView({
+      screen: 'phrase',
+      stage: 'phrase_active',
+      meter: { levelRelDb: 10, bandRelDb: 10, active: true, caption: 'Relative level, this session only' },
+    });
+    const screen = renderView(view);
+    const paths = svgElements(screen.UNSAFE_root, 'Path');
+    expect(paths[0]?.props.d).toBe('M 36 216 A 180 180 0 0 1 396 216');
+    expect(screen.getByTestId('arc-fill').props.d).toBe('M 36 216 A 180 180 0 0 1 216 36');
+    // inner radius 144 -> y 72, outer radius 216 -> y 0
+    expect(screen.getByTestId('arc-band-tick').props.d).toBe('M 216 72 L 216 0');
   });
 });
 
