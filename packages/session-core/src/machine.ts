@@ -64,6 +64,7 @@ export function initialCore(env: Env): Core {
     sub: 'ready',
     banner: null,
     paused: null,
+    restoreFocus: null,
     link: 'offline',
     authed: false,
     roomId: null,
@@ -159,6 +160,7 @@ export class Machine {
     s.sub = sub;
     s.banner = banner;
     s.level = null;
+    s.restoreFocus = null;
     if (stage !== 'paused_or_invalid') s.paused = null;
   }
 
@@ -257,6 +259,7 @@ export class Machine {
       this.bump('inputs_ignored');
       return;
     }
+    if (action !== 'cancel_destructive') this.s.restoreFocus = null;
     this.perform(action);
   }
 
@@ -352,7 +355,10 @@ export class Machine {
         break;
       case 'cancel':
         if (s.win !== null) this.cancelWindow('user_cancel');
-        else this.leaveRequest();
+        else {
+          this.leaveRequest();
+          if (s.dialog !== null) s.restoreFocus = 'cancel';
+        }
         break;
       case 'accept_join':
       case 'reject_join':
@@ -440,12 +446,15 @@ export class Machine {
         break;
       case 'reset_calibration':
         s.dialog = 'reset';
+        s.restoreFocus = action;
         break;
       case 'delete_local_data':
         s.dialog = 'delete';
+        s.restoreFocus = action;
         break;
       case 'unpair_phone':
         s.dialog = 'unpair';
+        s.restoreFocus = action;
         break;
       case 'confirm_destructive':
         this.confirmDialog();
@@ -488,9 +497,10 @@ export class Machine {
   private onBack(): void {
     const s = this.s;
     if (s.dialog !== null) {
-      s.dialog = null;
+      s.dialog = null; // Back on a dialog is Cancel; the control that opened it regains focus
       return;
     }
+    s.restoreFocus = null;
     if (s.overlay !== null) {
       s.overlay = s.overlay === 'settings' ? null : 'settings';
       return;
@@ -556,6 +566,7 @@ export class Machine {
     const s = this.s;
     const kind: DialogKind | null = s.dialog;
     s.dialog = null;
+    s.restoreFocus = null;
     if (kind === 'leave') {
       this.leaveSession();
     } else if (kind === 'delete') {

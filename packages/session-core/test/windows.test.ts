@@ -33,7 +33,47 @@ describe('duplicate input protection', () => {
     expect(h.of('window.stop')).toHaveLength(1);
     expect(h.last('window.stop').payload).toEqual({ reason: 'early_stop' });
     expect(h.view.stage).toBe('phrase_active');
-    expect(h.view.actions.map((a) => a.id)).toEqual(['cancel']);
+    expect(h.view.actions).toEqual([]); // after Stop there is nothing to press; Back still cancels
+  });
+
+  it('no control can be focused before the capture phase, so a repeated OK can never press Cancel; Back still cancels', async () => {
+    const h = await boot();
+    h.setupToPhrases();
+    h.ui('begin_phrase');
+    expect(h.view.actions).toEqual([]); // quiet lead
+    expect(h.view.preferredAction).toBeNull();
+    h.ok();
+    h.ui('cancel'); // not offered: ignored, exactly like a stray press landing on a hidden control
+    h.ui('stop_early');
+    expect(h.view.capturing).toBe(true);
+    expect(h.view.body.join(' ')).toContain('Press Back to cancel');
+    h.advance(1500);
+    expect(h.view.actions).toEqual([]); // precheck
+    h.ok();
+    h.ui('cancel');
+    expect(h.of('window.cancel')).toHaveLength(0);
+    h.answerPrecheck();
+    expect(h.view.actions.map((a) => a.id)).toEqual(['stop_early', 'cancel']); // capture
+    expect(h.view.preferredAction).toBe('stop_early');
+    h.back();
+    expect(h.last('window.cancel').payload).toEqual({ reason: 'user_cancel' });
+  });
+
+  it('the quiet check and calibration windows expose no controls while they run', async () => {
+    const h = await boot();
+    h.startAndPair();
+    h.ui('begin_quiet_check');
+    expect(h.view.actions).toEqual([]);
+    h.advance(1500);
+    expect(h.view.actions).toEqual([]);
+    h.back();
+    expect(h.view.stage).toBe('quiet_check');
+    expect(h.last('window.cancel').payload).toEqual({ reason: 'user_cancel' });
+    h.runQuiet();
+    h.beginAndLead('begin_calibration');
+    expect(h.view.actions).toEqual([]);
+    h.ok();
+    expect(h.of('window.cancel')).toHaveLength(1);
   });
 
   it('disabled actions are ignored: begin is unavailable while the microphone is not open', async () => {

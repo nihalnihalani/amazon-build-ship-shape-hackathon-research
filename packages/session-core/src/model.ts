@@ -4,7 +4,7 @@
  * `Core.credential`, which view.ts never reads).
  */
 
-import type { LinkView, TvInput, TvStage } from './contract.js';
+import type { ActionId, LinkView, TvInput, TvStage } from './contract.js';
 import type { LoadedData, Checkpoint, DeleteResult, Settings } from './storage.js';
 import type { AttemptRecord, EndReason, SessionRecord, VowelRecord } from './records.js';
 import type { MicMode, MicStateName, Outbound } from './wire.js';
@@ -110,6 +110,8 @@ export interface Core {
   sub: Sub;
   banner: Banner | null;
   paused: Paused | null;
+  /** Action that opened a dialog: its control regains focus when the dialog closes. */
+  restoreFocus: ActionId | null;
 
   link: LinkView;
   authed: boolean;

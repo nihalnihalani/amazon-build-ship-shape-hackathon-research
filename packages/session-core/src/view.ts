@@ -127,6 +127,10 @@ export function buildView(s: Core, env: Env): TvView {
   } else {
     v.announcement = announcement;
   }
+  // After a dialog closes, focus returns to the control that opened it.
+  if (s.dialog === null && s.restoreFocus !== null && v.actions.some((a) => a.id === s.restoreFocus && a.disabled !== true)) {
+    v.preferredAction = s.restoreFocus;
+  }
   // The preferred action must exist and be enabled.
   if (v.preferredAction !== null) {
     const preferred = v.actions.find((a) => a.id === v.preferredAction);
@@ -375,7 +379,7 @@ function projectPairing(v: TvView, s: Core, env: Env): string {
     }),
     act('cancel', COPY.pairing.cancel),
   ];
-  v.preferredAction = null;
+  v.preferredAction = 'cancel';
   if (expired) v.body.push(COPY.pairing.expired);
   return `${v.title}. ${status}`;
 }
@@ -451,15 +455,17 @@ function meterFor(s: Core, w: Win): MeterView | null {
   };
 }
 
+/**
+ * Controls during a window. Before the capture phase (quiet lead, precheck) and after Stop there are no
+ * focusable controls: a repeated OK cannot activate Cancel, and Back always cancels. In the capture phase of a
+ * vowel or phrase, Stop (OK) is preferred and Cancel stays labelled and focusable.
+ */
 function captureActions(w: Win, stopLabel: string, cancelLabel: string): { actions: ViewAction[]; preferred: ActionId | null } {
-  const actions: ViewAction[] = [];
-  let preferred: ActionId | null = null;
-  if (w.phase === 'capture') {
-    actions.push(act('stop_early', stopLabel, { hint: COPY.phrase.stopHint }));
-    preferred = 'stop_early';
-  }
-  actions.push(act('cancel', cancelLabel));
-  return { actions, preferred };
+  if (w.phase !== 'capture') return { actions: [], preferred: null };
+  return {
+    actions: [act('stop_early', stopLabel, { hint: COPY.phrase.stopHint }), act('cancel', cancelLabel)],
+    preferred: 'stop_early',
+  };
 }
 
 /* ---- quiet check ---- */
@@ -469,9 +475,9 @@ function projectQuiet(v: TvView, s: Core): string {
   v.title = COPY.quiet.title;
   const open = micOpen(s);
   if (s.win !== null) {
-    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.quiet.running];
+    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.quiet.running, COPY.phrase.cancelHint];
     v.timer = timerFor(s, s.win, COPY.quiet.running);
-    v.actions = [act('cancel', COPY.quiet.cancel)];
+    v.actions = [];
     return v.title;
   }
   if (s.sub === 'failed') {
@@ -499,10 +505,10 @@ function projectCalibration(v: TvView, s: Core): string {
   const open = micOpen(s);
   const hasBand = session !== null && session.calMarginDb !== null;
   if (s.win !== null) {
-    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.calibration.running];
+    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.calibration.running, COPY.phrase.cancelHint];
     v.timer = timerFor(s, s.win, COPY.calibration.running);
     v.meter = meterFor(s, s.win);
-    v.actions = [act('cancel', COPY.phrase.cancel)];
+    v.actions = [];
     return v.title;
   }
   if (s.sub === 'result' && session?.lastCalibration) {
@@ -583,7 +589,7 @@ function projectVowel(v: TvView, s: Core): string {
   const hasBand = session !== null && session.calMarginDb !== null;
   if (s.stage === 'vowel_active' && s.win !== null) {
     v.title = COPY.vowel.running;
-    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.vowel.running];
+    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.vowel.running, COPY.phrase.cancelHint];
     v.timer = timerFor(s, s.win, COPY.vowel.timerLabel);
     v.meter = meterFor(s, s.win);
     const c = captureActions(s.win, COPY.vowel.stop, COPY.phrase.cancel);
@@ -702,7 +708,7 @@ function projectPhrase(v: TvView, s: Core): string {
     };
     v.title = `Phrase ${v.phrase.position} of ${total}`;
     const line = w.phase === 'lead' ? COPY.phrase.lead : w.phase === 'precheck' ? COPY.phrase.precheck : COPY.phrase.running;
-    v.body = [line];
+    v.body = [line, COPY.phrase.cancelHint];
     if (w.hidden) v.body.push(COPY.phrase.blind);
     v.timer = timerFor(s, w, COPY.vowel.timerLabel);
     // Blind windows never get a meter; meterFor enforces it from the window flag, not from level data.

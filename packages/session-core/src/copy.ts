@@ -17,8 +17,12 @@ export const SUMMARY_COPY = {
   incomplete:
     'Incomplete session: it ended early, was interrupted, or was resumed. Do not compare it with completed sessions.',
   noBand: 'No band was set, so results were not scored.',
+  countingRules:
+    'Reached counts use the best valid attempt for each phrase. Blind checks use the first valid attempt, with the meter hidden.',
   listenerOff: 'Listener check was off for this session.',
   noEligible: 'No eligible listener responses',
+  lateNote: 'Late listener responses are listed separately and are not counted in agreement.',
+  borderlineNote: 'Some results were close to the band edge. Their verdicts are kept and counted separately.',
   relativeOnly: 'Levels are relative to the room in this session only. They are not sound pressure levels.',
 };
 
@@ -171,6 +175,7 @@ export const COPY = {
     running: 'Say the phrase now',
     stop: 'Stop now',
     stopHint: 'Press OK to stop early. Back cancels this window.',
+    cancelHint: 'Press Back to cancel this window.',
     cancel: 'Cancel window',
     precheck: 'Checking the room',
     lead: 'Get ready',

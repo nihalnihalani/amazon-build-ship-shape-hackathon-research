@@ -132,7 +132,7 @@ describe('family mode: listener response phase before reveal', () => {
     const s = h.view.summary;
     expect(s?.agreementHidden).toEqual({ agree: 1, eligible: 1 });
     expect(s?.agreementVisible).toEqual({ agree: 2, eligible: 3 });
-    expect(s?.lines.join('\n')).toContain('Meter and listener agreed overall: 3 of 4.');
+    expect(s?.lines.join('\n')).not.toContain('No eligible'); // both groups have eligible attempts
   });
 
   it('ignores listener responses for the wrong session, window or attempt, and for unopened attempts', async () => {

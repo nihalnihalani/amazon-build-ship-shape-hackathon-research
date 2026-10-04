@@ -114,10 +114,6 @@ export function computeAgreement(attempts: readonly AttemptRecord[]): { hidden: 
   return { hidden, visible };
 }
 
-function formatSeconds(ms: number): string {
-  return `${(ms / 1000).toFixed(1)} s`;
-}
-
 /** Counts per ADR-0004. Incomplete sessions are labelled and never compared with complete totals. */
 export function deriveSummary(input: SummaryInput): SummaryView {
   const { attempts, vowels } = input;
@@ -182,53 +178,19 @@ export function deriveSummary(input: SummaryInput): SummaryView {
   }
 
   const agreement = computeAgreement(attempts);
+  // `lines` carries notes and labelling only. Counts, denominators and agreement figures are in the
+  // structured fields, which the UI renders itself; nothing here repeats a count.
   const lines: string[] = [];
   if (!input.complete) lines.push(SUMMARY_COPY.incomplete);
-  lines.push(
-    `Phrases: ${completedPositions.size} completed, ${startedPositions.size} attempted, ${phrasesSkipped} skipped.`,
-  );
-  if (attemptsInvalid > 0) {
-    const detail = Object.keys(invalidReasons)
-      .sort()
-      .map((k) => `${k.replace(/_/g, ' ')} ${invalidReasons[k] ?? 0}`)
-      .join(', ');
-    lines.push(`Not scored: ${attemptsInvalid} attempts (${detail}).`);
-  }
-  if (input.calMarginDb === null) {
-    lines.push(SUMMARY_COPY.noBand);
-  } else {
-    lines.push(
-      `Reached today's relative level band: ${reachedVisible} of ${scoredVisible} phrases (best valid attempt per phrase).`,
-    );
-    lines.push(
-      scoredHidden === 0
-        ? 'Blind checks, first attempt with the meter hidden: none scored.'
-        : `Blind checks, first attempt with the meter hidden: reached ${reachedHidden} of ${scoredHidden} (first valid attempt).`,
-    );
-  }
-  if (scoredHidden > 0 || ratings.feltLoud + ratings.feltNormal + ratings.skipped > 0) {
-    lines.push(
-      `Speaker rating on blind checks: felt loud ${ratings.feltLoud}, felt normal ${ratings.feltNormal}, skipped ${ratings.skipped}.`,
-    );
-  }
+  lines.push(input.calMarginDb === null ? SUMMARY_COPY.noBand : SUMMARY_COPY.countingRules);
   if (input.familyMode) {
-    const total = {
-      agree: agreement.hidden.agree + agreement.visible.agree,
-      eligible: agreement.hidden.eligible + agreement.visible.eligible,
-    };
-    lines.push(describeAgreement('Meter and listener agreed on blind checks', agreement.hidden));
-    lines.push(describeAgreement('Meter and listener agreed on visible attempts', agreement.visible));
-    lines.push(describeAgreement('Meter and listener agreed overall', total));
-    if (lateListenerResponses > 0) {
-      lines.push(`Late listener responses, not counted: ${lateListenerResponses}.`);
-    }
+    if (agreement.hidden.eligible === 0) lines.push(`Agreement on blind checks: ${SUMMARY_COPY.noEligible}`);
+    if (agreement.visible.eligible === 0) lines.push(`Agreement on visible attempts: ${SUMMARY_COPY.noEligible}`);
+    if (lateListenerResponses > 0) lines.push(SUMMARY_COPY.lateNote);
   } else {
     lines.push(SUMMARY_COPY.listenerOff);
   }
-  if (borderlineCount > 0) {
-    lines.push(`Borderline results within 1 dB of the band edge: ${borderlineCount} (verdicts kept).`);
-  }
-  if (longest !== null) lines.push(`Longest voice-activity duration: ${formatSeconds(longest)}.`);
+  if (borderlineCount > 0) lines.push(SUMMARY_COPY.borderlineNote);
   lines.push(SUMMARY_COPY.relativeOnly);
 
   return {
@@ -251,11 +213,6 @@ export function deriveSummary(input: SummaryInput): SummaryView {
     calibrationMarginDb: input.calMarginDb,
     lines,
   };
-}
-
-function describeAgreement(label: string, a: Agreement): string {
-  if (a.eligible === 0) return `${label}: ${SUMMARY_COPY.noEligible}`;
-  return `${label}: ${a.agree} of ${a.eligible}.`;
 }
 
 export function summarizeRecord(record: SessionRecord): SummaryView {

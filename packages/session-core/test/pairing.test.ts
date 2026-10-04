@@ -9,7 +9,8 @@ describe('pairing screen and relay link', () => {
     h.ui('start_session');
     h.transportState('connected');
     h.roomCreated();
-    expect(h.view.preferredAction).toBeNull();
+    expect(h.view.preferredAction).toBe('cancel'); // spec S1: Cancel holds focus
+    expect(h.view.actions.map((a) => a.id)).toEqual(['refresh_code', 'cancel']);
     h.ui('refresh_code');
     expect(h.of('pairing.refresh')).toHaveLength(1);
     h.pairingCode('WXY347');

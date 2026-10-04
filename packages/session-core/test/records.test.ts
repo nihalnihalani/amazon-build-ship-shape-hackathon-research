@@ -56,8 +56,27 @@ describe('agreement (ADR-0004)', () => {
   it('with zero eligible attempts the summary says so instead of showing 0/0', () => {
     const s = deriveSummary({ ...base, attempts: [att({ position: 1 })] });
     expect(s.agreementHidden).toEqual({ agree: 0, eligible: 0 });
-    expect(s.lines.join('\n')).toContain('Meter and listener agreed on blind checks: No eligible listener responses');
+    expect(s.lines.join('\n')).toContain('Agreement on blind checks: No eligible listener responses');
+    expect(s.lines.join('\n')).toContain('Agreement on visible attempts: No eligible listener responses');
     expect(s.lines.join('\n')).not.toContain('0 of 0');
+  });
+
+  it('lines carry notes only: no count, denominator or figure that the structured fields already hold', () => {
+    const attempts = [
+      att({ position: 1, listener: 'heard', borderline: true }),
+      att({ position: 2, verdict: 'not_reached', listener: 'missing', lateListener: 'heard' }),
+      unscored(3, 'no_voice', { hidden: true }),
+    ];
+    const s = deriveSummary({
+      ...base,
+      complete: false,
+      attempts,
+      vowels: [{ windowId: 'w_1', valid: true, reason: null, longestActiveMs: 9100, verdict: null, borderline: false }],
+    });
+    expect(s.borderlineCount).toBe(1);
+    expect(s.lateListenerResponses).toBe(1);
+    expect(s.lines.length).toBeGreaterThanOrEqual(5);
+    for (const line of s.lines) expect(line, line).not.toMatch(/\d/);
   });
 
   it('does not report agreement lines when family mode was off', () => {
