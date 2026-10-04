@@ -4,7 +4,15 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "description": "Cross-component integration and end-to-end tests (local relay + phone page in Chrome + headless TV session core)",
   "scripts": {
-    "test": "echo 'integration tests are added in T12' && exit 0"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.1",
+    "playwright-core": "1.63.0",
+    "ws": "8.18.3"
   }
 }

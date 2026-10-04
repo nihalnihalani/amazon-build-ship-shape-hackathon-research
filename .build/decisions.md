@@ -14,3 +14,4 @@
 | 2026-10-05 | D-010 | Default relative_band with "this session only" caption until T04A; Listener Edition in-product fallback | docs/adr/0009 |
 | 2026-10-05 | D-011 | Native team = implicit session team; teammates are named Agent spawns with model `sonnet`, each reports its resolved model ID; separate git worktrees per teammate; lead is integrator for root manifests/lockfiles/CI | EV-0006 |
 | 2026-10-05 | D-012 | Do not deploy with root credentials; do not install Rosetta or the Vega SDK without owner action (licence acceptance, system change) | B-001, B-003 |
+| 2026-10-05 | D-013 | T05/T06 implementation ran in parallel with the independent review of T02's ADRs (security teammate). Any accepted review finding reopens affected tasks as `rework`; verified status of T05/T06 is conditional on T02 review outcome | .build/task-graph.json |

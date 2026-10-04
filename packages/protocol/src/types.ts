@@ -187,10 +187,11 @@ export interface MicStatePayload {
     sample_rate: number | null;
     channel_count: number | null;
   };
+  /** Revision 3: null means `getSupportedConstraints()` was unavailable (never assume false). */
   supported: {
-    auto_gain_control: boolean;
-    echo_cancellation: boolean;
-    noise_suppression: boolean;
+    auto_gain_control: boolean | null;
+    echo_cancellation: boolean | null;
+    noise_suppression: boolean | null;
   };
   wake_lock: WakeLockState;
   visibility: Visibility;
