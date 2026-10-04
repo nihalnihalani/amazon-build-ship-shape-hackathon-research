@@ -1,0 +1,5 @@
+{
+  "//": "The registered component name must equal the manifest interactive component id (Vega requirement).",
+  "name": "com.acrosstheroom.farsidecheck.main",
+  "displayName": "Across the Room"
+}
