@@ -17,6 +17,8 @@ export const ROOM = 'r_a11yreviewroom0001';
 export const CREDENTIAL = 'A11YCRED0123456789'.padEnd(43, 'x');
 export const PAIRING_CODE = 'ACDEFH';
 export const FLOOR = -50;
+/** The two digits the relay sends and the phone shows. The TV offers them among two decoys (contract rev 2, A3-06). */
+export const CONFIRM_DIGITS = '42';
 
 export interface TvMessage {
   type: string;
@@ -117,12 +119,19 @@ export class ScriptedPhone {
     setTimeout(fn, ms);
   }
 
-  /** The relay tells the TV a phone is asking to join (the test then accepts with the keyboard). */
-  requestJoin(): void {
+  /** Digits of the join request in flight (what the phone would show). */
+  confirmDigits = CONFIRM_DIGITS;
+
+  /**
+   * The relay tells the TV a phone is asking to join. The test then picks the matching number with the keyboard
+   * (number matching, A3-06). All frames are raw text frames built with MessageFactory (PK-09).
+   */
+  requestJoin(digits: string = CONFIRM_DIGITS): void {
+    this.confirmDigits = digits;
     this.sendRelay('join.requested', {
       join_id: 'j_a11yreview00001',
       device_label: 'QA scripted phone',
-      confirm_digits: '42',
+      confirm_digits: digits,
       expires_at: Date.now() + 60_000,
     });
   }

@@ -6,7 +6,7 @@
 - Evidence class of everything below: **automated**. The subject is a pure state machine driven through `createSessionStore` with fakes. This review says nothing about microphone validity, Vega behaviour, VoiceView, AsyncStorage on a real Vega device, or a deployed relay (those are `pending_external`, blocker B-001: no Vega SDK or VVD).
 - Requirement mapping: `docs/evaluation/REQUIREMENTS_EVIDENCE_MATRIX.md` has no requirement text in this checkout, so I mapped by task ownership: R-G1..R-G3 = T13, R-H1..R-H4 = T14, R-J2 and R-ST1 = T11. R-I1/R-I2 are not owned by these tasks and were not reviewed.
 
-## 1. Verdicts
+## 1. Verdicts (original review; the current verdicts are in section 10, Wave 2)
 
 | Task | Verdict | Open defects | Basis |
 |---|---|---|---|
@@ -175,3 +175,80 @@ Use real Vega Virtual Device builds, record the build id, VVD image and date, ke
 5. **Blind attempt on a real phone** (R-G1..G3): confirm nothing about level or verdict reaches the TV UI, VoiceView or the phone UI before reveal (needs the phone and VoiceView passes).
 6. **Listener phase on a real phone** (R-H1..H4): late tap after reveal shows "late, not counted"; 20 s choice; cue cap on the phone UI and the TV.
 7. **Timing:** real wall-clock lead (1.5 s), precheck and capture on the device (the suite uses a fake clock).
+
+## 10. Wave 2: re-review at the integrated commit (`7785c45`: session-core rework `2864603`, contract revision 2, AMENDMENTS-REV2, protocol revision 4)
+
+Evidence class: **automated** (pure state machine through `createSessionStore` with fakes). Same limits as section 6.
+
+### 10.1 Updated verdicts
+
+| Task | Verdict | Open defects (all Low) |
+|---|---|---|
+| T13 hidden meter, blind positions, retries, A4-01/02/03 | **accept** | none |
+| T14 listener phase, reveal lock, late answers, cues, agreement, A4-04/05/06 | **accept-with-defects** | QA-12, QA-12b (cue announcements) |
+| T11 storage, resume, deletion, retention, A5-01/03/04/05 | **accept-with-defects** | QA-10, QA-11, QA-13 |
+
+No Blocker, no High, no Medium is open in these three tasks. The earlier High (QA-09) and both Mediums (QA-02, QA-03) are fixed and verified.
+
+### 10.2 Status of every earlier defect
+
+| Id | Was | Now | Evidence |
+|---|---|---|---|
+| QA-01 | Low, ADR names `meter_visibility: visible_retry` | **resolved by decision** | AMENDMENTS-REV2 row QA-01: no such field; a retry is `attemptNumber > 1` and `hidden === false`. The test now reads the amendments and checks the view, the stored record and the wire. Info: the body of ADR-0004 still contains the stale sentence; its header says the amendments override it. |
+| QA-02, QA-02b | Medium, crash between record and checkpoint clear | **fixed** | the checkpoint of a finished session is dropped on launch (also after a crash right after the record write, and for a session the speaker ended early); Discard cannot overwrite a finished record |
+| QA-03 | Medium, `session.end` lost with the link down | **fixed** | queued, never attempted into a dead socket, delivered once and in order after `auth.ok`; waits for the phone when only the phone is gone; dropped when the relay ends the pairing. The evidence line was re-derived: `wire.dropped` is empty and `window.cancel` precedes `session.end`, each exactly once, also across a second reconnect |
+| QA-04 | Low, bank shrinks under the cursor | **fixed** | a skip freezes the bank (`next_session`); a resume clamps to the saved bank |
+| QA-05 | Low, phone can infer blind positions | **fixed (ruling)** | the phone sees only `phrase_active` from capture start to the next `phrase_ready`; `listener.open` is the explicit signal |
+| QA-06 | Low, stale checkpoint kept | **fixed (A5-03)** | kept at exactly 12 h, discarded 1 ms later, no prompt |
+| QA-07 | Low, record write failure cleared the checkpoint | **fixed** | the checkpoint is kept, an error is shown, the next launch offers Resume |
+| QA-08 | Low, no `silent_input` copy | **fixed** | "The phone microphone looks muted or blocked." on the failed quiet check and the paused screen |
+| QA-09 | High, `next_credential` ignored | **fixed** | the second reconnect presents the rotated credential; a relay `revoked` drops the room with "Pairing may be compromised. Pair again." |
+
+### 10.3 New defects (all Low), each with an `it.fails` repro in `tests/review/session-core.review.test.ts`
+
+Repro: `cd tests && QA_STRICT=1 npx vitest run --config review/vitest.config.ts -t "QA-12"`.
+
+- **QA-10 (T11): a session record dated far in the future is never pruned.** Repro: a record with `endedAt` 400 days ahead survives launch. Expected: an implausible `endedAt` is invalid, or retention clamps it; "minimize retention". Observed: kept (`endedAt < cutoff` is never true), so a TV clock set wrong and later corrected keeps such records for as long as the clock error. Fix: treat `endedAt` or `startedAt` more than about a day ahead of `now` as invalid (A5-05) or prune it.
+- **QA-11 (T11): a calendar-invalid `localDate` is accepted and shown.** Repro: `localDate: "2026-13-45"`. Expected: rejected like any other invalid value ("could not be read", A5-05). Observed: accepted; Home says "Last session, 2026-13-45". The shape check is digits-only. Fix: validate it as a calendar date.
+- **QA-12 (T14, announcements): a cue chip replaces the next screen's announcement.** Repro: reveal, a cue arrives, Next phrase within the 3 s chip. Expected: the new screen is announced (the cue may be added). Observed: `announcement` is only "Cue: zebra" (`view.ts`: `base = cue !== null ? COPY.cue(...) : announcement`). It recovers when the chip expires, so a screen-reader user hears the screen late and after the cue. Fix: announce the stage text and append the cue.
+- **QA-12b (T14, announcements): a cue held during a blind attempt is announced twice at the reveal** ("Cue: zebra Cue: zebra New phrases saved..."): the chip text plus the queued copy.
+- **QA-13 (T11, copy): the resume prompt says "1 phrases were attempted".** Not fixed in the rework (the earlier note in OBS-2). Fix: singular form.
+
+### 10.4 What was re-verified, with independent expectations (all `automated`)
+
+`tests/review/rig.ts` now picks the choice that equals the digits the relay sent (`pickJoin`), sends raw text frames only, builds measurement frames that satisfy the TV's own re-validation (calibration reports 6000 ms, not 8000), and has helpers for the a11y input, `forge`, `relayObject`, `relayBinary`, `seededSettings`. 163 tests after this section (158 pass + 5 expected-fail repros).
+
+| Area | What the new tests check |
+|---|---|
+| A3-06 number matching | three distinct two-digit choices containing the real digits across 60 random sources, the real one lands in every position, digits 00/07/99/10 work; actions are `pick_choice_1..3` then Reject, Reject preferred, `accept_join` is ignored; no confirm-digit key or marker in any view; the right pick sends `accept`; **a wrong pick (either decoy) sends reject, burns the code (no code or QR until a fresh `pairing.code`) and says "That number did not match. Pair again."**; OK and Back reject; the device name is shown as "Name the phone gave: ..."; a second join request is refused without disturbing the first |
+| PK-09 raw wire | a parsed object or a binary frame is refused (unparseable counter), the same frame as text is accepted |
+| A8-02 screen reader | `{kind:'a11y'}`: lead 3000 ms (2999 sends nothing), the scripts for quiet check, calibration, sustained sound and phrase, "wait four seconds" follows a configured lead, configured leads honoured and out-of-range ignored, a window already in its lead keeps it |
+| A4-01 | for a blind first attempt, windows the phone reports as `no_voice`, `low_coverage`, `clipped`, `continuous_sound`, and a TV-local integrity failure, all wait behind the same prompt: **every view from Begin to the prompt and the TV-to-phone traffic are byte-identical to a valid result**, in speaker-only and family mode; "Not scored" and its reason appear only after the rating; `interrupted`, Back, link loss and a precheck timeout keep the immediate path |
+| A4-02, A4-03 | the checkpoint has no verdict, reason, timing, rating or listener answer for an unrevealed attempt; Settings, History, About and Diagnostics are not offered between capture close and reveal and the leave dialog still works |
+| A4-04, A4-05 | Keep waiting re-sends `listener.open` for the same attempt; Continue without sends `attempt.reveal` once and at once, also while a blind rating is missing; first on-time answer wins; later answers are `rejected/already_answered`; an answer after reveal or after "continue without" (including before the rating) is stored late (`applied/late`) and a second one is rejected; unsolicited answers get `ignored_stale` with an empty detail |
+| A3-07 | a `peer.state` with a new generation mid-capture cancels the window (`interrupted`), mic unknown, "Phone reconnected."; the same generation does not; `revoked` drops the room, closes the transport, the session loses its band and a fresh room is created; other ending errors give the generic text; a non-ending error does not leave the screen |
+| A5 | records, index and checkpoint hold no phrase text, cue text or device label; 12 h checkpoint boundary; 13 kinds of invalid stored value are ignored and counted while a valid record still loads, Home offers deletion; write order and crash windows; 8-day retention boundary (8 days kept, 8 days + 1 ms pruned, prunes only on launch); delete sends `unpair` then `room.close`, "in progress", "confirmed" when the relay closes the connection, "not confirmed" at exactly 5000 ms or at once with no live link, and no reconnect creates a room or presents a credential |
+| A9-02 | default `not_run` labels end with " (unqualified phone)"; `passed` has no suffix; `failed` or `listener_edition` forces the listener check, shows no band verdict or tick, labels the result with the listener's answer and the summary states it and lists the answers |
+| A8-01 | a banner appearing while a window is open is visible but not announced and is announced with the next stage; for a blind attempt cue and banner text is held until the reveal; after a phone reconnect `session.state` re-states the open listener attempt |
+| About | the privacy statements required by A2-02, A2-03 and A5-04 are present |
+
+### 10.5 Test sensitivity
+
+Single-line mutants applied to a copy of `dist` (never to source): the earlier set again plus 10 new ones (queue disabled, queue re-sending, a wrong pick accepting, stale checkpoint kept, no 12 h discard, hidden invalid windows taking the immediate path, 30-day retention, announcements while capturing, both meter layers removed, blind cue hold removed). All 10 new mutants are killed. Of the earlier set, 20 are killed; the 4 survivors are the same equivalent mutants as before (single layers of redundant guards: the meter guard and the mic-unknown logic), and the two anchors that no longer exist were replaced by the new announcement and meter mutants. One wave 2 mutant initially survived (late answer after "continue without" while a blind rating is missing); I added the missing test and it is killed.
+
+### 10.6 Commands (UTC 2026-10-04 23:15Z to 23:50Z, commit `7785c45`)
+
+| Command | Exit | Result |
+|---|---|---|
+| `npm test -w @atr/tests` | 0 | 163 tests: 158 pass + 5 expected-fail repros (QA-10, QA-11, QA-12, QA-12b, QA-13) |
+| `QA_STRICT=1 npx vitest run --config review/vitest.config.ts` (`tests`) | 1 | exactly those 5 fail, each for its intended reason |
+| `npm run typecheck -w @atr/tests` | 0 | no type errors |
+| `npx vitest run` (`packages/session-core`, owner suite) | 0 | 20 files, 305 tests |
+| `npx vitest run` (`packages/protocol`) | 0 | 14 files, 921 tests |
+| `npx jest --silent` (`apps/tv`) | 0 | 18 suites, 374 tests |
+| `npm run test:a11y -w @atr/tests` | 0 | 49 tests: 42 pass (including 2 expected-fail repros) + 7 skipped (store-mode groups, see the a11y document) |
+
+### 10.7 Not covered, still `pending_external`
+
+Everything in section 6 and the VVD checklist in section 9 stays, plus: real AsyncStorage partial-failure behaviour for `multiRemove` during pruning and deletion, VoiceView behaviour for the A8-01 hold and the A8-02 script, and the relay's side of number matching and rotation (not reviewed here).
+
