@@ -646,6 +646,14 @@ export class Machine {
     return id;
   }
 
+  /** window_id is unique per measurement: never reuse one that a precheck, capture or recorded attempt already carried. */
+  private freshWindowId(sess: Session, current?: string): string {
+    return this.freshId(
+      'w_',
+      (id) => id === current || sess.attempts.some((a) => a.windowId === id) || sess.vowels.some((v) => v.windowId === id),
+    );
+  }
+
   private startSession(): void {
     const s = this.s;
     s.session = this.newSession([...s.phraseBank], s.settings.familyMode);
@@ -1253,7 +1261,7 @@ export class Machine {
     const w: Win = {
       kind,
       phase: 'lead',
-      windowId: this.freshId('w_', (id) => sess.attempts.some((a) => a.windowId === id) || sess.vowels.some((v) => v.windowId === id)),
+      windowId: this.freshWindowId(sess),
       attemptId: this.freshId('a_', (id) => sess.attempts.some((a) => a.attemptId === id)),
       leadUntil: s.now + QUIET_LEAD_MS,
       precheckAt: null,
@@ -1375,6 +1383,9 @@ export class Machine {
     const s = this.s;
     const sess = s.session;
     if (!sess) return;
+    // A precheck and the capture that follows it are two measurements: the capture gets its own window_id and
+    // keeps the attempt_id. The phone treats window ids as single-use, and stale filtering is per window_id.
+    if (w.precheckAt !== null) w.windowId = this.freshWindowId(sess, w.windowId);
     w.phase = 'capture';
     w.captureAt = s.now;
     this.send({
@@ -1390,6 +1401,7 @@ export class Machine {
     if (w.kind === 'phrase') {
       const a = sess.attempts.find((x) => x.attemptId === w.attemptId);
       if (a) {
+        a.windowId = w.windowId;
         a.started = true;
         a.state = 'capturing';
       }
