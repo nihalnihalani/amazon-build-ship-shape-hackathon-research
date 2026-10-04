@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T03:49:56+05:30",
+ "updated_at": "2026-10-05T03:50:01+05:30",
  "states": [
   "pending",
   "ready",
@@ -347,7 +347,7 @@
     "T05"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "blocked_external",
    "attempts": 1,
    "acceptance_criteria": [
     "RN for Vega app with screens, focus, Back handling, scaling",
@@ -361,8 +361,8 @@
    "evidence_refs": [
     "EV-0014"
    ],
-   "commit": null,
-   "blocker": "Native render part blocked by B-001; code + typecheck + jest proceeding"
+   "commit": "e4b87ea",
+   "blocker": "Code, typecheck and jest verified (EV-0014); native build/VVD render/doctor/vpt pending B-001"
   },
   {
    "id": "T10",
