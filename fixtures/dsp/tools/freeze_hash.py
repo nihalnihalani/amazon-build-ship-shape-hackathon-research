@@ -3,10 +3,12 @@
 
 The "protocol + criteria" freeze hash is the SHA-256 of two lines, one per frozen file:
 
-    <sha256 of docs/evaluation/T04-protocol.md>  docs/evaluation/T04-protocol.md
+    <sha256 of docs/evaluation/T04-protocol.md up to the Approval block>  docs/evaluation/T04-protocol.md
     <sha256 of packages/phone-mic-meter/src/qualification.ts>  packages/phone-mic-meter/src/qualification.ts
 
-(each line ends with a newline). The lead records the commit SHA and this hash in
+(each line ends with a newline). The protocol is hashed WITHOUT its trailing "## Approval block"
+section (everything from the line "## Approval block" on is excluded), so that filling in the
+reviewer, the date and the approving commit does not change the frozen content. The lead records the commit SHA and this hash in
 .build/evidence.jsonl before the first trial. Run from anywhere inside the repository.
 """
 import hashlib
@@ -18,9 +20,18 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 FILES = ["docs/evaluation/T04-protocol.md", "packages/phone-mic-meter/src/qualification.ts"]
 
 
+APPROVAL_MARKER = b"\n## Approval block"
+
+
 def sha256_file(path):
     with open(os.path.join(ROOT, path), "rb") as fh:
-        return hashlib.sha256(fh.read()).hexdigest()
+        data = fh.read()
+    if path.endswith("T04-protocol.md"):
+        cut = data.find(APPROVAL_MARKER)
+        if cut == -1:
+            raise SystemExit("the protocol has no '## Approval block' section")
+        data = data[: cut + 1]  # keep the newline that ends the last frozen line
+    return hashlib.sha256(data).hexdigest()
 
 
 hashes = {f: sha256_file(f) for f in FILES}

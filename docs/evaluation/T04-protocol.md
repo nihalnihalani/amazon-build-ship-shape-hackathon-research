@@ -14,8 +14,9 @@
 **Freeze rule.** No trial may start before (a) the Approval block at the end is filled in with the
 reviewer and the approving commit, and (b) the lead has recorded, in `.build/evidence.jsonl`, the
 **commit SHA and the SHA-256 of this protocol plus its criteria** (A9-04). Print the values with
-`python3 fixtures/dsp/tools/freeze_hash.py` (it hashes this file and `qualification.ts` and prints a
-combined hash and a ready-to-paste evidence line; it writes nothing). After that this document and
+`python3 fixtures/dsp/tools/freeze_hash.py` (it hashes this file up to, not including, the Approval block, so that filling in the
+Approval block does not change the frozen content, and `qualification.ts`, and prints a combined hash
+and a ready-to-paste evidence line; it writes nothing). After that this document and
 `qualification.ts` are read-only. A change (a threshold, a level, a trial, a stimulus, a criterion)
 creates revision 3 through an ADR amendment that keeps the original criteria and any failing
 result; data collected under revision 2 stays labelled revision 2. Criteria are never changed after
