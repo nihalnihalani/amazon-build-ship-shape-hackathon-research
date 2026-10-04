@@ -1,0 +1,341 @@
+{
+ "features": [
+  {
+   "concept": "FTV-4",
+   "name": "Felt-versus-reached check ('How loud did that feel?')",
+   "what_it_does": "When a phrase window closes, the TV asks 'How loud did that feel?' before it shows the verdict. Up means loud, Down means about normal, OK skips. The far-side verdict then appears next to the person's own rating. The session summary and the caregiver export gain two counts, 'Felt normal but reached the far side' and 'Felt loud but did not reach', plus a 7-day trend of the first count.",
+   "user_value": "Each phrase becomes a check of the person's own sense of loudness against what actually reached the listener's seat. That is the gap clinicians describe: a normal loudness feels too loud to the speaker. The household can watch the gap over the week, and no clinical claim is made. This answers the 'is it just a dB meter?' question.",
+   "research_evidence": [
+    "Breatheworks clinic article (updated 2023-08-12): therapy aims to make the speaker's felt loudness match what is actually audible, and a normal loudness often feels too loud at first. https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "JMIR 2025 smartphone voice-training study: its authors could not assess whether gains carried over into real-life communication. https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+    "Speak Up For Parkinson's App Store listing: the incumbent is an arm's-length volume meter, and nothing compares what the speaker felt with what a listener received. https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+    "Inference: no reviewed rival pairs a self-rating with a listener-position measurement, but the market was not scanned exhaustively."
+   ],
+   "judging_criterion_helped": "Quality of the Idea (primary); Potential Impact; Design",
+   "tier": "core-upgrade",
+   "hours_estimate": 4,
+   "fits_where_in_plan": "It changes the section 7.7 state machine, so design it on Thu 8 Oct right after the 20:00 IST gate passes. Build it Fri 9 to Sun 11 Oct alongside the D4 screens so it appears in the Wed 14 Oct K4 unedited take. It takes about 4 of the roughly 6 h of slack (the plan already uses 98 of about 104 h). All hours are unmeasured estimates.",
+   "risks_and_rule_issues": "Keep the copy as practice support. Do not use 'recalibrate', 'therapy', 'treatment' or any programme name, and add these words to the K5 grep over copy.ts. Do not paste clinic wording into the UI. The extra press adds roughly 10-20 s per session (estimate), so make it a Settings toggle that defaults to on. The rating is self-report: it never changes the meter verdict and never leaves the TV.",
+   "implementation_notes": "The change is TV-only; the relay is untouched. Add a sub-state phrases.card[i].rate between window_result and the verdict reveal. Compute the verdict but keep it hidden so the rating is not anchored, and add no timeout, per AC-2.4. Add felt: 'loud' | 'normal' | null to the phrase-attempt record (section 6.1, AsyncStorage). Add two counters to S5 (section 2.1 step 11) and to the phone export text. New copy keys: phrase.felt.prompt, summary.feltNormalReached, summary.feltLoudMissed, settings.askFelt. Jest tests cover reducer transitions, the skip path and summary counts on fixtures. In the video, show one phrase rated 'about normal' that reached the far side, and narrate that as the key moment.",
+   "real_or_simulated": "Real on the VVD. The 7-day trend keeps the existing '7-day chart: sample data' caption if fewer than seven dated sessions exist by filming."
+  },
+  {
+   "concept": "FTV-4",
+   "name": "Honest mic-state badge and a numbers-only line",
+   "what_it_does": "A small badge on S2-S5 states exactly what the phone microphone is doing. It reads 'Measuring' only while a window is open and samples are arriving, 'Mic open, not measuring' between windows, and 'Mic off' after the summary, when the phone stops its audio track. The pair screen and the phone page carry one line: 'Only numbers leave the phone. No sound is recorded or sent.'",
+   "user_value": "The household can see the room microphone's state and has reason to trust it. This answers the unease people report about always-on microphones, and it shows judges the no-audio design within the first seconds of the video.",
+   "research_evidence": [
+    "fenado.ai summary of a TechCrunch Bee hands-on: the reviewer was intrigued but uneasy about surveillance from an always-on mic. https://fenado.ai/articles/amazons-bee-wearable-sparks-intrigue-and-privacy-concerns-techcrunch-reports",
+    "Sam Julien, early Bee user (Mar 2025, outside the window): speaker-detection bugs and social awkwardness of an always-listening wearable. https://www.samjulien.com/bee-first-impressions/",
+    "About Amazon Bee page: 'no audio is ever stored' is already the baseline privacy claim in Amazon's own wearable. https://www.aboutamazon.com/news/devices/bee-amazon-wearable-ai-device-new-features",
+    "AFTVNews and Triple M: Vega allows no sideloading, so all pairing and mic state must live inside the Vega app and the phone page (inference from the lockdown). https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/"
+   ],
+   "judging_criterion_helped": "Design (also Potential Impact through trust)",
+   "tier": "core-upgrade",
+   "hours_estimate": 1,
+   "fits_where_in_plan": "Build it Fri 9 Oct with S2-S4 so it appears in the Wed 14 Oct K4 take. With the felt-versus-reached check, core-upgrades come to about 5 h, inside the roughly 6 h slack (estimate).",
+   "risks_and_rule_issues": "The badge must be literally true. If the phone keeps getUserMedia open for the whole session, the badge must say 'Mic open', never 'off'. The phone page must send sample frames only between start_window and stop_window, and must call track.stop() at session end; check this against the section 4.2 phone responsibilities before filming. Use no third-party recording-indicator iconography.",
+   "implementation_notes": "Derive the badge from the existing mic_state message and the TV window state. Add one TV-to-phone message, end_session, which adds one type to the section 5.2 relay allow-list; it makes the phone stop the MediaStreamTrack and release the Wake Lock. Add a phone-module jest test that no sample is emitted outside a window. New copy keys: pair.privacy, badge.measuring, badge.open, badge.off.",
+   "real_or_simulated": "Real."
+  },
+  {
+   "concept": "FTV-4",
+   "name": "One-cue listener with a meter/listener agreement count (family mode reshaped)",
+   "what_it_does": "This reshapes the planned family-mode control. The listener's phone shows Heard, Not heard and one cue button whose word the household picks once (default 'Volume'). Cues are capped at 3 per session. The TV shows a cue as a small neutral chip ('Cue from Rohan: Volume'), never as a failure. The summary adds 'Meter and listener agreed on N of M'.",
+   "user_value": "The partner can help without becoming the household 'speech police'. The listener also gives a human 'understood' signal next to the meter, which is the honest answer to whether the words were understood 3 m away. The agreement count gives judges a visible validity check on the measurement.",
+   "research_evidence": [
+    "Breatheworks: caregivers should support communication without policing it, using one agreed cue instead of repeated corrections. https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "Tactus Therapy (2019): partners can be trained to give appropriate cues. https://tactustherapy.com/parkinsons-disease-pd-improve-speech-therapy/",
+    "LSVT Global Patients & Family page: some people need reminders and help, while independence is also valued, so help should stay light-touch. https://www.lsvtglobal.com/Patients_Family",
+    "Spec section 2.2 already concedes that one far microphone cannot separate two voices with RMS alone. A human listener verdict is the existing mitigation, and this feature makes it count (inference)."
+   ],
+   "judging_criterion_helped": "Design; Technical Implementation (agreement rate as visible measurement validity)",
+   "tier": "core-upgrade",
+   "hours_estimate": 2,
+   "fits_where_in_plan": "Family mode is already scheduled Thu 15 to Sat 17 Oct, after K4. Do the reshape there, before the Mon 19 Oct feature freeze. Fund the extra 2 h (estimate) by moving 'Polly prompts (-2 h)' ahead of 'family mode controls (-3 h)' in the K4 cut order. Family mode deserves the protection because it is also the core of the FTV-4F fallback and the human 'understood' signal.",
+   "risks_and_rule_issues": "Household members must agree to act as the listener, and verdicts stay on the TV. Never present agreement as a clinical intelligibility score. The cue cap and neutral styling prevent a nagging dynamic. In the video, credit the listener as a family member or volunteer, never as a patient.",
+   "implementation_notes": "Reuse the existing verdict message with verdict:'cue', so the relay allow-list does not change. Phone P3 gains a 'Cue word' field (1-12 characters, plain text), and P4's 'Repeat' becomes the cue button, disabled after 3 cues with the note 'Cues used for today'. On the TV, show the chip for 3 s, announced with aria-live polite. Agreement counts windows where the listener's heard/not heard matches the meter's reached/not reached, over windows that have both. Add a jest test for the agreement function and the cap.",
+   "real_or_simulated": "Real (a second person in the room with their own phone)."
+  },
+  {
+   "concept": "FTV-4",
+   "name": "'Why this result' evidence drawer",
+   "what_it_does": "After a phrase, pressing Down to 'Why?' and then OK opens an overlay with the numbers behind the verdict. It shows the far-mic level above room noise (p95), today's band and the time it was set, the rule in plain words ('reached = level at least band minus 1 dB'), the room-noise status, frames received and dropped, and the relay latency estimate. S5 gains a 'How these numbers were made' row.",
+   "user_value": "The household and judges can see that the verdict is a measurement with stated limits, not a guess. It puts the deterministic, no-LLM design on screen.",
+   "research_evidence": [
+    "AngelHack organiser playbook (2026-06-08): without a framework, judges reward slick demos. The recommended fix is to judge trace logs and agent metrics. https://angelhack.com/blog/ai-agent-hackathon/",
+    "Still Here entrant demo: outgoing text is checked against evidence, and the model cannot invent a value. Evidence-bound output is now a judge-visible norm. https://www.youtube.com/watch?v=cAnbiR2ndcw",
+    "Solo.io 2026 MCP hackathon winners: judges explicitly credited observable execution. https://www.solo.io/blog/celebrating-the-winners-of-the-2026-hackathon-for-mcp-ai-agents"
+   ],
+   "judging_criterion_helped": "Technical Implementation",
+   "tier": "stretch",
+   "hours_estimate": 3,
+   "fits_where_in_plan": "After K4, Thu 15 to Sat 17 Oct, and only once the core-upgrades and family mode are done. It must be finished by the Mon 19 Oct feature freeze, and it is the first stretch item to drop.",
+   "risks_and_rule_issues": "Label every dB value 'dB above room noise (relative)', never a sound pressure level, in line with the spec's no-absolute-SPL rule. The overlay opens only after a window closes, so it can never overlap a measurement.",
+   "implementation_notes": "No new data is needed: the values already arrive in window_result and calibration (section 5.2), and the latency estimate already exists. Add overlay O4 with a focus trap and copy keys why.*. Reuse the screenshots in EVALUATION.md and the README verified-vs-labelled table.",
+   "real_or_simulated": "Real."
+  },
+  {
+   "concept": "FTV-4",
+   "name": "Starter phrase sets and weekly rotation",
+   "what_it_does": "The app ships about 40 starter household phrases written by the team, grouped as names and calls, mealtimes, phone-call openers and asking across the room. On the phone page the family picks sets and adds its own. The stored bank grows from 10 to 30 phrases. The TV draws 10 per session in a date-seeded order, so no phrase repeats within a week while the bank is large enough.",
+   "user_value": "This answers a speech-language pathologist's published complaint that the main free app's phrase bank is far too small. Daily practice stays fresh, and a judge or first-time user can start without typing.",
+   "research_evidence": [
+    "Speak Up For Parkinson's review by a user titled 'Speech Therapist' (2015): the phrase bank is far too small and the target is wrong at real mic distance. https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+    "Same listing, 2025 review titled 'Too Basic': very limited for early-stage users. https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+    "JMIR 2025 study app: varied feedback each time was a deliberate design choice. https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+    "Sierra Speech home workout video (2017, 205,605 views): evergreen demand for screen-led home practice. This is weak, old evidence and not a trend. https://www.youtube.com/watch?v=Dy2l7qLXhyA"
+   ],
+   "judging_criterion_helped": "Design; Potential Impact",
+   "tier": "stretch",
+   "hours_estimate": 3,
+   "fits_where_in_plan": "Thu 15 to Sun 18 Oct (Sunday is the buffer day), before the 19 Oct freeze. The starter set alone (about 1 h) can go in earlier if the fixture-replay judge route needs phrases without typing.",
+   "risks_and_rule_issues": "Write every phrase from scratch. Do not copy exercise lists or wording from any clinical programme or app (trademark and copyright, K5). Keep phrases neutral and non-medical. AC-4.1's 10-phrase limit becomes 30, so check the relay's 4 KB payload rule: 30 phrases of 60 characters is about 1.8 KB plus JSON (estimate).",
+   "implementation_notes": "Add starterPhrases to copy.ts. The phrases message carries up to 30 items; update the savePhrases limits (section 7) and the section 5.2 validation. Rotation: sort by hash(phrase + ISO week), skip phrases used in the last 7 days according to AsyncStorage history, and take 10. Add a jest test for rotation determinism.",
+   "real_or_simulated": "Real."
+  },
+  {
+   "concept": "FTV-4",
+   "name": "On-device words check, a machine listener in beta (the speech-recognition decision)",
+   "what_it_does": "This is an optional second signal after each phrase. An offline recogniser runs inside the phone browser on the same far-mic stream and reports how many of the phrase's words it recognised, for example 'Words matched: 4 of 5 (on-device recogniser)'. It never changes 'Reached the far side': loudness stays the verdict, and the human listener stays the judge of 'understood'. DECISION: do not redefine 'reached' as 'understood at 3 m' for this hackathon. Reject cloud recognition. Keep on-device recognition as post-hackathon, with an optional go/no-go spike.",
+   "user_value": "It moves toward 'the words were understood 3 m away' without any audio leaving the phone. That keeps the 'numbers only' thesis that sets the product apart from always-on recorders.",
+   "research_evidence": [
+    "MDN SpeechRecognition.processLocally page (verified by this designer on 4 Oct): Chrome desktop 139+ supports on-device processing, Chrome Android shows 'No support'. On the Android far-mic phone, the Web Speech API would therefore use the browser vendor's server, i.e. audio leaves the phone. https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition/processLocally",
+    "Web Speech API draft (verified 4 Oct): defines start(MediaStreamTrack), so in principle a recogniser could share the AGC-off track. Support on Chrome Android is unverified. https://webaudio.github.io/web-speech-api/",
+    "Vosk models page (verified 4 Oct): vosk-model-small-en-us-0.15 is 40 MB, Apache 2.0, WER 9.85 on LibriSpeech clean, and described as for Android. vosk-model-small-en-in-0.4 is 36 MB with WER 49.05 on NPTEL, which is poor for Indian-English speakers. https://alphacephei.com/vosk/models",
+    "vosk-browser (WebAssembly Kaldi in the browser, fed from getUserMedia). https://github.com/ccoreilly/vosk-browser",
+    "Amazon Transcribe FAQ (verified 4 Oct): voice inputs may be stored and used to improve Amazon AI services unless an AWS Organizations AI services opt-out policy is set. https://aws.amazon.com/transcribe/faqs/",
+    "Bee privacy complaints (TechCrunch via fenado.ai): sending room audio to a cloud is exactly what users find creepy. https://fenado.ai/articles/amazons-bee-wearable-sparks-intrigue-and-privacy-concerns-techcrunch-reports",
+    "Inference (general ASR knowledge, not researched here): recognition accuracy falls with distance, reverberation and atypical or dysarthric speech. A machine miss may reflect articulation, accent or the model rather than loudness, so it is not a valid stand-in for a human listener."
+   ],
+   "judging_criterion_helped": "Technical Implementation; Quality of the Idea (only if built and measured)",
+   "tier": "post-hackathon",
+   "hours_estimate": 10,
+   "fits_where_in_plan": "It is not in the 98 h plan and does not fit the roughly 6 h slack. An optional 2 h spike on Thu 15 Oct makes sense only if the Wed 14 Oct K4 take passed and D7 Open Source is ahead of schedule. Adopting it would mean cutting the Open Source publication (-7 h) and Polly (-2 h), which the plan protects or ranks above it. Otherwise it gets one README roadmap line and stays out of the video. Never introduce it after the Mon 19 Oct feature freeze.",
+   "risks_and_rule_issues": "PRIVACY: on-device processing keeps audio on the phone. The only network traffic is a one-time 40 MB model download, which must come from the project's own CloudFront origin, not a third-party CDN. Transcripts are discarded after scoring and only counts are sent. Cloud options are rejected for the demo. Chrome Android Web Speech sends audio to the vendor, an undisclosed third party. Amazon Transcribe would upload audio to AWS, where it may be retained for service improvement without the Organizations opt-out, and it breaks the 'no audio leaves the phone' line. If either is ever offered, it must be opt-in per session, disclosed on both TV and phone, and run with the AI opt-out policy applied. MEDICAL: 'understood' sounds like an intelligibility assessment, so label it 'words matched by an on-device recogniser, not a hearing or speech test' and keep it out of the verdict. BIAS: the small en-US model may underperform on the developer's own accent, and the small en-IN model's published WER is 49 percent. CAPACITY and THERMAL: WASM decoding alongside the 20 Hz analyser and WebSocket on a mid-range phone is unmeasured.",
+   "implementation_notes": "Use vosk-browser with vosk-model-small-en-us-0.15, self-hosted and cached in Cache Storage. Run a second AudioWorklet branch off the same AGC-off MediaStream, with a GainNode on the recogniser path only so the measurement path is untouched, resampled to 16 kHz. Use free decoding, not a grammar limited to the phrase list, because a restricted grammar inflates matches. After stop_window, normalise and compare words to the known phrase, then send {type:'word_match', win, matched, total, engine:'on-device'}; this adds one type to the section 5.2 allow-list. The TV shows a secondary chip only. Spike pass criteria: on the developer's voice at 3 m, 10 phrases each spoken soft, normal and loud, the matched fraction must rise with level, and results must arrive within 2 s of window end on the Android phone. If matches stay high when soft, the signal does not discriminate loudness, so drop it.",
+   "real_or_simulated": "Real if built: on-device, captioned 'beta, on-device recogniser, not a hearing or speech test'. It must not appear in the demo unless built and measured; never mock it."
+  },
+  {
+   "concept": "FTV-3",
+   "name": "AI-services opt-out applied and truthful delete wording",
+   "what_it_does": "Before any real capture, put the hackathon AWS account under an AWS Organizations AI services opt-out policy, so Textract (and Polly, if 'Hear it' ships) cannot keep document images for service improvement. Verify it with describe-effective-policy and record the output in the friction log and README. Rewrite the delete confirmation so it claims only what the system controls.",
+   "user_value": "The spec's delete screen currently says 'Deleted. Nothing about this letter is kept.' (section 2.1 step 9). The Textract FAQ says inputs may be stored and used for service improvement unless the opt-out policy is set. Without the opt-out, the product's central privacy promise to a low-vision person handling bills would be untrue.",
+   "research_evidence": [
+    "Amazon Textract FAQ (verified by this designer on 4 Oct; page updated 2026-09-25): document and image inputs may be stored and used to improve Textract and other Amazon AI technologies, and an AWS Organizations opt-out policy stops that use. https://aws.amazon.com/textract/faqs/",
+    "AWS Organizations AI services opt-out policies documentation. https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_ai-opt-out.html",
+    "AAO, quoting Be My Eyes guidance: do not have volunteers read mail with your address or financial details. Mail privacy is the known blocker. https://www.aao.org/eye-health/tips-prevention/low-vision-impairment-apps-tech-assistive-devices",
+    "Disability World (2026-05-30): streaming your view to a cloud model exposes everything in frame. https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/"
+   ],
+   "judging_criterion_helped": "Potential Impact (trust); Technical Implementation (AWS Builder entry shows a deliberate data-governance control)",
+   "tier": "core-upgrade",
+   "hours_estimate": 1,
+   "fits_where_in_plan": "Day 1 (Mon 5 Oct) inside D2 account setup, before the D3 Textract kill gate sends even synthetic bills. It is done well before the Wed 7 Oct day-3 gate and the Thu 8 Oct abandon milestone. It uses about 1 h of FTV-3's roughly 12 h slack (92 h core of about 104 h, estimates).",
+   "risks_and_rule_issues": "It needs AWS Organizations, where the account becomes the management account. Whether an AWS India (AISPL) account can create an organization and attach the policy is unverified; if it cannot, the delete copy must say only 'The picture and results are deleted from this app's storage.' Also confirm that analyze-Lambda logs never contain field values and that CloudWatch retention is short. No medical claims are involved, and only synthetic bills are used in the demo.",
+   "implementation_notes": "aws organizations create-organization; enable-policy-type AISERVICES_OPT_OUT_POLICY; create a policy with default opt_out_policy optOut; attach it to the root; verify with describe-effective-policy --policy-type AISERVICES_OPT_OUT_POLICY. Paste the output into docs/friction-log.md and the README verified-vs-labelled table. Change the copy at section 2.1 step 9 and in the README privacy section.",
+   "real_or_simulated": "Real; the README shows the policy output."
+  },
+  {
+   "concept": "FTV-3",
+   "name": "A reason on every 'Not sure', and a provenance stamp on every crop",
+   "what_it_does": "Each 'Not sure' now says why, in one short clause: 'not printed clearly enough', 'near the edge of the photo', 'handwritten', 'two different amounts found', 'not found on this letter', or 'the answer is not printed on the page'. The zoom view and the card footer add a provenance line, 'From your photo taken 4:12 pm today', drawn as an overlay border on the crop.",
+   "user_value": "An unexplained 'Not sure' looks like a broken reader. A reason tells the person what to do next (straighten the letter, switch on the lamp, ask someone). The provenance line ties every value to one specific capture, which the trusted non-AI check needs.",
+   "research_evidence": [
+    "Aperture entrant demo (Ring Playground, 2026-09-29): releases 'Cannot verify' with the specific reason (no verified capture timestamp). Reasoned uncertainty is now the entrant baseline, so a bare 'Not sure' looks thin. https://www.youtube.com/watch?v=WLnjM5z7IPQ",
+    "AFB AccessWorld (Fall 2025): users report AI readers summarising, inventing or being inaccurate. https://afb.org/aw/fall2025/meta-glasses-review",
+    "Optometric Management (Nov/Dec 2025): a Be My AI study found hallucinated information. https://www.optometricmanagement.com/issues/2025/novemberdecember/artificial-intelligence/",
+    "Ring release notes (2026-06-08): Ring now watermarks all partner media with device, app and timestamp. Used here as an analogy for provenance, so this is an inference. https://developer.amazon.com/docs/ring/release-notes.html"
+   ],
+   "judging_criterion_helped": "Design; Technical Implementation",
+   "tier": "core-upgrade",
+   "hours_estimate": 2.5,
+   "fits_where_in_plan": "The analyze Lambda emits the reason codes during D5 (days 2-5, by Fri 9 Oct), and the TV renders them during D6 (by Tue 13 Oct). Both land before the Wed 14 Oct core-loop take, and the degraded fixtures exercise them in the D8 evaluation.",
+   "risks_and_rule_issues": "A reason must never show the sub-threshold value or a numeric guess; keep the confidence number in the dev overlay only. Do not burn the stamp into the image, because section 4.2 forbids TV image processing beyond cropping. English only, as in the spec.",
+   "implementation_notes": "Add reason: LOW_CONFIDENCE | NOT_FOUND | AT_PAGE_EDGE | HANDWRITTEN | TWO_CANDIDATES | NOT_GROUNDED to each field in result.json. All of these come from detections that section 2.2 already performs: the edge rule, TextType HANDWRITING, multiple ANSWER ids and the grounding check. Add copy keys notSure.reason.*. capturedAt already comes from the phone's uploaded timestamps; render it as text. Jest: each reason is triggered by a degraded or adversarial fixture, and an assertion confirms no reason string contains a digit from the withheld value.",
+   "real_or_simulated": "Real on synthetic bills."
+  },
+  {
+   "concept": "FTV-3",
+   "name": "Guided 'check your first letter' lesson on a bundled sample",
+   "what_it_does": "On first launch, and from Settings, the existing bundled synthetic sample becomes a 4-step coached tour. Step 1: press OK to check this sample letter. Step 2: press Down to 'Amount due', then OK. Step 3: press Back. Step 4: 'You're ready. Put your own letter on the mat.' Each step waits for the correct key, with no timeouts, and every step is announced through aria-live.",
+   "user_value": "People abandon assistive devices when nobody trains them, and guides recommend starting with one simple task such as reading mail. Judges also get a self-guided path that shows the evidence-zoom idea in under a minute.",
+   "research_evidence": [
+    "HelpSquad 2026 assistive-technology guide: people abandon devices for lack of training, and the guide recommends starting with one task such as reading mail. https://helpsquad.com/blog/guide-to-assistive-technology-for-vision-loss/",
+    "Lighthouse Guild: Seeing AI's mode selection has a learning curve, and the wrong channel gives useless output. https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/"
+   ],
+   "judging_criterion_helped": "Design",
+   "tier": "core-upgrade",
+   "hours_estimate": 2,
+   "fits_where_in_plan": "Mon 12 to Tue 13 Oct, reusing S1a and the recorded fixture result, before the Wed 14 Oct take. Together with the two items above, core-upgrades total about 5.5 h, which brings FTV-3 to about 97.5 of 104 h (estimate).",
+   "risks_and_rule_issues": "The sample must be a labelled synthetic bill with an invented sender and no logos or third-party marks. Do not frame the app as a 'magnifier' or 'document reader'; the spec deliberately avoids those words.",
+   "implementation_notes": "A small coach-overlay reducer drives the steps, using the recorded fixture so no AWS is needed. Focus targets are forced with hasTVPreferredFocus at each step. 'Back' skips the lesson. A firstRunDone flag goes in AsyncStorage. Add a jest test for the step reducer.",
+   "real_or_simulated": "Real; the sample is captioned 'Synthetic sample' and the card 'Recorded result (fixture)', as spec section 9.6 already does."
+  },
+  {
+   "concept": "FTV-3",
+   "name": "'Due this week' list with an exact-record confirm",
+   "what_it_does": "After a card, Menu then 'Keep the due date' opens a confirm screen listing exactly what will be kept: sender, amount, due date and the last 4 digits of the reference. Only fields at 90 or above that pass grounding can be kept, and a 'Not sure' field blocks keeping that field. Kept items show on Home as 'Due this week', sorted by date, with per-item delete and 'Delete all kept dates'.",
+   "user_value": "It helps the person finish the task (pay before the date) instead of only describing the letter, which is the gap a Be My AI study found.",
+   "research_evidence": [
+    "Optometric Management (Nov/Dec 2025): in a 2-month study with 14 participants, AI answers described what was present rather than helping complete the task. https://www.optometricmanagement.com/issues/2025/novemberdecember/artificial-intelligence/",
+    "Thomas Wiegold (2026-06-10): before an irreversible action, show the real artifact rather than asking for confirmation in prose. https://thomas-wiegold.com/blog/how-to-build-mcp-ui/",
+    "Commitment Brief entrant demo: approve-before-export. https://www.youtube.com/watch?v=Dh66K4CFeUw"
+   ],
+   "judging_criterion_helped": "Potential Impact",
+   "tier": "stretch",
+   "hours_estimate": 4,
+   "fits_where_in_plan": "After the Wed 14 Oct core-loop take, Thu 15 to Sun 18 Oct, before the Mon 19 Oct freeze. It replaces optional O4 ('Checked by you' stamp and monthly list, 4 h), so total hours do not change.",
+   "risks_and_rule_issues": "It keeps bill text (not images) on the TV beyond 24 h. That fits the spec's 'never stores an image beyond 24 h' rule, but it must be opt-in per item and disclosed. It must not suggest payment actions or give financial advice. No background notification on Vega has been verified, so the list appears only when the app is opened; say so instead of calling it a 'reminder'.",
+   "implementation_notes": "Add a KeptDue entity in AsyncStorage {captureId, sender, amount, dueDate, refLast4, keptAt}, copying only grounded fields at 90 or above. Add a confirm overlay with Cancel focused first, a Home row and delete flows. Jest tests: no field below 90 can be kept, and delete-all empties storage.",
+   "real_or_simulated": "Real."
+  },
+  {
+   "concept": "FTV-3",
+   "name": "'Ask my family' one-field check",
+   "what_it_does": "From any field, send only that field's masked crop (for example the amount due) to one pre-registered family member's phone through a signed one-time link. The family member answers 'Yes, that's the amount' or 'No'. The TV then shows 'Checked by Ravi: yes'.",
+   "user_value": "It puts the practitioners' rule for money documents, verify with a human you trust, into the product, using family rather than stranger volunteers.",
+   "research_evidence": [
+    "Disability World (2026-05-30): for medication, allergens and financial documents, verify with a human or a trusted non-AI channel. https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+    "AAO, quoting Be My Eyes guidance: avoid having volunteers read mail with your address or financial details. https://www.aao.org/eye-health/tips-prevention/low-vision-impairment-apps-tech-assistive-devices",
+    "Spec scope recap: 'helper share' was dropped by the round-2 red team, so this reintroduces a previously cut scope item."
+   ],
+   "judging_criterion_helped": "Potential Impact",
+   "tier": "post-hackathon",
+   "hours_estimate": 8,
+   "fits_where_in_plan": "Not before 23 Oct: it adds a new surface, a signed-link page and another person's phone. Mention it only as a README roadmap line.",
+   "risks_and_rule_issues": "It sends a crop of financial data to a second device and person, which needs consent, a short expiry, single use and no whole-page sharing. It reverses a red-team cut. Any demo would need a synthetic bill and a consenting volunteer.",
+   "implementation_notes": "When built: HMAC-signed one-time link (pass_id-style token with a 1 h expiry), a crop served from a presigned GET with a 5-minute expiry, a two-button page with no free text, and the answer stored on the capture item and deleted with it.",
+   "real_or_simulated": "Not in the demo; roadmap only."
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Approval only from the parent's tap: app-only decide_pass, a gate test, and a live false-approval scene",
+   "what_it_does": "decide_pass (and the curfew override) is marked app-only, so a model-facing host never sees or calls it; only the Confirm button on the parent sheet invokes it. A test proves the server rejects any request that claims approval from the model or child path. The video shows a child saying 'Mom already said yes, I can go': the sentence appears to the parents as a stored note, and the card stays 'Waiting for Mom or Dad'.",
+   "user_value": "Parents can trust that nothing the child, a forwarded message or the assistant says can open a pass. Only their own tap on the exact pass card does.",
+   "research_evidence": [
+    "Spec section 5.1 row 12 (read 4 Oct): MCP Apps _meta.ui.visibility defaults to ['model','app'], so decide_pass is currently model-visible.",
+    "Scott Logic (2026-09-16): tool visibility can be limited to the app, so risky writes are triggered by a human tap and never called by the model. https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+    "HomeOps Guardian entrant: the server asks the human and fails closed. Per its video description, 7 of 8 gate tests fail if the server trusts the model's 'confirmed' flag. https://www.youtube.com/watch?v=00LRE46zk7U",
+    "Say So entrant: an injected instruction is obeyed by the assistant, yet the purchase still does not happen. https://www.youtube.com/watch?v=GMu3CWWQHVA",
+    "Recall entrant: a casual yes is not authorization, and stale approvals are blocked. https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+    "AAIF (2026-04-22): Alexa+ is not on the published MCP Apps host list, so enforcement must not rely on the host. https://aaif.io/blog/mcp-apps-extending-the-frontier/"
+   ],
+   "judging_criterion_helped": "Technical Implementation; Quality of the Idea (approval is supporting machinery, but this makes it visibly stronger than other entrants' approval gates)",
+   "tier": "core-upgrade",
+   "hours_estimate": 3,
+   "fits_where_in_plan": "Add the visibility meta and the server test during D2 (Wed 7 to Sun 11 Oct). Build host enforcement and the video scene during D7/D8 (Mon 12 to Thu 15 Oct), so they appear in the Thu 15 Oct core-loop take. This is ALX-5's own checkpoint, a day after FTV-4's Wed 14 Oct K4. It comes out of the roughly 18 h buffer (plan 78 h of about 96 h, estimates).",
+   "risks_and_rule_issues": "Confirm the exact field name and semantics in the @modelcontextprotocol/ext-apps 2.0.3 docs; the field name comes from the spec row and a blog. Do not claim Alexa+ enforces app-only visibility; it is enforced by our server role check and our labelled simulated host. The child's voice is an adult actor with synthetic names (existing children's-data rule). The approval phrase is stored verbatim as a note and never parsed into state.",
+   "implementation_notes": "Set _meta.ui.visibility:['app'] on decide_pass. In basic-host, filter app-only tools out of anything the parser or Nova path can call. On the server, decide_pass already requires a parent role (section 8.5); also bind the parent-surface token separately from the kitchen token. Add tests: request_pass with an extra approved:true or a note saying 'approved by mom' stays 'requested' (schema additionalProperties:false rejects unknown keys); decide_pass with the kitchen token returns FORBIDDEN. Video scene: the line is spoken, the card stays pending, and the parent sees the note text.",
+   "real_or_simulated": "Server logic and tests are real. The Alexa+ layer is simulated and labelled ('Simulated Alexa+-style host (independently built)'; 'Voice ID simulated')."
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Automated conformance probe in CI, shown in the video",
+   "what_it_does": "An npm run conformance script runs the eight track-verification checks automatically against the local and hosted endpoints. It covers 2025-11-25, 2025-06-18 and 2025-03-26 initialize plus a bad version, 202 for notifications, GET and DELETE returning 405, a bogus MCP-Protocol-Version returning 400, a forged Origin returning 403, tools/list schemas and annotations, and identical state after a fresh initialize. It prints PASS/FAIL JSON with a count, runs in GitHub Actions on each push, and appears for about 5 s in the video.",
+   "user_value": "Judges get repeatable proof of protocol quality instead of pasted transcripts. Competing Alexa+ entrants already show conformance and test counts, so this is the baseline.",
+   "research_evidence": [
+    "LQA entrant (63 views, the most in that set): shows Origin 403, 202, and 404 with -32601, and claims 23/23 conformance checks. Its author says the tests caught a real bug. https://www.youtube.com/watch?v=w9-IKSVXsT8",
+    "Recall entrant: a 12-check MCP conformance run plus CI. https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+    "Commitment Brief entrant: advertises 15 integration tests. https://www.youtube.com/watch?v=Dh66K4CFeUw",
+    "Spec section 10 already lists an optional 'addon-fr-checks' harness, built only if the core is recorded by 15 Oct. This pulls a minimal in-repo version forward."
+   ],
+   "judging_criterion_helped": "Technical Implementation",
+   "tier": "core-upgrade",
+   "hours_estimate": 2,
+   "fits_where_in_plan": "Script the D1 manual checks on Mon 5 to Tue 6 Oct, before the Tue 6 Oct 20:00 IST go/no-go. Point it at the hosted URL after D10 (by Sun 11 Oct). The separate Open Source package stays optional.",
+   "risks_and_rule_issues": "Banner it 'Unofficial checks, not Amazon certification' and never imply a live Alexa+ test (track-verification item 6). The hosted run needs the bearer token from CI secrets; never print it.",
+   "implementation_notes": "Node script using fetch, mirroring the curl cases in the track-verification block, with output saved to docs/conformance.json. Add a GitHub Actions job that starts npm run local on 127.0.0.1:3001 and runs the probe. Add a README badge and a count in the verified-vs-simulated doc.",
+   "real_or_simulated": "Real."
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Pass hours (parent-set window for requests)",
+   "what_it_does": "Parents set when passes can be requested, for example weekdays 4-8 pm with longer weekend hours. Outside the window the kitchen surface answers 'Passes are closed right now. Ask a grown-up in person.' and the parent is not pinged.",
+   "user_value": "It uses the control vocabulary parents of phone-free kids already know from kid landlines (approved contacts, active or quiet hours, logs), so OutPass feels familiar and stops late-night requests.",
+   "research_evidence": [
+    "The Everymom Tin Can review (2026-07-31, updated 2026-09-23): the reviewer sets active hours of 4-8 pm. https://theeverymom.com/tin-can-phone-review/",
+    "Wait Until 8th devices page: recommended kid phones give parents a dashboard for contacts and quiet hours. https://www.waituntil8th.org/devices",
+    "About Amazon parent guide: Amazon Kids time limits work by day and hour. Parents know this pattern, but native controls stop at device use, not leaving the house (inference). https://www.aboutamazon.com/news/devices/how-parents-can-use-alexa-devices-with-their-kids"
+   ],
+   "judging_criterion_helped": "Design",
+   "tier": "core-upgrade",
+   "hours_estimate": 2,
+   "fits_where_in_plan": "Add it to D4 (rule engine, Wed 7 to Sun 11 Oct) alongside the weekday/weekend and curfew rules, so it is in the Thu 15 Oct core-loop take.",
+   "risks_and_rule_issues": "Keep the child-facing copy kind and short. It adds no new child data, only a household rule. Do not present it as screen-time control, which is native. Check the native-vs-adds table so it is listed as an extension of familiar controls, not a new idea.",
+   "implementation_notes": "household.rules.pass_hours {weekday:{start,end}, weekend:{start,end}}, edited on parent screen P6. request_pass outside the window returns isError PASSES_CLOSED with the friendly text. Test on the 20 synthetic days already planned in D4.",
+   "real_or_simulated": "Real server logic, shown in the labelled simulated host."
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Change an active pass with a ladder re-arm",
+   "what_it_does": "A parent can change a pass that is already active, for example 'walk to my office instead' or 'I'll pick you up at 5:30'. The server atomically cancels the current ladder and arms a new one for the new time. The host-family link page shows 'Plan changed: a parent will pick Aarav up at 5:30'. The kitchen card and audit strip record the change.",
+   "user_value": "Changing plans and variable end times are the main objections to phone-free kids. A pass that can change mid-way, and reaches the host family even though the child has no device, answers them directly.",
+   "research_evidence": [
+    "Hacker News, 'Wait Until 8th' thread (2024): last-minute walk-home and pickup changes are the main reason parents want a reachable kid. https://news.ycombinator.com/item?id=42011784",
+    "Same thread: landline-only setups fail for events with variable end times. https://news.ycombinator.com/item?id=42011902",
+    "CPR News (2026-02-04): parents are tired of being their kids' 'executive assistants' for plans. https://www.cpr.org/2026/02/04/tin-can-kids-landline-cellphone-alternative/"
+   ],
+   "judging_criterion_helped": "Potential Impact; Technical Implementation (atomic ladder cancel and re-arm)",
+   "tier": "stretch",
+   "hours_estimate": 5,
+   "fits_where_in_plan": "Only after the Thu 15 Oct core-loop take, Fri 16 to Sun 18 Oct, before the Mon 19 Oct freeze. It competes with D9 (host link, 3 h) and D12 (OSS, 3 h). Decide on Thu 15 Oct; because the host page shows the change, it depends on D9.",
+   "risks_and_rule_issues": "The extra state transition raises ladder risk: old rungs must never fire after an amend. The host family sees only the first name and the new time, with no location or address. A change cannot reach the child directly; say so instead of implying the child is notified.",
+   "implementation_notes": "Add amend_pass as an app-only, parent-role tool (or a parent-surface HTTPS action) with fields pass_id, new return_by and/or mode 'pickup', note and client_event_id. Do a conditional update on state=active plus a version counter. Cancel via SendTaskSuccess on the stored token (or DeleteSchedule x3), then StartExecution named pass_id-a{n}. Write an event_log row. Tests: in 10 scripted runs of amend followed by check_in, no rung fires from either ladder; a duplicate amend with the same client_event_id is a no-op.",
+   "real_or_simulated": "Server and ladder are real (Step Functions execution history shown). Delivery to parents is simulated and labelled. The Alexa+ layer is simulated."
+  },
+  {
+   "concept": "ALX-5",
+   "name": "After-school arrival pass for working parents",
+   "what_it_does": "A parent schedules 'expected home by 3:45' on school days, with no departure step. The child says 'Alexa, I'm home' to close it; if that doesn't happen, the existing ladder escalates to the parent at work.",
+   "user_value": "It addresses the objection that phone-free plans assume a parent is at home. Kids of working parents often come home alone.",
+   "research_evidence": [
+    "Hacker News (2024): in many families both parents work and kids get home by themselves. https://news.ycombinator.com/item?id=42011648",
+    "Hacker News (2024): families improvise a fixed home device as the kid's channel, and one friend's 8-year-old is home alone after school with no landline. https://news.ycombinator.com/item?id=42016443",
+    "Counter-evidence: IDEA_SCORECARD.md section 6 rejects 'basic alerts, check-ins and reminder ladders as the product', and the spec's native-vs-adds table lists arrival and Personal Presence routines as native Alexa features."
+   ],
+   "judging_criterion_helped": "Potential Impact",
+   "tier": "post-hackathon",
+   "hours_estimate": 4,
+   "fits_where_in_plan": "Not before 23 Oct. At most one README roadmap line. Do not demo it, because it is the part of OutPass closest to native arrival routines and to the rejected reminder-ladder category.",
+   "risks_and_rule_issues": "It would invite the reading 'this is a reminder plus a message to Mom', which judges penalise as an existing Alexa+ feature. A child home alone raises safety stakes: a missed or late rung would be a safety failure, so it must never imply a guarantee. Children's data stays minimal.",
+   "implementation_notes": "If ever built: a recurring schedule creates a pass in state 'expected' at a set time and arms the ladder; check_in closes it. It reuses section 7.4 idempotency and the existing ladder unchanged.",
+   "real_or_simulated": "Not in the demo."
+  },
+  {
+   "concept": "FTV-4F",
+   "name": "Blind two-sided check: speaker rating plus listener verdict, revealed together",
+   "what_it_does": "After each phrase, the speaker rates 'felt loud' or 'about normal' on the remote while the listener taps Heard or Not heard on the far phone. Neither sees the other's input until both are in. The TV then reveals both, with the phonation-seconds counter unchanged. The summary reads 'You and Rohan agreed on 7 of 10; felt normal but was heard: 3' (illustrative).",
+   "user_value": "The spec's honest limit for the fallback is that judges may read the listener tap as self-report. Two independent, blinded observations make the result a check rather than an opinion, and they surface the 'feels loud versus is audible' gap that clinicians target.",
+   "research_evidence": [
+    "RECOMMENDATION.md section 5.4: the fallback's honest limit is that a judge may read the listener tap as a self-report, with Tech possibly dropping to about 3 (estimate).",
+    "Breatheworks: the core problem is the gap between felt loudness and actual audibility. https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "Inference: blinding the two raters is a standard way to make subjective ratings more credible. No source reviewed here tested it for this use."
+   ],
+   "judging_criterion_helped": "Technical Implementation (answers the self-report critique); Quality of the Idea",
+   "tier": "core-upgrade",
+   "hours_estimate": 4,
+   "fits_where_in_plan": "Applies only if the Thu 8 Oct 20:00 IST gate selects the Listener Edition. Build it Fri 9 to Sun 11 Oct, reusing the FTV-4 felt-versus-reached sub-state, so it is in the Wed 14 Oct K4 take. It sits within the fallback's roughly 12 h of new work (section 5.4) and overlaps its 'metric and chart relabelling' item.",
+   "risks_and_rule_issues": "There must be no clinical intelligibility claim; agreement is a household check. The listener's consent is required. Verdicts stay on the TV.",
+   "implementation_notes": "The TV holds the window's speaker rating and the verdict message until both arrive. The phone P4 never displays the speaker rating. Reveal both on one screen with Next focused. Add two summary counters and a jest test that the reveal waits for both inputs, or for an explicit skip from either side.",
+   "real_or_simulated": "Real; the same no-simulation status as the fallback."
+  },
+  {
+   "concept": "FTV-4F",
+   "name": "One-cue listener control with a cap and neutral display",
+   "what_it_does": "The fallback's headline control gets three buttons: Heard, Not heard and one household-chosen cue word (default 'Volume'). Cues are capped at 3 per session and shown on the TV as a neutral chip, never as a failure.",
+   "user_value": "In the Listener Edition the partner's tap is the main metric, so the risk of the partner becoming the 'speech police' is central. One agreed cue keeps the help supportive.",
+   "research_evidence": [
+    "Breatheworks: support communication without policing it; use one agreed cue. https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "Tactus Therapy: partners can be trained to give appropriate cues. https://tactustherapy.com/parkinsons-disease-pd-improve-speech-therapy/"
+   ],
+   "judging_criterion_helped": "Design",
+   "tier": "core-upgrade",
+   "hours_estimate": 2,
+   "fits_where_in_plan": "Same window as above, Fri 9 to Sun 11 Oct after the 8 Oct gate. It extends the fallback's planned 3 h Heard/Not heard control and shares code with the FTV-4 listener feature.",
+   "risks_and_rule_issues": "Avoid surveillance framing; household consent is needed. The cue word is plain text with a 12-character limit, rendered as text, never as markup.",
+   "implementation_notes": "Reuse verdict:'cue' on the existing message type and the P3 'Cue word' field. The cap is enforced on the phone and checked again on the TV.",
+   "real_or_simulated": "Real."
+  }
+ ],
+ "notes": "I propose 18 features: 6 for FTV-4, 5 for FTV-3, 5 for ALX-5 and 2 for FTV-4F. All hours are unmeasured estimates.\n\n**Capacity**\n- **FTV-4:** the plan uses 98 of about 104 h. The three core-upgrades add about 7 h:\n  - felt-versus-reached check, 4 h\n  - mic-state badge, 1 h\n  - one-cue listener, 2 h\n  The first two fit the roughly 6 h of slack. The listener's 2 h should be paid for by moving 'Polly prompts (-2 h)' ahead of 'family mode (-3 h)' in the K4 cut order. Family mode is worth protecting: it is the fallback's core and the human 'understood' signal.\n  - The 'Why this result' drawer (3 h) and the phrase sets (3 h) are stretch. Build them only after the Wed 14 Oct K4 take and before the Mon 19 Oct freeze.\n- **FTV-3:** core-upgrades add about 5.5 h, bringing it to about 97.5 of 104 h. The due-date list replaces optional item O4, so total hours do not change.\n- **ALX-5:** core-upgrades add about 7 h, bringing it to about 85 of 96 h and leaving about 11 h of buffer for the overruns the red team expects. The 'change an active pass' feature (5 h) is decided at its own Thu 15 Oct core-loop take.\n\n**Speech-recognition decision for FTV-4:** do not redefine 'reached the far side' as 'the words were understood at 3 m' for this hackathon. Loudness stays the verdict, and the human listener stays the judge of 'understood'.\n- **Cloud recognition: rejected.**\n  - MDN's processLocally page, which I checked on 4 Oct, lists Chrome Android as 'No support' for on-device recognition. So the browser's built-in speech API on the far-mic phone would send audio to the browser vendor's servers.\n  - Amazon Transcribe would upload audio to AWS. Its FAQ says voice inputs may be kept for service improvement unless an AWS Organizations opt-out policy is set.\n  - Either option breaks the 'only numbers leave the phone' thesis, which is also the answer to the always-on-mic complaints about Bee.\n- **On-device recognition: post-hackathon.** The candidate is vosk-browser with the 40 MB Apache-2.0 small US-English model. There is an optional 2 h go/no-go spike on Thu 15 Oct.\n  - It is post-hackathon because of capacity, the medical and intelligibility framing risk, likely accent bias, and the fact that a machine miss may reflect articulation rather than loudness.\n  - The accent risk is concrete: the small Indian-English model's published word error rate is 49 percent on the NPTEL benchmark.\n\n**Privacy finding for FTV-3:** after delete, the spec's screen says 'Deleted. Nothing about this letter is kept.' (section 2.1, step 9). The Textract FAQ, checked 4 Oct, says inputs may be stored for service improvement unless the AWS Organizations AI services opt-out policy is applied. Apply the opt-out on day 1, or soften the wording. Whether an AWS India (AISPL) account can create an organization is unverified.\n\n**Research signals already covered by the specs, so not proposed again:**\n- D-pad-only navigation\n- placement-honest calibration\n- consented destinations\n- curfew as trust rather than tracking\n- a visible 'watchdog not running' state\n- one clarifying question per turn\n- prompt-injection rules\n- signed, expiring, one-time host links\n- bundled samples\n- the 90 confidence gate\n\n**Signals considered and rejected:**\n- **Porting to Vega with ADBT:** both Fire TV concepts are already native React Native for Vega apps, so there is nothing to port.\n- **Fire TV pass status for ALX-5:** contradicts the rejection of broad multi-device integrations.\n- **Ring door-sensor evidence:** not verified as reachable through the Playground.\n- **A household-noise practice level:** conflicts with the noisy-room gate.\n- **Live camera magnifier on Vega:** streaming latency is unverified.\n- **A Hindi/English interface:** weak evidence.\n- **A web build for judges:** FTV-4 needs the phone mic, and the spec already has a fixture-replay judge route.\n- **Star button:** the 3rd-generation remote's Star button can launch an app, but the VVD remote probably lacks it. At most it is a no-cost first-run tip in the copy.\n\n**Rule and safety checks applied to every feature:**\n- no medical claims or programme names in UI copy (K5 grep)\n- no third-party marks in the demo\n- no audio leaves the phone\n- the Alexa+ layer always labelled simulated\n- adult voice actor and synthetic names for children\n- no new child data fields beyond household rules\n\n**Coverage caveats:**\n- Every research pass lost Reddit (paid-API error 402) and X (not authenticated). TikTok, Instagram and Hacker News returned nothing on-topic.\n- Feature evidence therefore comes mostly from evergreen clinical and assistive-technology articles, older App Store reviews, organizer updates and entrant demos with under 65 views. None of it shows a 30-day trend.\n- The 'after-school pass' and 'Ask my family' items are evidence-backed but conflict with the scorecard's section 6 rejection list or with red-team cuts, so they are tiered post-hackathon.\n\n**Questions for office hours #1 (Tue 6 Oct, 23:00 IST):**\n- Does Alexa+ now have kid profiles or permission features? That would affect OutPass's novelty.\n- Is MCP 2026-07-28 accepted?\n\n**Files read:**\n- research/TOP_THREE_BUILD_SPECS.md:\n  - FTV-4 sections 1-3, 5.2-5.3, 7.7, 12 and 12.1\n  - FTV-3 sections 1-2, 12 and track verification\n  - ALX-5 sections 1-2, 5.2, 7.2-7.3, 8.5, 12, track verification and open questions\n- research/RECOMMENDATION.md, sections 5.4, 6 and 7\n- research/IDEA_SCORECARD.md, lines 1-25 and the section 6 rejection list\n\nNo files were written."
+}

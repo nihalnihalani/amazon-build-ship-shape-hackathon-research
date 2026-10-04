@@ -1,0 +1,300 @@
+{
+ "angle": "hackathon-buzz",
+ "topic_run": "Amazon Developer Hackathon Build Ship Shape (last30days v2.9.6 script, window 2026-09-04 to 2026-10-04), supplemented by 2 WebSearch queries and direct reads of Devpost updates, the Amazon Developer Community newsletter, 2 GitHub repos, 1 GitHub issue, dev.to, and 5 YouTube description pages",
+ "script_ran": true,
+ "script_error": "The script finished in 23.5 s without a fatal error. Reddit returned '402 Client Error: Payment Required' from the ScrapeCreators API, so it found 0 threads. X/Twitter was skipped because Bird is installed but not authenticated (expected). Xiaohongshu was unavailable. HN found 0 stories. TikTok, Instagram and Polymarket were enabled but returned nothing. YouTube found 16 videos and kept 9 after filtering. The script header said 'Mode: reddit-only' and '0 item(s) confirmed' in the date range, even though all 9 YouTube videos are dated inside it.",
+ "saved_file": "~/Documents/Last30Days/amazon-developer-hackathon-build-ship-shape-raw.md",
+ "stats": {
+  "reddit": "none (0 threads; ScrapeCreators 402 Payment Required)",
+  "youtube": "9 videos kept (16 found before filtering), 1,201 views total, 1 like, 4 with transcripts; I also read 5 more descriptions via firecrawl",
+  "tiktok": "none",
+  "instagram": "none",
+  "hn": "none (0 stories)",
+  "polymarket": "none",
+  "web": "2 WebSearch queries, about 15 unique results. I read 10 pages: 3 Devpost update posts (one returned only an outline because of truncation), the Devpost project gallery (not yet published), the Devpost updates index, the Amazon Dev Community September newsletter (58 views), GitHub issue woahwhattheheck/commons#16009, repos ASAYAMedia/amazon-alexa-mcp-hackathon (0 stars) and syedjafri06193/Build-Ship-Shape-Amazon-Developer-Hack (1 star), and dev.to Dev Opportunity Radar #17. builder.aws.com was JS-rendered and returned no text."
+ },
+ "coverage_note": "Results were thin. The topic is niche, and public talk about this hackathon is very quiet. Reddit failed (402), X is not authenticated, and HN, TikTok, Instagram and Polymarket returned nothing. Every social signal is from YouTube: 9 low-view videos (most-viewed 804 views), of which 6 are entrant demos and 3 are promo or explainer videos. Two community announcement threads show 155 and 72 views with 0 replies. The Devpost project gallery says 'The hackathon managers haven't published this gallery yet', so I could not check entrant collisions properly. The entrants I saw are a small, self-selected sample of people who posted demos early. The most useful material came from the organizer's own Devpost updates (judge hints, office hours, the Alexa+ simulation allowance). No posts about the requested complaint topics appeared anywhere I read: gated partner tools, Bedrock quota, Bee hardware. Some Devpost update text came through WebFetch summaries; I only quote phrases the fetch returned inside quotation marks. Whether this is fully exhaustive is unclear; the collision check covered only the entrants listed below, and nobody I saw is building a Fire TV loudness or speech practice app, a Fire TV mail or bill reader, or an Alexa+ child-pass app.",
+ "findings": [
+  {
+   "insight": "The organizer named the Fire TV ideas judges want: multimodal voice + D-pad + visuals, or computer vision with a camera, instead of a simple video player. FTV-4 (phone mic + remote + TV visuals) and FTV-3 (phone camera + OK press + TV evidence view) both match this wording directly.",
+   "platform": "Devpost (organizer update)",
+   "source_name": "amazonappdev2026.devpost.com update 'Got an idea?'",
+   "engagement": "not shown",
+   "date": "2026-09-18 (approx; shown as '16 days ago' on 2026-10-04)",
+   "url": "https://amazonappdev2026.devpost.com/updates/46456-got-an-idea",
+   "quote": "a computer vision fitness app using the TV's camera or a multi modal experience blending voice, D-pad, and visuals"
+  },
+  {
+   "insight": "The same update tells Alexa+ entrants to move past a single-turn Q&A bot toward agentic, cross-session workflows. It says scoring is 1-5 on four equally weighted criteria. Per the fetched summary, private GitHub repos are now allowed if Amazon reviewers and Devpost test accounts are added as collaborators. OutPass's multi-session check-out/check-in ladder fits the 'keeps context across sessions' wording.",
+   "platform": "Devpost (organizer update)",
+   "source_name": "amazonappdev2026.devpost.com update 'Got an idea?'",
+   "engagement": "not shown",
+   "date": "2026-09-18 (approx)",
+   "url": "https://amazonappdev2026.devpost.com/updates/46456-got-an-idea",
+   "quote": "an agentic workflow that orchestrates across services or keeps context across sessions"
+  },
+  {
+   "insight": "The organizer explicitly allows simulating Alexa+ instead of building a live MCP or Agent Skill integration. That makes the independent-simulation route official for ALX-5, but many entrants are already using it (see PrimeCare and Commitment Brief).",
+   "platform": "Devpost (organizer update)",
+   "source_name": "amazonappdev2026.devpost.com update 'Let's get you building!'",
+   "engagement": "not shown",
+   "date": "2026-09-14 (approx; shown as '20 days ago')",
+   "url": "https://amazonappdev2026.devpost.com/updates/46202-let-s-get-you-building",
+   "quote": "Simulate the Alexa+ experience with any agentic tools you already know."
+  },
+  {
+   "insight": "Two live office hours are scheduled. By my conversion from CDT (an inference), they fall on Tue 6 Oct at 23:00-00:00 IST and Mon 19 Oct at 21:30-22:30 IST. These are the places to ask about Vega Virtual Device acceptance, the Ring Playground and the Alexa+ simulation route.",
+   "platform": "Devpost (organizer update)",
+   "source_name": "amazonappdev2026.devpost.com update 'Office Hours Schedule'",
+   "engagement": "not shown",
+   "date": "2026-10-03 (approx; shown as '1 day ago')",
+   "url": "https://amazonappdev2026.devpost.com/updates/46771-office-hours-schedule",
+   "quote": "Office Hours #1: Tuesday, October 6 | 12:30 to 1:30 pm CT"
+  },
+  {
+   "insight": "Entrant demo, Alexa+ track: a commitment-diff MCP server. It runs without a live Alexa connection, keeps evidence visible, creates unsent previews, and clears approval after any edit. It advertises '15 integration tests' as proof of technical depth. Evidence-first, approve-before-export design is already common among entrants.",
+   "platform": "YouTube",
+   "source_name": "Darren Carreras",
+   "engagement": "40 views, 1 like",
+   "date": "2026-09-14",
+   "url": "https://www.youtube.com/watch?v=Dh66K4CFeUw",
+   "quote": "This is a working MCP companion without a live Alexa connection, model calls, or automatic extraction from notes."
+  },
+  {
+   "insight": "Entrant demo, Alexa+ track: Recall, a study coach behind an approval gate. It uses plan -> exact-phrase approve -> execute -> verify, rejects a casual 'yes', and blocks stale approvals with STATE_DRIFT. It shows a 12-check MCP conformance run plus CI. This partly overlaps OutPass's parent-approval mechanic.",
+   "platform": "YouTube",
+   "source_name": "Senih Bayankul",
+   "engagement": "13 views",
+   "date": "2026-09-22",
+   "url": "https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+   "quote": "A casual yes, go ahead, is not authorization."
+  },
+  {
+   "insight": "Entrant demo, Ring track: Still Here, a caretaking app for someone living alone. It learns a 14-day baseline, 'knocks' through Ring Chime before alerting family, and checks every outgoing sentence against evidence. It says it is built on the Ring partner API and signed webhooks, which we cannot use outside the US. It matches the organizer's 'caretaking monitor' Ring example.",
+   "platform": "YouTube",
+   "source_name": "Petaflo AI Lab",
+   "engagement": "52 views, 0 likes",
+   "date": "2026-09-05",
+   "url": "https://www.youtube.com/watch?v=cAnbiR2ndcw",
+   "quote": "Every sentence is checked against the evidence before it is sent. A model may rephrase it, but it cannot invent a time."
+  },
+  {
+   "insight": "Entrant demo, Ring track: Aperture uses the official Ring Playground Package flow, which is our known non-US route. It grants short-lived, owner-approved, one-question permissions. It returns an honest 'Cannot verify' because Playground frames lack a verified capture timestamp. That is both a friction point and the same honest-uncertainty pattern as Mail Check's 'Not sure'.",
+   "platform": "YouTube",
+   "source_name": "Himanshu Jha",
+   "engagement": "6 views",
+   "date": "2026-09-29",
+   "url": "https://www.youtube.com/watch?v=WLnjM5z7IPQ",
+   "quote": "The browser-saved Ring frame has no verified capture timestamp. This run therefore releases Cannot verify."
+  },
+  {
+   "insight": "Entrant demo, Alexa+ track: PrimeCare, a clinic-operations brief. It shows a simulated Alexa+ experience in a web app calling a read-only MCP server over Streamable HTTP, with synthetic data and staff keeping every decision. It also shows a health-adjacent entrant using the simulation route.",
+   "platform": "YouTube",
+   "source_name": "Asyraf Saharudin",
+   "engagement": "17 views",
+   "date": "2026-09-18",
+   "url": "https://www.youtube.com/watch?v=OKq3zQBhmmY",
+   "quote": "In this demo, we show a simulated Alexa+ experience in a web app."
+  },
+  {
+   "insight": "Entrant demo, Alexa+ track: Nexus Semantic has Bedrock plan a workflow, which runs over MCP across live Firefox and native Windows Notepad. It pauses for explicit human confirmation on sensitive actions. This is evidence that Bedrock is being used, but nobody mentioned a quota problem.",
+   "platform": "YouTube",
+   "source_name": "Mbuso Harvey",
+   "engagement": "14 views",
+   "date": "2026-09-22",
+   "url": "https://www.youtube.com/watch?v=gLIf-a7ag30",
+   "quote": "Alexa+ \u2192 Amazon Bedrock \u2192 MCP \u2192 Nexus Semantic \u2192 Firefox + Windows"
+  },
+  {
+   "insight": "Entrant demo, Alexa+ track: a content-wrapper MCP that serves book lessons as tools. This is the 'single turn Q&A' pattern the organizer says to push past, and it confirms our kill criteria for latent-LLM-capability ideas.",
+   "platform": "YouTube",
+   "source_name": "boussad charchour (@littlebitbetterdaily)",
+   "engagement": "31 views",
+   "date": "2026-09-17",
+   "url": "https://www.youtube.com/watch?v=HJdu7UQ-ak4",
+   "quote": "30 no-excuses mindset lessons from the book '30 Days of Hard Truths' by Boussad Charchour, exposed as MCP tools over Streamable HTTP."
+  },
+  {
+   "insight": "Entrant build plan for the Alexa+ track: HomeOps Relay, a durable SQLite MCP for multi-step household jobs. It uses dependencies, evidence, guarded transitions and receipts. The issue was closed as a duplicate of an already-shipped homeops-mcp repo. It is the closest household-state-machine overlap with OutPass, though about household chores rather than a child's pass.",
+   "platform": "GitHub",
+   "source_name": "woahwhattheheck/commons issue #16009",
+   "engagement": "repo 0 stars, 2 forks; issue closed 'not planned' on 2026-10-03",
+   "date": "2026-09-18",
+   "url": "https://github.com/woahwhattheheck/commons/issues/16009",
+   "quote": "Build a working Alexa+-oriented MCP server for stateful multi-step household operations, not a one-turn Q&A wrapper."
+  },
+  {
+   "insight": "Entrant repo, Alexa+ track: a personal assistant MCP with persistent memory, tasks, calendar and proactive suggestions. This sits in territory that Alexa+ already markets, which the organizer says scores poorly.",
+   "platform": "GitHub",
+   "source_name": "ASAYAMedia/amazon-alexa-mcp-hackathon",
+   "engagement": "0 stars, 5 commits",
+   "date": "not shown (found 2026-10-04)",
+   "url": "https://github.com/ASAYAMedia/amazon-alexa-mcp-hackathon",
+   "quote": "A Model Context Protocol (MCP) server built for the Amazon Developer Hackathon 2026 (Alexa+ Track)"
+  },
+  {
+   "insight": "The most-viewed item in the window is a promo video, not an entrant demo. It sells the hackathon as the first time all four Amazon device platforms are open at once, and lists required product feedback and optional friction-log entries. A separate Hindi/English promo (Arman Learning Hub, 224 views, 2026-09-25) targets Indian students, so expect more Indian entrants (inference).",
+   "platform": "YouTube",
+   "source_name": "IdeaMela",
+   "engagement": "804 views, 0 likes",
+   "date": "2026-09-07",
+   "url": "https://www.youtube.com/watch?v=aiyb4ru60EQ",
+   "quote": "You can be part of the first hackathon where Fire TV, Alexa plus, Ring, and B are all open to outside developers at once."
+  },
+  {
+   "insight": "Amazon DevRel's September newsletter promotes the hackathon next to ADBT, a tool that ports Fire OS apps to Vega with AI coding assistants. It also promotes a devCon workshop running apps on a TV simulator. A Fire OS build could be ported to Vega OS cheaply to push the Fire TV track further. The two hackathon announcement threads show 155 and 72 views with 0 replies.",
+   "platform": "Web (Amazon Developer Community)",
+   "source_name": "community.amazondeveloper.com, post by Moses (Amazon staff)",
+   "engagement": "58 views, 3 links",
+   "date": "2026-09-23",
+   "url": "https://community.amazondeveloper.com/t/amazon-developer-newsletter-september-2026/29217",
+   "quote": "You can use ADBT with any of your AI assistants, such as Claude Code and Cursor, to port your apps to Vega."
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "The organizer's own Fire TV 'push past the obvious' examples are a camera CV app or a multimodal voice + D-pad + visuals experience.",
+   "implication_for_hackathon": "This strongly supports FTV-4 as primary and FTV-3 as alternative. Use the organizer's wording ('multi modal experience blending voice, D-pad, and visuals') in the Devpost description and the first 15 seconds of the demo video, and show all three inputs on screen.",
+   "evidence_refs": [
+    "https://amazonappdev2026.devpost.com/updates/46456-got-an-idea"
+   ]
+  },
+  {
+   "signal": "Public entrant demos lean heavily to Alexa+. Of the 9 entrant projects I found (videos plus GitHub), 7 are Alexa+, 2 are Ring, and 0 are Fire TV or Bee. This is a small sample, and the gallery is unpublished.",
+   "implication_for_hackathon": "Inference: the Fire TV track may be less crowded than Alexa+, which favours FTV-4 or FTV-3 over ALX-5 on competitive odds. Re-check on 6 Oct at office hours and once the gallery is published.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=Dh66K4CFeUw",
+    "https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+    "https://www.youtube.com/watch?v=OKq3zQBhmmY",
+    "https://www.youtube.com/watch?v=gLIf-a7ag30",
+    "https://www.youtube.com/watch?v=HJdu7UQ-ak4",
+    "https://github.com/woahwhattheheck/commons/issues/16009",
+    "https://github.com/ASAYAMedia/amazon-alexa-mcp-hackathon",
+    "https://www.youtube.com/watch?v=cAnbiR2ndcw",
+    "https://www.youtube.com/watch?v=WLnjM5z7IPQ"
+   ]
+  },
+  {
+   "signal": "Approval-gated agent mechanics are already a common Alexa+ entrant theme: exact-phrase approval with drift blocking (Recall), approve-before-export (Commitment Brief), confirmation before sensitive actions (Nexus Semantic), and guarded household transitions (HomeOps).",
+   "implication_for_hackathon": "OutPass (ALX-5) cannot win Quality of the Idea on 'parent approves' alone. Its novelty has to lead: a phone-free child at the kitchen Echo, a conditional pass with a check-out/check-in ladder, and a one-tap host-family link. Present the approval engine as supporting machinery.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+    "https://www.youtube.com/watch?v=Dh66K4CFeUw",
+    "https://www.youtube.com/watch?v=gLIf-a7ag30",
+    "https://github.com/woahwhattheheck/commons/issues/16009"
+   ]
+  },
+  {
+   "signal": "Several entrants share an evidence-bound, honest-uncertainty design ethic: 'cannot invent a time' (Still Here), 'Cannot verify' (Aperture), and 'not independently verified' with no assumptions made (Commitment Brief).",
+   "implication_for_hackathon": "Mail Check's 'Not sure' and evidence crops are now expected rather than novel. Its differentiator has to be the TV-native, remote-only review of each field shown next to its crop, plus the capture flow triggered by the OK press. Likewise, FTV-4 should state its measurement limits honestly instead of presenting 'honesty' as the hook.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=cAnbiR2ndcw",
+    "https://www.youtube.com/watch?v=WLnjM5z7IPQ",
+    "https://www.youtube.com/watch?v=Dh66K4CFeUw"
+   ]
+  },
+  {
+   "signal": "Content-wrapper and memory/calendar MCP servers already exist among entrants (Daily Hard Truths, ASAYAMedia personal assistant).",
+   "implication_for_hackathon": "This confirms the kill rule against latent-LLM-capability and existing-Alexa+-feature ideas. There is no reason to revisit the killed concepts.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=HJdu7UQ-ak4",
+    "https://github.com/ASAYAMedia/amazon-alexa-mcp-hackathon"
+   ]
+  },
+  {
+   "signal": "Amazon DevRel is pushing Fire OS-to-Vega porting via ADBT and a TV-simulator workshop.",
+   "implication_for_hackathon": "A stretch goal for FTV-4 or FTV-3 is to show the same app running on the Vega Virtual Device after an ADBT port. That would 'push the track further' and produce concrete friction-log content for the required product feedback.",
+   "evidence_refs": [
+    "https://community.amazondeveloper.com/t/amazon-developer-newsletter-september-2026/29217"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "Make the three-input experience obvious: the phone mic as the voice channel, the remote D-pad driving the whole session (start, repeat, the listener's heard/not-heard), and a large on-TV visual of loudness reaching the far side of the room. Name it with the organizer's 'voice, D-pad, and visuals' wording.",
+   "which_concept": "FTV-4 Across the Room (and FTV-4F Listener Edition)",
+   "evidence_refs": [
+    "https://amazonappdev2026.devpost.com/updates/46456-got-an-idea"
+   ]
+  },
+  {
+   "feature_need": "Evidence-bound session summary: any text sent to the clinician or listener is built from measured values, and an LLM may rephrase it but cannot change a number (Still Here pattern). Show a 'numbers locked to measurements' check in the demo.",
+   "which_concept": "FTV-4 Across the Room",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=cAnbiR2ndcw"
+   ]
+  },
+  {
+   "feature_need": "Cross-session context: a week-over-week far-side trend with explicit 'measured on date X in room Y' labels. This covers the organizer's 'keeps context across sessions' hint even on Fire TV (inference: the hint was written for Alexa+ but applies to judging generally).",
+   "which_concept": "FTV-4 Across the Room",
+   "evidence_refs": [
+    "https://amazonappdev2026.devpost.com/updates/46456-got-an-idea",
+    "https://www.youtube.com/watch?v=Dh66K4CFeUw"
+   ]
+  },
+  {
+   "feature_need": "Give every 'Not sure' field a specific reason (low OCR confidence, crop cut off, no due date found), as Aperture does with 'Cannot verify'. Add approve-before-export where editing any field clears approval, as Commitment Brief does.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=WLnjM5z7IPQ",
+    "https://www.youtube.com/watch?v=Dh66K4CFeUw"
+   ]
+  },
+  {
+   "feature_need": "Stretch goal: port to Vega OS with ADBT and show it on the Vega Virtual Device, logging the port's friction for the required product feedback.",
+   "which_concept": "FTV-3 Mail Check / FTV-4 Across the Room",
+   "evidence_refs": [
+    "https://community.amazondeveloper.com/t/amazon-developer-newsletter-september-2026/29217"
+   ]
+  },
+  {
+   "feature_need": "Bind each parent approval to the specific pass plan (destination, return time, conditions), and block it if the child's request changes after approval, like Recall's plan-bound phrase and STATE_DRIFT. Keep durable receipts and guarded check-out/check-in transitions, as in HomeOps Relay.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+    "https://github.com/woahwhattheheck/commons/issues/16009"
+   ]
+  },
+  {
+   "feature_need": "Show technical proof in the video: an MCP conformance run with the official MCP client plus integration tests in CI. Competing Alexa+ entrants already show '12 checks' and '15 integration tests', so this is the Tech Implementation baseline.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=nxf7_ZA5bQo",
+    "https://www.youtube.com/watch?v=Dh66K4CFeUw"
+   ]
+  },
+  {
+   "feature_need": "Cross-device touch: show active pass status on a Fire TV screen in the living room, or the host-family view, to match the hackathon's 'connect the living room, front door, and the cloud' framing (inference; not an organizer requirement).",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://community.amazondeveloper.com/t/amazon-developer-newsletter-september-2026/29217",
+    "https://www.youtube.com/watch?v=aiyb4ru60EQ"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "I found no posts about gated partner tools, Bedrock quota or Bee hardware access in anything the script returned or I read. Reddit and X, where such complaints would usually appear, were unavailable (Reddit returned 402; X is not authenticated).",
+  "Ring Playground limitation (from an entrant's own description): browser-saved Ring frames have no verified capture timestamp, so the Aperture entrant had to release 'Cannot verify'.",
+  "Alexa+ entrants are demoing without a live Alexa connection: Commitment Brief says so explicitly, and PrimeCare shows a 'simulated Alexa+ experience in a web app'. Inference: a live Alexa+ hookup is not practical for most entrants.",
+  "The Devpost project gallery is unpublished ('The hackathon managers haven't published this gallery yet'), so entrants cannot check for idea collisions before the deadline.",
+  "Public discussion is thin. Both Devpost-linked community announcement threads show 0 replies (155 and 72 views), and every entrant demo video has under 60 views."
+ ],
+ "competitors_or_entrants_seen": [
+  "Commitment Brief (Darren Carreras): Alexa+ MCP; commitment snapshot diff with an approval-gated export; no live Alexa connection",
+  "Recall, guarded by HERMX ProofGate (Senih Bayankul): Alexa+ MCP study coach; plan-bound exact-phrase approval and STATE_DRIFT blocking; github.com/senih25/hermx-proofgate-amazon-2026",
+  "PrimeCare (Asyraf Saharudin): Alexa+ simulated in a web app; read-only clinic operations brief MCP",
+  "Nexus Semantic (Mbuso Harvey): Alexa+ -> Bedrock -> MCP agent operating Firefox and Windows Notepad; github.com/Mbuso-Harvey/nexus-alexa",
+  "Daily Hard Truths MCP (boussad charchour): Alexa+ content-wrapper MCP; github.com/charchourb/daily-hard-truths-mcp",
+  "HomeOps Relay (woahwhattheheck): Alexa+ stateful household-operations MCP; github.com/woahwhattheheck/homeops-mcp",
+  "ASAYAMedia amazon-alexa-mcp-hackathon: Alexa+ memory, task and calendar assistant MCP",
+  "Still Here (Petaflo AI Lab): Ring caretaking monitor for someone living alone; claims Ring partner API and signed webhooks",
+  "Aperture (Himanshu Jha): Ring Playground; owner-approved one-question private checks; github.com/himanshu748/aperture",
+  "Collision check vs our concepts: none of these is a Fire TV loudness/speech practice app (FTV-4), a Fire TV mail/bill evidence reader (FTV-3), or an Alexa+ child pass (ALX-5). The closest partial overlap is Recall/HomeOps approval and state-machine mechanics vs OutPass."
+ ],
+ "key_patterns": [
+  "The organizer is the clearest source of judge hints. 'Got an idea?' lists per-track 'push past the obvious' examples: Fire TV = CV with a camera, or voice + D-pad + visuals; Alexa+ = cross-service or cross-session agentic workflows; Bee = cross-device or on-wrist coaching; Ring = caretaking or business access control. It also confirms scoring is 1-5 on four equally weighted criteria.",
+  "Entrant demos so far are mostly Alexa+ MCP servers: 7 of 9 entrant projects I found, with 0 Fire TV and 0 Bee. Many use the organizer-endorsed simulation route instead of a live Alexa+ connection.",
+  "A shared design style runs through entrant demos: approval gates, evidence preserved next to claims, explicit 'Cannot verify / not independently verified' states, and visible test or conformance counts. These now look like the baseline, not differentiators.",
+  "Promotion is aimed at students, including Indian students (Arman Learning Hub, IdeaMela, Internshala listing, dev.to radar). Engagement is very low everywhere (top item 804 views; entrant demos 6-52 views), so public buzz cannot yet show which ideas are crowded."
+ ]
+}

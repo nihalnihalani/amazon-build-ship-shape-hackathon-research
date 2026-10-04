@@ -1,0 +1,263 @@
+{
+ "angle": "ring-bee",
+ "topic_run": "Ring doorbell developers API and Amazon Bee wearable",
+ "script_ran": true,
+ "script_error": "The script ran twice and returned zero items both times. The default run took 2.6s and the --quick retry took 1.6s. Reddit failed because ScrapeCreators returned '402 Client Error: Payment Required' (credits exhausted). YouTube returned 0 results, HN 0 stories, and TikTok, Instagram and Polymarket printed no results. X was skipped because Bird is not authenticated, which was expected. Xiaohongshu was unavailable. The script fell back to 'reddit-only' mode and flagged 'LIMITED RECENT DATA: 0 items confirmed 2026-09-04 to 2026-10-04'.",
+ "saved_file": "~/Documents/Last30Days/ring-doorbell-developers-api-and-amazon-bee-wearable-raw.md (default run); ~/Documents/Last30Days/ring-doorbell-developers-api-and-amazon-bee-wearable-raw-2026-10-04.md (--quick retry). Both contain only the empty-results header.",
+ "stats": {
+  "reddit": "none (0 threads; ScrapeCreators API returned 402 Payment Required)",
+  "youtube": "none (0 videos)",
+  "tiktok": "none (no results returned)",
+  "instagram": "none (no results returned)",
+  "hn": "none (0 stories)",
+  "polymarket": "none (no results returned)",
+  "web": "2 WebSearch queries (reddit.com and x.com excluded) returned 19 links; 12 pages fetched, 11 read, 1 blocked (cryptorank.io, HTTP 403). Mostly first-party Ring/Amazon docs plus 3 Bee review sites of mixed reliability. No engagement counts exist for these pages."
+ },
+ "coverage_note": "Coverage is thin. Every social source returned nothing. The Reddit API is out of credits (402), and the long compound query matched no YouTube or HN items in the window. So this pass has no community voice from Ring owners, Ring developers or Bee users. Everything below comes from 2 web searches and 11 page reads, mostly Ring developer docs and release notes, the Ring blog and support pages, and Amazon's own Bee page. The three Bee review sites are weak sources. aitools4you reads as research-based, not hands-on. bytee.org claims hands-on testing but describes details that do not match Bee, such as an 'aerospace-grade aluminum chassis' and a wake word, so treat it as low reliability (my inference). Sam Julien's post is from March 2025, outside the 30-day window. fenado.ai only summarizes a TechCrunch review and gives no date. Nothing I read covered Bee availability in India or Bee on Apple Watch beyond one 'two wrists' remark. Two questions in the brief, 'what Ring owners want that Ring does not do' and 'what Ring developers say about the Partner API', were NOT answered by real user discussion here; only the platform's own changelog is covered. One inconsistency: the release-notes page prints general availability as 'April 21, 2025', but the Ring blog dates the Appstore launch to March 31, 2026. A useful rerun would need ScrapeCreators credits topped up and short separate queries ('Ring Appstore', 'Ring developer API', 'Amazon Bee').",
+ "findings": [
+  {
+   "insight": "The Ring Appstore launched for U.S. customers with a Ring subscription. Launch categories were Pet Care, Home Analytics, Elder Care and Business Automation; the named partner was Toast (Cheer Chime for restaurants). Every app goes through a review.",
+   "platform": "web",
+   "source_name": "The Ring Blog (blog.ring.com)",
+   "engagement": "n/a (company blog)",
+   "date": "2026-03-31",
+   "url": "https://blog.ring.com/about-ring/introducing-the-ring-appstore-ring-cameras-just-got-smarter/",
+   "quote": "Every app in the Ring Appstore goes through a review process, so what you find there is vetted, purposeful."
+  },
+  {
+   "insight": "Ring Developer lists these capabilities: live video (WebRTC, RTSP), motion events, doorbell presses, device status and event history, through the APIs or a Ring MCP Server. It also promotes AI coding assistants (Kiro, Claude, Cursor, Lovable and others) for building apps.",
+   "platform": "web",
+   "source_name": "Ring Developer (developer.ring.com)",
+   "engagement": "n/a (developer portal)",
+   "date": "undated (footer \u00a9 2026)",
+   "url": "https://developer.ring.com/",
+   "quote": "Your AI coding assistant can then search Ring Appstore API references, retrieve integration guides, and generate working code."
+  },
+  {
+   "insight": "Since June 2026, all media from the Partner API (live video, clips, snapshots) carries a mandatory visible watermark with the Ring logo, Device ID, App Name and a timestamp. Any app that shows Ring video has to design around it.",
+   "platform": "web",
+   "source_name": "Ring Appstore API Release Notes (developer.amazon.com)",
+   "engagement": "n/a (release notes)",
+   "date": "2026-06-08",
+   "url": "https://developer.amazon.com/docs/ring/release-notes.html",
+   "quote": "All media content delivered through the Ring Partner API now includes a mandatory visible watermark"
+  },
+  {
+   "insight": "Ring is rolling out two video-encryption modes, Throw Away the Key (TAKE) and End-to-End Encryption (E2EE). For users who enable them, partner apps get encrypted video they cannot read.",
+   "platform": "web",
+   "source_name": "Ring Appstore API Release Notes (developer.amazon.com)",
+   "engagement": "n/a (release notes)",
+   "date": "2026-09-16",
+   "url": "https://developer.amazon.com/docs/ring/release-notes.html",
+   "quote": "video requests return encrypted content, so your app cannot read recordings"
+  },
+  {
+   "insight": "Apps now request specific scopes (Cameras and Doorbells, Sensors, Chimes), and Ring sensors were newly documented as a device family. This is a non-video surface that only just opened up.",
+   "platform": "web",
+   "source_name": "Ring Appstore API Release Notes (developer.amazon.com)",
+   "engagement": "n/a (release notes)",
+   "date": "2026-08-24",
+   "url": "https://developer.amazon.com/docs/ring/release-notes.html",
+   "quote": "Sensor support \u2014 Ring sensors are now documented as a device family."
+  },
+  {
+   "insight": "The Playground is a sandbox for device, media and account APIs that needs no app, no account linking and no subscription. Events and webhooks are not in that list, which fits the brief's 'no webhooks' constraint for the non-US route (my inference from what the entry leaves out).",
+   "platform": "web",
+   "source_name": "Ring Appstore API Release Notes (developer.amazon.com)",
+   "engagement": "n/a (release notes)",
+   "date": "2026-05-28",
+   "url": "https://developer.amazon.com/docs/ring/release-notes.html",
+   "quote": "a sandbox to test Ring device, media, and account APIs in real-time without creating an app"
+  },
+  {
+   "insight": "A Private Apps track (added in July 2026 per the release notes) lets a developer build for a small, known group of users without publishing to the Appstore. That fits a single-household project.",
+   "platform": "web",
+   "source_name": "Getting Started with Ring Developer Experience (developer.amazon.com)",
+   "engagement": "n/a (developer docs)",
+   "date": "undated page; Private Apps track added 2026-07-21 per release notes",
+   "url": "https://developer.amazon.com/docs/ring/get-started.html",
+   "quote": "If you're building an app for a small, known group of users without publishing it on the Appstore, see Private Use Apps."
+  },
+  {
+   "insight": "Developer testing needs real hardware, at least one Ring camera or doorbell. Certification covers security, privacy and functionality, and most submissions are reviewed within 48 hours.",
+   "platform": "web",
+   "source_name": "Getting Started with Ring Developer Experience (developer.amazon.com)",
+   "engagement": "n/a (developer docs)",
+   "date": "undated",
+   "url": "https://developer.amazon.com/docs/ring/get-started.html",
+   "quote": "On average, 90% of submissions are reviewed in less than 48 hours."
+  },
+  {
+   "insight": "Ring's customer-facing rules: developer apps require a Ring subscription, and users can revoke an app's device access at any time. A September release note added an API endpoint (DELETE /v1/accounts/me/app-integrations) so a partner app can unlink a Ring user itself.",
+   "platform": "web",
+   "source_name": "Ring Support: Ring Appstore and Third-Party App Integrations (ring.com)",
+   "engagement": "n/a (support article)",
+   "date": "about mid-Sept 2026 (page says 'last updated 3 weeks ago'); unlink endpoint 2026-09-15 per release notes",
+   "url": "https://ring.com/support/articles/e2sg9/Ring-appstore-third-party-integrations",
+   "quote": "Removing a developer app integration revokes account linking and all device access permanently."
+  },
+  {
+   "insight": "Amazon's own Bee page lists Actions (email and calendar outcomes such as drafted emails and invites), Daily Insights, Voice Notes and Templates. It states that only the user can see transcripts and that no audio is stored. So commitment and follow-up handling already ships in Bee.",
+   "platform": "web",
+   "source_name": "About Amazon (aboutamazon.com)",
+   "engagement": "n/a (company news)",
+   "date": "undated",
+   "url": "https://www.aboutamazon.com/news/devices/bee-amazon-wearable-ai-device-new-features",
+   "quote": "Bee processes conversations in real-time and no audio is ever stored."
+  },
+  {
+   "insight": "An early Bee user liked hands-free capture, daily summaries and the to-do suggestions. He reported significant speaker-detection bugs that forced manual tagging, and found it awkward to wear Bee alongside an Apple Watch.",
+   "platform": "web",
+   "source_name": "Sam Julien (samjulien.com blog)",
+   "engagement": "n/a (personal blog)",
+   "date": "2025-03 (outside 30-day window)",
+   "url": "https://www.samjulien.com/bee-first-impressions/",
+   "quote": "looks pretty silly wearing something on each wrist"
+  },
+  {
+   "insight": "This review names speaker identification in groups as Bee's weakest point and confirms the $19/month subscription. It says recording-consent laws vary by jurisdiction. It reads as research-based rather than hands-on.",
+   "platform": "web",
+   "source_name": "AI Tools 4 You (aitools4you.ai)",
+   "engagement": "n/a (review site)",
+   "date": "2026-01-15",
+   "url": "https://aitools4you.ai/blog/amazon-bee-ai-wearable-review",
+   "quote": "Groups exceeding three people often result in misattributed dialogue, with multiple speakers' words consolidated incorrectly."
+  },
+  {
+   "insight": "This review claims false triggers 2-3 times a day, social friction from always-on listening, proactive suggestions that were only about 60% useful, nightly charging, and no availability in Germany or France because of GDPR. Low reliability: it describes hardware that does not match Bee (my inference).",
+   "platform": "web",
+   "source_name": "Bytee (bytee.org)",
+   "engagement": "n/a (review site)",
+   "date": "2026-06-21",
+   "url": "https://bytee.org/amazon-bee-wearable-review-2/",
+   "quote": "An always-on microphone connected to Amazon's infrastructure is a privacy nightmare"
+  },
+  {
+   "insight": "A secondary summary of a TechCrunch hands-on: Bee was useful for summarizing conversations, but the reviewer was uneasy about the surveillance. It lists extensive mobile permissions and cloud-stored transcripts as concerns.",
+   "platform": "web",
+   "source_name": "fenado.ai (summarizing TechCrunch)",
+   "engagement": "n/a (aggregator)",
+   "date": "undated",
+   "url": "https://fenado.ai/articles/amazons-bee-wearable-sparks-intrigue-and-privacy-concerns-techcrunch-reports",
+   "quote": "I tried Amazon's Bee wearable and am both intrigued and slightly creeped out"
+  },
+  {
+   "insight": "An independent API catalog entry describes Ring as launching its developer platform and Appstore in 2026 around 'video-powered apps'. Its detailed API profile is still a placeholder, which suggests little third-party analysis of the Partner API exists yet (my inference).",
+   "platform": "web",
+   "source_name": "API Evangelist (github.com/api-evangelist/ring)",
+   "engagement": "n/a (GitHub repo, 34 commits)",
+   "date": "undated",
+   "url": "https://github.com/api-evangelist/ring",
+   "quote": "Third-party developers can build video-powered apps against the Ring Partner API."
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "Ring keeps adding privacy and provenance limits on video: a mandatory watermark (June), scoped permissions (Aug), a partner-side unlink endpoint (Sept 15), and TAKE/E2EE modes that make recordings unreadable to apps (Sept 16).",
+   "implication_for_hackathon": "Inference: a Ring-track idea that depends on running computer vision over recorded video is moving against the platform and fails for E2EE users. If Ring is ever reconsidered, the safer shape uses events, device state or sensors and treats video as optional. This also backs the earlier decision to kill the zone-reader idea.",
+   "evidence_refs": [
+    "https://developer.amazon.com/docs/ring/release-notes.html"
+   ]
+  },
+  {
+   "signal": "Ring is US-first. The Appstore is for U.S. customers with a subscription, developer testing needs a real Ring camera or doorbell, and the Playground covers only device, media and account APIs.",
+   "implication_for_hackathon": "This confirms that the India-based solo developer cannot show real Ring event flows. Ring stays a poor primary track, and the current Fire TV primary (FTV-4) is the right call.",
+   "evidence_refs": [
+    "https://blog.ring.com/about-ring/introducing-the-ring-appstore-ring-cameras-just-got-smarter/",
+    "https://developer.amazon.com/docs/ring/get-started.html",
+    "https://developer.amazon.com/docs/ring/release-notes.html"
+   ]
+  },
+  {
+   "signal": "Ring's official Appstore categories are Elder Care, Pet Care, Home Analytics and Business Automation, and Toast is already a named small-business partner.",
+   "implication_for_hackathon": "Inference: elder-care alerts, pet monitoring and storefront analytics on Ring are the obvious ideas and likely crowded, so they risk a low 'Quality of the Idea' score. The newer surfaces (sensors as a device family, Private Apps) are less crowded but were not verified to work in the Playground.",
+   "evidence_refs": [
+    "https://blog.ring.com/about-ring/introducing-the-ring-appstore-ring-cameras-just-got-smarter/",
+    "https://developer.ring.com/",
+    "https://developer.amazon.com/docs/ring/release-notes.html"
+   ]
+  },
+  {
+   "signal": "Bee already ships Actions (drafted emails and calendar invites from conversations), Daily Insights, Voice Notes and Templates.",
+   "implication_for_hackathon": "A Bee 'memory' or 'commitment tracker' idea would overlap a built-in feature, which the organizer says scores poorly. Add that to the existing hardware block (no Bee device, no Apple Watch), and Bee remains a skip.",
+   "evidence_refs": [
+    "https://www.aboutamazon.com/news/devices/bee-amazon-wearable-ai-device-new-features"
+   ]
+  },
+  {
+   "signal": "Users and reviewers keep raising the same Bee problems: an always-on mic that feels creepy socially, speaker misattribution in groups, and wrist-wear friction next to an Apple Watch.",
+   "implication_for_hackathon": "Inference that carries over to FTV-4: a phone used as a far-field room mic will meet the same 'creeped out' reaction and multi-speaker confusion. Push-to-practice capture, no stored audio and a target-speaker check can be shown as a deliberate design answer to Bee's known complaints, which helps the Design score.",
+   "evidence_refs": [
+    "https://fenado.ai/articles/amazons-bee-wearable-sparks-intrigue-and-privacy-concerns-techcrunch-reports",
+    "https://www.samjulien.com/bee-first-impressions/",
+    "https://aitools4you.ai/blog/amazon-bee-ai-wearable-review"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "Visible capture state plus 'no audio stored' processing. The phone mic is active only during a remote-started practice turn; the TV shows a clear on-air indicator and the remote mutes instantly. Only loudness numbers are kept, never audio. This mirrors Bee's 'no audio is ever stored' baseline and answers the 'creeped out' reaction to always-on mics (inference).",
+   "which_concept": "FTV-4 Across the Room (and fallback FTV-4F)",
+   "evidence_refs": [
+    "https://www.aboutamazon.com/news/devices/bee-amazon-wearable-ai-device-new-features",
+    "https://fenado.ai/articles/amazons-bee-wearable-sparks-intrigue-and-privacy-concerns-techcrunch-reports",
+    "https://www.samjulien.com/bee-first-impressions/"
+   ]
+  },
+  {
+   "feature_need": "Target-speaker gating. A short voice-enrollment step lets the far-side check score only the practicing adult, not the TV or other people in the room. Reviews report that Bee misattributes speakers in groups of more than three, so household noise is a known failure mode to design for (inference).",
+   "which_concept": "FTV-4 Across the Room",
+   "evidence_refs": [
+    "https://aitools4you.ai/blog/amazon-bee-ai-wearable-review",
+    "https://www.samjulien.com/bee-first-impressions/"
+   ]
+  },
+  {
+   "feature_need": "A provenance stamp on each evidence crop: capture timestamp, device and a 'source image' marker drawn on the crop shown beside each Textract field. This borrows the pattern of Ring's mandatory watermark (logo, Device ID, App Name, timestamp) so every extracted value can be traced to its capture (analogy, inference).",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://developer.amazon.com/docs/ring/release-notes.html"
+   ]
+  },
+  {
+   "feature_need": "A revocable, scoped host-family link: one tap revokes the link everywhere, and it expires when the pass closes. This copies Ring's consent model, where removing an integration 'revokes account linking and all device access permanently' and partner apps can unlink users (inference).",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://ring.com/support/articles/e2sg9/Ring-appstore-third-party-integrations",
+    "https://developer.amazon.com/docs/ring/release-notes.html"
+   ]
+  },
+  {
+   "feature_need": "An optional door-sensor event as check-out/check-in evidence on the pass ladder, shown as a simulated sensor feed. Ring sensors became a documented device family with their own scope in Aug 2026. Speculative: it is not verified to be reachable through the non-US Playground, so frame it as a stretch or simulated integration only.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://developer.amazon.com/docs/ring/release-notes.html"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "Bee: always-on listening feels intrusive and creates social friction ('intrigued and slightly creeped out' in the TechCrunch hands-on; 'privacy nightmare' per bytee.org, a low-reliability source).",
+  "Bee: speaker detection and attribution is buggy and needs manual tagging, and it is worse in groups of more than three (Sam Julien; aitools4you).",
+  "Bee: wearing it alongside an Apple Watch is awkward, 'something on each wrist' (Sam Julien).",
+  "Bee: claimed false triggers 2-3 times a day, proactive suggestions only about 60% useful, nightly charging, and no availability in Germany or France because of GDPR (bytee.org; unverified, low reliability).",
+  "Bee: $19/month subscription on top of the device (aitools4you).",
+  "Bee: extensive mobile permissions and cloud-stored transcripts (fenado.ai summary of TechCrunch).",
+  "Ring developer constraints (from docs, not voiced complaints; no developer complaints were found): mandatory visible watermark on all Partner API media; TAKE/E2EE users' recordings unreadable by apps; at least one real Ring device needed for testing.",
+  "Ring customer constraint: Appstore apps are for U.S. customers only and require a Ring subscription (Ring blog; Ring support)."
+ ],
+ "competitors_or_entrants_seen": [
+  "Toast: Ring Cheer Chime integration for restaurants (Ring Appstore launch partner)",
+  "Holy Roly Ice Cream (Los Angeles): featured at the Ring Appstore launch event",
+  "Ring Appstore official categories that likely hold incumbents: Pet Care, Home Analytics, Elder Care, Business Automation (rental property, workplace safety, storefronts)",
+  "Ring MCP Server plus a Ring-endorsed AI coding-assistant workflow (Kiro, Claude, Lovable, Cursor, Replit, Bolt.new, v0, Windsurf, GitHub Copilot)",
+  "Bee built-in features that would collide with Bee-track ideas: Actions, Daily Insights, Voice Notes, Templates",
+  "No hackathon entrants or competing submissions were seen in this pass"
+ ],
+ "key_patterns": [
+  "No community data: Reddit (402, out of credits), YouTube, HN, TikTok, Instagram and Polymarket all returned zero, so this pass only covers first-party docs and a few weak review sites. It says nothing reliable about what Ring owners or developers are asking for.",
+  "Ring's 2026 changelog keeps adding privacy limits (watermark in June, scoped permissions in August, partner unlink and TAKE/E2EE in September). Apps that read video are increasingly constrained, while event, sensor and consent-respecting designs fit where the platform is going.",
+  "Ring is US-first and needs hardware: the Appstore is for U.S. subscribers, testing needs a real device, and the Playground covers only device, media and account APIs. This confirms that the Ring track is a poor fit for an India-based solo developer.",
+  "Ring's obvious categories (elder care, pet care, home analytics, small-business automation) are already official Appstore categories with partners. The less crowded surfaces are sensors (documented Aug 2026) and Private Apps (my inference).",
+  "Bee complaints cluster on trust and accuracy (always-on mic, speaker misattribution, two-wrist wear), and Bee already ships commitment and follow-up Actions. A memory or commitment idea on Bee would duplicate an existing feature, but the privacy lessons carry over to FTV-4's room-mic design."
+ ]
+}

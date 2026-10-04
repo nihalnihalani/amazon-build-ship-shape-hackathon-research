@@ -1,0 +1,294 @@
+{
+ "angle": "alexa-plus: what Alexa+ users love and hate, jobs they want done, what developers say about Alexa+ add-ons, MCP Apps and Agent Skills, gaps Alexa+ does not fill natively, and signals for OutPass (kids, families, permissions)",
+ "topic_run": "Alexa+ developers MCP add-ons",
+ "script_ran": true,
+ "script_error": "The script finished in about 18 s with no crash or timeout, so I did not rerun it with --quick. Three sources failed inside the run. Reddit: ScrapeCreators returned HTTP 402 Payment Required, so 0 threads. X/Twitter: skipped because it is not authenticated on this machine (expected). Xiaohongshu: not available. The firecrawl MCP scraper was rate-limited by other agents running at the same time, so I read pages with WebFetch and yt-dlp instead.",
+ "saved_file": "~/Documents/Last30Days/alexa-developers-mcp-add-ons-raw.md",
+ "stats": {
+  "reddit": "none (0 threads; the ScrapeCreators search returned HTTP 402 Payment Required)",
+  "youtube": "The script found 12 videos in the date range and showed 6 after relevance ranking: 89 views and 0 likes in total. It fetched 5 transcripts and showed 3. yt-dlp confirmed the same view counts; likes are hidden.",
+  "tiktok": "none (source enabled, 0 items)",
+  "instagram": "none (source enabled, 0 items)",
+  "hn": "none (0 stories)",
+  "polymarket": "none",
+  "web": "2 WebSearch queries, 18 results in total (8 + 10). Pages read: Consumer Reports (19 Dec 2025), uprisera (6 Mar 2026) and aboutamazon (undated). Two TechRadar article bodies came back truncated, so only their headlines were read, and TrustedReviews returned HTTP 530. I also read 6 YouTube descriptions with yt-dlp."
+ },
+ "coverage_note": "Results were thin and lean toward developers. No Reddit (HTTP 402), X, TikTok, Instagram, HN or Polymarket data came back. The 6 YouTube items are all Alexa+ track demo videos from other hackathon entrants, dated 8 Sep to 2 Oct 2026, each with 1-63 views. They show what rivals are building, not what Alexa+ users want. The script says 0 items were confirmed in the date range, but that does not match the YouTube upload dates, which all fall between 2026-09-04 and 2026-10-04. The user love/hate material comes only from web reviews. Consumer Reports (Dec 2025) falls outside the 30-day window. uprisera (Mar 2026) is a secondary roundup that cites Wired and Consumer Reports. Quotes from web pages were pulled out by WebFetch's summarizing model and may not be word-for-word. I found nothing on Agent Skills specifically, nothing on MCP Apps beyond one entrant, and nothing showing Alexa+ supports Amazon Kids profiles. Four entrants are new compared with research/TRENDS_AND_RIVALS.md: Puente, Say So, Tally and LQA. FixIt and HomeOps Guardian are already listed there.",
+ "findings": [
+  {
+   "insight": "Fellow entrant HomeOps Guardian says the Alexa+ add-on console still shows 'Coming Soon' (checked signed in on 14 Sep 2026). It also says Amazon devrel told the build session that no SDK can control an Echo Show today. So it uses a web client in place of Alexa+, as Amazon's own teams did in their demos.",
+   "platform": "YouTube",
+   "source_name": "Atchayam Ganesh (HomeOps Guardian demo; repo AtchayamG/homeops-guardian)",
+   "engagement": "5 views, 0 likes shown by the script",
+   "date": "2026-09-24",
+   "url": "https://www.youtube.com/watch?v=00LRE46zk7U",
+   "quote": "Amazon's developer relations team said on the hackathon build session that you cannot take an SDK and control an Echo Show today."
+  },
+  {
+   "insight": "In HomeOps Guardian, the model cannot approve its own plan. The server asks a human through MCP elicitation and stops if the client cannot ask. The video description says that if the server trusts the model's 'confirmed' flag instead, 7 of 8 gate tests fail. That is the server-side approval pattern OutPass's parent approval needs.",
+   "platform": "YouTube",
+   "source_name": "Atchayam Ganesh (HomeOps Guardian)",
+   "engagement": "5 views, 0 likes shown by the script",
+   "date": "2026-09-24",
+   "url": "https://www.youtube.com/watch?v=00LRE46zk7U",
+   "quote": "the server itself asks the human through MCP elicitation and shows the exact staged plan; it fails closed if the client cannot ask"
+  },
+  {
+   "insight": "Puente is an entrant aimed at families: a parent on Alexa+ gets school notices explained in Spanish, adds the dates to the family calendar and drafts replies to teachers. The parent approves every step. The demo runs in an open-source Alexa+ simulator, an Echo Show-style web app with voice, on-screen confirmation forms and MCP Apps. It is the closest family/parent-permission rival to OutPass seen here, though it does not collide directly.",
+   "platform": "YouTube",
+   "source_name": "Cristian Vega Labs (Puente)",
+   "engagement": "6 views, 0 likes shown by the script",
+   "date": "2026-09-29",
+   "url": "https://www.youtube.com/watch?v=kg4YrGWWAJk",
+   "quote": "lets Alexa+ explain school notices in plain Spanish, add their dates to the family calendar, and write replies to teachers in English"
+  },
+  {
+   "insight": "Say So is a self-hosted MCP purchase gate. A product listing carries an injected instruction, the assistant obeys it, and the purchase still does not happen, even with the injection detector off. The description claims 241 tests and no API key. It shows judges may see 'injected text cannot approve' as a strength, which maps to a child or a message falsely claiming that a parent said yes.",
+   "platform": "YouTube",
+   "source_name": "\uc720\uc9c0\uace4 (Say So; repo jigonyoo/say-so)",
+   "engagement": "1 view, 0 likes shown by the script",
+   "date": "2026-09-25",
+   "url": "https://www.youtube.com/watch?v=GMu3CWWQHVA",
+   "quote": "The seller's own product listing tells the assistant to add a $214 bundle. The assistant obeys. The purchase still does not happen"
+  },
+  {
+   "insight": "Tally, a household expense ledger built as an MCP server, argues that the kitchen Echo is a shared household device that no per-phone app can replace. The same argument supports a phone-free child asking the kitchen Echo for a pass.",
+   "platform": "YouTube",
+   "source_name": "Aleksandr (Tally)",
+   "engagement": "6 views, 0 likes shown by the script",
+   "date": "2026-09-08",
+   "url": "https://www.youtube.com/watch?v=jMP3aDyg1_Q",
+   "quote": "Alexa is not a personal device \u2014 it sits in the kitchen and belongs to everyone in the apartment."
+  },
+  {
+   "insight": "Tally never guesses when speech recognition leaves a name ambiguous. It asks over MCP elicitation and, when the host has no way to ask back, puts the question in the error text. Every tool returns a sentence written to be heard once, and the no-display path is tested.",
+   "platform": "YouTube",
+   "source_name": "Aleksandr (Tally)",
+   "engagement": "6 views, 0 likes shown by the script",
+   "date": "2026-09-08",
+   "url": "https://www.youtube.com/watch?v=jMP3aDyg1_Q",
+   "quote": "\"An\" with both Anna and Andrew in the flat does not pick one: it asks over MCP elicitation"
+  },
+  {
+   "insight": "FixIt answers appliance questions from the manufacturer's manual and cites the page. Its client is clearly labelled as a simulation because Alexa+ developer tools are closed to entrants. No model runs inside any tool; the AI extraction happens offline. It reports 62 of 63 grounded answers in one evaluation run and a cold start of about 5 seconds.",
+   "platform": "YouTube",
+   "source_name": "sadi shihab (FixIt; repo sadishihab/fixit-mcp)",
+   "engagement": "8 views, 0 likes shown by the script",
+   "date": "2026-10-02",
+   "url": "https://www.youtube.com/watch?v=EbuSbJQJrXQ",
+   "quote": "This client is simulated because Alexa plus developer tools aren't available to hackathon participants."
+  },
+  {
+   "insight": "LQA, an English-Romanian translation checker, shows protocol conformance as a selling point. A forged Origin header gets 403, a notification gets 202 and an unknown method gets 404 with error -32601. The description claims 23/23 conformance checks. It has the most views in this set.",
+   "platform": "YouTube",
+   "source_name": "Gabriel1312 (LQA; repo grotefigi/lqa-agent)",
+   "engagement": "63 views, 0 likes shown by the script",
+   "date": "2026-09-13",
+   "url": "https://www.youtube.com/watch?v=w9-IKSVXsT8",
+   "quote": "Writing these tests caught a real bug in my own server, which returned 200 where the spec requires 404."
+  },
+  {
+   "insight": "Consumer Reports' review praises Alexa+ for natural conversation, smart-home control and calendar handling. It faults the app, wrong answers, agentic errors (Uber addresses), inconsistent memory and full-screen ads. Older than the 30-day window.",
+   "platform": "Web",
+   "source_name": "Consumer Reports (Daniel Wroclawski)",
+   "engagement": "n/a",
+   "date": "2025-12-19",
+   "url": "https://www.consumerreports.org/electronics/digital-assistants/amazon-alexa-plus-ai-assistant-review-a1667486499/",
+   "quote": "The smart home controls are buggy, and the user interface is clunky and slow"
+  },
+  {
+   "insight": "The same Consumer Reports review found Alexa+ understood a 5-year-old's speech well, which suggests a young child can talk to the Echo directly, as OutPass assumes. The review did not discuss parental controls, profiles or third-party skills.",
+   "platform": "Web",
+   "source_name": "Consumer Reports (Daniel Wroclawski)",
+   "engagement": "n/a",
+   "date": "2025-12-19",
+   "url": "https://www.consumerreports.org/electronics/digital-assistants/amazon-alexa-plus-ai-assistant-review-a1667486499/",
+   "quote": "Never confused by his filler words or stuttering"
+  },
+  {
+   "insight": "A secondary roundup lists three main Alexa+ problems: erratic or slow behaviour, a buggy app with broken routines (it claims automations fail about 50% of the time) and confident wrong answers. It cites Wired, Consumer Reports, Business Insider and 6,400+ Amazon employee beta testers. None of these were verified directly.",
+   "platform": "Web",
+   "source_name": "uprisera blog (author shown as mAIstro)",
+   "engagement": "n/a",
+   "date": "2026-03-06",
+   "url": "https://uprisera.com/blog/en/alexa-plus-failing-amazon-ai-assistant-struggles-2026",
+   "quote": "unbearably erratic"
+  },
+  {
+   "insight": "Amazon's own parent guide lists what Amazon Kids on Alexa does: age filters, explicit-lyric filtering, blocking unapproved videos, time limits by day and hour, rules that hold back entertainment until daily goals are met, and approved contacts for calls. It does not mention Alexa+ for kids or any request-and-approve flow for leaving the house. That points to OutPass's gap (inference).",
+   "platform": "Web",
+   "source_name": "aboutamazon.com (How parents can use Alexa devices with their kids)",
+   "engagement": "n/a",
+   "date": "undated",
+   "url": "https://www.aboutamazon.com/news/devices/how-parents-can-use-alexa-devices-with-their-kids",
+   "quote": "set time limits, including total time per day, and specific hours when a child can or cannot use Alexa"
+  },
+  {
+   "insight": "Search results show a TechRadar piece on Prime members angry about being upgraded to Alexa+ automatically. Only the headline was read because the article body came back truncated.",
+   "platform": "Web",
+   "source_name": "TechRadar",
+   "engagement": "n/a",
+   "date": "unknown (body not readable)",
+   "url": "https://www.techradar.com/ai-platforms-assistants/amazon-is-pushing-alexa-upgrades-on-prime-members-and-users-arent-happy-about-it",
+   "quote": "'I don't want an assistant with attitude': some Prime members are railing against their auto-upgrade to Alexa+"
+  },
+  {
+   "insight": "A second TechRadar piece frames Alexa+ as still being beta-tested on users. Only the headline was read because the article body came back truncated.",
+   "platform": "Web",
+   "source_name": "TechRadar",
+   "engagement": "n/a",
+   "date": "unknown (body not readable)",
+   "url": "https://www.techradar.com/ai-platforms-assistants/were-definitely-beta-testing-this-technology-is-alexa-really-bad-or-are-our-expectations-for-free-services-too-high",
+   "quote": "\"We're definitely beta testing this technology\": is Alexa+ really bad, or are our expectations for free services too high?"
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "Four of the six Alexa+ entrants seen use MCP elicitation or confirmation forms so a human approves before the assistant acts: HomeOps Guardian, Say So, Puente and Tally.",
+   "implication_for_hackathon": "For OutPass, 'parent approves' alone is now standard among entrants and will not stand out. The parts judges have not seen are the conditions attached to an approval (return-by time, where, with whom), the check-out/check-in ladder with escalation, and the one-tap link for a host family. The pitch should lead with those (inference).",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=00LRE46zk7U",
+    "https://www.youtube.com/watch?v=GMu3CWWQHVA",
+    "https://www.youtube.com/watch?v=kg4YrGWWAJk",
+    "https://www.youtube.com/watch?v=jMP3aDyg1_Q"
+   ]
+  },
+  {
+   "signal": "Tally argues that the shared kitchen Echo belongs to the whole household, something a per-phone app cannot be.",
+   "implication_for_hackathon": "This supports OutPass's choice of a phone-free child at the kitchen Echo. Quote the household-device reasoning in the Quality of the Idea section (inference).",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=jMP3aDyg1_Q"
+   ]
+  },
+  {
+   "signal": "The Alexa+ add-on console shows 'Coming Soon' and the developer tools are closed to entrants, so every entrant demos with a simulated client. Puente uses an open-source Echo Show-style simulator with voice, confirmation forms and MCP Apps.",
+   "implication_for_hackathon": "A simulation is the accepted norm and will not cost points if it is labelled honestly. OutPass can show the parent's approval card through MCP Apps in a similar simulator. Identify and credit that simulator if it is reused; its repo was not identified in this pass.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=00LRE46zk7U",
+    "https://www.youtube.com/watch?v=EbuSbJQJrXQ",
+    "https://www.youtube.com/watch?v=kg4YrGWWAJk"
+   ]
+  },
+  {
+   "signal": "Native Amazon Kids covers content filters, time limits, goal rules and approved contacts. None of the pages read describe a child asking to go somewhere, a parent approving with conditions, or check-in and escalation.",
+   "implication_for_hackathon": "That is a native gap for OutPass, which helps against the judges' penalty for ideas that duplicate an existing Alexa+ feature. Before relying on it, verify that Alexa+ has not added kid profiles or a permissions feature; that was not confirmed in this pass (inference).",
+   "evidence_refs": [
+    "https://www.aboutamazon.com/news/devices/how-parents-can-use-alexa-devices-with-their-kids"
+   ]
+  },
+  {
+   "signal": "Users do not trust Alexa+: reviewers report wrong answers, broken routines, agentic mistakes and lapses in memory.",
+   "implication_for_hackathon": "For a safety feature like a child's pass, put the pass state, conditions and escalation timers in deterministic server code, not in the model's memory. FixIt pitches 'no model inside any tool' the same way, so it is a plausible Tech Implementation asset (inference).",
+   "evidence_refs": [
+    "https://www.consumerreports.org/electronics/digital-assistants/amazon-alexa-plus-ai-assistant-review-a1667486499/",
+    "https://uprisera.com/blog/en/alexa-plus-failing-amazon-ai-assistant-struggles-2026",
+    "https://www.youtube.com/watch?v=EbuSbJQJrXQ"
+   ]
+  },
+  {
+   "signal": "Strong Alexa+ entrants show measured protocol conformance (version negotiation, Origin 403, 202, 404 with -32601), resistance to prompt injection, and test counts.",
+   "implication_for_hackathon": "The technical bar for Alexa+ is evidence on screen, not claims. OutPass should show a conformance probe and gate tests in its video and README.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=w9-IKSVXsT8",
+    "https://www.youtube.com/watch?v=00LRE46zk7U",
+    "https://www.youtube.com/watch?v=GMu3CWWQHVA"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "An approval gate the server owns. A pass becomes active only after the parent answers through elicitation or the parent's link, never because the model or the child says so. If the parent cannot be asked, the pass stays pending. Include a test showing the gate fails if the server trusts a model-supplied 'approved' flag.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=00LRE46zk7U"
+   ]
+  },
+  {
+   "feature_need": "Resistance to false approvals: 'Mom already said yes', or text inside a forwarded message, can never approve or extend a pass. Show it live with the detector switched off, as Say So does.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=GMu3CWWQHVA",
+    "https://www.youtube.com/watch?v=00LRE46zk7U"
+   ]
+  },
+  {
+   "feature_need": "Ask instead of guessing when names are ambiguous: which child is speaking, which friend's house, which parent should approve. Use elicitation, with a question in the error text when the host cannot ask back.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=jMP3aDyg1_Q"
+   ]
+  },
+  {
+   "feature_need": "Replies written to be heard once by a child at a kitchen Echo with no screen (the pass, the return-by time, what happens next), plus a tested path for devices without a display.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=jMP3aDyg1_Q",
+    "https://www.consumerreports.org/electronics/digital-assistants/amazon-alexa-plus-ai-assistant-review-a1667486499/"
+   ]
+  },
+  {
+   "feature_need": "An MCP Apps card for the parent on an Echo Show or in a simulator, showing who, where, with whom and return-by, with buttons to approve, approve with conditions or decline. Demo it in an Echo Show-style simulator that has on-screen confirmation forms.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=kg4YrGWWAJk"
+   ]
+  },
+  {
+   "feature_need": "Conditions modelled on the time limits parents already know from Amazon Kids (allowed hours, weekday and weekend rules), applied to passes out of the house. Show in the pitch that native controls stop at screen time and content.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.aboutamazon.com/news/devices/how-parents-can-use-alexa-devices-with-their-kids"
+   ]
+  },
+  {
+   "feature_need": "Show the host family's one-tap link in another language, inspired by Puente's Spanish-language parent flow (inference: not asked for by any user in this data).",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=kg4YrGWWAJk"
+   ]
+  },
+  {
+   "feature_need": "Run the ladder logic (check-out, due time, reminder, escalation) as deterministic server code with no model inside the tools. State latency and cold start, and label every simulated household number (for example with a dataSource field).",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=EbuSbJQJrXQ",
+    "https://www.youtube.com/watch?v=00LRE46zk7U"
+   ]
+  },
+  {
+   "feature_need": "A protocol conformance probe shown in the video and README: 2025-11-25 version negotiation, Origin 403, notification 202, unknown method 404 with -32601. Also run it from source so it cannot drift from the repo.",
+   "which_concept": "Any Alexa+ entry (ALX-5 OutPass)",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=w9-IKSVXsT8",
+    "https://www.youtube.com/watch?v=00LRE46zk7U"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "Developers: the Alexa+ add-on console shows 'Coming Soon' and Alexa+ developer tools are closed to entrants, so nothing runs on a real Echo (HomeOps Guardian, FixIt).",
+  "The Alexa app's smart-home controls are buggy and its interface is clunky and slow (Consumer Reports, Dec 2025).",
+  "Confident wrong answers, e.g. the wrong day given for a snowstorm forecast (Consumer Reports, Dec 2025; uprisera).",
+  "Agentic mistakes: home and destination addresses wrong when ordering an Uber (Consumer Reports, Dec 2025).",
+  "Memory lapses: could not recall a saved recipe two weeks later (Consumer Reports, Dec 2025).",
+  "Full-screen ads on Echo Show even as Alexa+ becomes a paid service (Consumer Reports; WebSearch summary).",
+  "Erratic, slow behaviour and broken routines; uprisera claims automations fail about 50% of the time (secondary source, not verified).",
+  "Anger at the forced auto-upgrade and an assistant with 'attitude' (TechRadar headline only; body not read).",
+  "Work Gmail and Exchange calendars cannot be linked, and some users dislike Alexa+'s voice cadence. Both come only from the WebSearch summary; the source pages were not read."
+ ],
+ "competitors_or_entrants_seen": [
+  "Puente (Cristian Vega Labs): Alexa+ MCP server that explains school notices in Spanish, adds dates to the family calendar and drafts replies to teachers, with parent approval at every step. Uses Amazon Nova Pro and an open-source Alexa+ simulator with MCP Apps. New compared with TRENDS_AND_RIVALS.md and adjacent to OutPass's family audience.",
+  "Say So (jigonyoo/say-so, plus jigonyoo/gatemcp): Alexa+ shopping purchase gate that resists prompt injection; claims 241 tests. New compared with TRENDS_AND_RIVALS.md.",
+  "Tally (Aleksandr): Alexa+ MCP household expense ledger with link codes for each household member, elicitation for ambiguous names and money stored as integers. New compared with TRENDS_AND_RIVALS.md.",
+  "LQA (grotefigi/lqa-agent): English-Romanian translation checker as an MCP server; claims 23/23 conformance checks and 48/48 tests. New compared with TRENDS_AND_RIVALS.md; no overlap with OutPass.",
+  "HomeOps Guardian (AtchayamG/homeops-guardian): energy-load MCP server with a human gate via elicitation, Bedrock Nova Pro agent, 57+9 tests, Alexa+ track plus Open Source mini challenge. Already listed in TRENDS_AND_RIVALS.md.",
+  "FixIt (sadishihab/fixit-mcp): appliance-manual MCP server on Bedrock AgentCore, Alexa+ track plus AWS Builder and Open Source mini challenges. Already listed in TRENDS_AND_RIVALS.md.",
+  "Native rival: Amazon Kids and Kids+ (content filters, time limits, approved contacts, Parent Dashboard)."
+ ],
+ "key_patterns": [
+  "Every Alexa+ entrant seen demos with a simulated client because the add-on console is 'Coming Soon'. They compete on server quality, measured protocol conformance, test counts and honest SIMULATED labels.",
+  "A human approving through MCP elicitation or confirmation forms appears in 4 of 6 Alexa+ entrants. It is expected, not a differentiator. Distinctive structure around the approval (conditions, timed ladders, a third party such as a host family) is where room is left.",
+  "Entrants increasingly frame the kitchen Echo as a household device shared by everyone (Tally) and target families and parents (Puente). That supports the OutPass setting, and a direct family-permission rival could still appear (inference).",
+  "Reviewers report a trust gap: wrong answers, broken routines, agentic slips and memory lapses. Deterministic, cited, server-owned state is the counter-pattern rivals use (FixIt: no model inside any tool).",
+  "Social demand data is near zero for this query. Entrant videos have 1-63 views, and there is no Reddit, X, HN, TikTok or Instagram signal. This pass shows what rivals and reviewers say, not proof of consumer demand for any concept."
+ ]
+}

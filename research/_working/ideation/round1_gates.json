@@ -1,0 +1,253 @@
+[
+ {
+  "id": "FTV-1",
+  "eligibility": "pass",
+  "eligibility_reasons": "Meets the Fire TV rule: a Vega OS app shown on the Vega Virtual Device, which the Official Rules name as 'the Fire TV/Vega simulator' (evt-rules-live.md L152). Fire TV is exempt from the runtime-hook rule. The TV only renders, takes D-pad input (TVEventHandler/FocusManager, verified in the RN-for-Vega overview, firetv.md \u00a75) and plays audio. It needs no TV camera, no TV microphone (the VVD has none; all capture is on phones) and no arbitrary Alexa voice. Content is the family's own photos and voices, so it complies with forum 45329 (no third-party clips). It does not depend on the Android TV emulator.",
+  "feasibility": "conditional",
+  "feasibility_reasons": "(1) The 140 h solo estimate exceeds solo capacity of about 117 h. That capacity is an estimate (6.5 focused h/day \u00d7 18 build days), the baseline the other concepts use. (2) It is the heaviest choreography in the set: a realtime room across 3+ phones plus the TV, and a shoot with live consenting people. (3) Vega WebSocket support is documented only through a WebFetch summary (firetv.md \u00a75, medium confidence). The 1 s fetch-polling fallback is rules-safe. (4) Transcribe and Bedrock depend on a Paid-plan account with non-zero quota (forum 45416/45384 report quota 0 or suspension). (5) The stated fallback, 'Fire OS react-native-tvos on a real Fire TV Stick over adb', does not work with the stick the user can buy. The \u20b95,499 Fire TV Stick 4K Select runs Vega OS 1.1 and uses `vega devmode`, not adb (firetv.md \u00a74). Real Fire OS options are a Fire OS stick, or Appstore Quality Central Live Device Interaction, which offers remote Fire OS 5\u20138/14 TVs; Vega is not supported per an Amazon community answer from May 2026 (.firecrawl/idea-gate-aqc-remote-firetv.json), and India account access is unverified. (6) The device page lists the 4K Select at OS 1.1, while SDK 0.24 needs OS 1.2. Whether an OTA update closes that gap is unverified.",
+  "conditions": [
+   "A 2-person split (about 85 h each, the concept's estimate) or a solo scope cut to about 110 h or less. For example, make the multi-teller claim ledger a stretch goal and use labelled Web Speech captions live, with Transcribe only for the archive.",
+   "At least 3 consenting participants are available for the shoot, including an elder; minors need guardian consent. Old photos must be genuinely family-owned.",
+   "Phone-to-TV events reach the Vega app on the VVD over WSS, or over 1 s polling, by day 2.",
+   "Bedrock Nova Lite and Transcribe are usable in us-east-1 on a Paid-plan AWS account (quota is not 0).",
+   "For a real-device take: the Vega path needs the 4K Select confirmed on OS 1.2, an Amazon Developer account and a USB data cable. The Fire OS path needs a Fire OS stick or AQC Live Device Interaction. Not adb on the 4K Select.",
+   "Do not commit family media to a public repo. Use consented sample media, or a private repo shared with the 6 reviewers plus testing@devpost.com (forum 45418, 45420)."
+  ],
+  "native_overlap": "low",
+  "native_overlap_notes": "Reviewed sources show no Amazon-native group story-capture or family-archive feature. Amazon Luna GameNight shares only the QR phone-join mechanic. It is games, not an archive, and India is not in its country list (rivals_weartv.md). The Fire TV Alexa+ mobile companion (US from November) is focused on watchlists. Inference: native risk is low, but judges may read the join flow as 'GameNight-like'.",
+  "crowding": "medium",
+  "crowding_notes": "Storytelling theme: 0 of about 37 visible Fire TV repos (github.md \u00a72; a lower bound). The QR phone-companion pattern is common, though: CommonScene, HomeBoard and Cinemastamps per research claim GH-035. The memory/elder theme has about 15 repos across tracks, including Marc-Dvci/Mantel (a Fire TV 'patient memory' for dementia). Fire TV has about 12 visible repos per prize slot.",
+  "overall": "conditional",
+  "redesign_to_pass": "Not a gate fail. To remove the conditions for a solo builder: (a) ship the question relay and episode player first, at about 100 h, and treat the claim ledger as a stretch; (b) drop the adb fallback and stay VVD-only, which is rules-compliant, or use AQC Live Device Interaction with a separate Fire OS build; (c) script the shoot with 3 consenting adults if minors complicate consent.",
+  "day_one_proof": "On the VVD (Rosetta installed, Vega SDK 0.24, Node 20 via nvm), a Vega RN app must do four things: receive 50 phone-PWA events over WSS through API Gateway with a median under 500 ms (or work over 1 s polling); show a phone-uploaded JPEG full-screen from a presigned GET; play an S3 audio clip through react-native-w3cmedia with currentTime advancing. Separately, Bedrock Nova Lite in us-east-1 must return a structured claims JSON for one test transcript."
+ },
+ {
+  "id": "FTV-2",
+  "eligibility": "pass",
+  "eligibility_reasons": "A Vega OS app on the VVD meets the Fire TV rule (Rules L152), and Fire TV is exempt from the runtime hook. It is single-device, with no camera or microphone needed. All episode content is original or generated, so there is no third-party copyrighted media (forum 45329). Caveat: everything needed to run must be in the repo (M19). Forum 45418 recommends a private repo shared with reviewers if AI-generated illustrations and audio are not open-licensed.",
+  "feasibility": "conditional",
+  "feasibility_reasons": "(1) The 125 h solo estimate exceeds the roughly 117 h solo capacity (estimate). (2) The core risk is unverified: whether react-native-w3cmedia currentTime and seek on the VVD are precise enough (the concept marks this unverified). Polly word speech marks are verified (.firecrawl/idea-ftv-polly-speechmarks.md). (3) Nova Canvas availability and price are unverified, and Bedrock quota may be 0 on new accounts. (4) Children's content needs a human review pass, and efficacy cannot be shown. (5) The Fire OS 'real stick' fallback has the same problem as FTV-1: the 4K Select is Vega, so it needs a Fire OS stick or AQC Live Device Interaction. Supporting data point: entrant usv240/everyword reports a 30 ms median word-onset error on its own renderer, measured on LibriSpeech (entrant claim, unverified). That suggests the mechanism is achievable on Fire OS, but says nothing yet about the VVD.",
+  "conditions": [
+   "Fit solo scope within about 117 h: drop Nova Canvas in favour of react-native-svg scenes, and drop live generation in favour of hand-reviewed pre-generated episodes.",
+   "On day 1, the VVD word clock must reach a median error of 150 ms or less with no word highlighted more than 150 ms early, or the JS-timer re-anchoring fallback must meet the same bar.",
+   "Differentiation from usv240/everyword must be visible in the first 30 s of the video: per-word D-pad replay plus the household-adaptive next episode. Otherwise Quality of the Idea is at risk.",
+   "No efficacy claims about real children. Any child viewing only with parental consent.",
+   "AI-generated assets must be licensed into the repo, or the repo made private and shared with the reviewers (forum 45418).",
+   "Bedrock Nova Lite access is confirmed in us-east-1 or us-west-2."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Fire TV has system captions (line-level). Amazon already ships read-along highlighting for books: Kindle Assistive Reader on Alexa 'features automatic page turns and real-time highlighting' (Amazon help page, undated, retrieved 2026-10-03, .firecrawl/idea-gate-echo-vision-a11y.md), and everyword's README cites Immersion Reading. PBS KIDS Video and Amazon Kids+ serve this audience with passive video. Reviewed sources show no native word-level, adaptive practice on Fire TV.",
+  "crowding": "high",
+  "crowding_notes": "Direct visible collision with usv240/everyword (created 2026-09-14, pushed 2026-10-03, MIT; README read via Firecrawl 2026-10-03, .firecrawl/idea-gate-everyword.md; all of the following are entrant claims, unverified). It has the same Same Language Subtitling thesis on Fire TV, word-by-word highlighting built from Polly speech marks and Transcribe, 'read-that-line-again' and slow mode, the published npm package karaoke-captions-react (which collides with the proposed react-native-word-clock OSS piece), a live MCP server, a Strands agent, 153 tests, and footage filmed on an Amazon-hosted Fire TV. usv240 is a serial, highly polished entrant. Other overlaps: moiz-lakkadkutta/lingo (dual subtitles), samadon1/sightline (caption runtime), vega-media-kit CueOverlay.",
+  "overall": "conditional",
+  "redesign_to_pass": "This is not a gate fail, but the headline thesis is already visibly built by a strong entrant. Two options. Option (a): drop the SLS/karaoke framing and pitch only the household-adaptive practice loop (replay and dwell signals, then a tricky-word profile, then a constrained next episode behind a deterministic readability gate) plus per-word D-pad replay; also make the Open Source piece a Vega port of an existing MIT React Native caption library, which matches the rules' own example of 'adding Vega support to a popular React Native library'. Option (b): choose a different concept.",
+  "day_one_proof": "A single-screen Vega app on the VVD plays one Polly neural MP3 through w3cmedia. It logs highlighted-word error against the speech marks over 3 minutes and must show a median of 150 ms or less with zero words lit more than 150 ms early. Play/Pause followed by OK must replay exactly one word's slice. The same day, write a 3-line differentiation against everyword that a judge could verify from the video."
+ },
+ {
+  "id": "FTV-3",
+  "eligibility": "pass",
+  "eligibility_reasons": "A Vega OS app on the VVD meets the Fire TV rule (Rules L152). It deliberately avoids the infeasible TV camera (no Vega camera API or camera hardware, firetv.md \u00a77) by using a phone on a stand as the sensor. The TV handles remote keys, rendering, Polly audio playback and VoiceView labels. It needs no TV microphone and no arbitrary Alexa voice. Demo documents are the team's own and redacted, or synthetic and labelled, so there are no third-party IP issues.",
+  "feasibility": "pass",
+  "feasibility_reasons": "The 115 h solo estimate fits within the roughly 117 h capacity, but with only about 2 h of buffer; both figures are estimates. Textract AnalyzeDocument QUERIES+LAYOUT (synchronous, with geometry and confidence) is verified (.firecrawl/idea-ftv-textract-analyzedocument.md), and Polly is verified. The unverified pieces each have a rules-safe fallback: Vega WebSocket (fall back to auto-capture plus polling), Textract accuracy on photos taken by a phone on a stand (fall back to DetectDocumentText plus cited lines), and Bedrock quota (the core runs on Textract and deterministic rendering without Nova). One person can record the demo. The Fire OS fallback needs a Fire OS stick or AQC Live Device Interaction, not adb on the Vega 4K Select.",
+  "conditions": [
+   "Textract QUERIES field accuracy of about 90% or better on the team's own phone-on-stand captures under living-room light, which is the concept's own kill threshold.",
+   "Demo documents are team-owned and redacted, or synthetic and labelled. Account numbers are masked on screen. Read-only scope only, with no payment or medication advice.",
+   "English-only MVP, since Textract support for Hindi was not verified.",
+   "For a real-device take: a Vega 4K Select on OS 1.2 via `vega devmode`, or a Fire OS build on a Fire OS stick or AQC Live Device Interaction."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Amazon's own vision accessibility includes Echo Show 'Show and Tell', which identifies items you hold up, and Alexa+ 'Visual Input', which uses the Echo Show camera 'to identify objects and assist with daily tasks' (Amazon help page, undated, retrieved 2026-10-03). The page does not say whether either reads letters or bills or pulls out due dates and amounts. Fire TV and Echo Screen Magnifier and VoiceView only magnify on-screen UI. Non-Amazon incumbents are dedicated CCTV magnifiers at $400\u2013$4,998 (AFB, retailer). The video must make the gap with Visual Input explicit.",
+  "crowding": "medium",
+  "crowding_notes": "The accessibility cluster is the most crowded Fire TV theme: about 12 visible blind/low-vision repos across tracks, at least 8 of them Fire TV AI audio description (github.md theme counts). vikrant-29/ai-tv-vision-assistant ('D-pad-first AI vision assistant designed for Fire TV', Fire OS, Flutter) has unknown scope and is a possible overlap. No visible entrant reads physical documents on the TV. The risk is that judges lump it in with the audio-description entries.",
+  "overall": "pass",
+  "redesign_to_pass": "Not required. Recommended: open the video with the contrast to Echo Show Visual Input (10-foot reflow, evidence crops a viewer can check, remote-only control), and keep the confidence-threshold 'Not sure, show me' state visible.",
+  "day_one_proof": "End to end: an OK key press on the VVD sends 'capture' over WSS or polling. The phone kiosk page on a stand grabs a full-resolution still and PUTs it to S3. Textract AnalyzeDocument QUERIES returns sender, amount and due date with bounding boxes for 10 of the team's own redacted bills, with at least 9 of 10 fields correct. The VVD then renders the reflowed card and a zoomed evidence crop at 60\u201396 px."
+ },
+ {
+  "id": "ALX-1",
+  "eligibility": "pass",
+  "eligibility_reasons": "It uses the forum-accepted path: a self-hosted MCP server on spec 2025-11-25 over Streamable HTTP, plus a simulated Alexa+-style host labelled SIMULATED (Rules L154; forum 45058, 45403). It needs no gated toolkit, CLI or simulator. Cross-account Alexa notifications are shown as simulated and not claimed. Google Calendar is a third-party API used within its terms. The thesis is cross-household acceptance and reassignment, which is not a native Alexa+ feature in reviewed sources.",
+  "feasibility": "pass",
+  "feasibility_reasons": "The 100 h solo estimate fits the roughly 117 h capacity (estimate). Step Functions .waitForTaskToken, the MCP transport and annotations, and the Strands MCP client are verified. Google Calendar events.insert with a client-supplied ID is unverified. Multi-tenant OAuth plus a saga is the largest build in the set. Bedrock is used only for parsing, and forum 45058 accepts a deterministic simulation. Not verified in reviewed sources (general knowledge): in Google OAuth 'Testing' mode, refresh tokens expire after about 7 days. That would break a judge-facing demo through 20 Nov unless the ICS-feed fallback is used or the calendars are re-linked.",
+  "conditions": [
+   "The hosted MCP endpoint stays live through 20 Nov 12:00 PT (forum 45411), with a local-run path documented as well.",
+   "The host is labelled simulated. No claim of real Alexa+ deployment or cross-account push.",
+   "Calendar access stays valid through judging: either re-link the test families' Google OAuth before Stage 2, or switch to per-family ICS feeds.",
+   "Bedrock quota is checked on day 1, or the deterministic utterance parser is kept as the default."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Alexa+ already does family calendars, 'schedule events when everyone is free' and person-targeted reminders, but within one household; single-household scope is inferred (aboutamazon, updated 24 Jul 2026). Google CC keeps a family calendar current. GoKid broadcasts driver needs. Targeted, constraint-checked cross-family offers with acceptance were not found natively. The concept's own removal test concedes that Alexa+ adds the entry point, not the core value.",
+  "crowding": "high",
+  "crowding_notes": "Alexa+ is the most crowded track: about 158 visible repos, or about 53 per prize. At least 10 visible Alexa+ repos do household replanning or handoff, several with explicit acceptance: dev-pinegrass/homerelay ('explicit acceptance'), codeforcode111/relay-household, chowol0309/planpatch, ToukoUrsin/threshold, Elinfiny/HestiaRelay, BurpingSpider/readynest-alexaplus, Willyahaisibwe/household-coordinator-mcp, QIU-Guanzong/waypoint-local-planner, KoaChang/dinner-relay, and KindHandoff (cited by the concept).",
+  "overall": "pass",
+  "redesign_to_pass": "Not a gate fail. Originality is the exposure: put the carpool-specific constraint filter (seats, boosters, arrive-by) and the fairness ledger on screen in the first 20 s, and show the voice-first entry so the Alexa+ fit is not purely nominal.",
+  "day_one_proof": "The deployed MCP server (2025-11-25 Streamable HTTP, MCP-Session-Id, Origin validation) passes MCP Inspector tools/list. A Step Functions offer with .waitForTaskToken times out and falls through to the next candidate. A Google Calendar events.insert retry with the same client-chosen ID does not create a duplicate for a test family. Bedrock Nova Lite quota is non-zero, or the deterministic parser is in place."
+ },
+ {
+  "id": "ALX-2",
+  "eligibility": "pass",
+  "eligibility_reasons": "It uses a self-hosted MCP server (2025-11-25 over Streamable HTTP) plus a simulated host with Echo Dot (voice-only) and Echo Show modes. Both are accepted routes (Rules L154; forum 45058, 45263). It implements Amazon's public Functional Requirements but uses no gated tool. The OSS harness only emits JSON shaped like the gated Local Inspector's verdict, which is allowed provided it is never presented as Amazon certification. The agency is fictional, so no real agency is impersonated. Payments are simulated.",
+  "feasibility": "pass",
+  "feasibility_reasons": "The 88 h solo estimate fits the roughly 117 h capacity (estimate). All dependencies are public: the MCP SDK, ext-apps 2.0.3 and Inspector 2.9.0. No LLM is needed at runtime (forum 45058). DynamoDB conditional writes cover idempotency. The main limits are realism (a fictional agency, no real riders), which are not gates. Real-rider testing within 20 days is not feasible, so no impact claims should be made.",
+  "conditions": [
+   "The harness and README say 'unofficial; not Amazon certification'. Remove 'built to Alexa+ certification requirements' from the product name.",
+   "No real agency names or logos in the UI. Real agency policies are cited only as public sources for the config values.",
+   "The server accepts 2025-03-26, 2025-06-18 and 2025-11-25 negotiation, because Amazon's lifecycle sample sends 2025-03-26 (mcp.md gaps #1).",
+   "The endpoint stays live through 20 Nov, or a local-run path is provided."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Alexa+ already books rides natively through Uber, and 'ride booking' is a partner-gated Category SDK category (mcp.md \u00a72). Forum 45397 warns that existing Alexa+ features score poorly. Paratransit-specific mechanics (advance windows, negotiated times, linked return legs, no-show and cancel policy) were not found natively in reviewed sources, so the pitch must lead with those, not with 'book a ride'.",
+  "crowding": "low",
+  "crowding_notes": "No visible paratransit repo appears in the 363-repo classification (github.md; a lower bound). The Alexa+ track overall is the most crowded, at about 158 visible repos. The OSS harness sits next to AlSayedGamal/mcp-voice-simulator and everyword's 'verify:live' probe, which checks MCP 2025-11-25 spec rules. That is a different rule set from the Alexa+ Functional Requirements, but the space is adjacent.",
+  "overall": "pass",
+  "redesign_to_pass": "Not required. A naming and claims hygiene fix only, as listed in the conditions.",
+  "day_one_proof": "The deployed endpoint negotiates 2025-11-25 in MCP Inspector and also accepts 2025-03-26. search_trip_options, then get_offer, then book_trip return chained stable IDs. Repeating book_trip with the same idempotency key returns the existing trip_id (DynamoDB conditional write). A ui:// trip card renders in the ext-apps basic host. The voice-only path reads back fare and pickup window and requires an explicit 'yes'."
+ },
+ {
+  "id": "ALX-3",
+  "eligibility": "pass",
+  "eligibility_reasons": "Two forum-accepted routes are eligible: a classic Alexa Skill on an Echo that invokes your MCP (forum 45263), or a simulated host (forum 45058). The native Alexa+ add-on is correctly marked gated and excluded. There is no claim of live Alexa+ integration. Insurance data is synthetic or reconstructed, so no real insurer data or branding is used.",
+  "feasibility": "conditional",
+  "feasibility_reasons": "The MVP includes a classic custom skill on a real Echo. The base-case user has no Echo, and an Amazon Forum thread (Jan 2026) reports personal and developer skills failing under Alexa+ Early Access. Alexa+ Early Access began in India on 16 Sep 2026 (mcp.md \u00a711), so a device in India may be enrolled. Textract AnalyzeExpense and the ASK pieces are marked unverified in the concept. The 92 h solo estimate fits (estimate). The simulated-host fallback removes the hardware dependency.",
+  "conditions": [
+   "The default demo runs on the simulated Echo Show host. Show a real Echo only if the user has one registered to the same developer account and a dev-mode skill is confirmed working on it outside Alexa+ Early Access.",
+   "Claims and receipts are synthetic or reconstructed and labelled. No coverage interpretation or insurance advice.",
+   "Receipts are treated as personal financial data: encrypted at rest, with delete and export controls.",
+   "The MCP endpoint stays live through 20 Nov, or a local-run path is provided. Bedrock is optional, used only for splitting compound utterances."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Alexa+ natively remembers personal facts, accepts document uploads, manages email and calendar and sets reminders (aboutamazon, updated 24 Jul 2026). That could absorb simple 'remember I paid 189'. Reconciliation of claimed, approved and paid amounts, depreciation holdback, and adjuster commitment tracking were not found natively. Insurer portals (USAA) are the incumbent substitute.",
+  "crowding": "low",
+  "crowding_notes": "No visible home-insurance-claim entrant was found. Adjacent visible repos are ramkumar122/homebrain (durable home case memory), Marc-Dvci/Circa (home-repair transaction guardian), K1Andayesh/fixproof (repair handover evidence) and BxRKings/claimguard-voice (shipment claims). The Alexa+ track overall is crowded, at about 158 visible repos.",
+  "overall": "conditional",
+  "redesign_to_pass": "To make it unconditional, drop the classic-skill/Echo path from the MVP and demo only on the simulated Echo Show host. Lead with reconciliation ('what is still owed and why', with source chips) rather than voice capture, so it does not read as Alexa+ memory.",
+  "day_one_proof": "The deployed MCP server passes Inspector. Textract AnalyzeExpense extracts vendor, total and date correctly on at least 9 of 10 of the team's own receipts. Ledger reconciliation unit tests pass on one reconstructed claim. Only if the Echo path is pursued: a dev-mode custom skill on the user's own Echo invokes the MCP-backed Lambda end to end."
+ },
+ {
+  "id": "BEE-1",
+  "eligibility": "conditional",
+  "eligibility_reasons": "Rules \u00a74 (L156) require data 'recorded and processed through an actual Bee device or an Apple Watch running the Bee software', shown live in both the video and the code. The base-case user has neither. Bee Pioneer ships only to the US (Help Center), and the Android app is US-only with a reported pairing block (forum 45111). The iOS app is listed on the India App Store, but whether the service works for an India-based account is unverified (bee.md \u00a77). The FAQ and forum 'no device' answers conflict with the rules, and the rules prevail (\u00a711.4, D2). Eligible only if a real capture path exists.",
+  "feasibility": "conditional",
+  "feasibility_reasons": "The 122 h solo estimate exceeds the roughly 117 h capacity; the concept itself says so. It spans two platforms (Bee CLI and the Vega app) and needs two people. Speaker attribution is reported as poor (TechCrunch 2026-05-24). The stream is at-most-once and reportedly dies after about 43 h. Todo events are reportedly never delivered on the stream; ringfence reports this, and it is a single-source anecdote. Processing latency is undocumented, and recordings under about 50 words are deleted (forum 45111).",
+  "conditions": [
+   "Hardware path A: an iPhone (iOS 17.6+) plus an Apple Watch (watchOS 10+) running the Bee app, whose recordings reach the CLI. Forum 45111 has a participant report that the Watch works. A Reddit snippet (not read) reports about 1 h recordings on a Watch Ultra. Ambient parity with Pioneer is unverified.",
+   "Or hardware path B: a Bee Pioneer ($49.99) shipped to a US address and forwarded to India. The address cannot be changed once processing starts. Forwarding lead time is unverified.",
+   "The account works from India: the new Amazon-account sign-in (since 2026-09-23), Developer Mode unlocked by tapping the app version 5 times, and `bee login` plus `bee status` both OK. Login with an Amazon-account sign-in is undocumented.",
+   "Hardware and a working CLI are in hand by about day 5, or the concept is abandoned (it is ineligible without real data).",
+   "A second consenting adult is on camera, and all recordings exceed 50 words.",
+   "Scope fits solo: drop the Vega board and use the concept's web-board fallback, or work as a 2-person team.",
+   "Optional: a written clarification request under Rule 11.6 if any part relies on a Watch-only account."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Bee natively extracts the wearer's commitments and suggested to-dos and offers Actions (aboutamazon, 2026-01-05). The capture and extraction half is native. The two-key acceptance, revision chain and counterparty-confirmed completion were not found in Bee, Otter, Hearth or Caring Village, but that is absence from pages, not proof (rivals_home). Caring Village's claimable to-dos overlap the acceptance step.",
+  "crowding": "medium",
+  "crowding_notes": "The Bee track is the least crowded, at about 7\u201310 visible repos (github.md). johnwils/kept ('Bee-powered commitment tracker for developers') and carrerasdarren-cell/commitment-brief overlap the commitment theme. Household coordination is saturated across tracks, with at least 10 Alexa+ household replanning or handoff repos.",
+  "overall": "conditional",
+  "redesign_to_pass": "If no Bee or Watch capture path works by about day 5, it is ineligible and should not be built. If hardware exists, cut the Vega app (submit to Bee only) to fit solo hours, and keep the two-key ledger and the counterparty-confirmed close-out as the visible wedge.",
+  "day_one_proof": "With hardware: Developer Mode is on and `bee login` plus `bee status` succeed. One consented, over-50-word, two-person exchange containing a promise is recorded. `bee changed --cursor --json` returns it with two distinct speaker labels and a conversation_uuid. The extractor emits one proposal with the correct owner and counterparty. `bee todos create --alarm-at` writes back and the todo appears in the Bee app."
+ },
+ {
+  "id": "BEE-2",
+  "eligibility": "conditional",
+  "eligibility_reasons": "It has the same hard gate as all Bee concepts: the rules require real data captured by a Bee device or an Apple Watch running Bee (L156), and the base-case user has neither. The preferred answer channel, push-to-talk voice notes, is a Pioneer button feature. On a Watch, the journal-created and journal-text events are marked unverified. It is eligible only with a real capture path and a consenting human tutor whose sessions are recorded.",
+  "feasibility": "conditional",
+  "feasibility_reasons": "The 109 h solo estimate fits (estimate). The binding constraint is the calendar: the 1/3/7-day Leitner spacing needs real sessions starting by about day 5, which depends on when hardware arrives. Whether voice-note answers reach the CLI from a Watch, whether the roughly 50-word deletion threshold applies to voice notes, and whether todo alarms reach the wrist (one entrant saw phone-only delivery) are all unverified. The Bee contributor's guidance to use journal-text for command-like use comes from issue #4 (bee.md \u00a73). Grader agreement must be measured.",
+  "conditions": [
+   "Hardware path A (iPhone plus Apple Watch running Bee, with recordings reaching the CLI) or path B (a US-shipped and forwarded Pioneer), and the account works from India with Developer Mode and `bee login`, as for BEE-1.",
+   "Real tutoring sessions start by about day 5 so that the spaced intervals appear in real data before the video.",
+   "Written consent from the demo tutor. No real lectures recorded without instructor (and, where the policy requires, classmate) consent.",
+   "If the Watch voice-note path fails, answers fall back to button- or Watch-started short conversations of 60 words or more, linked by time window. The video must state this.",
+   "If prompts arrive on the phone rather than the wrist, the video says so (the 'on-wrist' claim is limited)."
+  ],
+  "native_overlap": "low",
+  "native_overlap_notes": "Bee Templates natively turn lectures into study plans, and voice notes are native (aboutamazon, 2026-01-05). Spaced explain-back prompts graded against the tutor's verbatim words were not found in Bee, RemNote, Studr, StudyFetch or Otter in reviewed sources; that is absence from pages, not proof.",
+  "crowding": "low",
+  "crowding_notes": "No education entrant among the roughly 7\u201310 visible Bee repos. Cross-track, the mechanism exists in Alexa+ entrants: khalidbench1-collab/Recall_Amazon ('Grades what you said aloud'), senih25/recall-alexa-mcp (hands-free spaced repetition) and corepilotlabs/yasmin-voice-tutor. Novelty within Bee rests on wearable capture of the source session.",
+  "overall": "conditional",
+  "redesign_to_pass": "If no capture path is working by about day 5, it is ineligible; pivot to another track. If only a Watch is available, design answers around short conversations from the start rather than voice notes, and frame prompts as 'on your phone and wrist'.",
+  "day_one_proof": "Record one consented 8-minute mini-tutorial through Bee, then give 3 spoken explain-back answers of 60\u201390 words. Each answer must reach the CLI (journal event or `bee changed`) within about 10 minutes and not be dropped. A `bee todos create --alarm-at` prompt must fire on the wrist or the phone. The grader must agree with a hand rubric on at least 2 of 3 answers."
+ },
+ {
+  "id": "BEE-3",
+  "eligibility": "conditional",
+  "eligibility_reasons": "Same hardware gate: the rules require real data captured by a Bee device or an Apple Watch running Bee (L156), and the base-case user has neither. Once real capture exists, it satisfies the runtime hook directly (`bee stream`, `bee changed`, transcripts and todos are called at runtime) and needs no second person in solo mode. The concept correctly avoids relying on Bee's built-in MCP for protocol compliance, because entrants report it negotiates 2024-11-05.",
+  "feasibility": "pass",
+  "feasibility_reasons": "Assuming the hardware condition holds: 108 h solo fits the roughly 117 h capacity (estimate). It is a single platform on a laptop. Claude Code hooks (UserPromptSubmit, PreToolUse with permissionDecision) are verified (.firecrawl/idea-bee-claude-code-hooks.json). The risk sits in identifier alignment and in the A/B result against the native `bee mcp connect claude-code` baseline. Cost note: the $30\u201360 A/B estimate uses Claude on Bedrock. Whether the promotional credits cover Anthropic models is unverified (the AWS Marketplace is excluded; event.md \u00a74), so this may be out-of-pocket unless Nova is used for extraction and the number of runs is reduced. The AgentCore stretch needs a Paid plan.",
+  "conditions": [
+   "Hardware path A or B, and the account works from India with Developer Mode and `bee login`, as for BEE-1. Hardware must be in hand by about day 5.",
+   "Narration sessions exceed 50 words. Pair mode only with the partner's opt-in.",
+   "The Claude Code version is pinned in the README, because the hook schemas evolve.",
+   "The A/B budget is confirmed: either credits cover the Bedrock model chosen, or runs are capped or switched to Nova."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "`bee mcp connect claude-code` natively exposes 34 Bee tools (search, transcripts, facts, todos) to the coding agent with no extra code (docs.bee.computer/docs/mcp). That is the main substitute. The deterministic PreToolUse guard and the symbol-grounded attempt records are not native. The concept rightly makes beating this baseline its kill test.",
+  "crowding": "high",
+  "crowding_notes": "Within the small Bee field, 3 of roughly 7\u201310 visible repos target developer workflows: johnwils/kept (decisions to issues and ADRs; a scaffold as of 09-13), harshpuri84/ringfence (mature and evidence-heavy) and Marc-Dvci/Mental-Model-Drift (github.md). It has the highest originality risk among the Bee concepts.",
+  "overall": "conditional",
+  "redesign_to_pass": "If no capture path works, it is ineligible; pivot. If hardware exists, keep the scope narrowed to what the native Bee MCP baseline cannot do: the deterministic edit-time guard and the consent-gated PR provenance. Publish the A/B logs.",
+  "day_one_proof": "Debug one seeded bug aloud with Bee for 3\u20135 minutes, ruling out 2 hypotheses with over 50 words. The narration reaches the CLI via `bee changed` or a transcript. The aligner maps at least 80% of 10 spoken identifiers to repo symbols. On that bug, run Claude Code with and without the hook. The TriedThat run must avoid both ruled-out edits that the `bee mcp connect claude-code` baseline repeats or risks repeating."
+ },
+ {
+  "id": "RNG-1",
+  "eligibility": "pass",
+  "eligibility_reasons": "The Ring Developer Playground is the Ring-documented simulator the FAQ accepts, and forum 45309 calls it 'the only documented route' without a US device. The demo's real runtime Ring calls are the Playground token, device, status and capabilities reads, and WHEP live view of the Playground Vehicle simulation with in-browser vehicle detection. Gated motion_detected sub_type=vehicle webhooks are delivered by the ring-sandbox emulator and labelled SIMULATED, not claimed live. There is no plate or face analysis, and CC BY attribution is planned. The real US-device path is correctly excluded.",
+  "feasibility": "conditional",
+  "feasibility_reasons": "The 105 h solo estimate fits (estimate). The core real-Ring feature depends on two unverified facts. (1) What the Playground 'Vehicle' live-view footage shows: the console is behind sign-in and was not inspected (ring.md gaps #1), and it may not show a vehicle stopping at a curb. (2) WHEP reliability. One entrant (doorstep-ring) got 201 and 1280x720 frames on 2026-09-23 only with browser-built SDP offers; a werift offer got 500. The concept's 'WHEP failure 2026-09-30' and '68 KB JPEG' anecdotes could not be traced in the research digests. Playground regional gating for an India account is unverified. The machine runs Node v25 while the starter uses Next 14, so use nvm. If the vehicle live view is unusable, the fallback leaves only device reads as real Ring calls, which weakens Stage 1 and Tech Implementation.",
+  "conditions": [
+   "The Playground opens for the user's Amazon Developer account from India (regional gating unverified).",
+   "The Playground Vehicle simulation shows a vehicle that MediaPipe detects inside a drawn zone, with at least 80% recall on clearly visible frames and the watermark band masked.",
+   "WHEP sessions succeed on at least 3 of 10 attempts using a browser or headless-Chrome SDP offer through a server-proxied exchange.",
+   "Every emulator-driven event is labelled SIMULATED on screen and in the README. CC BY attribution for Playground footage appears in the video.",
+   "Team-recorded curb footage is consented, with people blurred and no plates kept. No OCR of plates or fleet numbers.",
+   "No claim that agencies accept rider-held evidence; this is unverified."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Ring Smart Alerts include native vehicle alerts on paid plans. The partner app School Bus Home already ships the 'expected window plus no-vehicle heads-up' pattern ($4.99/mo). Agency apps (Access 'Where's My Ride', myRTCpara, Pace TripCheck) give vehicle ETA. A policy-based wait clock, a helper accept ladder and a dispute packet were not found natively.",
+  "crowding": "low",
+  "crowding_notes": "No paratransit or curb entrant among the roughly 36 visible Ring repos (github.md). An analogous evidence pattern exists: christin09110-stack/doorstep-receipt reconciles carrier tracking claims against what a Ring doorbell recorded. The elder-care cluster (about 15 repos) is adjacent but different. Note an internal collision: ALX-2 uses the same paratransit domain.",
+  "overall": "conditional",
+  "redesign_to_pass": "Not a gate fail. If the Vehicle footage is unusable, keep a load-bearing real Ring interaction: the rider or helper starts a Playground live-view check from the app ('look at my curb now'), and the WHEP frame plus the on_demand history entry become part of the dispute timeline. Then the core still visibly calls documented Ring surfaces, and the dwell CV runs on labelled team footage.",
+  "day_one_proof": "With a Playground token: list the device and capabilities; open 10 WHEP sessions on the Vehicle simulation through a server-proxied SDP exchange with a browser-built offer, and get at least 3 successes; capture 30 frames; run the MediaPipe detector with the watermark band masked and get at least 80% vehicle recall inside a drawn curb polygon. Verify a ring-sandbox HMAC-signed vehicle webhook against API Gateway, with raw-byte HMAC and a 2xx in under 5 s."
+ },
+ {
+  "id": "RNG-2",
+  "eligibility": "conditional",
+  "eligibility_reasons": "The product's core trigger is the doorbell press (button_press), and walk-away detection uses motion.human history. Neither exists on the Playground: forum 45309 says it has no motion or doorbell webhooks, and history holds only on_demand. Both are delivered only by ring-sandbox, a third-party entrant tool that is not a simulator listed in Ring's developer documentation, which is the rules' test (L158). As planned, the only real Ring calls are device and configuration reads and a WHEP party-size frame, so Ring is peripheral to the demonstrated value. That is a Stage 1 'reasonably applies the required APIs' risk. It is eligible if a real Playground interaction is made load-bearing.",
+  "feasibility": "pass",
+  "feasibility_reasons": "The 90 h solo estimate fits (estimate). The matcher, scheduler and webhook pieces are standard and deterministic, with no model in the decision path. WHEP is contested (works only with browser-built offers per doorstep-ring). The Playground's Motion footage is CC BY and not a practice doorway, so person-count accuracy must be measured. iOS Web Push needs an installed PWA (assumption). ICS export availability varies across booking tools (unverified).",
+  "conditions": [
+   "Redesign the demo so the arrival signal shown live comes from the Playground: a Motion-simulation live view with a person detected in the door zone acts as the check-in. button_press from ring-sandbox is shown only as a labelled SIMULATED secondary path.",
+   "The Playground opens for the user's account from India. WHEP sessions succeed using a browser-built SDP offer.",
+   "The person counter reaches at least 80% accuracy on 30 Playground Motion frames with the watermark band masked, or party-size and walk-away features are cut.",
+   "HIPAA practices are excluded. Clients get a door-sign notice. Privacy zones are excluded from analysis, and their coordinates are never shown.",
+   "CC BY attribution, and SIMULATED labels on all emulator events."
+  ],
+  "native_overlap": "medium",
+  "native_overlap_notes": "Ring natively notifies all shared users of a doorbell press. Ring Quick Replies auto-message visitors, and Alexa+ Greetings (US/CA) answers the door and takes messages (IDEATION_CONTEXT native list). Silent check-in with acknowledgement already exists in TapIn and The Receptionist (iPad). Booking-matched routing to one practitioner and walk-away detection were not found natively. The concept's own removal test is only partial.",
+  "crowding": "medium",
+  "crowding_notes": "Visible Ring and business-door entrants include banksythequantLab/front-desk (law-office door, Ring events plus MCP plus a Fire TV lobby, with a reported 18/20 on real frames), ANUOLUWA-1/doorstep-concierge, and iot-forge/Stoop ('expected visitors matched'). That is out of roughly 36 visible Ring repos.",
+  "overall": "conditional",
+  "redesign_to_pass": "Make the real Playground live view the trigger rather than an add-on: person-in-door-zone detection on the Motion simulation starts matching, and a second confirmatory WHEP frame drives walk-away. Present ring-sandbox button_press as the labelled production path for US devices. Alternatively, narrow to shared suites where one doorbell rings every room, and lead with the booking-matched silent routing.",
+  "day_one_proof": "With a Playground token: open a WHEP session on the Motion simulation (browser-built offer), sample 30 frames, and get at least 80% person-count accuracy in a door polygon with the watermark masked. Drive the ICS matcher from that real detection and get the correct practitioner for a 2-booking, 3-minute-apart table test. Also verify a ring-sandbox button_press webhook end to end, with raw-byte HMAC and a 2xx in under 5 s."
+ },
+ {
+  "id": "RNG-3",
+  "eligibility": "pass",
+  "eligibility_reasons": "The core loop runs on surfaces the Playground supports, all called at runtime: device list, status and configurations; Event History on_demand records (live views), which entrant doorstep-ring reports are the only events the Playground history holds; and WHEP. The drift beat uses a labelled ring-sandbox fixture and is not claimed live. Ring-app owner sessions are stated as documented but not demonstrable. No media is stored and there is no face or plate analysis. Its anti-covert design matches Ring Content Policy \u00a712.2 as quoted in the concept (policy page read via saved capture).",
+  "feasibility": "pass",
+  "feasibility_reasons": "The 70 h solo estimate (estimate) is the lowest in the set and leaves a large buffer. The unknown is the delay between a live view and its on_demand record appearing in history. The fallback ('notice within N minutes' plus a per-shift receipt, with real-time notice for sessions OnAir opens itself) is honest and rules-safe. is_third_party_reviewed and the 'event_types filter is ignored' anecdote are unverified, so filter client-side and do not depend on that attribute. The 30-minute token interrupts long takes.",
+  "conditions": [
+   "OnAir-opened WHEP sessions produce on_demand records that GET history returns. Latency is measured over 20 trials and reported in the README.",
+   "Whether Playground console simulations also create on_demand records is verified. If not, a second labelled script stands in for 'another app'.",
+   "A 'not legal advice' notice. No claim of legal compliance. CC BY attribution for any Playground footage shown.",
+   "Both parties' consent screens are shown. The worker never handles Ring credentials."
+  ],
+  "native_overlap": "low",
+  "native_overlap_notes": "The Ring app shows the account owner their own event and live-view history, and the Partner API defines on_demand as user- or partner-initiated live view. No worker-facing notice or two-party agreement check was found in reviewed sources. Beside Care watches the care recipient, not the worker.",
+  "crowding": "medium",
+  "crowding_notes": "josepha-mayo/attest (MIT, CI) logs the live-view sessions it brokers into signed coverage, which is the closest visible overlap; its answer is 'did the visit happen', not worker notice. The privacy, consent and redaction theme has about 19 visible repos across tracks (github.md), and AtchayamG/bee-bystander does consent for Bee.",
+  "overall": "pass",
+  "redesign_to_pass": "Not required. To lift Tech Implementation, put the measured on_demand latency, the attribution classes and the drift diffing on screen, because the concept has no AI or CV 'wow'.",
+  "day_one_proof": "With a Playground token: open 20 OnAir WHEP sessions and poll GET /v1/history/devices/{id}/events every 15 s. Each session must appear as an on_demand record; record the median and p90 latency, and whether records appear only after the session ends. Also read /configurations to confirm the privacy_zones and motion_detection fields are present for the drift diff."
+ }
+]

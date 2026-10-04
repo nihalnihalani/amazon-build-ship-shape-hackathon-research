@@ -1,0 +1,6 @@
+.firecrawl/
+.DS_Store
+*.part[0-9].md
+research/_working/exec_part1.md
+research/_working/exec_part2.md
+__pycache__/

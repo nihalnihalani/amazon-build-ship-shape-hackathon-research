@@ -1,0 +1,212 @@
+{
+ "ideas": [
+  {
+   "id": "NEW-1",
+   "name": "Pillbox Second Look: a TV-sized fill check for the weekly pill organizer",
+   "track": "Fire TV (Vega OS on the Vega Virtual Device; phone on a stand as the camera). AWS Builder optional.",
+   "pitch": "Someone fills an older relative's weekly pill organizer, usually at the living-room table. A phone on a stand photographs the open organizer when OK is pressed on the remote. The TV shows a big 7-day grid: each compartment's count against the caregiver's plan, marked match, mismatch or 'Not sure' with the photo crop. A family member in another city can approve the week from their phone. It only counts. It never identifies a pill or gives medical advice.",
+   "user": "Adult children and spouses who fill a parent's weekly organizer, and remote family members who want to check the fill without a video call. Inference: common in Indian families where parents live apart from their adult children. This is not evidenced in the research.",
+   "workflow": "1) The caregiver enters the plan on the phone page, e.g. Mon AM = 3, Mon PM = 1. 2) The open organizer sits on a printed alignment mat under the phone stand. 3) Press OK on the remote: the phone captures and counts each compartment on-device (OpenCV.js blob count inside mat-defined cells). 4) The TV shows the 7xN grid in green/amber/red. D-pad steps through amber and red cells, each shown beside its enlarged crop. 5) Fix a compartment, press OK to re-check. 6) 'Send for second look' gives the remote relative masked crops plus counts to approve. Every week is logged.",
+   "wow_moment": "One pill is dropped into the wrong compartment on camera, OK is pressed, and that cell turns red on the TV with its crop. Moving the pill and pressing OK again turns it green. Then the relative's phone (on screen) taps Approve and the TV shows 'Week approved by Asha, 18:42'.",
+   "mechanism": "Deterministic geometry and counting, not an LLM. ArUco markers on the printed mat fix each compartment's position. Per-cell blob segmentation counts objects. When blob areas are ambiguous (touching pills, translucent capsules) the cell shows 'Not sure' with the reason. The plan and approvals live in a small backend: a WebSocket relay plus a store. The Vega app is remote-only (TVEventHandler) and uses a high-contrast theme. Optional per-pill colour signature from a reference photo is a stretch goal.",
+   "research_evidence": [
+    "Disability World (2026-05-30): AI description tools sometimes describe things that are not there, and medication or financial documents should be checked 'with a human or a trusted non-AI channel'. This supports a no-LLM count plus a human second look. https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+    "AFB AccessWorld (Fall 2025): users report AI readers summarizing, inventing things or being inaccurate. https://afb.org/aw/fall2025/meta-glasses-review",
+    "Vision Buddy (2026-05-20, vendor): a paid product bundles medication fine print reading with TV viewing for low-vision users. Medication handling is a recognized home-screen job. https://visionbuddy.com/ai-reading-devices-for-people-with-low-vision/",
+    "Fire TV organizer guidance names 'computer vision' and multimodal UX as prioritized categories. https://amazonappdev2026.devpost.com/resources ; https://amazonappdev2026.devpost.com/updates/46456-got-an-idea",
+    "LIMIT: none of the 8 passes found people talking about pill-organizer filling errors in the last 30 days. The need is inferred. A supplementary search (not part of the 8 passes) found electronic pillboxes that detect pill removal (PMC9618185) and a caregiver-owns-filling blog (pillo.care), but no camera fill-verification product in the top 5 results."
+   ],
+   "why_not_native_or_latent_llm": "No Amazon feature checks an organizer fill. Echo Show 'Show and Tell' names packaged products and does not count compartments (Lighthouse Guild, per research). Partial latent-LLM risk: a photo sent to a vision chatbot can attempt a count. The differences are deterministic per-cell geometry, explicit 'Not sure' instead of a guess, the plan-versus-actual diff, a remote human approval loop and a weekly ledger. Lead the pitch with those, not with 'AI counts pills'.",
+   "closest_rivals_or_entrants": "Smart dispensers and pillboxes (Hero Health dispensers; electronic pillboxes that detect removal, PMC9618185) solve dosing, not checking a manual fill. Pharmacy pill-counter camera apps count one tray, not a plan grid (general knowledge, not verified). Elder care is a crowded GitHub theme (about 15 repos per IDEATION_CONTEXT), but no visible entrant on organizer fill checks was seen in the research.",
+   "eligibility_feasibility_for_this_user": "Fully real for an India-based solo developer: Vega Virtual Device on the Apple-silicon Mac, any phone browser as the camera, printed mat, no AWS required for the core. It shares about half its infrastructure with FTV-3 (stand, OK-press capture, evidence crops, 'Not sure'), so it could replace FTV-3 if Mail Check's native-overlap problem (Apple Magnifier bill example, Alexa+ document recall) worries judges. Medical-adjacent: label it 'not a medical device; counts only'.",
+   "solo_hours_estimate": 90,
+   "biggest_risk": "Counting accuracy on real pills (touching, white-on-white, translucent capsules), and judges reading a medication tool as a safety liability. A correct count with the wrong pill is undetectable unless the colour-signature stretch goal works.",
+   "one_day_test": "Print an ArUco mat, put a 7x2 organizer on it with 0-4 mixed pills or beads per cell, and photograph it 20 times from a phone stand under living-room light. Pass if the per-cell count is exact or honestly 'Not sure' in at least 95% of cells, with zero confident wrong counts.",
+   "rough_scores": {
+    "tech": 3.5,
+    "design": 3.5,
+    "impact": 3,
+    "originality": 3,
+    "feasibility": 3
+   }
+  },
+  {
+   "id": "NEW-2",
+   "name": "Chair Stand Check: the 30-second sit-to-stand test, guided on the TV and counted by the phone at your chest",
+   "track": "Fire TV (Vega OS on the Vega Virtual Device; phone accelerometer as the sensor)",
+   "pitch": "Clinicians use a 30-second chair-stand test for leg strength in older adults, and the test protocol has arms crossed over the chest. Here a phone is held against the chest, its accelerometer counts each full stand, and the TV gives the large, remote-started countdown, live count and week-over-week trend. A second household member is the spotter the protocol asks for.",
+   "user": "Older adults doing home strength or falls-prevention work, and the family member who stands by. Inference: the research shows no user demand for this specific job.",
+   "workflow": "1) Press Star or OK to start. The TV shows chair setup (straight-back chair against a wall) and asks 'Is someone standing next to you?', confirmed with the remote. 2) Open the phone page, hold the phone to the chest with arms crossed. 3) The TV counts down and shows a 30 s timer. The phone's DeviceMotion signal counts full stands and shows the count huge on the TV. 4) The result is shown against the person's own previous results (norms optional, labelled 'below average' only per published tables, never a diagnosis). 5) Weekly card for a clinician.",
+   "wow_moment": "Across the room, the TV number ticks up in real time with each stand (target under 300 ms), and a half stand at the buzzer counts or does not count exactly as the published rule says. The trend line shows last week's 9 against today's 11.",
+   "mechanism": "A deterministic signal pipeline in the phone browser: DeviceMotion/orientation, low-pass filter, pitch and vertical-acceleration state machine (seated, rising, standing, sitting), and a half-way rule at timeout. Counts stream over WebSocket to a remote-only Vega app with ten-foot visuals. Session store plus clinician export. No LLM anywhere.",
+   "research_evidence": [
+    "Organizer Fire TV prioritized categories include fitness and multi-modal UX. https://amazonappdev2026.devpost.com/resources",
+    "Organizer 'Got an idea?' asks for multimodal voice + D-pad + visuals. Here the phone sensor, D-pad and TV visuals share one flow. https://amazonappdev2026.devpost.com/updates/46456-got-an-idea",
+    "JMIR 2025 home voice-training study: convenience of practising at home was the main satisfaction reason, and adherence was high for most. This transfers by analogy only. https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+    "LIMIT: no last-30-day user posts about home strength tests were found. Supplementary checks (outside the 8 passes): the CDC STEADI 30-second chair stand sheet has scoring tables and tells the tester to stand next to the patient (cdc.gov/steadi/media/pdfs/steadi-assessment-30sec-508.pdf). A smartphone-accelerometer sit-to-stand app has been validated in older adults (PMC8000467)."
+   ],
+   "why_not_native_or_latent_llm": "It is a physical measurement, so an LLM cannot answer it from a screenshot. No Fire TV or Alexa+ feature runs a timed, counted functional test (not seen in the reviewed sources). Fire TV fitness apps (534 Health & Fitness, per IDEATION_CONTEXT) play workouts and do not measure.",
+   "closest_rivals_or_entrants": "Research apps and sensors for sit-to-stand (PMC8000467; MDPI Sensors 20/5813 with a low-cost sensor plus an Android app). Phone-camera rep counters with a TV scoreboard (Form Coach, per IDEATION_CONTEXT). No hackathon entrant seen.",
+   "eligibility_feasibility_for_this_user": "Fully real on the Vega Virtual Device plus any phone. No AWS needed for the core. It reuses FTV-4's relay pattern, so it could even be a second mode of the same app, though that dilutes FTV-4's story.",
+   "solo_hours_estimate": 70,
+   "biggest_risk": "Safety and claims: a fall during a home test, and judges questioning a health measure. Mitigate with the mandatory spotter step and 'not a diagnosis'. Also weak evidence of demand: the impact case rests on clinical convention, not on voices in the research.",
+   "one_day_test": "Hold a phone to the chest with arms crossed, do ten 30-second trials at different speeds plus deliberate half stands, and film each for ground truth. Pass if the count is exact in at least 9 of 10 trials and the half-stand rule is right every time.",
+   "rough_scores": {
+    "tech": 3,
+    "design": 3.5,
+    "impact": 3,
+    "originality": 3,
+    "feasibility": 3.5
+   }
+  },
+  {
+   "id": "NEW-3",
+   "name": "Buffer Blame: is it your Wi-Fi spot, the stick or your ISP?",
+   "track": "Fire TV (needs a real Vega stick; see limits)",
+   "pitch": "Vega OS cannot sideload, and reviewers could not install the speed-test or system-info tools they rely on. Buffer Blame is a Vega-native diagnosis: press Star when a stream stutters. The stick measures its own throughput and jitter while the paired phone runs the same test next to the TV and then next to the router. The TV gives a plain verdict ('your Wi-Fi at the TV's spot', 'the ISP is slow everywhere tonight', or 'a LAN adapter would likely help').",
+   "user": "Fire TV households, especially in India where the Vega Stick HD sells at Rs 5,249 and a reviewer notes it has no LAN port (adapter about Rs 1,500).",
+   "workflow": "1) Map Star to the app (first-run tip). 2) Press Star, then OK to start a 20 s stick test. 3) The phone page (QR pairing) asks the user to stand by the TV and run the test, then by the router. 4) The TV shows three bars (stick, phone at TV, phone at router) plus a deterministic verdict and one recommended action. 5) Results from different times of day pile up in a small evening heatmap.",
+   "wow_moment": "Three bars on screen: phone at router 85 Mbps, phone at TV 14, stick 11. The verdict 'it's the Wi-Fi where the TV is' appears with an action, then is re-run after moving the router or adding an adapter.",
+   "mechanism": "Timed fetches of fixed-size payloads plus round-trip pings from the Vega app and the phone page against the same test endpoint. A rule table compares the three readings. Results stored for the heatmap. No LLM.",
+   "research_evidence": [
+    "Triple M (2026-10-02, 13,035 views): Vega has a 'very limited app store'; Analiti speed test, AIDA64 and Downloader could not be installed. https://www.youtube.com/watch?v=NWRr86zuuMI",
+    "AFTVNews (2026-09-30): the new stick cannot sideload and has a 'vastly smaller app selection'. https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/",
+    "XDA (2026-09-30): the 2,000+ apps Amazon added are mostly media (Spotify, Xbox, VLC, VPNs), and sideloading stays locked. https://www.xda-developers.com/amazon-refreshed-fire-tv-stick4k-faster-switch-to-vega-os-comes-with-major-catch/",
+    "EBR (2026-09-04, 49,180 views): India review says the stick has no USB or LAN port and a LAN adapter costs about Rs 1,500. https://www.youtube.com/watch?v=sVW9V7ExNUg",
+    "NewTechWorld with Tej (2026-09-23): the Vega Stick HD is on sale in India at Rs 5,249. https://www.youtube.com/watch?v=6hxcF8y6SDA"
+   ],
+   "why_not_native_or_latent_llm": "Not an LLM capability: it is a measurement taken at the stick. Partly native: Fire TV Settings has a basic network status page (general knowledge, not verified for Vega), and Analiti exists on Fire OS. The originality claim rests only on the three-point comparison and the verdict, which is modest.",
+   "closest_rivals_or_entrants": "Analiti and other speed-test apps on Fire OS (not available on Vega per Triple M). The Fire TV network status screen. Phone speed-test apps. No hackathon entrant seen.",
+   "eligibility_feasibility_for_this_user": "Important limit: the Vega Virtual Device runs on the Mac, so its 'stick' reading is just the Mac's network. A meaningful demo needs a real Vega stick bought in India (Stick HD Rs 5,249 per research; 4K Select Rs 5,499 per IDEATION_CONTEXT). Otherwise it is solo-easy and needs no AWS.",
+   "solo_hours_estimate": 45,
+   "biggest_risk": "Judges see it as a utility port with low Quality of the Idea. It is closest to the rules' 'Obvious' end even though it is not a streaming UI.",
+   "one_day_test": "On the VVD, confirm a Vega app can time a 10 MB fetch and 20 pings with stable results (variation under 10% across 5 runs). Then confirm whether a real stick can be bought or delivered in time.",
+   "rough_scores": {
+    "tech": 3,
+    "design": 3.5,
+    "impact": 3,
+    "originality": 2,
+    "feasibility": 4
+   }
+  },
+  {
+   "id": "NEW-4",
+   "name": "Vega Pair Kit: open-source phone-to-Vega pairing and live-sensor relay for React Native for Vega",
+   "track": "Open Source mini challenge (paired with FTV-4, FTV-3 or NEW-1/NEW-2; not a standalone track entry)",
+   "pitch": "Vega cannot sideload a TV-side helper, so every phone-as-sensor Fire TV app must re-solve QR pairing, a WebSocket relay with long-poll fallback, reconnect, and a 'phone paired / sensor live' status tile. Package that as a tested, MIT-licensed library and sample built on the organizer-recommended multi-TV sample, so the primary entry's plumbing doubles as the Open Source submission.",
+   "user": "Fire TV and Vega developers building companion-phone experiences, including other hackathon entrants.",
+   "workflow": "1) npm install the kit into a react-native-multi-tv-app-sample project. 2) <PairScreen/> shows a QR code and short code. 3) The phone opens the companion page and joins the session. 4) Typed sensor messages (audio level, accelerometer, capture-ready) stream to the TV with latency stats. 5) <LinkStatusTile/> shows paired, live, stale or lost, with D-pad re-pair.",
+   "wow_moment": "In the demo the Wi-Fi drops mid-session: the tile goes 'stale' then 'lost', the transport falls back to long-poll, and the session resumes without re-scanning, with a latency histogram on screen.",
+   "mechanism": "Relay server (Node, also deployable on AWS) plus a TV client with a WebSocket-first transport and a 250 ms fetch long-poll fallback (the fallback already planned in FTV-4's day-one proof). Session tokens, a reconnect state machine, a typed message schema, a latency probe, and Jest tests plus a VVD smoke test in CI.",
+   "research_evidence": [
+    "AFTVNews (2026-09-30): Vega cannot sideload, so all pairing state has to live in the Vega app plus the phone (research feature signal). https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/",
+    "Devpost resources page recommends react-native-multi-tv-app-sample (one codebase for Vega, Android TV, Apple TV and web). https://amazonappdev2026.devpost.com/resources",
+    "Amazon Developer September newsletter promotes ADBT for porting Fire OS apps to Vega, so DevRel is actively pushing Vega tooling. https://community.amazondeveloper.com/t/amazon-developer-newsletter-september-2026/29217",
+    "AI-agent research: judges are told to reward visible traces and latency over slick videos. https://angelhack.com/blog/ai-agent-hackathon/"
+   ],
+   "why_not_native_or_latent_llm": "Developer infrastructure, not an LLM capability. Amazon's Matter casting route exists but IDEATION_CONTEXT calls it too heavy. A lightweight Vega pairing library was not seen in the research; check npm and GitHub before claiming 'first'.",
+   "closest_rivals_or_entrants": "Generic libraries (socket.io, reconnecting-websocket) without Vega testing or TV UI components. Amazon Matter casting. Not verified: whether any Vega-specific pairing library exists.",
+   "eligibility_feasibility_for_this_user": "Fully real and cheap, because FTV-4 or FTV-3 builds this relay anyway. The extra work is packaging, tests and docs. The rules' Open Source Creative example is 'adding Vega support to a popular React Native library'. If a popular RN library the primary needs lacks Vega support, porting it would match that wording better than a new kit.",
+   "solo_hours_estimate": 20,
+   "biggest_risk": "Judges may see it as a thin extraction rather than 'a meaningful feature with tests', and it competes for hours with the primary in the final week.",
+   "one_day_test": "Search npm and GitHub for Vega pairing or companion libraries and list the RN libraries the primary uses that fail on Vega. Then get a WebSocket echo and a long-poll fallback running inside the VVD (already day-one item 2 for FTV-4).",
+   "rough_scores": {
+    "tech": 3.5,
+    "design": 2.5,
+    "impact": 2.5,
+    "originality": 2.5,
+    "feasibility": 4.5
+   }
+  },
+  {
+   "id": "NEW-5",
+   "name": "Add-on Preflight: see your Alexa+ add-on the way Amazon's contract says users will, then check it",
+   "track": "Alexa+ (weak fit, since the organizer calls Alexa+ consumer-focused) / Open Source mini challenge (better fit)",
+   "pitch": "Every Alexa+ entrant demos on a home-made simulator because the add-on console says 'Coming Soon'. Preflight points at any MCP server and shows each tool response in Amazon's documented display modes (inline, fullscreen, hydrated, voice-only, with spoken text played through text-to-speech and timed). It also checks protocol conformance and the certification Functional Requirements, such as confirmation before pay, cancel or delete, duplicate prevention, stable IDs and isError use.",
+   "user": "Alexa+ add-on developers, including the many entrants who are demoing without a real host.",
+   "workflow": "1) Enter the MCP URL. 2) Preflight runs conformance probes (2025-11-25 version negotiation, Origin 403, notification 202, unknown method 404/-32601). 3) Pick a tool call: a four-pane render shows MCP Apps UI via _meta.ui.resourceUri, the native card or list, the hydrated fallback, and voice-only text-to-speech with seconds-to-hear. 4) A requirements checklist flags e.g. 'cancel_order executed without confirmation' or 'reply takes 19 s to hear'. 5) Export a report for the README.",
+   "wow_moment": "A sample shopping add-on passes protocol conformance but fails Preflight: its voice-only reply runs 22 seconds and it deletes without asking. After the fix, all four panes go green.",
+   "mechanism": "An MCP client harness plus a sandboxed MCP Apps iframe host and a rule engine encoding Amazon's public add-on contract and certification Functional Requirements. Text-to-speech via Polly or the browser for spoken-length timing. Deterministic checks.",
+   "research_evidence": [
+    "HomeOps Guardian entrant (2026-09-24): the add-on console shows 'Coming Soon' and DevRel said no SDK can control an Echo Show today. https://www.youtube.com/watch?v=00LRE46zk7U",
+    "FixIt entrant (2026-10-02): 'Alexa plus developer tools aren't available to hackathon participants'. https://www.youtube.com/watch?v=EbuSbJQJrXQ",
+    "LQA entrant (2026-09-13, 63 views, the most-viewed Alexa+ demo in that pass) sells protocol conformance, and its tests found a real 200-vs-404 bug. https://www.youtube.com/watch?v=w9-IKSVXsT8",
+    "Scott Logic (2026-09-16): MCP Apps client support is weak and still catching up. AAIF's host list does not include Alexa+. https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html ; https://aaif.io/blog/mcp-apps-extending-the-frontier/",
+    "Tally entrant: replies 'written to be heard once' and a tested no-display path. https://www.youtube.com/watch?v=jMP3aDyg1_Q"
+   ],
+   "why_not_native_or_latent_llm": "Not an Alexa+ end-user feature and not an LLM capability. It applies deterministic checks against a published contract. Overlap risk with Amazon's own tooling is real (see rivals).",
+   "closest_rivals_or_entrants": "Amazon's Local Inspector (2025-06-18, per IDEATION_CONTEXT). The official MCP Inspector. The open-source Echo Show-style Alexa+ simulator used by the Puente entrant (repo not identified). LQA's 23-check probe and Recall's 12-check conformance run.",
+   "eligibility_feasibility_for_this_user": "Fully real for a solo developer in India. It needs no gated tools and no Amazon hardware. Weak on Alexa+ Potential Impact because it serves developers, not households. Stronger as an Open Source mini-challenge entry, but a separate project splits the 18 days.",
+   "solo_hours_estimate": 60,
+   "biggest_risk": "Amazon's Local Inspector or the Puente simulator already does most of this, and Alexa+ judges score consumer impact low for a developer tool.",
+   "one_day_test": "Run Amazon's Local Inspector and the MCP Inspector against a sample add-on and list exactly which display-mode renders and certification checks neither provides. If the gap is under about 3 checks, drop the idea.",
+   "rough_scores": {
+    "tech": 3.5,
+    "design": 2.5,
+    "impact": 2,
+    "originality": 2.5,
+    "feasibility": 4
+   }
+  },
+  {
+   "id": "NEW-6",
+   "name": "Ask First: a bystander consent light for Bee, on the living-room TV",
+   "track": "Bee (plus Fire TV as the shared display). Ineligible in the base case.",
+   "pitch": "Reviewers say always-on wearable mics feel creepy and that Bee misattributes speakers in groups. Ask First turns the wearer's own Bee stream into a visible 'on air' badge on the household TV, with a live speaker count. Anyone in the room can press 'Not me' or 'Pause' on the remote, and the app then keeps that speaker's utterances out of every summary, fact and action it produces. A weekly consent receipt shows what was excluded.",
+   "user": "Bee wearers who share a home, and the family members, guests or domestic workers recorded without asking.",
+   "workflow": "1) The wearer pairs their Bee account. 2) While `bee stream` emits utterance events, the TV shows an on-air badge and the number of distinct speaker labels. 3) A household member presses 'Not me' (on the remote or a phone tile) and picks their label, or 'Pause 15 min'. 4) The app redacts those utterances from its own downstream outputs. If the Bee API allows deletion, it also requests deletion (unverified). 5) Weekly receipt: what was captured, excluded and deleted.",
+   "wow_moment": "A guest walks in mid-conversation, the TV badge goes from 2 to 3 speakers, the guest presses 'Not me', and the end-of-day summary the app shows contains nothing they said, with a receipt line to prove it.",
+   "mechanism": "Bee CLI/MCP stream consumer (at-most-once, lossy, so state must be reconciled against the conversations API). Speaker-label mapping, a deterministic redaction filter ahead of any summary step, a Vega display app and a consent ledger.",
+   "research_evidence": [
+    "TechCrunch hands-on via fenado.ai: 'intrigued and slightly creeped out'; concerns about extensive permissions and cloud transcripts. https://fenado.ai/articles/amazons-bee-wearable-sparks-intrigue-and-privacy-concerns-techcrunch-reports",
+    "Sam Julien (2025-03, outside window): significant speaker-detection bugs needing manual tagging. https://www.samjulien.com/bee-first-impressions/",
+    "aitools4you (2026-01-15): groups over three people often misattribute dialogue; consent laws vary by jurisdiction. https://aitools4you.ai/blog/amazon-bee-ai-wearable-review",
+    "bytee.org (2026-06-21, low reliability): 'privacy nightmare'. https://bytee.org/amazon-bee-wearable-review-2/",
+    "Amazon's Bee page: transcripts visible only to the user and no audio stored, but nothing for bystanders. https://www.aboutamazon.com/news/devices/bee-amazon-wearable-ai-device-new-features"
+   ],
+   "why_not_native_or_latent_llm": "Bee's native privacy covers the wearer (only the user sees transcripts, no audio stored), not the people being recorded. Not a latent LLM capability: it is real-time state plus consent bookkeeping. It differs from BEE-4 Hearsay, which is wearer-facing fact review.",
+   "closest_rivals_or_entrants": "Bee's own privacy settings. About 7 visible Bee entrants (IDEATION_CONTEXT); none on bystander consent was seen in the research.",
+   "eligibility_feasibility_for_this_user": "Explicit Bee limits: the rules require data 'recorded and processed through an actual Bee device or an Apple Watch running the Bee software'. Bee Pioneer ships to the US only. The Android app blocks at pairing for an India entrant. The iOS app is listed on the India App Store, and one participant showed Apple Watch recordings reaching the API. Recordings under about 50 words are deleted, there is no raw audio, and `bee stream` is lossy. The user has neither an iPhone with an Apple Watch nor a Bee, so it is ineligible unless that hardware is bought. Whether the Bee API can delete a conversation is unverified. Bee plus Fire TV echoes BEE-1's breadth (122 h).",
+   "solo_hours_estimate": 85,
+   "biggest_risk": "Hardware eligibility, then platform truth: lossy streams and unknown delete support could reduce 'Not me' to redacting only the app's own outputs.",
+   "one_day_test": "Only if an iPhone plus Apple Watch is available: record a three-person conversation and confirm that `bee stream` delivers distinct speaker labels within about 10 s. Check whether the API exposes conversation deletion.",
+   "rough_scores": {
+    "tech": 1.5,
+    "design": 3.5,
+    "impact": 3,
+    "originality": 3.5,
+    "feasibility": 1
+   }
+  },
+  {
+   "id": "NEW-7",
+   "name": "Ring Receipt: a tamper-evident provenance receipt for every Ring clip an app hands over",
+   "track": "Ring (Ring Developer Playground; fixture-bound for a non-US entrant)",
+   "pitch": "Ring now watermarks partner media and is adding end-to-end encryption, yet an entrant on the Playground still had to say 'Cannot verify' because saved frames have no verified capture time. Ring Receipt captures a live-view segment through the official API, hashes and signs it together with the API metadata (device ID, request time, token scope), and gives a receipt page anyone can use to check that a shared clip is unaltered and says honestly what it does and does not prove.",
+   "user": "Ring owners sharing clips with insurers, landlords, neighbours or small-business staff, and the people who receive those clips.",
+   "workflow": "1) The owner approves a short-lived token in the Playground flow. 2) Ring Receipt pulls a WHEP live-view segment and device reads. 3) It hashes the media, signs a manifest (fetch time, device ID, app name, scope) and checks for the watermark where present. 4) It issues a receipt link and QR code. 5) The verifier page re-hashes the uploaded file: 'unaltered since fetched at 14:02 from device X via app Y' or 'altered'. It never claims event time.",
+   "wow_moment": "Trim one second from the clip and re-upload it: the verifier flips to 'altered'. The original passes with a plain-language list of what is proven and what is not.",
+   "mechanism": "Ring Playground device and media APIs, WHEP capture, SHA-256 hashing, an Ed25519-signed manifest (optionally C2PA-style), and a static verifier page. Deterministic.",
+   "research_evidence": [
+    "Aperture entrant (2026-09-29): the Playground frame 'has no verified capture timestamp', so it released 'Cannot verify'. https://www.youtube.com/watch?v=WLnjM5z7IPQ",
+    "Ring release notes: mandatory visible watermark on all Partner API media (2026-06-08); TAKE/E2EE makes recordings unreadable to apps (2026-09-16); the Playground covers device, media and account APIs only (2026-05-28). https://developer.amazon.com/docs/ring/release-notes.html",
+    "Ring support: removing an integration revokes all device access permanently (consent-first platform direction). https://ring.com/support/articles/e2sg9/Ring-appstore-third-party-integrations",
+    "LIMIT: no Ring owner or developer posts were retrieved (Reddit 402, social sources empty), so user demand for clip provenance is not evidenced."
+   ],
+   "why_not_native_or_latent_llm": "Not an LLM capability: hashing and signatures. The watermark is visible branding, not cryptographic integrity, so a receipt adds a different guarantee. Not verified: whether Ring offers any native authenticity feature for shared clips. Check before building.",
+   "closest_rivals_or_entrants": "Aperture (Ring Playground, owner-approved one-question checks; shares the honest 'Cannot verify' ethic). Ring's watermark. C2PA tooling. The CamCharter and OnAir concepts are about consent, not provenance.",
+   "eligibility_feasibility_for_this_user": "Explicit Playground limits: one simulated DoorbellPro. WHEP live view plays pre-recorded CC BY footage that needs attribution. Device reads only, 30-minute tokens. History holds only on_demand events. No motion or button webhooks, no stored snapshots (416), and watermark presence on Playground media is unverified. So the demo can prove 'unaltered since fetched', but never a real event time. This is fixture-bound, which the rejection list penalizes.",
+   "solo_hours_estimate": 60,
+   "biggest_risk": "It sits in the rejected 'fixture-bound Ring demo' category, and the pre-recorded footage makes the wow look staged. Weak demand evidence.",
+   "one_day_test": "In the Playground, capture 10 s of WHEP live view, check whether the frames carry the June 2026 watermark, and confirm what metadata (device ID, timestamps) the API returns alongside it.",
+   "rough_scores": {
+    "tech": 2,
+    "design": 2.5,
+    "impact": 2,
+    "originality": 3,
+    "feasibility": 2.5
+   }
+  }
+ ],
+ "notes": "BOTTOM LINE (estimate, not a win prediction): none of the 7 new ideas clearly beats the current selection on the analyst model. Weighted estimates (0.25 tech, 0.20 design, 0.20 impact, 0.20 originality, 0.15 feasibility, pre-red-team, single-author scores): NEW-1 Pillbox Second Look 3.23; NEW-2 Chair Stand Check 3.18; NEW-3 Buffer Blame 3.05; NEW-4 Vega Pair Kit 3.05 (mini challenge, not comparable to track ideas); NEW-5 Add-on Preflight 2.88; NEW-6 Ask First 2.53 in the base case (about 3.33 if an iPhone plus Apple Watch is bought); NEW-7 Ring Receipt 2.38. For comparison, the existing post-red-team scores are FTV-4 3.30, FTV-3 3.33, ALX-5 3.00. Earlier red teams cut scores by roughly 0.3, so expect the same here. The 8 research passes mostly confirm the current picks rather than revealing a better idea.\n\nWHY THE EVIDENCE IS THIN: every pass lost Reddit (ScrapeCreators 402) and X (not authenticated). TikTok, Instagram, HN and Polymarket returned nothing. The only strong, recent, real-user complaint in the research is the Vega utility gap (Triple M 2026-10-02, AFTVNews and XDA 2026-09-30, EBR 2026-09-04), which backs NEW-3. That idea is the least original, though. NEW-1 and NEW-2 rest on indirect evidence (expert 'verify with a human' guidance, organizer category lists) plus two supplementary firecrawl searches I ran outside the 8 passes: CDC STEADI chair-stand sheet, PMC8000467, PMC9618185, pillo.care. They are labelled as such. Rivals marked 'general knowledge' or 'IDEATION_CONTEXT' were not re-verified.\n\nHOW EACH IDEA STAYED CLEAR OF THE 20 CONCEPTS AND THE \u00a76 REJECTION LIST: no household assistant or coordination agent, no Bee commitment or memory product, no check-in ladder as the product, no streaming clone, no thin API wrapper, no TV-camera computer vision (phone sensors only), and no ledger as the whole thesis. Known tensions: NEW-1 shares infrastructure with FTV-3 (a possible pivot if Mail Check's native overlap is fatal). NEW-2 shares the relay with FTV-4. NEW-6 is Bee plus Fire TV (breadth, like BEE-1). NEW-7 is fixture-bound, a rejection-list category, and is included only because the brief asked for Ring coverage. I considered and dropped these ideas: a cross-household playdate broker (restates ALX-5's original handshake); an after-school 'I'm home' pass (an OutPass feature, and the rejected check-in-ladder category); a pledge tracker for phone-free families (Wait Until 8th already runs one); a phone-to-TV photo drop (VLC and Amazon Photos cover it); a live phone-to-TV magnifier (restates FTV-3 BigPrint); a home cricket replay (no evidence of need; Fulltrack AI is a rival).\n\nFEATURES FOR THE TOP IDEAS SUGGESTED BY THIS RESEARCH (the user asked for these):\n- FTV-4 Across the Room: (1) a 'felt vs heard' rating on Up/Down before each verdict (Breatheworks). (2) A one-cue listener mode with a capped cue count, so the listener is not the 'speech police' (Breatheworks, Tactus). (3) A larger rotating phrase bank (App Store SLP review: 'phrase bank is way too small'). (4) Prominent calibration at the seat (the same review: target wrong at 15-18 inches). (5) A Star-button quick launch and D-pad-only controls, since the new remote has no fast-forward or rewind (Triple M, XDA). (6) An on-air indicator with no audio stored, answering the Bee 'creeped out' reaction. (7) Numbers locked to measurements in any text summary (Still Here pattern). (8) A latency readout plus a 'why this result' panel (AngelHack: judges want traces). Inference, a new suggestion from this pass: an optional listener ear check (digits-in-noise with the phone at the seat), so 'not heard' is not wrongly blamed on the speaker.\n- FTV-3 Mail Check: (1) a 'Read every line' key that is never replaced by a summary (AFB). (2) An 'Ask my family' masked-crop confirmation instead of stranger volunteers (AAO / Be My Eyes caution; Disability World). (3) A specific reason on every 'Not sure' (Aperture). (4) Edits clear approval (Commitment Brief). (5) Yellow-on-black and white-on-black themes. (6) No mode picker (Seeing AI pain point). (7) A guided first-letter lesson (HelpSquad: devices abandoned for lack of training). (8) A 20-bill eval card with accuracy, 'Not sure' rate, cost and latency.\n- ALX-5 OutPass: (1) decide_pass set to app-only visibility, so the model cannot approve (Scott Logic). (2) A server-owned elicitation gate that fails closed, with a test showing failure if a model 'approved' flag is trusted (HomeOps Guardian). (3) Resistance to 'Mom already said yes' injections (Say So). (4) Pass hours and approved hosts in Tin Can and Ring Ring Club vocabulary. (5) Amend-pass and a parent-at-work escalation path (HN objections). (6) An after-school arrival pass. (7) An agent trace drawer plus a conformance probe (LQA, Recall).\n\nOTHER OBSERVATIONS: public entrants are 7 of 9 Alexa+ with 0 Fire TV, a small sample from an unpublished gallery, which supports staying on Fire TV. Office hours fall on Tue 6 Oct about 23:00 IST and Mon 19 Oct about 21:30 IST (converted from CT; inference). Use them to ask about VVD acceptance and whether a real stick is needed for NEW-3. Files read: research/IDEA_SCORECARD.md (lines 1-25, \u00a71.3-1.5, \u00a75-7, heading list) and research/_working/IDEATION_CONTEXT.md. No files were written."
+}

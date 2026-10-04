@@ -1,0 +1,292 @@
+{
+ "idea_verdicts": [
+  {
+   "id": "NEW-1",
+   "verdict": "kill",
+   "strongest_threat": "Amazon's own PillPack. pharmacy.amazon.com/pillpack says PillPack 'sorts your medications by date and time into convenient packets', at no extra cost; checked by firecrawl on 4 Oct, saved at .firecrawl/oct4/l30d-rt-pillpack-native.json. For US Amazon judges, the job of filling a weekly organizer is something Amazon already removes. A second threat: one phone photo sent to any vision chatbot attempts the same count, which is a latent LLM capability.",
+   "reason": "(1) It hits the organizer's 'existing feature' penalty: PillPack is an Amazon-native fix for the same job. It is absent in India, but the judges are Amazon staff. (2) No demand evidence. None of the 8 passes found complaints about filling organizers. My search (.firecrawl/oct4/l30d-rt-pillbox-rivals.json) found Hero Health blogs, Wirecutter and caregiver forums, but no fill-check product, so the need is still an inference. (3) The TV is a weak fit. The caregiver sits at the table looking at the organizer, and the phone that takes the photo already has a screen. (4) The CV is less certain than claimed. Flip-up lids hide neighbouring cells, compartment walls cast shadows, white pills sit on translucent plastic, and whether ArUco ships in a stock OpenCV.js build is unverified. The one-day bar of 95% with zero confident wrong counts is strict. (5) Liability: a 'Week approved' stamp can give false comfort, because a correct count of the wrong pill goes undetected. (6) It needs about 90 h, so it cannot sit beside FTV-4. As a swap for FTV-3 it gives up FTV-3's Tech lead (Textract with evidence crops) and the spec already written, while bringing a native overlap of its own (PillPack).",
+   "revised_scores": {
+    "tech": 3,
+    "design": 3,
+    "impact": 2.5,
+    "originality": 2.5,
+    "feasibility": 2.5
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "About 2.73 against FTV-4's 3.30 on the analyst weights (single-reviewer estimate). Its demo is real but depends on fragile CV, while FTV-4's live arc depends on a sensor that the day-one AGC test checks. It also does not beat FTV-3 (3.33) as Alternative 1."
+  },
+  {
+   "id": "NEW-2",
+   "verdict": "kill",
+   "strongest_threat": "The iOS App Store app 'Sit to Stand: Longevity Test' (id6757300858). Its listing snippet says it measures leg strength with the 30-second chair stand test, 'counted automatically and scored for your age' (firecrawl search on 4 Oct, saved at .firecrawl/oct4/l30d-rt-chairstand-apps.json; I did not open the page). A published smartphone-instrumented chair-stand paper (PMC13345531) and the MDPI Sensors system add to that.",
+   "reason": "What is left once a consumer app already auto-counts and age-scores is only 'a bigger screen and a remote start'. That is exactly the 'same app on a bigger screen' reading the FTV-4 red team warned about, and here there is no geometry argument to answer it. Demand is weak. The only user voice in my search was a Reddit search snippet in which a user prefers a free phone timer to paying $1.99. The protocol also gets in the way. The CDC STEADI sheet asks for hands on the opposite shoulders with arms against the chest, so the phone has to be pinned under the forearms or strapped on, not held. The sheet also says to stop and record 0 if the arms are used, which an accelerometer cannot detect. It adds a home fall risk and health-measure claims. Merging it into FTV-4 as a second mode would add about 20 h or more and blur FTV-4's one-sentence thesis.",
+   "revised_scores": {
+    "tech": 3,
+    "design": 3,
+    "impact": 2.5,
+    "originality": 2,
+    "feasibility": 3.5
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "About 2.78 against 3.30. The demo is as real as FTV-4's (live sensor plus TV), but originality collapses against an existing app that auto-counts. FTV-4's far-side geometry was absent from every rival page reviewed."
+  },
+  {
+   "id": "NEW-3",
+   "verdict": "kill",
+   "strongest_threat": "Not real on the Vega Virtual Device: its 'stick' reading would just be the Mac's network. Beyond that, it is a TV utility with Quality-of-Idea near the rules' 'Obvious' end. Speed-test and phone apps already cover two of its three bars, and the streaming apps' own network checks may cover the rest (general knowledge; not verified on Vega).",
+   "reason": "The only strong, recent, real-user signal in the research (the Vega utility gap: Triple M 2 Oct, AFTVNews and XDA 30 Sep) backs a speed-test port. That is the least original kind of entry. A meaningful demo needs a Vega stick bought and delivered in India, plus developer mode on it, which adds days of setup. The verdict rule table is simple and judges will score it as a port. It does not use the organizer's prioritized categories (computer vision, fitness, multimodal).",
+   "revised_scores": {
+    "tech": 2.5,
+    "design": 3,
+    "impact": 2.5,
+    "originality": 1.5,
+    "feasibility": 3
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "About 2.48 against 3.30. Demo realness is worse than FTV-4's, because the VVD reading is meaningless without hardware."
+  },
+  {
+   "id": "NEW-4",
+   "verdict": "kill",
+   "strongest_threat": "Duplication. FTV-4 already plans an Open Source repo (D7, 7 h: ten-foot-meter with a RoomCodeQR component, plus phone-mic-meter). Phone-companion QR pairing is also a recurring entrant pattern (Cinemastamps, CommonScene, HomeBoard per research/_working/github.md), and vega-media-kit already sets a Vega OSS bar of 159 tests. A standalone pairing kit would be generic plumbing next to socket.io and reconnecting-websocket.",
+   "reason": "The claim that 'FTV-4 builds this relay anyway' is only half true. FTV-4's relay is API Gateway WebSocket plus Lambda and DynamoDB, and the long-poll fallback is deployed only if the WebSocket spike fails on the VVD. So the kit's showcase moment (Wi-Fi drop, fallback, resume without re-scan) needs new work. The proposal's own estimate is 20 h, and FTV-4 has about 6 h of slack. The existing D7 package (a11y UI-scale binding on Vega, AGC-off mic caveats) is more specific and is validated by the primary. Salvage: export the TV's existing paused.link/link-status reducer into ten-foot-meter only if it takes under 1 h. Never claim 'first Vega pairing library': my search for one failed with an HTTP 400, so that remains unverified.",
+   "revised_scores": {
+    "tech": 3,
+    "design": 2,
+    "impact": 2.5,
+    "originality": 2,
+    "feasibility": 4
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "Not comparable: it is a mini-challenge companion, not a track entry. About 2.65 on the analyst weights, and weaker than the OSS package FTV-4 already plans."
+  },
+  {
+   "id": "NEW-5",
+   "verdict": "kill",
+   "strongest_threat": "Several tools already do most of this: Amazon's Local Inspector, the official MCP Inspector, the open-source Echo-Show-style Alexa+ simulator with MCP Apps that the Puente entrant uses, and entrants' own conformance probes (LQA 23 checks, Recall 12). The research already rates conformance counts as the baseline, not a differentiator.",
+   "reason": "It is a developer tool entered in a track the organizer calls consumer-focused, so Potential Impact scores low. As an Open Source entry it would be a third project splitting 18 days. Its one useful part, automated conformance in CI, is already proposed as a 2 h ALX-5 feature (accepted below).",
+   "revised_scores": {
+    "tech": 3,
+    "design": 2,
+    "impact": 1.5,
+    "originality": 2,
+    "feasibility": 3.5
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "About 2.38 against 3.30. Its demo is real but has no household wow."
+  },
+  {
+   "id": "NEW-6",
+   "verdict": "kill",
+   "strongest_threat": "Hardware ineligibility: the rules require data recorded through an actual Bee device or an Apple Watch running Bee, and the user has neither. There is also a visible entrant on the same theme: AtchayamG/bee-bystander (Bee track, Sept 2026, 2:47 YouTube demo, listed in research/_working/github.md). That contradicts the idea's claim that no bystander-consent entrant exists.",
+   "reason": "It is ineligible in the base case. It collides with a visible entrant and sits in a crowded privacy, consent and redaction cluster (about 19 repos). It depends on a lossy `bee stream` (bee-cli issue #4; ringfence reports the stream dies after about 43 h) and on deletion support that has not been verified. It is a Bee plus Fire TV build, the breadth the rejection list penalizes (BEE-1 was 122 h).",
+   "revised_scores": {
+    "tech": 1,
+    "design": 3,
+    "impact": 2.5,
+    "originality": 2,
+    "feasibility": 1
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "About 1.9 against 3.30. It cannot be demonstrated with real data without new hardware."
+  },
+  {
+   "id": "NEW-7",
+   "verdict": "kill",
+   "strongest_threat": "A visible entrant, josepha-mayo/attest (Ring track plus AWS Builder and OSS), already ships 'signed evidence packs with in-browser verifier on GitHub Pages', with HMAC intake and KMS (research/_working/github.md). It is also in the rejection list's 'fixture-bound Ring demos for non-US entrants' category.",
+   "reason": "The idea collides with attest. The Playground's pre-recorded CC BY footage makes the tamper demo look staged. It can prove only 'unaltered since fetched', never an event time. Its main capture is live view, which the rules list as Obvious for Ring. There is no evidence of demand.",
+   "revised_scores": {
+    "tech": 2,
+    "design": 2,
+    "impact": 1.5,
+    "originality": 1.5,
+    "feasibility": 2
+   },
+   "beats_current_primary": false,
+   "comparison_to_primary": "About 1.8 against 3.30. Its demo is fixture-bound, while FTV-4's is fully real."
+  }
+ ],
+ "feature_verdicts": [
+  {
+   "concept": "FTV-4",
+   "name": "Felt-versus-reached check ('How loud did that feel?')",
+   "verdict": "add-to-core",
+   "reason": "This is the strongest Quality-of-Idea upgrade. It answers the 'just a dB meter on a bigger screen' risk in RECOMMENDATION.md \u00a73, item 3. As specified, though, it is flawed. The TV draws the live arc and band at 20 Hz during every phrase window (AC-2.1), so the speaker has already seen whether the band was reached, and hiding the verdict afterwards does not stop anchoring. Change: make 3 of the 10 phrases 'blind check' phrases. During those windows the arc is hidden. The speaker rates with two focusable buttons ('Felt loud' / 'Felt normal'), and then both results are revealed. Use buttons, not Up/Down, because Up/Down already moves focus between Next, Try again and Finish early. The other 7 phrases keep the live-arc wow, and there are only 3 extra presses, so no Settings toggle is needed. Keep 'recalibrate' and programme names out of the copy (add them to the K5 grep).",
+   "adjusted_hours": 5
+  },
+  {
+   "concept": "FTV-4",
+   "name": "Honest mic-state badge and a numbers-only line",
+   "verdict": "add-to-core",
+   "reason": "Cheap Design and trust gain, and it shows the no-audio design early in the video. Two fixes. (1) The proposed line 'Only numbers leave the phone' is false: the phrases the family types also travel over the relay. Use 'No sound is recorded or sent. Only levels and the phrases you type leave this phone.' (2) The badge must say 'Measuring' during floor and calibration windows too, not only phrase windows. Stopping the track at session end means the next session needs a tap on the phone to restart the mic. That is acceptable because AC-1.3 is per session, but say so in the README. The new end_session type has to be added to the \u00a75.2 allow-list.",
+   "adjusted_hours": 1.5
+  },
+  {
+   "concept": "FTV-4",
+   "name": "One-cue listener with a meter/listener agreement count (family mode reshaped)",
+   "verdict": "add-to-core",
+   "reason": "The agreement count is the best Tech addition on the list. It gives a visible check of the meter against a human listener, which is the honest answer to spec \u00a72.2's admission that RMS cannot judge clarity. It reuses the existing verdict message, and family mode is also the core of the FTV-4F fallback. Accept the cut-order swap (Polly before family mode). The video needs a volunteer, and D6 already plans two. If agreement in the D6 falsification run is low (a judgement call, say under 70%), report it in EVALUATION.md rather than showcasing the number.",
+   "adjusted_hours": 2
+  },
+  {
+   "concept": "FTV-4",
+   "name": "'Why this result' evidence drawer",
+   "verdict": "add-as-stretch",
+   "reason": "It helps Tech, and judges reward visible traces. A 3 h focus-trapped overlay is too much for the slack left, though. Ship a one-line inline 'why' under each verdict instead (level above room noise against today's band, frames dropped). The latency readout is already in the footer. Make it the first stretch item after the Wed 14 Oct K4 take, and label it 'relative, not SPL'.",
+   "adjusted_hours": 1.5
+  },
+  {
+   "concept": "FTV-4",
+   "name": "Starter phrase sets and weekly rotation",
+   "verdict": "add-as-stretch",
+   "reason": "Keep only a starter set written from scratch (about 20 neutral household phrases, chosen on the phone page), which helps first-time users and the fixture-replay judge route. Defer rotation and the 10-to-30 phrase limit: that change touches AC-4.1, savePhrases validation and the relay payload rule for little video value. The supporting evidence is a 2015 review and a 2017 video, so it shows no trend.",
+   "adjusted_hours": 1
+  },
+  {
+   "concept": "FTV-4",
+   "name": "On-device words check, a machine listener in beta",
+   "verdict": "defer",
+   "reason": "Agree with the designer's own decision, and drop the optional Thu 15 Oct spike too. MDN lists Chrome Android as 'No support' for on-device recognition. Vosk WASM would compete with the 20 Hz analyser on a mid-range phone. The small en-IN model's published word error rate is 49%. A word miss may reflect articulation or accent rather than loudness, which invites an intelligibility-test reading. FTV-4 has no slack. Cloud recognition (Web Speech on Android, Transcribe) would break the no-audio thesis: reject it outright. Give it one README roadmap line.",
+   "adjusted_hours": 0
+  },
+  {
+   "concept": "FTV-3",
+   "name": "AI-services opt-out applied and truthful delete wording",
+   "verdict": "add-to-core",
+   "reason": "Valid and important. The spec's delete screen says 'Deleted. Nothing about this letter is kept.' (\u00a72.1 step 9), and grep finds no opt-out anywhere in the FTV-3 spec. Rewrite the copy on day 1 whatever happens (about 15 minutes). Apply the AWS Organizations AI opt-out if an AISPL account can create an organization, which is unverified. Otherwise the copy may claim only deletion from this app's storage.",
+   "adjusted_hours": 1
+  },
+  {
+   "concept": "FTV-3",
+   "name": "A reason on every 'Not sure', and a provenance stamp on every crop",
+   "verdict": "add-to-core",
+   "reason": "A bare 'Not sure' now looks thin, because reasoned uncertainty has become the norm across entrants (the Aperture entrant releases 'Cannot verify' with a stated reason). Every reason comes from detections the spec already makes (edge rule, HANDWRITING TextType, multiple ANSWER ids, grounding). The jest test that no reason leaks a digit of the withheld value is the right guard.",
+   "adjusted_hours": 2.5
+  },
+  {
+   "concept": "FTV-3",
+   "name": "Guided 'check your first letter' lesson on a bundled sample",
+   "verdict": "add-as-stretch",
+   "reason": "Good for Design, but a coach overlay costs video seconds. FTV-3's slack is better kept for its known risk, the 6-14 s cloud chain. Build it after the Wed 14 Oct take in the slot freed by dropping optional O4.",
+   "adjusted_hours": 2
+  },
+  {
+   "concept": "FTV-3",
+   "name": "'Due this week' list with an exact-record confirm",
+   "verdict": "defer",
+   "reason": "It moves FTV-3 toward Alexa+ document recall and reminders, the native overlap that already weakens it. It keeps bill text past the 24 h privacy line. Vega background notification is unverified, so it is a list rather than a reminder. Spend O4's hours on the lesson and on evaluation evidence instead.",
+   "adjusted_hours": 0
+  },
+  {
+   "concept": "FTV-3",
+   "name": "'Ask my family' one-field check",
+   "verdict": "defer",
+   "reason": "It reverses a round-2 red-team cut, adds a third surface and a second person's phone, and sends financial crops off the TV. Give it one README roadmap line.",
+   "adjusted_hours": 0
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Approval only from the parent's tap: app-only decide_pass, a gate test, and a live false-approval scene",
+   "verdict": "add-to-core",
+   "reason": "It strengthens Tech, and the 'Mom already said yes' scene is a concrete, judge-visible failure case. Approval gates and injection resistance are now baseline across entrants (HomeOps Guardian, Say So, Recall), so this keeps pace with the field rather than standing out. The real guard is the server's parent-role and token binding, not `_meta.ui.visibility`; confirm that field's semantics in ext-apps before relying on it, and never claim that Alexa+ enforces it.",
+   "adjusted_hours": 3
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Automated conformance probe in CI, shown in the video",
+   "verdict": "add-to-core",
+   "reason": "Cheap, repeatable proof. LQA and Recall show that it is now table stakes, so leaving it out would look weak. Keep the 'Unofficial checks, not Amazon certification' banner and keep the token out of the logs.",
+   "adjusted_hours": 2
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Pass hours (parent-set window for requests)",
+   "verdict": "add-as-stretch",
+   "reason": "Low demo value, and it restates Amazon Kids day and hour limits. It is fine as household-rule polish but should be the last item funded, after amend-pass.",
+   "adjusted_hours": 2
+  },
+  {
+   "concept": "ALX-5",
+   "name": "Change an active pass with a ladder re-arm",
+   "verdict": "add-as-stretch",
+   "reason": "It answers the strongest parent objection (plans changing mid-way) and shows atomic state-machine Tech. It carries ladder risk, though: old rungs must never fire, and it depends on D9's host link. Decide at the Thu 15 Oct core-loop take, ahead of pass hours.",
+   "adjusted_hours": 5
+  },
+  {
+   "concept": "ALX-5",
+   "name": "After-school arrival pass for working parents",
+   "verdict": "reject",
+   "reason": "It falls squarely in the \u00a76 rejected category 'check-ins and reminder ladders as the product'. Native arrival and Personal Presence routines cover it, and a missed rung while a child is home alone is a safety failure the demo cannot honestly guard against.",
+   "adjusted_hours": 0
+  },
+  {
+   "concept": "FTV-4F",
+   "name": "Blind two-sided check: speaker rating plus listener verdict, revealed together",
+   "verdict": "add-to-core",
+   "reason": "Applies only if the Thu 8 Oct gate picks the fallback. It directly addresses the fallback's stated weakness that the listener tap reads as self-report. Call it 'independent' rather than 'blind' in the copy, because in one living room the speaker can see the listener's face. Build this instead of FTV-4's blind-check phrases, not as well.",
+   "adjusted_hours": 4
+  },
+  {
+   "concept": "FTV-4F",
+   "name": "One-cue listener control with a cap and neutral display",
+   "verdict": "add-to-core",
+   "reason": "Conditional on the fallback. It uses the same code as FTV-4's one-cue listener, so count the hours once. The partner's tap is the headline metric here, so the cap and the neutral display matter even more.",
+   "adjusted_hours": 2
+  }
+ ],
+ "should_primary_change": false,
+ "primary_change_reasoning": "All seven new ideas fail the adversarial check, and none beats FTV-4 on the analyst model (about 3.30) or on how real the demo is. After review the estimates are: NEW-2 about 2.78, NEW-1 about 2.73, NEW-4 about 2.65 (mini challenge, not comparable), NEW-3 about 2.48, NEW-5 about 2.38, NEW-6 about 1.9 and NEW-7 about 1.8. These are single-reviewer estimates, not win probabilities. Each fails for a different reason. NEW-1's job is covered by Amazon's own PillPack, which I checked on 4 Oct. NEW-2 loses its edge to an App Store app that already counts automatically and scores by age. NEW-3 cannot be demonstrated for real on the VVD. NEW-6 and NEW-7 collide with visible entrants: bee-bystander for NEW-6 and attest for NEW-7. NEW-6 is also ineligible without Bee hardware, and NEW-7 is fixture-bound. NEW-4 duplicates FTV-4's planned D7 open-source package, and NEW-5 is a developer tool that rebuilds Amazon's Local Inspector and the MCP Inspector. FTV-4's own distinction, measuring at the listener's position with remote-only control and the phone never touched, still has no Amazon-native or LLM equivalent in the reviewed sources. The decision still depends on the day-one Android AGC-off monotonicity test. So the useful output of this pass is features, not a new idea. The best of them for FTV-4 are the felt-versus-reached check (redesigned as blind-check phrases so the live arc does not anchor the rating) and the meter/listener agreement count, which answer the 'dB meter on a bigger screen' critique and the 'is the meter valid?' question. Keep FTV-3 as Alternative 1 and ALX-5 as Alternative 2, but apply FTV-3's opt-out and copy fix on day 1 if it is ever activated.",
+ "recommended_feature_bundle": [
+  {
+   "concept": "FTV-4",
+   "features": [
+    "CORE: Felt-versus-reached as 3 blind-check phrases per session (arc hidden in those windows, two focusable rating buttons, both results then revealed; S5 and summary counts) - 5 h",
+    "CORE: Honest mic-state badge with corrected copy ('No sound is recorded or sent. Only levels and the phrases you type leave this phone.'), end_session message and track.stop - 1.5 h",
+    "CORE: One-cue listener (3-cue cap, neutral chip) plus meter/listener agreement count - 2 h",
+    "STRETCH, only after the Wed 14 Oct K4 take and before the Mon 19 Oct freeze: inline 'why' line under each verdict (1.5 h), then a starter phrase set written from scratch (1 h)"
+   ],
+   "total_added_hours": 8.5,
+   "what_to_cut_to_make_room": "Cut Polly prompts now (\u22122 h; text prompts only, and the TV is already silent during windows). Move the caregiver export to stretch (\u22122 h; the summary counts stay on S5). Core becomes 98 + 8.5 \u2212 4 = 102.5 of about 104 h, leaving about 1.5 h of slack plus the two untouched reserve days. Swap the cut order so family mode is protected (it carries the agreement count and is the fallback core). If K4 slips, cut the D7 Open Source publication next (\u22127 h, code stays in the primary repo). Do not add NEW-4 or any speech-recognition spike."
+  },
+  {
+   "concept": "FTV-3",
+   "features": [
+    "CORE (only if FTV-3 becomes primary): rewrite the delete copy on day 1 and apply the AWS Organizations AI opt-out if the AISPL account allows it - 1 h",
+    "CORE: a reason on every 'Not sure' plus a provenance line on every crop - 2.5 h",
+    "STRETCH after the Wed 14 Oct take: guided first-letter lesson on the bundled synthetic sample - 2 h"
+   ],
+   "total_added_hours": 3.5,
+   "what_to_cut_to_make_room": "Nothing is needed for core: 92 + 3.5 = 95.5 of about 104 h. Drop optional O4 ('Checked by you' list, 4 h) and the deferred 'Due this week' list, and use 2 h of O4's slot for the lesson. 'Ask my family' stays a roadmap line."
+  },
+  {
+   "concept": "ALX-5",
+   "features": [
+    "CORE: app-only decide_pass with server parent-role and token binding, gate tests, and the 'Mom already said yes' false-approval scene - 3 h",
+    "CORE: automated conformance probe in CI, shown for about 5 s in the video - 2 h",
+    "STRETCH, decided at the Thu 15 Oct take: change an active pass with an atomic ladder re-arm (5 h; needs D9), then pass hours last (2 h)"
+   ],
+   "total_added_hours": 5,
+   "what_to_cut_to_make_room": "Nothing is needed for core: 78 + 5 = 83 of about 96 h, leaving about 13 h of buffer for the overruns the red team expects. Fund amend-pass only from that buffer and only if the Thu 15 Oct take passed. Drop pass hours before amend-pass. Reject the after-school arrival pass."
+  },
+  {
+   "concept": "FTV-4F",
+   "features": [
+    "CORE (only if the Thu 8 Oct 20:00 IST gate selects the fallback): independent two-sided check, with the speaker rating and listener verdict revealed together - 4 h",
+    "CORE: one-cue listener control with a cap and a neutral chip (same code as FTV-4's, counted once) - 2 h"
+   ],
+   "total_added_hours": 6,
+   "what_to_cut_to_make_room": "These replace FTV-4's blind-check and one-cue items; do not build both. They raise the fallback's new work from about 12 h to about 18 h, partly offset by the dropped cross-session dB, median-of-five and band work. Cut Polly prompts and the caregiver export as in the FTV-4 bundle, and re-total against about 104 h at the gate."
+  }
+ ],
+ "caveats": [
+  "Four firecrawl CLI commands were run. Three succeeded and one failed (HTTP 400 from the developer,github category combination), so 'no Vega pairing library exists' is still unverified. Saved outputs: .firecrawl/oct4/l30d-rt-pillbox-rivals.json, l30d-rt-chairstand-apps.json and l30d-rt-pillpack-native.json, each with a .stderr file.",
+  "The 'Sit to Stand: Longevity Test' rival for NEW-2 rests on a search-result snippet only. I did not open the App Store page, so its rating, date and accuracy are unknown. The pill-organizer search was shallow (top 8 results), so 'no camera fill-check product' means none was found, not that none exists.",
+  "Corrections to the research summary. It says there are 0 Fire TV entrants, but that is a YouTube-only count: research/_working/github.md lists about 46 Fire TV repos, including Cinemastamps and dicechess-tv. Phone-companion QR pairing also recurs among entrants (Cinemastamps, CommonScene, HomeBoard), so FTV-4's video should lead with the far-side geometry, not the phone pairing.",
+  "NEW-6's claim that no bystander-consent entrant exists is contradicted by AtchayamG/bee-bystander, and NEW-7 overlaps josepha-mayo/attest. Both are listed in research/_working/github.md and were not re-checked live today.",
+  "All hours are unmeasured estimates. Even after the recommended cuts, FTV-4 core sits at about 102.5 of about 104 h and relies on the two untouched reserve days. Treat the Wed 14 Oct K4 take as the hard point for any cut.",
+  "There is no Reddit or X data in any pass. Demand evidence for every new idea and most features comes from evergreen clinical and assistive-technology pages, old App Store reviews and entrant demos with under 65 views. None of it shows a 30-day trend.",
+  "Before filming, run the felt-versus-reached copy through the K5 grep: no 'recalibrate', 'therapy', 'treatment' or programme names, and no clinic wording pasted into the UI.",
+  "Three questions are still unverified: whether an AISPL (AWS India) account can create an AWS Organization and attach the AI opt-out policy; the exact name and semantics of the `_meta.ui.visibility` field in ext-apps; and whether a stock OpenCV.js build includes ArUco (only relevant if NEW-1 is ever revived).",
+  "All scores are single-reviewer model estimates under the user's analyst weights, not the official rubric, and none of them predicts a win."
+ ]
+}

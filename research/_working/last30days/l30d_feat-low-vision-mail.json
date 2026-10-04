@@ -1,0 +1,295 @@
+{
+ "angle": "feat-low-vision-mail: feature ideas for FTV-3 Mail Check (low-vision reading of mail, bills, medication labels; tools used; scam letters; failure modes; helpers)",
+ "topic_run": "low vision reading mail and bills magnifier app (--quick --emit=compact --no-native-web)",
+ "script_ran": true,
+ "script_error": "The run finished. The Reddit source failed with ScrapeCreators '402 Client Error: Payment Required', so it returned 0 threads. X/Twitter was skipped because it is not authenticated ('Bird installed but not authenticated'), which was expected. Xiaohongshu was unavailable. The script reported mode as 'reddit-only' and flagged 'LIMITED RECENT DATA': 0 items confirmed between 2026-09-04 and 2026-10-04.",
+ "saved_file": "~/Documents/Last30Days/low-vision-reading-mail-and-bills-magnifier-app-raw.md",
+ "stats": {
+  "reddit": "none (0 threads; ScrapeCreators 402 Payment Required)",
+  "youtube": "10 found, 0 inside the 30-day window. 4 shown, all older (2021-11 to 2026-02): 58,264 views and 1,253 likes in total. Log said 2 of 3 transcripts fetched, but the output included 0 transcripts.",
+  "tiktok": "none (enabled, no results reported)",
+  "instagram": "none (enabled, no results reported)",
+  "hn": "none (0 stories)",
+  "polymarket": "none",
+  "web": "2 WebSearch queries (reddit.com and x.com blocked), about 20 result links. 12 pages fetched or read: 3 by Firecrawl scrape, 9 by WebFetch. A further 3 Firecrawl scrapes hit the rate limit and were retried with WebFetch. No engagement metrics (articles)."
+ },
+ "coverage_note": "Results were thin, and the last-30-day social signal is essentially absent. Reddit failed (402 payment). X was not authenticated. TikTok, Instagram, HN and Polymarket returned nothing. YouTube found 10 videos but none inside the window; the 4 shown date from 2021-11 to 2026-02 and are general magnifier or reading-glasses content, with no mail- or bill-specific transcripts in the output. Almost all substantive evidence comes from web articles read directly: Disability World (2026-05-30), AFB AccessWorld (Fall 2025), Optometric Management (Nov/Dec 2025), Lighthouse Guild (revised 4/2023), Vision Buddy blog (2026-05-20), HelpSquad 2026 guide (undated on page) and AAO (2020-08-14). Gaps: no source found on scam letters, medication-label reading failures, or family helpers' own accounts. Claims seen only in search summaries were not confirmed on the pages read and are not reported as findings: OneStep Reader reading bills, and Lookout 'sorting mail and putting away groceries'. Lighthouse Guild does confirm Lookout Text mode for sorting mail. Quote policy: under the session's copyright limits, only one verbatim quote is taken from web content (finding 1). Other web findings carry clearly labelled paraphrases. YouTube 'quotes' are the video titles exactly as the script output shows them.",
+ "findings": [
+  {
+   "insight": "A 2026 assistive-tech roundup says every AI description tool sometimes describes things that are not there. For medication, allergens and financial documents, it says the only safe rule is to verify with a human or a trusted non-AI channel.",
+   "platform": "web",
+   "source_name": "Disability World",
+   "engagement": "n/a (article)",
+   "date": "2026-05-30",
+   "url": "https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+   "quote": "verify with a human or a trusted non-AI channel"
+  },
+  {
+   "insight": "Same article raises privacy: a device that streams a first-person view to a cloud model or a volunteer also streams everything else in the frame.",
+   "platform": "web",
+   "source_name": "Disability World",
+   "engagement": "n/a (article)",
+   "date": "2026-05-30",
+   "url": "https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+   "quote": "[paraphrase] Streaming your view to a cloud model or volunteer also streams everything else in frame."
+  },
+  {
+   "insight": "A low-vision reviewer (a certified vision rehabilitation therapist) found that Ray-Ban Meta AI tends to summarize text. That helps when sorting mail, but reading a whole document needed an explicit 'read every single word' prompt.",
+   "platform": "web",
+   "source_name": "AFB AccessWorld (Steven Kelley)",
+   "engagement": "n/a (article)",
+   "date": "Fall 2025",
+   "url": "https://afb.org/aw/fall2025/meta-glasses-review",
+   "quote": "[paraphrase] Meta tends to summarize; handy for sorting mail, but full reading needs a 'read every word' prompt."
+  },
+  {
+   "insight": "The same review reports users citing cases where the AI summarized instead of reading in full, made things up, or was inaccurate. It also notes the camera's left-side position caused missed parts of the frame.",
+   "platform": "web",
+   "source_name": "AFB AccessWorld (Steven Kelley)",
+   "engagement": "n/a (article)",
+   "date": "Fall 2025",
+   "url": "https://afb.org/aw/fall2025/meta-glasses-review",
+   "quote": "[paraphrase] Users cite the AI summarizing instead of reading fully, inventing things, or being inaccurate."
+  },
+  {
+   "insight": "AAO's listing for Be My Eyes repeats a security caution: do not ask volunteers to read personal information such as mail showing your address, or financial or card details. This rules out the core mail-and-bills use case for volunteer help.",
+   "platform": "web",
+   "source_name": "American Academy of Ophthalmology",
+   "engagement": "n/a (article)",
+   "date": "2020-08-14",
+   "url": "https://www.aao.org/eye-health/tips-prevention/low-vision-impairment-apps-tech-assistive-devices",
+   "quote": "[paraphrase] For security, don't ask Be My Eyes volunteers to read mail with your address or financial/card info."
+  },
+  {
+   "insight": "Optometric Management cites a study of 14 visually impaired participants who used Be My AI for 2 months. The AI often described what was present rather than how to complete a task, and sometimes fabricated information.",
+   "platform": "web",
+   "source_name": "Optometric Management",
+   "engagement": "n/a (article)",
+   "date": "Nov/Dec 2025 issue",
+   "url": "https://www.optometricmanagement.com/issues/2025/novemberdecember/artificial-intelligence/",
+   "quote": "[paraphrase] 14 participants, 2 months of Be My AI: descriptive not task-oriented answers; hallucinated information."
+  },
+  {
+   "insight": "Seeing AI has many channels (short text, document, handwriting and others). Choosing the wrong one gives useless output, such as calling a handwritten note just a piece of paper. The article calls this a learning curve.",
+   "platform": "web",
+   "source_name": "Lighthouse Guild (via Senior Living)",
+   "engagement": "n/a (article)",
+   "date": "revised 2023-04",
+   "url": "https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/",
+   "quote": "[paraphrase] Pick the wrong Seeing AI channel for a handwritten note and it just says it sees paper."
+  },
+  {
+   "insight": "Lookout narrates continuously, and Google suggests wearing the phone on a lanyard or in a shirt pocket. Its Text mode is described as the way to sort mail. Continuous narration of outdoor scenes is called noisy.",
+   "platform": "web",
+   "source_name": "Lighthouse Guild (via Senior Living)",
+   "engagement": "n/a (article)",
+   "date": "revised 2023-04",
+   "url": "https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/",
+   "quote": "[paraphrase] Lookout: phone on lanyard or shirt pocket; Text mode to sort mail; constant narration."
+  },
+  {
+   "insight": "Amazon's own Echo Show is named the best Alexa device for poor vision because of Show and Tell, which identifies products held up to the camera, and the VoiceView screen reader. This is an existing Amazon camera-recognition feature next to FTV-3.",
+   "platform": "web",
+   "source_name": "Lighthouse Guild (via Senior Living)",
+   "engagement": "n/a (article)",
+   "date": "revised 2023-04",
+   "url": "https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/",
+   "quote": "[paraphrase] Echo Show's Show and Tell identifies products held to its camera; VoiceView reads the screen."
+  },
+  {
+   "insight": "Vision Buddy sells a headset that combines a TV Hub for watching TV with document reading. The blog covers reviewing mail and paperwork, and a medication bottle's fine print read aloud or shown in large enhanced text. It is a paid competitor bundling TV and mail reading.",
+   "platform": "web",
+   "source_name": "Vision Buddy blog (Jessica Hayes)",
+   "engagement": "n/a (vendor article)",
+   "date": "2026-05-20",
+   "url": "https://visionbuddy.com/ai-reading-devices-for-people-with-low-vision/",
+   "quote": "[paraphrase] Headset with a TV Hub plus reading of mail, documents and medication-bottle fine print."
+  },
+  {
+   "insight": "A 2026 guide lists OrCam MyEye 3, which answers questions like what the total on a bill is, and Lookout for sorting mail. It notes that electronic magnifiers can show yellow text on black. It says people abandon devices for lack of training, and recommends starting with one simple task such as reading mail. Its table puts AI wearables at $2,000 to $5,000.",
+   "platform": "web",
+   "source_name": "HelpSquad Health blog",
+   "engagement": "n/a (vendor article)",
+   "date": "undated on page (titled 2026 guide)",
+   "url": "https://helpsquad.com/blog/guide-to-assistive-technology-for-vision-loss/",
+   "quote": "[paraphrase] Start with one simple task, like reading your mail; many abandon devices for lack of training."
+  },
+  {
+   "insight": "A 2026 review from a large low-vision channel covers turning an iPad into a video magnifier (a CCTV-style setup on consumer hardware). This shows ongoing demand for repurposing devices people already own as fixed magnifiers.",
+   "platform": "youtube",
+   "source_name": "The Blind Life",
+   "engagement": "8,351 views, 365 likes",
+   "date": "2026-02-21",
+   "url": "https://www.youtube.com/watch?v=NaM5Lv1h9Ug",
+   "quote": "Optaro XL Review: Turning Your iPad Into a Powerful Low Vision Video Magnifier"
+  },
+  {
+   "insight": "An older tip video from a low-vision clinic covers the same repurpose-a-tablet-as-magnifier pattern.",
+   "platform": "youtube",
+   "source_name": "New England Low Vision and Blindness",
+   "engagement": "4,931 views, 69 likes",
+   "date": "2022-08-08",
+   "url": "https://www.youtube.com/watch?v=yi_GTfvvej4",
+   "quote": "How to Turn Your IPad Into a Video Magnifier! (Low Vision Tips)"
+  },
+  {
+   "insight": "Tutorials on built-in screen magnification still draw solid views. These are evergreen, not specific to mail.",
+   "platform": "youtube",
+   "source_name": "The Blind Life",
+   "engagement": "20,389 views, 504 likes",
+   "date": "2025-07-30",
+   "url": "https://www.youtube.com/watch?v=Yr5cozp-aOU",
+   "quote": "How to Use Windows Magnifier: A Quick Tutorial for Low Vision Users 2025"
+  },
+  {
+   "insight": "The most-viewed result is a low-vision optometrist's reading-glasses guide. Optical aids remain the first line for reading; content is evergreen.",
+   "platform": "youtube",
+   "source_name": "Midwest Low Vision / Dr. Jarrod Long",
+   "engagement": "24,593 views, 315 likes",
+   "date": "2021-11-28",
+   "url": "https://www.youtube.com/watch?v=0jvjR-A6ZJ0",
+   "quote": "Low Vision Reading Glasses Guide"
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "Expert and practitioner sources agree that AI readers hallucinate or summarize, and that financial or medication documents need verification through a human or non-AI channel.",
+   "implication_for_hackathon": "This supports FTV-3's core: no LLM, verbatim Textract values, each value shown beside its evidence crop, and 'Not sure' below 90 confidence. Lead the Quality-of-Idea pitch with it, because it is the opposite of a latent LLM capability. Inference: judges will read 'every value beside where it was printed' as the trusted non-AI check these sources call for.",
+   "evidence_refs": [
+    "https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+    "https://afb.org/aw/fall2025/meta-glasses-review",
+    "https://www.optometricmanagement.com/issues/2025/novemberdecember/artificial-intelligence/"
+   ]
+  },
+  {
+   "signal": "Be My Eyes' own guidance, as quoted by AAO, says not to have volunteers read mail with your address or financial details. Disability World flags cloud and volunteer streaming as a privacy exposure.",
+   "implication_for_hackathon": "Impact framing: mail and bills are a task the leading human-help app steers people away from. FTV-3 keeps the document in the household: the user's own TV, 24-hour deletion, and a masked reference number. Inference: this is a strong, sourced one-liner for the video and Devpost text.",
+   "evidence_refs": [
+    "https://www.aao.org/eye-health/tips-prevention/low-vision-impairment-apps-tech-assistive-devices",
+    "https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/"
+   ]
+  },
+  {
+   "signal": "Recurring friction with phone and wearable readers: choosing a mode or channel (Seeing AI), wearing the phone on a lanyard (Lookout), and a camera offset that misses part of the frame (Meta glasses).",
+   "implication_for_hackathon": "This supports the fixed phone on a stand plus the one OK button on the remote. Show a side-by-side of the hold-and-aim steps versus a single press. Inference.",
+   "evidence_refs": [
+    "https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/",
+    "https://afb.org/aw/fall2025/meta-glasses-review"
+   ]
+  },
+  {
+   "signal": "People already repurpose consumer devices (iPads) as fixed video magnifiers. Paid products bundle TV watching with document reading (Vision Buddy TV Hub), and bill Q&A exists in costly wearables (OrCam MyEye 3; wearables at $2,000 to $5,000 per HelpSquad).",
+   "implication_for_hackathon": "Position FTV-3 as a household-hardware CCTV-plus-reader: a phone and a Fire TV stick the household already owns, versus headsets and wearables costing thousands. Inference: judges will recognize the CCTV pattern.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NaM5Lv1h9Ug",
+    "https://www.youtube.com/watch?v=yi_GTfvvej4",
+    "https://visionbuddy.com/ai-reading-devices-for-people-with-low-vision/",
+    "https://helpsquad.com/blog/guide-to-assistive-technology-for-vision-loss/"
+   ]
+  },
+  {
+   "signal": "Amazon already has camera-based recognition aimed at low-vision users: Echo Show's Show and Tell, plus the VoiceView screen reader.",
+   "implication_for_hackathon": "Risk for the 'existing Amazon feature' penalty. Explicitly contrast FTV-3: documents, not packaged products; a value-by-value evidence crop and Not sure, not a spoken answer only; a TV-sized display and remote, not an Echo Show screen. Inference.",
+   "evidence_refs": [
+    "https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "A 'Read every line' key that is never replaced by a summary. Whole-letter line stepping (already specced) should be one remote button away and labelled as the full text, because sources report the AI summarizing when users wanted every word.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://afb.org/aw/fall2025/meta-glasses-review"
+   ]
+  },
+  {
+   "feature_need": "'Ask my family' confirm loop: send only the masked crop of one field (for example the amount due) to a named household member's phone for a yes or no check, instead of a stranger volunteer. This turns the expert's 'verify with a human' rule into a product feature. Inference; scope it after the core works.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+    "https://www.aao.org/eye-health/tips-prevention/low-vision-impairment-apps-tech-assistive-devices"
+   ]
+  },
+  {
+   "feature_need": "A 'Due this week' board on the TV: after a bill is read, the verbatim due date and amount (only fields at 90 or above) can be pinned to a deterministic list with a reminder. This answers the Be My AI study finding that AI describes what is present rather than helping finish the task.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.optometricmanagement.com/issues/2025/novemberdecember/artificial-intelligence/"
+   ]
+  },
+  {
+   "feature_need": "High-contrast and inverted display themes (yellow on black, white on black) plus stepped magnification for the card and evidence crops, matching what electronic magnifier users expect.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://helpsquad.com/blog/guide-to-assistive-technology-for-vision-loss/",
+    "https://www.youtube.com/watch?v=NaM5Lv1h9Ug",
+    "https://www.youtube.com/watch?v=Yr5cozp-aOU"
+   ]
+  },
+  {
+   "feature_need": "A live 'Magnifier' mode with no OCR: stream the stand-mounted phone camera to the TV as a CCTV for things that are not bills (medication bottle fine print, handwritten notes). It is pixels only, so nothing can be hallucinated. Inference; it is a stretch feature because of streaming latency on Vega OS.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://visionbuddy.com/ai-reading-devices-for-people-with-low-vision/",
+    "https://www.youtube.com/watch?v=yi_GTfvvej4"
+   ]
+  },
+  {
+   "feature_need": "No modes to choose: one OK press handles bill, letter or other automatically, and never asks the user to pick a channel, which is a documented Seeing AI pain point.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://lighthouseguild.org/smartphone-apps-and-resources-for-people-with-vision-loss-or-impairment/"
+   ]
+  },
+  {
+   "feature_need": "Pre-capture framing preview and a privacy indicator on the TV: show exactly what the fixed camera sees and when it captures, so nothing beyond the letter is sent. Extends the specced framing guard and answers the 'camera sees everything in frame' concern.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.disabilityworld.org/articles/assistive-tech-for-blind-people-2026/",
+    "https://afb.org/aw/fall2025/meta-glasses-review"
+   ]
+  },
+  {
+   "feature_need": "A guided first-run lesson ('Check your first letter') using a bundled sample bill, because sources say people abandon assistive devices for lack of training and should start with mail as the first task.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://helpsquad.com/blog/guide-to-assistive-technology-for-vision-loss/"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "AI readers make things up or give inaccurate information (AFB review; Be My AI study; Disability World).",
+  "AI summarizes when the user wanted every word read; full reading needs an explicit prompt (AFB, Meta glasses).",
+  "AI answers describe what is present rather than how to complete the task (Be My AI study, 14 participants over 2 months).",
+  "Seeing AI's mode selection has a learning curve; the wrong channel gives useless output (Lighthouse Guild).",
+  "Lookout narrates continuously and noisily and has to be worn on a lanyard or in a pocket (Lighthouse Guild).",
+  "Privacy: volunteers should not read mail showing an address or financial details (Be My Eyes guidance quoted by AAO). Cloud and volunteer streaming exposes everything in frame (Disability World).",
+  "Camera position on glasses misses part of the frame (AFB, Meta glasses).",
+  "People abandon devices for lack of training (HelpSquad).",
+  "Cost: AI wearables at $2,000 to $5,000 and electronic magnifiers at $200 to $1,500 (HelpSquad comparison table)."
+ ],
+ "competitors_or_entrants_seen": [
+  "Microsoft Seeing AI",
+  "Be My Eyes / Be My AI",
+  "Google Lookout",
+  "Google Lens",
+  "Aira",
+  "OrCam MyEye 3 (bill-total Q&A)",
+  "Envision Glasses",
+  "Ray-Ban Meta AI glasses",
+  "eSight Go",
+  "Vision Buddy (headset with TV Hub plus document and medication reading)",
+  "Optaro XL (iPad video magnifier)",
+  "Windows Magnifier",
+  "Amazon Echo Show Show and Tell + VoiceView (Amazon's own adjacent feature)",
+  "No hackathon entrants seen"
+ ],
+ "key_patterns": [
+  "Practitioners keep repeating the same rule: AI readers hallucinate or over-summarize, so financial and medication documents need a non-AI or human check. This matches FTV-3's verbatim values, evidence crop and Not sure design.",
+  "Holding and aiming the phone, plus choosing modes, is the recurring friction in phone and wearable readers. A fixed camera with one button (the CCTV pattern) is familiar, and people already repurpose iPads as magnifiers.",
+  "Privacy is a known blocker for mail: human-volunteer services steer users away from reading financial mail, which is a reason to keep processing in the household.",
+  "Amazon already ships adjacent camera recognition (Echo Show Show and Tell), so FTV-3 must state its document, evidence and TV-remote difference explicitly.",
+  "Social signal from the last 30 days is absent for this niche; evidence is evergreen articles and older YouTube videos. Do not claim the topic is trending."
+ ]
+}

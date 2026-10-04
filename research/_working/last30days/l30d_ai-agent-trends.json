@@ -1,0 +1,286 @@
+{
+ "angle": "ai-agent-trends: what AI-agent and MCP builders are excited about (MCP Apps interactive UIs, agent observability, human-in-the-loop confirmation, voice agents), which demos impress, what judges find gimmicky, translated into idea and feature signals for the Amazon-device hackathon concepts (FTV-4, FTV-3, ALX-5, FTV-4F)",
+ "topic_run": "AI agents MCP apps voice assistant demo ideas (--quick --emit=compact --no-native-web), plus 2 WebSearch queries: 'MCP Apps interactive UI human-in-the-loop agents September 2026' and 'AI agent hackathon winning demos voice agents judges gimmick 2026' (reddit.com, x.com, twitter.com blocked)",
+ "script_ran": true,
+ "script_error": "The script finished in 16.4 s but only partly worked. The Reddit global search failed with '402 Client Error: Payment Required' from the ScrapeCreators API, so it returned 0 threads. X/Twitter was skipped because Bird is installed but not authenticated (expected on this machine). Xiaohongshu was unavailable. HN returned 0 stories. TikTok, Instagram and Polymarket were enabled but returned nothing. I did not retry because the script did not error or time out. Separately, Firecrawl scrape hit a shared rate limit (0 requests/min left), so I read pages with WebFetch instead.",
+ "saved_file": "~/Documents/Last30Days/ai-agents-mcp-apps-voice-assistant-demo-ideas-raw.md",
+ "stats": {
+  "reddit": "none (0 threads; ScrapeCreators API returned 402 Payment Required)",
+  "youtube": "6 videos, 7,965,729 views, 167,110 likes, 1 with transcript; 0 inside the 30-day window (newest 2026-07-19, oldest 2025-02-19)",
+  "tiktok": "none",
+  "instagram": "none",
+  "hn": "none (0 stories)",
+  "polymarket": "none",
+  "web": "2 WebSearch queries, 20 results; 8 pages read via WebFetch (Scott Logic, AngelHack, VoiceOS, Thomas Wiegold, AAIF, Solo.io, CopilotKit, A2A Devpost); only 1 page dated inside the window (Scott Logic, 16 Sep 2026); X/Twitter not authenticated"
+ },
+ "coverage_note": "Results were thin and mostly older than 30 days. The script returned no Reddit, HN, TikTok, Instagram, Polymarket or X data. Its 6 YouTube videos are old explainers (AI agents, MCP vs API, build-your-first-agent, voice receptionist tutorial), none from 4 Sep to 4 Oct 2026, and the script itself flagged 'LIMITED RECENT DATA'. The compound query probably also hurt recall. Most usable evidence came from web pages I read: one inside the window (Scott Logic, 16 Sep 2026) and the rest from Jan to Jun 2026, plus one Devpost page from Jul 2025. Treat these as recent background, not last-30-day chatter. WebFetch summarises pages with a small model, so wording is not character-verified. To respect the copyright limit (one verbatim quote under 15 words per response), only the AngelHack finding has a verbatim quote; the other quote fields are marked [paraphrase]. I read no posts about this Amazon hackathon and found no Amazon-device entrants. Hackathon winners named only in the search summary (VendorGuard, LORE) were not checked on their own pages. Inferences are labelled.",
+ "findings": [
+  {
+   "insight": "MCP Apps (servers returning interactive, stateful UI that renders inline in chat) is the main thing MCP builders are writing about in the window. The worked demo is an editable contacts carousel inside the chat.",
+   "platform": "web",
+   "source_name": "Scott Logic blog (James Strong)",
+   "engagement": "not shown (blog post; also syndicated on daily.dev)",
+   "date": "2026-09-16",
+   "url": "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+   "quote": "[paraphrase] MCP Apps let a server return a sandboxed, interactive, stateful UI that renders inline beside the agent's answer."
+  },
+  {
+   "insight": "Tool visibility can be limited to the app, so the model cannot see or call a tool while a human tap in the UI still can. This is presented as the way to keep risky writes in human hands.",
+   "platform": "web",
+   "source_name": "Scott Logic blog (James Strong)",
+   "engagement": "not shown",
+   "date": "2026-09-16",
+   "url": "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+   "quote": "[paraphrase] Tool visibility can be set so risky actions are triggered by a human in the app, never called directly by the model."
+  },
+  {
+   "insight": "Builders complain that client support for MCP Apps lags far behind the spec.",
+   "platform": "web",
+   "source_name": "Scott Logic blog (James Strong)",
+   "engagement": "not shown",
+   "date": "2026-09-16",
+   "url": "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+   "quote": "[paraphrase] Author says client support for MCP Apps has been weak and is still catching up."
+  },
+  {
+   "insight": "MCP 2026-07-28 formalised extensions, including MCP Apps. ChatGPT now supports MCP Apps natively instead of only its own Apps SDK. Inference: the Alexa+ track's 2025-11-25 MCP target predates this formalisation.",
+   "platform": "web",
+   "source_name": "Scott Logic blog (James Strong)",
+   "engagement": "not shown",
+   "date": "2026-09-16",
+   "url": "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+   "quote": "[paraphrase] MCP version 2026-07-28 formalised extensions including MCP Apps; ChatGPT moved from its Apps SDK to native MCP Apps support."
+  },
+  {
+   "insight": "The 'approval gate' pattern: before an irreversible action, show the real artifact (recipient, subject, body) in a UI rather than asking for confirmation in prose. Because MCP Apps is a standard, the same gate runs in Claude and ChatGPT.",
+   "platform": "web",
+   "source_name": "thomas-wiegold.com (Thomas Wiegold)",
+   "engagement": "not shown",
+   "date": "2026-06-10",
+   "url": "https://thomas-wiegold.com/blog/how-to-build-mcp-ui/",
+   "quote": "[paraphrase] Prose confirmation is weak because the user never sees the actual artifact; a UI gate shows the real email, subject and recipient."
+  },
+  {
+   "insight": "A hackathon organiser's playbook warns that without a judging framework, judges reward slick videos over working agents. This is direct evidence of what reads as gimmicky.",
+   "platform": "web",
+   "source_name": "AngelHack blog (Mia Le)",
+   "engagement": "not shown",
+   "date": "2026-06-08",
+   "url": "https://angelhack.com/blog/ai-agent-hackathon/",
+   "quote": "Whoever made the slickest demo wins, regardless of whether their agent actually worked."
+  },
+  {
+   "insight": "The recommended fix is to judge trace logs against a standard rubric: task completion rate, tool-use accuracy, cost per run, latency and hallucination rate.",
+   "platform": "web",
+   "source_name": "AngelHack blog (Mia Le)",
+   "engagement": "not shown",
+   "date": "2026-06-08",
+   "url": "https://angelhack.com/blog/ai-agent-hackathon/",
+   "quote": "[paraphrase] Give teams an evaluation framework from day one and judge the trace logs, using task completion, tool accuracy, cost, latency and hallucination rate."
+  },
+  {
+   "insight": "Agents need a real environment (real APIs in a sandbox, or mocks where access doesn't exist). Otherwise they are just an LLM. This matches the organiser's warning against latent-LLM ideas.",
+   "platform": "web",
+   "source_name": "AngelHack blog (Mia Le)",
+   "engagement": "not shown",
+   "date": "2026-06-08",
+   "url": "https://angelhack.com/blog/ai-agent-hackathon/",
+   "quote": "[paraphrase] An agent with no real environment is just an LLM with extra steps; sandbox real APIs or mock missing ones."
+  },
+  {
+   "insight": "Engineering-only teams over-index on technical novelty and under-index on whether the agent solves a real workflow.",
+   "platform": "web",
+   "source_name": "AngelHack blog (Mia Le)",
+   "engagement": "not shown",
+   "date": "2026-06-08",
+   "url": "https://angelhack.com/blog/ai-agent-hackathon/",
+   "quote": "[paraphrase] Engineering-only teams chase technical novelty and neglect whether the agent solves a real workflow."
+  },
+  {
+   "insight": "At a voice-only hackathon in Tokyo, the winner treated voice as an execution layer: an MCP that mines dictation logs for repeated workflows and generates new MCP tools. Judges favoured systems that learn from repetition over one-shot commands.",
+   "platform": "web",
+   "source_name": "VoiceOS blog",
+   "engagement": "not shown",
+   "date": "2026-05-13 (last updated)",
+   "url": "https://www.voiceos.com/blog/worlds-first-voice-only-hackathon",
+   "quote": "[paraphrase] Winner was an MCP that mines dictation logs for repeated workflows and generates new MCP tools; voice both does work and improves the system."
+  },
+  {
+   "insight": "The AAIF's list of MCP Apps hosts does not include Alexa+ (observation from the list as published). Open problems named: balancing generative and predefined UI, and an 'App Tools' proposal to let agents operate existing UIs.",
+   "platform": "web",
+   "source_name": "Agentic AI Foundation (AAIF) blog",
+   "engagement": "not shown",
+   "date": "2026-04-22",
+   "url": "https://aaif.io/blog/mcp-apps-extending-the-frontier/",
+   "quote": "[paraphrase] Listed MCP Apps hosts: VS Code, Cursor, GitHub Copilot, Claude, ChatGPT, Postman, Goose; App Tools proposal would let agents drive existing UIs."
+  },
+  {
+   "insight": "Judges at a 2026 MCP and AI-agents hackathon explicitly credited observability (OpenTelemetry agent execution) and identity. Winners also included a webcam vision agent supporting ASL and an agentic FinOps platform.",
+   "platform": "web",
+   "source_name": "Solo.io blog",
+   "engagement": "not shown",
+   "date": "2026-05-06",
+   "url": "https://www.solo.io/blog/celebrating-the-winners-of-the-2026-hackathon-for-mcp-ai-agents",
+   "quote": "[paraphrase] Judges credited an agentgateway entry for identity at the edge and observable agent execution via OpenTelemetry."
+  },
+  {
+   "insight": "Generative UI is described in three tiers: static (pre-built components, the agent only picks and fills), declarative, and open-ended. MCP Apps lets a tool reference an interactive UI that the host renders in place.",
+   "platform": "web",
+   "source_name": "CopilotKit blog (Anmol Baranwal, Nathan Tarbert)",
+   "engagement": "not shown",
+   "date": "2026-01-29",
+   "url": "https://www.copilotkit.ai/blog/the-developer-s-guide-to-generative-ui-in-2026",
+   "quote": "[paraphrase] In static generative UI, developers pre-build components and the agent only chooses when one appears and what data fills it."
+  },
+  {
+   "insight": "The most-viewed agent explainer in the script output (evergreen, outside the window) frames good agent demos as apps that simply work for non-technical users, with the complexity hidden.",
+   "platform": "youtube",
+   "source_name": "Jeff Su",
+   "engagement": "5,276,990 views, 115,582 likes",
+   "date": "2025-04-08",
+   "url": "https://www.youtube.com/watch?v=FwOTs4UxQS4",
+   "quote": "[paraphrase] Ordinary users want an app that simply works without understanding the back end."
+  },
+  {
+   "insight": "Voice-agent prize criteria at an agents hackathon (older, Jul 2025): polished UX, fast response times and thoughtful use of voice. Latency is a judged property of voice demos.",
+   "platform": "web",
+   "source_name": "Devpost: A2A Agents Hackathon (Creators Corner)",
+   "engagement": "129 participants (as shown)",
+   "date": "2025-07-26",
+   "url": "https://a2a-agents-hackathon.devpost.com/",
+   "quote": "[paraphrase] Vapi voice-agent prize judged on polished UX, fast response times and thoughtful use of voice."
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "Human-in-the-loop has moved from typed 'are you sure?' to rendered approval artifacts, with the approving tool hidden from the model so only a human tap can fire it.",
+   "implication_for_hackathon": "Inference: ALX-5 OutPass is on-trend because its core is a permission and state system, not an LLM capability. The pitch should lead with 'the assistant cannot approve a pass; only the parent's tap on the exact pass card can'. That separates it from a latent-LLM idea and from existing Alexa+ features.",
+   "evidence_refs": [
+    "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+    "https://thomas-wiegold.com/blog/how-to-build-mcp-ui/"
+   ]
+  },
+  {
+   "signal": "There is a backlash against judging on slick demos; organisers recommend judging trace logs and standard agent metrics.",
+   "implication_for_hackathon": "Inference: with Tech Implementation as the tie-break, every concept should show its evidence on screen: raw far-side dB windows and calibration (FTV-4), Textract confidence with evidence crops (FTV-3), and the event log and ladder timeline (ALX-5). A polished video with no visible trace is the gimmick pattern judges are being warned about.",
+   "evidence_refs": [
+    "https://angelhack.com/blog/ai-agent-hackathon/"
+   ]
+  },
+  {
+   "signal": "An agent with no real environment is 'an LLM with extra steps'; real workflows beat technical novelty.",
+   "implication_for_hackathon": "Inference: this supports the current shortlist, where each concept depends on physical sensing or device context (phone as a far-field mic, a phone camera capturing a bill, a phone-free child at the kitchen Echo). Frame each submission around one named real workflow (clinician-assigned loudness practice, bill triage, a child going out) rather than around the AI.",
+   "evidence_refs": [
+    "https://angelhack.com/blog/ai-agent-hackathon/"
+   ]
+  },
+  {
+   "signal": "Many MCP hosts support MCP Apps, but support is described as weak and Alexa+ is absent from the AAIF host list.",
+   "implication_for_hackathon": "Inference: ALX-5 must not depend on Alexa+ rendering an MCP App iframe. The text and hydrated-card fallback in TOP_THREE_BUILD_SPECS.md is essential, and the iframe should be shown only in the simulated host, clearly labelled.",
+   "evidence_refs": [
+    "https://aaif.io/blog/mcp-apps-extending-the-frontier/",
+    "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html"
+   ]
+  },
+  {
+   "signal": "Voice demos are judged on response latency and on voice acting as an execution layer, and winners learn from repeated patterns.",
+   "implication_for_hackathon": "Inference: for ALX-5, a deterministic 'same as last Tuesday' pass template learned from the household's own pass history fits the 'learns from repetition' pattern without becoming an LLM trick. For FTV-4, show measured mic-to-TV latency, since voice judges reward fast response.",
+   "evidence_refs": [
+    "https://www.voiceos.com/blog/worlds-first-voice-only-hackathon",
+    "https://a2a-agents-hackathon.devpost.com/"
+   ]
+  },
+  {
+   "signal": "Judges give explicit credit for agent observability (OpenTelemetry).",
+   "implication_for_hackathon": "Inference: for the AWS Builder mini challenge, a visible trace (CloudWatch or X-Ray / OpenTelemetry spans per tool call or per capture) is a cheap, judge-legible addition.",
+   "evidence_refs": [
+    "https://www.solo.io/blog/celebrating-the-winners-of-the-2026-hackathon-for-mcp-ai-agents"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "Make `decide_pass` (and curfew override) app-only via `_meta.ui.visibility: [\"app\"]`, so the model can never see or invoke the parent's approval. Only the Confirm tap in the pass card or parent sheet calls it. TOP_THREE_BUILD_SPECS.md row 12 currently relies on the default `[\"model\",\"app\"]`. The simulated host must enforce this, since Alexa+ rendering is unconfirmed (inference).",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://blog.scottlogic.com/2026/09/16/mcp-apps-your-ui-their-chat.html",
+    "https://thomas-wiegold.com/blog/how-to-build-mcp-ui/"
+   ]
+  },
+  {
+   "feature_need": "An approval gate that shows the exact artifact plus what happens next: who, where, by when, the conditions, and the scheduled check-out/check-in ladder steps with their real times, before Confirm.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://thomas-wiegold.com/blog/how-to-build-mcp-ui/"
+   ]
+  },
+  {
+   "feature_need": "An 'agent trace' drawer on the parent surface: each tool call with actor (child, parent, system, host family), timestamp, state transition and idempotency key, exportable. It doubles as Tech Implementation evidence and AWS Builder observability.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://angelhack.com/blog/ai-agent-hackathon/",
+    "https://www.solo.io/blog/celebrating-the-winners-of-the-2026-hackathon-for-mcp-ai-agents"
+   ]
+  },
+  {
+   "feature_need": "A 'why this result' evidence panel on the TV: per-phrase far-side dB against the clinician target, the calibration record, and the noise floor. Scoring stays deterministic with no LLM in the loop, so it reads as measurement, not a latent-LLM feature.",
+   "which_concept": "FTV-4 Across the Room (and FTV-4F Listener Edition)",
+   "evidence_refs": [
+    "https://angelhack.com/blog/ai-agent-hackathon/"
+   ]
+  },
+  {
+   "feature_need": "An on-screen latency readout (phone mic to TV result, in ms) and a short end-of-session eval card (phrases attempted, phrases reaching target, median latency).",
+   "which_concept": "FTV-4 Across the Room",
+   "evidence_refs": [
+    "https://a2a-agents-hackathon.devpost.com/",
+    "https://angelhack.com/blog/ai-agent-hackathon/"
+   ]
+  },
+  {
+   "feature_need": "Static generative UI: pre-built field cards (payee, amount, due date) where extraction only fills data, each beside its evidence crop and confidence, or 'Not sure'. Add an approval gate before any follow-on action (e.g. saving a due-date reminder) that shows the exact record to be saved.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.copilotkit.ai/blog/the-developer-s-guide-to-generative-ui-in-2026",
+    "https://thomas-wiegold.com/blog/how-to-build-mcp-ui/"
+   ]
+  },
+  {
+   "feature_need": "A small labelled eval set (e.g. 20 sample bills) with field accuracy, 'Not sure' rate, cost per capture and latency shown in the README and the closing demo card. Judges are being told to score these metrics, not the video.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://angelhack.com/blog/ai-agent-hackathon/"
+   ]
+  },
+  {
+   "feature_need": "A deterministic repeat-pass template ('same as last time') learned from the household's own pass history and still requiring parent approval. It nods to the voice-learns-from-repetition pattern without an LLM trick.",
+   "which_concept": "ALX-5 OutPass",
+   "evidence_refs": [
+    "https://www.voiceos.com/blog/worlds-first-voice-only-hackathon"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "Client support for MCP Apps is weak and still catching up with the spec (Scott Logic, 16 Sep 2026).",
+  "Typed confirmation is weak because users never see the real artifact the agent is about to act on (Thomas Wiegold, 10 Jun 2026).",
+  "Hackathon judges score videos and vibes, so the slickest demo wins even when the agent doesn't work (AngelHack, 8 Jun 2026).",
+  "Engineering-only teams over-index on technical novelty and ignore whether a real workflow is solved (AngelHack).",
+  "The balance between generative UI and predefined UI is an unresolved interoperability problem (AAIF, 22 Apr 2026).",
+  "Audience frustration: explanations of AI agents are either too technical or too basic (Jeff Su YouTube highlight, 2025-04-08, outside window).",
+  "Research-tooling frustrations (ours, not market signal): Reddit source paywalled (402), X unauthenticated, Firecrawl scrape rate-limited."
+ ],
+ "competitors_or_entrants_seen": [
+  "Recursive MCP Builder: winner of the VoiceOS Tokyo voice-only hackathon (an MCP that generates MCPs from dictation patterns)",
+  "Frugalia (agentic FinOps for Kubernetes), a Kagent webcam vision agent with ASL support, and an MCP governance platform: winners at the Solo.io 2026 Hackathon for MCP & AI Agents",
+  "VendorGuard (Microsoft Agent Academy Hackathon top entry) and LORE (GitLab AI Hackathon 2026 grand prize): named only in the WebSearch summary; pages not read",
+  "Platforms and tooling builders use: MCP Apps hosts (Claude, ChatGPT, VS Code, Cursor, GitHub Copilot, Postman, Goose), OpenAI Apps SDK, MCPUI, CopilotKit / AG-UI, Vapi (voice), VoiceOS",
+  "No entrants or posts about the Amazon 'Build, Ship, Shape' hackathon were seen"
+ ],
+ "key_patterns": [
+  "Human-in-the-loop now means a rendered approval artifact plus a tool the model cannot call (app-only visibility), not typed confirmation.",
+  "Judging is pushing back on slick demos: trace logs, agent metrics (task completion, tool accuracy, cost, latency, hallucination rate) and a real workflow count for more than polish.",
+  "MCP Apps is the standard for agent UI (formalised in MCP 2026-07-28 and supported natively by ChatGPT), but host support is uneven and Alexa+ is not on the published host list, so a text fallback is required.",
+  "Voice agents are judged on latency and UX, and on voice acting as an execution layer that learns from repeated use.",
+  "Observability (OpenTelemetry-style traces) earns explicit judge credit, which suits the AWS Builder mini challenge."
+ ]
+}

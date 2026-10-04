@@ -1,0 +1,294 @@
+{
+ "angle": "feat-voice-practice",
+ "topic_run": "Parkinsons speech therapy voice loudness practice at home (--quick --emit=compact --no-native-web)",
+ "script_ran": true,
+ "script_error": "The script finished in 18.5 s with no crash or timeout, so it was not retried. It did hit partial source failures. Reddit search returned '402 Client Error: Payment Required' from the ScrapeCreators API, giving 0 threads. X/Twitter was skipped because it is not authenticated on this machine (expected). Xiaohongshu was unavailable. The output header said 'LIMITED RECENT DATA', with 0 items confirmed inside 2026-09-04 to 2026-10-04. During supplementing, the Firecrawl MCP scrape hit its rate limit (other agents were using it), so pages were read with WebFetch instead. WebFetch failed on three pages: Parkinson's Europe returned 403, and two clinicaltrials.gov pages loaded without the study record.",
+ "saved_file": "~/Documents/Last30Days/parkinsons-speech-therapy-voice-loudness-practice-at-home-raw.md",
+ "stats": {
+  "reddit": "none (Reddit search failed with 402 Payment Required; 0 threads)",
+  "youtube": "1 video in output (log said 10 found, 1 in range, transcripts for 2 of 3; the compact output and sources line show 1 video with 0 transcripts): Sierra Speech, published 2017-04-16, 205,605 views, 2,284 likes",
+  "tiktok": "none",
+  "instagram": "none",
+  "hn": "none (0 stories)",
+  "polymarket": "none",
+  "web": "2 WebSearch queries (reddit.com and x.com excluded) returned 18 links; 7 pages read with WebFetch (Brain Support Network, PMC/JMIR 2025 study, Apple App Store Speak Up For Parkinson's, Breatheworks, LSVT Global Patients & Family, Cleveland Clinic, Tactus Therapy); 3 fetches failed"
+ },
+ "coverage_note": "The topic was too niche for the social sources. Results are thin and none are from the last 30 days. The script produced 0 Reddit threads (paid API failed, 402), no X (not authenticated), no TikTok, Instagram, HN or Polymarket results, and one evergreen YouTube video from 2017. So there is no recent patient, spouse or SLP chatter to report, and I did not invent any. Most findings come from 2 web searches plus 7 pages read with WebFetch: clinical guidance pages, a 2025 JMIR feasibility study, an app-roundup page from 2018, and the App Store page for Speak Up For Parkinson's (4 user reviews from 2015-2025). The App Store reviews are the only first-person user voice. WebFetch quotes are extracted by a summarizer model from the pages, so treat them as close to verbatim and spot-check before quoting publicly. I found nothing on 'Loud and Clear' (it already appears in the FTV-4 rival table in TOP_THREE_BUILD_SPECS.md). Feature and idea signals marked 'inference' are my reading, not something a source states.",
+ "findings": [
+  {
+   "insight": "The only result from the script is an old follow-along home workout video with large lifetime reach. People clearly use a screen-led format for home speech practice, but this is evergreen demand, not a recent trend.",
+   "platform": "YouTube",
+   "source_name": "Sierra Speech",
+   "engagement": "205,605 views, 2,284 likes",
+   "date": "2017-04-16",
+   "url": "https://www.youtube.com/watch?v=Dy2l7qLXhyA",
+   "quote": "Parkinson's Home Speech Therapy Workout"
+  },
+  {
+   "insight": "A reviewer titled 'Speech Therapist' says the incumbent app's loudness target is wrong for the actual distance between the speaker and the mic, and the phrase bank is too small. This directly supports FTV-4's thesis: calibrate at the real listener distance and let users add their own phrases.",
+   "platform": "Apple App Store review",
+   "source_name": "Speak Up For Parkinson's (review by Hombre Tinta, 'Speech Therapist')",
+   "engagement": "App rated 2.7/5 from 3 ratings",
+   "date": "2015-03-03",
+   "url": "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+   "quote": "The target volume is too high when the mic is 15-18\" from the iPad speaker. The phrase bank is way too small."
+  },
+  {
+   "insight": "A recent user calls the main free Parkinson's voice app too basic. There is room for a better-designed, more capable practice tool.",
+   "platform": "Apple App Store review",
+   "source_name": "Speak Up For Parkinson's (review by RodL1919, 'Too Basic')",
+   "engagement": "App rated 2.7/5 from 3 ratings",
+   "date": "2025-02-22",
+   "url": "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+   "quote": "Not very helpful. Very limited for someone in the early stages of Parkinson's."
+  },
+  {
+   "insight": "Users who liked the app were stopped by microphone and camera permission failures. Getting the mic connected reliably is a known failure point for these tools (relevant to FTV-4's phone-as-mic pairing).",
+   "platform": "Apple App Store review",
+   "source_name": "Speak Up For Parkinson's (review by tomkatmc)",
+   "engagement": "App rated 2.7/5 from 3 ratings",
+   "date": "2019-02-18",
+   "url": "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+   "quote": "Recently, however, when I have opened the app, it cannot open my iPad's camera or microphone."
+  },
+  {
+   "insight": "The incumbent app's design is a volume meter plus a selfie camera at arm's length. It does not measure what a listener across the room hears. Last updated as version 1.3.2 on 2025-11-14.",
+   "platform": "Apple App Store listing",
+   "source_name": "Speak Up For Parkinson's (app description)",
+   "engagement": "2.7/5 from 3 ratings",
+   "date": "2025-11-14 (last update, v1.3.2)",
+   "url": "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+   "quote": "With both tools a volume meter is provided as well as audio/video feedback."
+  },
+  {
+   "insight": "A 2025 smartphone voice-training study (South Korea, 28 enrolled, 5 weeks) says outright that it could not test whether gains carried over into real-life communication. Carryover is the unmeasured gap.",
+   "platform": "Web (peer-reviewed study)",
+   "source_name": "PMC / Journal of Medical Internet Research",
+   "engagement": "n/a (28 participants, 25 completed)",
+   "date": "2025-02-13",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+   "quote": "We were unable to conduct functional assessments to determine whether participants' voice issues improved in real-life communication situations."
+  },
+  {
+   "insight": "Convenience of practising at home was the main reason participants were satisfied, and adherence was high for most (above 90% for 20 participants, below 70% for 4).",
+   "platform": "Web (peer-reviewed study)",
+   "source_name": "PMC / Journal of Medical Internet Research",
+   "engagement": "n/a; 75% (18/24) satisfied",
+   "date": "2025-02-13",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+   "quote": "Most were satisfied with the convenience of being able to practice at their own home, citing it as the primary reason."
+  },
+  {
+   "insight": "The research app varied its spoken feedback each time and paired praise with a concrete technique cue. This is a design pattern FTV-4's feedback screens can copy.",
+   "platform": "Web (peer-reviewed study)",
+   "source_name": "PMC / Journal of Medical Internet Research",
+   "engagement": "n/a",
+   "date": "2025-02-13",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+   "quote": "It also provides different feedback each time whenever the patient performs a task (eg, 'Good job! Squeeze your abdomen and speak louder!')."
+  },
+  {
+   "insight": "Guidance for caregivers: help without nagging, using one agreed cue word instead of repeated corrections. This applies directly to how FTV-4's household listener mode should behave.",
+   "platform": "Web (speech clinic article)",
+   "source_name": "Breatheworks",
+   "engagement": "n/a",
+   "date": "2023-08-12 (updated)",
+   "url": "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+   "quote": "Caregivers can support communication without becoming the 'speech police.'"
+  },
+  {
+   "insight": "The core clinical problem is a gap between how loud speech feels to the speaker and how audible it actually is. Therapy aims to recalibrate that internal sense, which is exactly what a far-side listener check makes visible.",
+   "platform": "Web (speech clinic article)",
+   "source_name": "Breatheworks",
+   "engagement": "n/a",
+   "date": "2023-08-12 (updated)",
+   "url": "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+   "quote": "Therapy helps recalibrate your internal sense of loudness so 'feels loud' matches 'is audible.'"
+  },
+  {
+   "insight": "The program owner says some people need reminders for daily home exercises, while therapists also value independence. Reminders and caregiver help should be optional and light-touch.",
+   "platform": "Web (program site)",
+   "source_name": "LSVT Global, Patients & Family",
+   "engagement": "n/a",
+   "date": "undated",
+   "url": "https://www.lsvtglobal.com/Patients_Family",
+   "quote": "Persons with advanced PD or other cognitive changes may need reminders to do the daily home exercises that are vital to successful treatment."
+  },
+  {
+   "insight": "Maintenance means daily practice of about 10-15 minutes, framed like taking medication. That suggests a short session length and a habit anchored to an existing daily routine.",
+   "platform": "Web (program site)",
+   "source_name": "LSVT Global, Patients & Family",
+   "engagement": "n/a",
+   "date": "undated",
+   "url": "https://www.lsvtglobal.com/Patients_Family",
+   "quote": "Continue your daily homework exercise routine just as you take your daily medication!"
+  },
+  {
+   "insight": "Clinician-licensed coaching software already collects practice data and gives feedback at home. FTV-4 is not first to do home data collection; its difference has to be listener-position measurement and the shared TV surface.",
+   "platform": "Web (program site)",
+   "source_name": "LSVT Global, Patients & Family (LSVT Coach)",
+   "engagement": "n/a",
+   "date": "undated",
+   "url": "https://www.lsvtglobal.com/Patients_Family",
+   "quote": "The LSVT Coach, Client Edition is a computer system that collects data as you practice LSVT LOUD exercises and provides personalized feedback."
+  },
+  {
+   "insight": "A current (July 2026) clinician article recommends daily exercise and decibel meter apps 'in and out of practice'. Checking loudness during ordinary life, not only in drills, is a recognized need.",
+   "platform": "Web (health system article)",
+   "source_name": "Cleveland Clinic (Danielle Brown, MA, CCC-SLP)",
+   "engagement": "n/a",
+   "date": "2026-07-17",
+   "url": "https://health.clevelandclinic.org/parkinsons-speech-therapy",
+   "quote": "Decibel meter apps allow you to monitor how loudly you're speaking in and out of practice."
+  },
+  {
+   "insight": "An SLP roundup says partners can be trained to give cues and control the environment. It also lists rival approaches, including a wearable that plays background noise to prompt louder speech and an app with faces that grow with volume.",
+   "platform": "Web (SLP blog)",
+   "source_name": "Tactus Therapy (Megan S. Sutton, MS, CCC-SLP)",
+   "engagement": "n/a",
+   "date": "2019",
+   "url": "https://tactustherapy.com/parkinsons-disease-pd-improve-speech-therapy/",
+   "quote": "Partners can be trained to give appropriate cues to be part of a successful interaction."
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "A first-person SLP complaint says loudness targets break when the mic distance changes (15-18 inches from an iPad), and the incumbent app is an arm's-length meter plus selfie video.",
+   "implication_for_hackathon": "This supports FTV-4's core claim (measure at the listener's seat, not at arm's length) with a real user complaint. Cite it in the README rival table and open the demo with the far-side calibration. Inference: it strengthens 'Quality of the Idea', because it is not a latent LLM capability or an existing Alexa+ feature.",
+   "evidence_refs": [
+    "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908"
+   ]
+  },
+  {
+   "signal": "Peer-reviewed app research admits it could not measure carryover to real-life communication, and clinical guidance says carryover is what makes gains last.",
+   "implication_for_hackathon": "Frame FTV-4 as a home-practice tool that checks loudness in the real room and at real listener distance. This is a practical stand-in for 'real-life communication', not a clinical outcome; keep the not-a-medical-device wording. Inference: this is the strongest Potential Impact argument available without making claims.",
+   "evidence_refs": [
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/",
+    "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/"
+   ]
+  },
+  {
+   "signal": "The central clinical concept is the gap between 'feels loud' and 'is audible'. Clinicians teach caregivers to cue with one agreed word, not to police.",
+   "implication_for_hackathon": "The household listener in FTV-4 and FTV-4F is the natural judge of 'is audible'. Design the listener role around one agreed cue plus heard or not-heard, so it reads as support rather than surveillance. That is a design-criterion story judges can grasp in a 3-minute video (inference).",
+   "evidence_refs": [
+    "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "https://tactustherapy.com/parkinsons-disease-pd-improve-speech-therapy/"
+   ]
+  },
+  {
+   "signal": "Incumbent consumer tools are old, basic or buggy: Speak Up has 2.7/5 from 3 ratings, reviews say 'Too Basic' and report mic/camera failures, and the rest are generic dB meter apps listed in a 2018 roundup.",
+   "implication_for_hackathon": "A polished, remote-only TV experience with reliable phone pairing stands out against weak rivals. Put effort into pairing reliability and clear large-type screens rather than into more metrics (inference).",
+   "evidence_refs": [
+    "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+    "https://www.brainsupportnetwork.org/apps-to-increase-vocal-loudness-and-improve-fluency/"
+   ]
+  },
+  {
+   "signal": "The only social result is an evergreen home speech workout video with 205,605 views. No last-30-day Reddit, X, TikTok, Instagram or HN chatter was retrievable.",
+   "implication_for_hackathon": "There is demand for guided home practice on a screen, but no trend to point to. Do not claim 'people are talking about this now'; ground the 'why' in clinical guidance and the incumbents' shortcomings (inference).",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=Dy2l7qLXhyA"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "'Felt vs heard' gap tracker: after each phrase the speaker presses Up/Down on the remote for 'felt loud' or 'felt normal' before the listener verdict or far-side result is shown. The summary charts how often 'felt normal' was actually 'heard', which tracks the 'feels loud matches is audible' recalibration over days.",
+   "which_concept": "FTV-4 (also works in FTV-4F Listener Edition)",
+   "evidence_refs": [
+    "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/"
+   ]
+  },
+  {
+   "feature_need": "One-cue listener mode: in family mode the listener's phone gets a single agreed cue button (e.g. 'Volume') alongside Heard / Not heard. Cues are capped per session, and the TV shows the cue gently rather than as a failure, to avoid 'speech police' dynamics. Make the cue word configurable.",
+   "which_concept": "FTV-4 family mode / FTV-4F",
+   "evidence_refs": [
+    "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "https://tactustherapy.com/parkinsons-disease-pd-improve-speech-therapy/"
+   ]
+  },
+  {
+   "feature_need": "Anchored daily habit: a session preset of about 10-15 minutes with a 'practice time' tied to an existing routine. An optional caregiver nudge (on the phone page or shown at TV launch) for users who need reminders, off by default to keep independence. Inference: how a reminder is delivered on Fire TV is unverified and needs a platform check.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://www.lsvtglobal.com/Patients_Family",
+    "https://health.clevelandclinic.org/parkinsons-speech-therapy"
+   ]
+  },
+  {
+   "feature_need": "Carryover ladder: progress from sustained 'ahh' to single words, then household phrases, then a 'conversation round' where the TV shows a question and the speaker answers the listener across the room. Add an optional 'ad-break check' that runs one far-side phrase during ordinary TV time, i.e. checking 'in and out of practice'.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://breatheworks.com/parkinsons-speech-therapy-lsvt-loud-speak-out/",
+    "https://health.clevelandclinic.org/parkinsons-speech-therapy",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/"
+   ]
+  },
+  {
+   "feature_need": "Bigger, personal phrase bank: go beyond the 10 phrase fields in the current spec. Offer starter categories (family names, dinner calls, phone-call openers, requests to the listener) that rotate so phrases do not repeat within a week, answering the 'phrase bank is way too small' complaint.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908"
+   ]
+  },
+  {
+   "feature_need": "Varied, specific feedback lines: rotate encouragement and pair each with one concrete technique cue, never the same 'good job' twice in a row, and keep clinical wording out.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/"
+   ]
+  },
+  {
+   "feature_need": "Placement-honest calibration as the headline: an on-screen check that the phone is at the listener's seat, with automatic re-calibration prompts when the margin drifts. This answers the 'target too high at 15-18 inches' complaint. It is already in the spec; the evidence says keep it prominent in the demo.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908"
+   ]
+  },
+  {
+   "feature_need": "Clinician-readable weekly card: days practised, reached out of attempted at listener distance, felt-vs-heard gap, and listener cue count, exported from the phone page so the person can show it to their SLP. Positioned against clinician-licensed coaching software that already logs home practice.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://www.lsvtglobal.com/Patients_Family",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC11888063/"
+   ]
+  },
+  {
+   "feature_need": "Stretch, inference only: a stepped 'household noise' practice level where the TV plays a known low background bed (kitchen or TV chatter), so the user practises being heard over everyday noise, echoing the noise-prompt wearable. Caveat: this conflicts with the spec's 'Room too noisy' gate, so the known bed would have to be accounted for in scoring. Likely post-hackathon.",
+   "which_concept": "FTV-4",
+   "evidence_refs": [
+    "https://tactustherapy.com/parkinsons-disease-pd-improve-speech-therapy/"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "Speak Up For Parkinson's (SLP reviewer, 2015): the app crashes often, its target volume is too high at a 15-18 inch mic distance, and the phrase bank is too small.",
+  "Speak Up For Parkinson's (2025 review, 'Too Basic'): 'Not very helpful. Very limited for someone in the early stages of Parkinson's.'",
+  "Speak Up For Parkinson's (2019 reviews): the app could not reach the iPad's microphone or camera; one user called it 'useless' after reinstalling several times.",
+  "Research gap: a 2025 JMIR smartphone-app study could not assess whether gains carried into real-life communication.",
+  "Caregivers risk becoming the 'speech police' with repeated corrections. The clinic advice implies this is a known household friction (inference from the guidance, not a first-person complaint).",
+  "Self-monitoring mismatch: a normal loudness 'often feels too loud at first' to the speaker (Breatheworks), which makes unaided home practice unreliable.",
+  "People with advanced PD or cognitive change may need reminders for daily practice (LSVT Global), while therapists also want independence."
+ ],
+ "competitors_or_entrants_seen": [
+  "Speak Up For Parkinson's (iOS; Northwest Parkinson's Foundation / Sandcastle; volume meter with 'Target Zone' plus selfie video; 2.7/5 from 3 ratings; v1.3.2, 2025-11-14)",
+  "Decibel X / Decibel 10th (Skypaw Co. Ltd; free iOS/Android sound meter)",
+  "Voice Meter Pro ($3.99 iOS visual voice meter)",
+  "Voice-o-Meter ($0.99 iOS visual voice meter)",
+  "Sound Meter Pro (free dB meter)",
+  "Bla | Bla | Bla app (faces that expand with loudness)",
+  "SpeechVive wearable (plays background noise into the ear to prompt louder speech)",
+  "LSVT Coach, Client Edition (clinician-linked computer system that collects home-practice data)",
+  "LSVT LOUD and SPEAK OUT! programs (clinician-led; LOUD Crowd group follow-on)",
+  "Researcher-developed Android voice-training app (South Korea, JMIR 2025 feasibility study)",
+  "Connected Speech Pathology online LSVT/SPEAK OUT! programs (seen in search results only)",
+  "No hackathon entrants seen"
+ ],
+ "key_patterns": [
+  "There is almost no recent social conversation in the sources the script could reach: Reddit failed (402), X is unauthenticated, and TikTok, Instagram and HN returned nothing. The one YouTube result is a 2017 evergreen workout video (205,605 views). Evidence for FTV-4 features has to come from clinical guidance and app reviews, not trend chatter.",
+  "Clinical guidance agrees on short daily home practice (about 10-15 minutes) and on carryover into real conversation. Existing tools measure the drill, and the 2025 app study says outright that it could not measure real-life carryover.",
+  "Incumbent consumer tools are arm's-length meters or selfie-camera apps. An SLP reviewer specifically flags that loudness targets break when mic distance changes, which is the gap FTV-4's far-side check targets ('not verified in reviewed sources' that no rival does it).",
+  "Family involvement is encouraged but must be bounded: one agreed cue instead of 'speech police' corrections, reminders only for those who need them, and independence valued. This shapes how FTV-4's listener mode should feel.",
+  "The core problem is a self-perception gap ('feels loud' versus 'is audible'). A far-side listener verdict paired with the speaker's own rating is a natural, non-clinical way to make that gap visible (inference)."
+ ]
+}

@@ -1,0 +1,275 @@
+{
+ "angle": "fire-tv-vega",
+ "topic_run": "Fire TV Vega OS apps",
+ "script_ran": true,
+ "script_error": "The script finished in 29.7s, so no --quick retry was needed. Some sources still failed. Reddit search returned 402 Payment Required from the ScrapeCreators API, so 0 threads came back. X/Twitter was skipped because Bird is installed but not logged in (expected on this machine). Xiaohongshu was unavailable. The report header also contradicts itself: it says 'Only 0 item(s) confirmed from 2026-09-04 to 2026-10-04' and 'Mode: reddit-only', but all 6 YouTube videos it lists are dated 2026-09-04 to 2026-10-02. For the web step, both WebSearch queries worked. Firecrawl scrape hit its rate limit (other agents were using it), so WebFetch was used instead. gadgethacks.com returned 403.",
+ "saved_file": "~/Documents/Last30Days/fire-tv-vega-os-apps-raw.md",
+ "stats": {
+  "reddit": "none (0 threads; the API returned 402 Payment Required)",
+  "youtube": "6 videos, 237,536 views, 3,204 likes, 2 with transcripts (Triple M, EBR)",
+  "tiktok": "none",
+  "instagram": "none",
+  "hn": "none (0 stories)",
+  "polymarket": "none",
+  "web": "2 WebSearch queries (20 result links, reddit.com and x.com excluded); 4 pages read via WebFetch (XDA Developers, AFTVNews, the Devpost hackathon resources page, kunalganglani.com); gadgethacks.com returned 403; X/Twitter not authenticated"
+ },
+ "coverage_note": "Results were thin and narrow. Only YouTube returned anything: 6 videos, 2 with transcripts. Reddit failed on a paid-API error, X is not authenticated, and TikTok, Instagram, HN and Polymarket came back empty. Almost everything is about one news event: Amazon's 3rd-gen Fire TV Stick 4K (about Sep 30, 2026) runs Vega OS and cannot sideload apps. Nothing I read covered accessibility apps, fitness or family activities on TV, phone-as-companion patterns, voice or loudness practice, or bill/mail scanning on TV. Treat that as no evidence either way, not as proof of demand. Some figures appeared only in WebSearch summaries whose source pages I did not open, so they are unverified: Vega has about 1,257 apps vs 30,000+ on Fire OS, Vega covers fewer than 40% of Fire TV's top 250 apps, and niche fitness and regional apps are often missing. The kunalganglani.com page (dated 2026-07-11, outside the 30-day window) did not contain those figures. The EBR transcript looks machine-translated from Hindi. Three of the 6 videos (CalebRated, UG Tech, NewTechWorld with Tej) had no transcript, so only their titles were read. Note that CalebRated has the most engagement (106,634 views).",
+ "findings": [
+  {
+   "insight": "A Vega OS reviewer says the app store is very limited and that he could not install his usual tools (Analiti speed test, AIDA64 system info, Downloader). Without sideloading there is no way around it.",
+   "platform": "YouTube",
+   "source_name": "Triple M",
+   "engagement": "13,035 views, 224 likes",
+   "date": "2026-10-02",
+   "url": "https://www.youtube.com/watch?v=NWRr86zuuMI",
+   "quote": "So, let me just say this. With the Vega OS, very limited app store."
+  },
+  {
+   "insight": "Utility gap on Vega: the file explorer the reviewer found in the store showed 'no media found' on a USB drive full of files, and he had almost no other choices.",
+   "platform": "YouTube",
+   "source_name": "Triple M",
+   "engagement": "13,035 views, 224 likes",
+   "date": "2026-10-02",
+   "url": "https://www.youtube.com/watch?v=NWRr86zuuMI",
+   "quote": "the thing that sucks about this is that you don't have a lot of options to choose from."
+  },
+  {
+   "insight": "The new Vega 4K stick has 8 GB total, and the OS plus a few apps leave only about 1.93 GB free. Apps with heavy local storage will struggle.",
+   "platform": "YouTube",
+   "source_name": "Triple M",
+   "engagement": "13,035 views, 224 likes",
+   "date": "2026-10-02",
+   "url": "https://www.youtube.com/watch?v=NWRr86zuuMI",
+   "quote": "We have 1.93 gigs of 4.62 available"
+  },
+  {
+   "insight": "The redesigned remote drops the fast-forward and rewind buttons (you hold left or right on the D-pad instead), replaces the voice button with a mic button, and adds a Star button you can set to open an app.",
+   "platform": "YouTube",
+   "source_name": "Triple M",
+   "engagement": "13,035 views, 224 likes",
+   "date": "2026-10-02",
+   "url": "https://www.youtube.com/watch?v=NWRr86zuuMI",
+   "quote": "Now, one thing that's different about this remote is this does not have the fast forward and rewind button."
+  },
+  {
+   "insight": "The reviewer sees the Vega stick as good for basic streaming but restrictive for anything else. This supports the view of Vega as a streaming-first platform.",
+   "platform": "YouTube",
+   "source_name": "Triple M",
+   "engagement": "13,035 views, 224 likes",
+   "date": "2026-10-02",
+   "url": "https://www.youtube.com/watch?v=NWRr86zuuMI",
+   "quote": "Good streaming device for everyone who's just expecting the basics, but again, it's going to keep you tied down."
+  },
+  {
+   "insight": "The most-viewed item in the window is a first look at the new Fire TV Stick 4K. There is no transcript, so its reasoning is unknown. The title suggests a positive reversal.",
+   "platform": "YouTube",
+   "source_name": "CalebRated",
+   "engagement": "106,634 views, 2,258 likes",
+   "date": "2026-09-30",
+   "url": "https://www.youtube.com/watch?v=WdEFI_nwwZU",
+   "quote": "New Fire TV Stick 4K First Look: I Was Wrong About Amazon Fire TV (video title; no transcript)"
+  },
+  {
+   "insight": "An Indian Hindi-language comparison says Vega Fire TV sticks in India cannot install APKs or third-party apps. The transcript appears machine-translated.",
+   "platform": "YouTube",
+   "source_name": "EBR",
+   "engagement": "49,180 views, 305 likes",
+   "date": "2026-09-04",
+   "url": "https://www.youtube.com/watch?v=sVW9V7ExNUg",
+   "quote": "you cannot download any APK file in it. You cannot download third party apps."
+  },
+  {
+   "insight": "For Indian households, the reviewer recommends the Jio set-top box for elders, because it carries live channels such as cricket, religious channels and serials, which Fire TV lacks.",
+   "platform": "YouTube",
+   "source_name": "EBR",
+   "engagement": "49,180 views, 305 likes",
+   "date": "2026-09-04",
+   "url": "https://www.youtube.com/watch?v=sVW9V7ExNUg",
+   "quote": "So for this reason Jio set top box is very good for older people."
+  },
+  {
+   "insight": "The same reviewer praises Fire TV voice recognition in both Hindi and English as a key strength over Jio's remote.",
+   "platform": "YouTube",
+   "source_name": "EBR",
+   "engagement": "49,180 views, 305 likes",
+   "date": "2026-09-04",
+   "url": "https://www.youtube.com/watch?v=sVW9V7ExNUg",
+   "quote": "its voice command is so accurate that whatever we say, whether in Hindi or English, it understands it to a great extent."
+  },
+  {
+   "insight": "Sideloading worries extend to Fire OS: a widely viewed video is about a bug that hides Downloader from 'Install Unknown Apps'. There is no transcript, so only the title was read.",
+   "platform": "YouTube",
+   "source_name": "UG Tech",
+   "engagement": "59,931 views, 357 likes",
+   "date": "2026-09-10",
+   "url": "https://www.youtube.com/watch?v=1k9fa5MxRpw",
+   "quote": "Fire TV Bug Hides Downloader from Install Unknown Apps \u2014 Here's Why (video title; no transcript)"
+  },
+  {
+   "insight": "The 2026 Fire TV Stick HD with Vega OS is sold in India at Rs 5,249, so real Vega hardware is available to an India-based developer. Title only, no transcript.",
+   "platform": "YouTube",
+   "source_name": "NewTechWorld with Tej",
+   "engagement": "8,354 views, 56 likes",
+   "date": "2026-09-23",
+   "url": "https://www.youtube.com/watch?v=6hxcF8y6SDA",
+   "quote": "NEW Firestick HD (2026 Edition) with Vega OS! \u20b95,249 Worth It or BIG Mistake? Full Review (video title)"
+  },
+  {
+   "insight": "XDA reports that Amazon has added more than 2,000 apps to Vega, mostly media and entertainment names (Spotify, Xbox, VLC, VPNs), while keeping sideloading locked.",
+   "platform": "Web",
+   "source_name": "XDA Developers (Patrick O'Rourke)",
+   "engagement": "n/a (article)",
+   "date": "2026-09-30",
+   "url": "https://www.xda-developers.com/amazon-refreshed-fire-tv-stick4k-faster-switch-to-vega-os-comes-with-major-catch/",
+   "quote": "Vega OS now has over 2,000 more apps, including Spotify, Xbox, VLC, and several VPNs."
+  },
+  {
+   "insight": "Amazon is adding small utility features driven by the remote and voice: 'Alexa, find my remote' and a customizable Star button.",
+   "platform": "Web",
+   "source_name": "XDA Developers (Patrick O'Rourke)",
+   "engagement": "n/a (article)",
+   "date": "2026-09-30",
+   "url": "https://www.xda-developers.com/amazon-refreshed-fire-tv-stick4k-faster-switch-to-vega-os-comes-with-major-catch/",
+   "quote": "a new Find My Remote feature that lets you say 'Alexa, find my remote' so it plays a sound"
+  },
+  {
+   "insight": "AFTVNews confirms the new stick has the usual Vega shortcomings: no sideloading and far fewer apps. It also notes no Dolby audio decoding. The shipping list (US, CA, JP, MX, UK, DE, FR, IT, ES, CH, AU) does not include India.",
+   "platform": "Web",
+   "source_name": "AFTVNews (Elias Saba)",
+   "engagement": "n/a (article)",
+   "date": "2026-09-30",
+   "url": "https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/",
+   "quote": "such as not being able to sideload apps and a vastly smaller app selection."
+  },
+  {
+   "insight": "The hackathon's own Fire TV guidance names prioritized categories that include fitness, family entertainment, multi-modal UX and computer vision. It recommends react-native-multi-tv-app-sample, one codebase for Vega, Android TV, Apple TV and web.",
+   "platform": "Web",
+   "source_name": "Devpost: Build, Ship, Shape resources page",
+   "engagement": "n/a (organizer page)",
+   "date": "no date shown on page",
+   "url": "https://amazonappdev2026.devpost.com/resources",
+   "quote": "Prioritized categories: AI-enhanced viewing, sports, fitness, family entertainment, multi-modal UX, and computer vision."
+  }
+ ],
+ "idea_signals": [
+  {
+   "signal": "Vega's app store is thin on everything beyond major streaming apps. Reviewers cannot find working utilities (file explorer, speed test, system info), and sideloading is impossible, so any non-streaming capability has to come as a native Vega app.",
+   "implication_for_hackathon": "An app built natively for Vega that makes the TV do something other than play video fills a gap reviewers are complaining about. FTV-4 and FTV-3 should be pitched as 'new on Vega, not a port', built in React Native and running on the Vega Virtual Device. (Inference: the judges' Potential Impact score benefits from naming this catalog gap.)",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI",
+    "https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/",
+    "https://www.xda-developers.com/amazon-refreshed-fire-tv-stick4k-faster-switch-to-vega-os-comes-with-major-catch/"
+   ]
+  },
+  {
+   "signal": "The organizer's prioritized Fire TV categories explicitly include fitness, family entertainment, multi-modal UX and computer vision.",
+   "implication_for_hackathon": "FTV-4 (remote plus phone far-field mic plus TV display, a health and practice routine for the household) maps to multi-modal UX and fitness/health. FTV-3 Mail Check (phone camera plus Textract) maps to computer vision. Name the matching category word for word in each Devpost write-up.",
+   "evidence_refs": [
+    "https://amazonappdev2026.devpost.com/resources"
+   ]
+  },
+  {
+   "signal": "Reviewers frame Vega as a basic streaming device that keeps you 'tied down'. None of the returned coverage mentions interactive, accessibility, health or phone-companion apps on Vega.",
+   "implication_for_hackathon": "Interaction beyond streaming looks like an open lane: nothing returned suggests a competing Vega app for loudness practice or bill checking. This is an absence of evidence from a thin sample, not proof that the lane is empty.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI"
+   ]
+  },
+  {
+   "signal": "In India, a Vega Fire TV Stick HD is on sale at Rs 5,249. An Indian reviewer says older family members prefer the Jio set-top box for live TV and praises Fire TV's Hindi and English voice recognition.",
+   "implication_for_hackathon": "Inference: the India-based solo developer can buy real Vega hardware to back up the Vega Virtual Device demo, since the 3rd-gen 4K is not listed as shipping in India. FTV-4's audience (adults told by a clinician to speak louder, often older) overlaps with the elder TV viewer; Hindi/English UI copy could be an optional extra.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=6hxcF8y6SDA",
+    "https://www.youtube.com/watch?v=sVW9V7ExNUg",
+    "https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/"
+   ]
+  },
+  {
+   "signal": "The new remote is simpler: no fast-forward or rewind buttons, a mic button instead of a voice button, and a programmable Star button. Amazon is adding small voice-triggered utilities such as 'Alexa, find my remote'.",
+   "implication_for_hackathon": "Design every FTV-4 and FTV-3 flow for D-pad, OK and Back only. A demo moment of 'press Star to start tonight's far-side check' shows a native fit with the new hardware.",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI",
+    "https://www.xda-developers.com/amazon-refreshed-fire-tv-stick4k-faster-switch-to-vega-os-comes-with-major-catch/"
+   ]
+  }
+ ],
+ "feature_signals": [
+  {
+   "feature_need": "Quick launch from the Star button: a first-run tip that tells the user to set the remote's Star button to open the app, so the daily far-side check (or Mail Check) is one press away.",
+   "which_concept": "FTV-4 Across the Room (also FTV-3 Mail Check)",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI",
+    "https://www.xda-developers.com/amazon-refreshed-fire-tv-stick4k-faster-switch-to-vega-os-comes-with-major-catch/"
+   ]
+  },
+  {
+   "feature_need": "Navigation by D-pad alone: left and right step through attempts or fields, holding repeats, and OK confirms. Do not rely on media keys, because the new remote has no fast-forward or rewind buttons.",
+   "which_concept": "FTV-4 Across the Room, FTV-4F Listener Edition, FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI"
+   ]
+  },
+  {
+   "feature_need": "Bring bill images in from the phone camera over the network, not by USB or local file import. On the reviewer's stick, the Vega file explorer showed 'no media found' on a USB drive, and sideloaded file managers are impossible.",
+   "which_concept": "FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI"
+   ]
+  },
+  {
+   "feature_need": "Keep little on the device: process audio and documents in the cloud and store only short summaries and evidence crops. The 4K Vega stick had only about 1.93 GB free after setup.",
+   "which_concept": "FTV-3 Mail Check, FTV-4 Across the Room",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=NWRr86zuuMI"
+   ]
+  },
+  {
+   "feature_need": "Build from react-native-multi-tv-app-sample so the same app also runs as a web build. Judges without Fire TV hardware can then try it, and the Vega Virtual Device demo has a fallback.",
+   "which_concept": "FTV-4 Across the Room, FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://amazonappdev2026.devpost.com/resources"
+   ]
+  },
+  {
+   "feature_need": "Optional Hindi/English prompts and labels for the practice and listener screens (inference from praise of Fire TV's bilingual voice recognition in India; not a direct user request).",
+   "which_concept": "FTV-4 Across the Room / FTV-4F Listener Edition",
+   "evidence_refs": [
+    "https://www.youtube.com/watch?v=sVW9V7ExNUg"
+   ]
+  },
+  {
+   "feature_need": "A 'Phone paired / mic live' status tile on the TV, so the remote-only user can see the phone's state. Vega cannot run a sideloaded TV-side helper, so all pairing state has to live in the Vega app plus the phone (inference from the sideloading lockdown).",
+   "which_concept": "FTV-4 Across the Room, FTV-3 Mail Check",
+   "evidence_refs": [
+    "https://www.aftvnews.com/amazon-announces-new-3rd-gen-fire-tv-stick-4k-running-vega-os-with-an-all-new-remote/",
+    "https://www.youtube.com/watch?v=NWRr86zuuMI"
+   ]
+  }
+ ],
+ "complaints_and_frustrations": [
+  "Vega OS cannot sideload APKs at all (Triple M, EBR, AFTVNews, XDA, and the Tech Bard video 'Amazon's New Fire TV Stick Won't Let You Sideload', 402 views).",
+  "The Vega app store is very limited, and common utilities (Analiti speed test, AIDA64, Downloader) are missing (Triple M).",
+  "The only file explorer apps on Vega could not read a full USB drive ('no media found') (Triple M).",
+  "Low free storage: about 1.93 GB available out of 8 GB after setup (Triple M).",
+  "The new 4K stick ships with no power brick and is powered from the TV's USB port, yet still costs $59, and no HDMI extender is included (Triple M).",
+  "Fast-forward and rewind buttons were removed from the new remote (Triple M; the reviewer personally found it acceptable).",
+  "The new stick cannot decode Dolby audio and supports only HLG, HDR10 and HDR10+ (AFTVNews).",
+  "India: Fire TV has no live channels, which elders prefer, and the stick has no USB or LAN port (a LAN adapter costs about Rs 1,500) (EBR).",
+  "On Fire OS, a bug hides Downloader from 'Install Unknown Apps' (UG Tech, title only)."
+ ],
+ "competitors_or_entrants_seen": [
+  "Jio set-top box (India; bundled with Jio Fiber/AirFiber, has live TV, rented for about Rs 200/month)",
+  "Fire TV Stick 4K Max (per WebSearch summaries, the only stick still on Fire OS with sideloading; source page not opened)",
+  "Apple TV (mentioned as also lacking fast-forward/rewind buttons)",
+  "Apps newly on Vega: Spotify, Xbox, VLC, several VPNs, Netflix, Disney+, YouTube, Prime Video, HBO Max, Peacock, Tubi",
+  "Apps unavailable on Vega: Downloader, AIDA64, Analiti",
+  "No hackathon entrants or competing Vega apps for voice practice or bill/mail checking were seen"
+ ],
+ "key_patterns": [
+  "The last 30 days of Fire TV talk are dominated by one event: the 3rd-gen Fire TV Stick 4K (launched about Sep 30, 2026) runs Vega OS. Almost every item centers on the loss of sideloading.",
+  "Utility gap: reviewers repeatedly cannot find basic tools (file explorer, speed test, system info) in the Vega store, and Amazon's additions are mostly media apps (Spotify, Xbox, VLC, VPNs).",
+  "Vega is described as a streaming-first, 'tied down' platform. The returned coverage contained nothing about interactive, accessibility, fitness, family or phone-companion apps. That is an absence in a thin sample, not confirmed demand.",
+  "India context: a Vega HD stick sells at Rs 5,249 and is positioned against the Jio set-top box. Elders are said to prefer live TV, and Fire TV's Hindi/English voice is praised.",
+  "The remote is getting simpler (no fast-forward/rewind, mic button, programmable Star button, 'Alexa, find my remote'). Apps should be built for D-pad plus OK and launched by shortcut."
+ ]
+}
