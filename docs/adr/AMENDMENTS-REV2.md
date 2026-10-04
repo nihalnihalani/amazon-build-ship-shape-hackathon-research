@@ -61,6 +61,9 @@ Owners: P = protocol (`contracts`), D = DSP (`dsp`), S = session-core (`session`
 | A4-06 | Accept. Borderline attempts are eligible for agreement and counted separately as well. | S |
 | A4-07 | Accept. Relay cue cap is per room tied to the session id announced in `session.begin`; the TV rejects cues outside between-window states with `ack rejected`. | R, S |
 
+| QA-01 | Accept. There is no `meter_visibility` wire or contract field: a retry is identified by `attemptNumber > 1` in the view and by its own `attempt_id`; summaries label retries from that. | L |
+| QA-05 | Accept. The phone receives `session.state` stage `phrase_active` from capture start until the next `phrase_ready` or `summary`; `response_pending` and `reveal` are never sent to the phone, so blind positions cannot be inferred from stage changes. `listener.open` remains the explicit listener signal. | S |
+
 ## ADR-0005 storage
 
 | Finding | Decision | Owner |
@@ -69,6 +72,7 @@ Owners: P = protocol (`contracts`), D = DSP (`dsp`), S = session-core (`session`
 | A5-02 | Accept. The phone persists nothing (no cookies, localStorage, sessionStorage, IndexedDB or Cache API entries). Test asserts it. | H |
 | A5-03 | Accept. A checkpoint older than 12 h is discarded on launch. | S |
 | A5-04 | Accept. Retention reduced to **8 days** (7 shown plus today). Session summaries store positions and counts, never phrase text, cue text or device labels. The phrase bank persists until deleted (stated in About). | S |
+| QA-02/07 | Accept. Final record is written before the checkpoint is cleared; a resume never overwrites a completed record; a failed final write keeps the checkpoint and shows an error. | S |
 | A5-05 | Accept. Corrupt values treated as absent with a delete offer; values read from storage validated; `multiRemove` partial failure surfaced; no phrases, credentials or codes in logs or Diagnostics. | S, T |
 
 ## ADR-0006 transport
@@ -108,6 +112,10 @@ Owners: P = protocol (`contracts`), D = DSP (`dsp`), S = session-core (`session`
 ## Protocol package findings
 
 PK-01 (snapshot input once, validate and return the snapshot), PK-02 (cross-field invariants exactly as listed in the review), PK-03 (display-safety text rule from `docs/security/probes/text_policy_sketch.mjs`: forbidden characters, invisible-only strings, combining runs > 4; keep NFC, ZWJ, ZWNJ, LRM/RLM/ALM), PK-05 (normalise −0 to 0), PK-09 (receivers parse raw text only; the TV `wire` input must be a string — objects are refused), PK-11 (doc drift fixes), PK-12 (TV startup NFC self-test shown in Diagnostics): all accepted. Owner P (S for PK-09/PK-12).
+
+## QA review defects routed
+
+QA-03 (must-deliver commands queued across link loss) and QA-04 (phrase bank shorter than current position) → S; A11Y-01/02/03 (disabled controls, dialog name, UI-scale overflow) → T. Repros live in `tests/review` and `tests/a11y` as expected-fail until fixed.
 
 ## Defects from T12
 
