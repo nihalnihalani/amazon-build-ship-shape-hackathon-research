@@ -6,7 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { isDbQuantized, quantizeCoverage } from '@atr/protocol';
+import { isCoverageQuantized, isDbQuantized } from '@atr/protocol';
 import { describe, expect, it } from 'vitest';
 import { evaluateCalibration, evaluateGate, evaluateQuietCheck, evaluateWindow, validateWindowResult } from '../src/index.js';
 import type { PrecheckResultPayload, WindowResultPayload } from '../src/wire.js';
@@ -92,24 +92,27 @@ describe('fixtures/dsp/soft-windows.json (20 valid phrase windows below the band
     }
   });
 
-  /** Protocol revision 4 puts dB fields on a 0.1 dB grid; a few fixtures use 0.01 dB steps to probe the edge. */
+  /** Protocol revision 4 puts dB fields on a 0.1 dB grid; the regenerated fixtures are all on it. */
   const onGrid = (c: SoftCase): boolean =>
     [c.expected_window.p50_active_dbfs, c.expected_window.p95_active_dbfs, c.expected_window.peak_dbfs].every(
       (v) => v === null || isDbQuantized(v),
-    );
+    ) && isCoverageQuantized(c.expected_window.coverage);
 
-  it('fixtures 03, 04 and 18 sit below the 0.1 dB wire grid: the verdict function handles them, the wire cannot carry them', () => {
-    expect(soft.filter((c) => !onGrid(c)).map((c) => c.id)).toEqual([
-      'soft-03-11.01dB-borderline',
-      'soft-04-11.99dB-borderline',
-      'soft-18-fractional-margin',
-    ]);
+  it('all 20 fixtures are wire-transmittable on the revision 4 grid (dB multiples of 0.1, coverage multiples of 0.001)', () => {
+    expect(soft.filter((c) => !onGrid(c)).map((c) => c.id)).toEqual([]);
+    // the three that used to sit between grid points keep their borderline flags on the grid
+    const byId = new Map(soft.map((c) => [c.id, c]));
+    for (const id of ['soft-03-11.01dB-borderline', 'soft-04-11.99dB-borderline', 'soft-18-fractional-margin']) {
+      const c = byId.get(id);
+      if (c) expect(onGrid(c), id).toBe(true);
+    }
+    expect(soft.filter((c) => c.expected_borderline).length).toBeGreaterThanOrEqual(3);
   });
 
   it('through the whole TV flow (quiet check, calibration at the fixture margin, phrase window) none comes out reached', async () => {
     let sent = 0;
     for (const c of soft) {
-      if (!onGrid(c)) continue;
+      expect(onGrid(c), `${c.id} must be wire-transmittable`).toBe(true);
       const h = new Harness({ settings: { onboarded: true } });
       await h.boot();
       h.floor = c.session_floor_dbfs;
@@ -121,9 +124,7 @@ describe('fixtures/dsp/soft-windows.json (20 valid phrase windows below the band
       h.beginAndLead('begin_phrase');
       h.answerPrecheck();
       expect(h.view.stage, c.id).toBe('phrase_active');
-      // fixture 16 has coverage 0.98125; the wire carries multiples of 0.001 and the TV recomputes it from the counts
-      const payload = { ...c.expected_window, coverage: quantizeCoverage(c.expected_window.coverage) };
-      h.answerWindowWith(payload as unknown as Record<string, unknown>);
+      h.answerWindowWith(c.expected_window as unknown as Record<string, unknown>);
       expect(h.view.stage, c.id).toBe('reveal');
       expect(h.view.result?.label, c.id).toBe("Below today's relative level band (unqualified phone)");
       expect(h.view.result?.tone, c.id).toBe('below');
@@ -132,7 +133,8 @@ describe('fixtures/dsp/soft-windows.json (20 valid phrase windows below the band
       expect(h.view.summary, c.id).toMatchObject({ scoredVisible: 1, reachedVisible: 0 });
       sent += 1;
     }
-    expect(sent).toBe(17);
+    expect(sent).toBe(20);
+    expect(sent).toBe(soft.length);
   });
 });
 
@@ -149,8 +151,14 @@ describe('fixtures/dsp/quiet-check.json versus the TV re-validation (docs/MEASUR
   }));
 
   it('the fixture file has the expected shape', () => {
-    expect(cases).toHaveLength(22);
-    for (const c of cases) expect(c.expected, c.id).toBeTruthy();
+    // the file has grown with the DSP rework: derive the size from the file, require at least the original 22
+    expect(cases.length).toBeGreaterThanOrEqual(22);
+    expect(new Set(cases.map((c) => c.id)).size).toBe(cases.length);
+    for (const c of cases) {
+      expect(c.expected, c.id).toBeTruthy();
+      expect(['quiet_check', 'pre_window'], c.id).toContain(c.expected.purpose);
+      expect(typeof c.expected.valid, c.id).toBe('boolean');
+    }
   });
 
   it('a phone that wrongly reports valid is overruled by the TV with the same reason as the fixture', () => {
