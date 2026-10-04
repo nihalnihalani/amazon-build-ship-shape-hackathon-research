@@ -1,5 +1,5 @@
 {
-  "note": "Hand-derived expected values; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
+  "note": "Hand-derived expected values for ADR-0001 revision 2; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
   "cases": [
     {
       "id": "qc-01-valid-typical",
@@ -22,11 +22,11 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. p80 - p20 = -40 - (-46) = 6 (<= 6, stable). p95 - floor = -36 - (-43) = 7 (<= 10). floor -43 <= -30. Coverage 100/100 = 1. Valid."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = -40 - (-46) = 6 (<= 6, stable). p95 - floor = -36 - (-43) = 7 (<= 10). floor -43 <= -30 and >= -110. Coverage 100/100 = 1. Valid."
     },
     {
       "id": "qc-02-stable-exactly-6",
-      "description": "Stability boundary: p80 - p20 is exactly 6 dB.",
+      "description": "Stability boundary: p80 - p20 is exactly 6.0 dB.",
       "purpose": "quiet_check",
       "duration_ms": 5000,
       "runs": [[-50,20],[-48,30],[-44,30],[-42,15],[-41,5]],
@@ -45,21 +45,21 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. p80 - p20 = -44 - (-50) = 6.00 which is <= 6: valid. p95 - floor = -42 - (-48) = 6."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = -44 - (-50) = 6.0 <= 6: valid. p95 - floor = -42 - (-48) = 6."
     },
     {
-      "id": "qc-03-unstable-6.01",
-      "description": "Stability boundary: p80 - p20 = 6.01 dB.",
+      "id": "qc-03-unstable-6.1",
+      "description": "Stability boundary: p80 - p20 = 6.1 dB (the finest step on the 0.1 dB grid above the limit).",
       "purpose": "quiet_check",
       "duration_ms": 5000,
-      "runs": [[-50,20],[-48,30],[-43.99,30],[-42,15],[-41,5]],
+      "runs": [[-50,20],[-48,30],[-43.9,30],[-42,15],[-41,5]],
       "expected": {
         "purpose": "quiet_check",
         "valid": false,
         "invalid_reason": "unstable_floor",
         "floor_dbfs": -48,
         "p20_dbfs": -50,
-        "p80_dbfs": -43.99,
+        "p80_dbfs": -43.9,
         "p95_dbfs": -42,
         "frame_count": 100,
         "expected_frames": 100,
@@ -68,11 +68,57 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. p80 - p20 = -43.99 - (-50) = 6.01 > 6: unstable_floor."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = -43.9 - (-50) = 6.1 > 6: unstable_floor. (Revision 1 used 6.01; the grid is now 0.1 dB.)"
+    },
+    {
+      "id": "qc-03b-raw-6.04-rounds-to-valid",
+      "description": "Raw p80 - p20 = 6.04 dB: the emitted p80 is -44.0, the rule is decided on emitted values, so the quiet check is valid.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-50,20],[-48,30],[-43.96,30],[-42,15],[-41,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": true,
+        "invalid_reason": null,
+        "floor_dbfs": -48,
+        "p20_dbfs": -50,
+        "p80_dbfs": -44,
+        "p95_dbfs": -42,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. C = -43.96 -> x10 = -439.6 -> round -440 -> -44.0. Emitted p80 - p20 = -44.0 - (-50.0) = 6.0 <= 6: valid. A receiver recomputing validity from the payload (A1-09) gets the same answer."
+    },
+    {
+      "id": "qc-03c-raw-6.06-rounds-to-invalid",
+      "description": "Raw p80 - p20 = 6.06 dB: the emitted p80 is -43.9, so the quiet check is unstable.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-50,20],[-48,30],[-43.94,30],[-42,15],[-41,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "unstable_floor",
+        "floor_dbfs": -48,
+        "p20_dbfs": -50,
+        "p80_dbfs": -43.9,
+        "p95_dbfs": -42,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. C = -43.94 -> x10 = -439.4 -> round -439 -> -43.9. Emitted p80 - p20 = 6.1 > 6: unstable_floor."
     },
     {
       "id": "qc-04-burst-exactly-10",
-      "description": "Burst boundary: p95 - floor is exactly 10 dB.",
+      "description": "Burst boundary: p95 - floor is exactly 10.0 dB.",
       "purpose": "quiet_check",
       "duration_ms": 5000,
       "runs": [[-46,20],[-43,30],[-40,30],[-33,15],[-30,5]],
@@ -91,14 +137,14 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. p95 - floor = -33 - (-43) = 10.00 <= 10: valid. p80 - p20 = 6 (stable)."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p95 - floor = -33 - (-43) = 10.0 <= 10: valid. p80 - p20 = 6 (stable)."
     },
     {
-      "id": "qc-05-burst-10.01",
-      "description": "Burst boundary: p95 - floor = 10.01 dB.",
+      "id": "qc-05-burst-10.1",
+      "description": "Burst boundary: p95 - floor = 10.1 dB.",
       "purpose": "quiet_check",
       "duration_ms": 5000,
-      "runs": [[-46,20],[-43,30],[-40,30],[-32.99,15],[-30,5]],
+      "runs": [[-46,20],[-43,30],[-40,30],[-32.9,15],[-30,5]],
       "expected": {
         "purpose": "quiet_check",
         "valid": false,
@@ -106,7 +152,7 @@
         "floor_dbfs": -43,
         "p20_dbfs": -46,
         "p80_dbfs": -40,
-        "p95_dbfs": -32.99,
+        "p95_dbfs": -32.9,
         "frame_count": 100,
         "expected_frames": 100,
         "coverage": 1.0,
@@ -114,11 +160,34 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. p95 - floor = -32.99 - (-43) = 10.01 > 10: burst_noise. p80 - p20 = 6 (stable, so not the reported reason)."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p95 - floor = -32.9 - (-43) = 10.1 > 10: burst_noise. p80 - p20 = 6 (stable, so not the reported reason)."
+    },
+    {
+      "id": "qc-05b-raw-10.04-rounds-to-valid",
+      "description": "Raw p95 - floor = 10.04 dB rounds to 10.0 and is valid.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-46,20],[-43,30],[-40,30],[-32.96,15],[-30,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": true,
+        "invalid_reason": null,
+        "floor_dbfs": -43,
+        "p20_dbfs": -46,
+        "p80_dbfs": -40,
+        "p95_dbfs": -33,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. D = -32.96 -> x10 = -329.6 -> round -330 -> -33.0. Emitted p95 - floor = 10.0: valid."
     },
     {
       "id": "qc-06-floor-exactly-minus-30",
-      "description": "Loudness boundary: floor is exactly -30 dBFS.",
+      "description": "Loudness boundary: floor is exactly -30.0 dBFS.",
       "purpose": "quiet_check",
       "duration_ms": 5000,
       "runs": [[-33,20],[-30,30],[-28,30],[-24,15],[-23,5]],
@@ -137,19 +206,19 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. floor = -30 <= -30: valid. p80 - p20 = -28 - (-33) = 5. p95 - floor = -24 - (-30) = 6."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. floor = -30 <= -30: valid. p80 - p20 = -28 - (-33) = 5. p95 - floor = -24 - (-30) = 6."
     },
     {
-      "id": "qc-07-too-loud-minus-29.99",
-      "description": "Loudness boundary: floor is -29.99 dBFS.",
+      "id": "qc-07-too-loud-minus-29.9",
+      "description": "Loudness boundary: floor is -29.9 dBFS.",
       "purpose": "quiet_check",
       "duration_ms": 5000,
-      "runs": [[-33,20],[-29.99,30],[-28,30],[-24,15],[-23,5]],
+      "runs": [[-33,20],[-29.9,30],[-28,30],[-24,15],[-23,5]],
       "expected": {
         "purpose": "quiet_check",
         "valid": false,
         "invalid_reason": "too_loud",
-        "floor_dbfs": -29.99,
+        "floor_dbfs": -29.9,
         "p20_dbfs": -33,
         "p80_dbfs": -28,
         "p95_dbfs": -24,
@@ -160,7 +229,30 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. floor = -29.99 > -30: too_loud. p80 - p20 = 5 and p95 - floor = 5.99, so only too_loud applies."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. floor = -29.9 > -30: too_loud. p80 - p20 = 5 and p95 - floor = 5.9, so only too_loud applies."
+    },
+    {
+      "id": "qc-07b-raw-minus-29.96-rounds-to-valid",
+      "description": "Raw floor -29.96 dBFS rounds to -30.0 and is not too loud.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-33,20],[-29.96,30],[-28,30],[-24,15],[-23,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": true,
+        "invalid_reason": null,
+        "floor_dbfs": -30,
+        "p20_dbfs": -33,
+        "p80_dbfs": -28,
+        "p95_dbfs": -24,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. B = -29.96 -> x10 = -299.6 -> round -300 -> -30.0 <= -30: valid."
     },
     {
       "id": "qc-08-coverage-exactly-0.90",
@@ -252,7 +344,7 @@
         "nonfinite_frames": 5,
         "duration_ms": 5000
       },
-      "derivation": "95 finite frames at -50 and 5 non-finite. Coverage 95/100 = 0.95 >= 0.90. Non-finite fraction 5/100 = 0.05, not > 0.05: valid. Non-finite frames are excluded from statistics."
+      "derivation": "95 finite frames at -50 and 5 non-finite. Non-finite fraction 5/100 = 0.05, not > 0.05. Coverage 95/100 = 0.95 >= 0.90: valid. Non-finite frames are excluded from statistics."
     },
     {
       "id": "qc-12-nonfinite-6pct",
@@ -275,7 +367,214 @@
         "nonfinite_frames": 6,
         "duration_ms": 5000
       },
-      "derivation": "94 finite + 6 non-finite. Coverage 0.94 >= 0.90 passes; non-finite fraction 0.06 > 0.05: nonfinite."
+      "derivation": "94 finite + 6 non-finite: non-finite fraction 0.06 > 0.05: nonfinite (evaluated before coverage, which would pass at 0.94)."
+    },
+    {
+      "id": "qc-12b-nonfinite-beats-low-coverage",
+      "description": "Revision 2 priority: nonfinite is evaluated before low_coverage.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-50,40],[null,10]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "nonfinite",
+        "floor_dbfs": -50,
+        "p20_dbfs": -50,
+        "p80_dbfs": -50,
+        "p95_dbfs": -50,
+        "frame_count": 50,
+        "expected_frames": 100,
+        "coverage": 0.4,
+        "clipped_frames": 0,
+        "nonfinite_frames": 10,
+        "duration_ms": 5000
+      },
+      "derivation": "40 finite + 10 non-finite = 50 frames received of 100 expected. Non-finite fraction 10/50 = 0.2 > 0.05 -> nonfinite. Coverage 40/100 = 0.4 < 0.90 would be low_coverage, but nonfinite has priority (A1-07)."
+    },
+    {
+      "id": "qc-s1-silent-boundary-valid",
+      "description": "A1-05: floor exactly -110.0 dBFS is not silent_input.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-110,100]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": true,
+        "invalid_reason": null,
+        "floor_dbfs": -110,
+        "p20_dbfs": -110,
+        "p80_dbfs": -110,
+        "p95_dbfs": -110,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "floor = -110.0, not < -110: valid. Stability, burst and loudness rules hold (all percentiles equal)."
+    },
+    {
+      "id": "qc-s2-silent-input",
+      "description": "A1-05: floor -110.1 dBFS is silent_input.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-110.1,100]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "silent_input",
+        "floor_dbfs": -110.1,
+        "p20_dbfs": -110.1,
+        "p80_dbfs": -110.1,
+        "p95_dbfs": -110.1,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "floor = -110.1 < -110: silent_input (the phone microphone looks muted or blocked)."
+    },
+    {
+      "id": "qc-s3-digital-silence",
+      "description": "A1-05: digital silence (-140 dBFS) used to pass the quiet check and is now silent_input.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-140,100]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "silent_input",
+        "floor_dbfs": -140,
+        "p20_dbfs": -140,
+        "p80_dbfs": -140,
+        "p95_dbfs": -140,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "100 frames at -140 dBFS: p80 - p20 = 0 and floor <= -30 (the revision 1 rules passed), but floor -140 < -110: silent_input."
+    },
+    {
+      "id": "qc-s4-raw-minus-110.04-valid",
+      "description": "Raw floor -110.04 rounds to -110.0: not silent.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-110.04,100]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": true,
+        "invalid_reason": null,
+        "floor_dbfs": -110,
+        "p20_dbfs": -110,
+        "p80_dbfs": -110,
+        "p95_dbfs": -110,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "-110.04 -> x10 = -1100.4 -> round -1100 -> -110.0, not < -110: valid."
+    },
+    {
+      "id": "qc-s5-raw-minus-110.06-silent",
+      "description": "Raw floor -110.06 rounds to -110.1: silent.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-110.06,100]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "silent_input",
+        "floor_dbfs": -110.1,
+        "p20_dbfs": -110.1,
+        "p80_dbfs": -110.1,
+        "p95_dbfs": -110.1,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "-110.06 -> x10 = -1100.6 -> round -1101 -> -110.1 < -110: silent_input."
+    },
+    {
+      "id": "qc-s6-prewindow-silent",
+      "description": "A1-05 applies to the pre-window check too.",
+      "purpose": "pre_window",
+      "duration_ms": 2000,
+      "runs": [[-140,40]],
+      "expected": {
+        "purpose": "pre_window",
+        "valid": false,
+        "invalid_reason": "silent_input",
+        "floor_dbfs": -140,
+        "p20_dbfs": -140,
+        "p80_dbfs": -140,
+        "p95_dbfs": -140,
+        "frame_count": 40,
+        "expected_frames": 40,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 2000
+      },
+      "derivation": "40 frames at -140: floor -140 < -110: silent_input (pre_window reason set includes silent_input)."
+    },
+    {
+      "id": "qc-s7-low-coverage-beats-silent",
+      "description": "low_coverage is evaluated before silent_input.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-140,50]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "low_coverage",
+        "floor_dbfs": -140,
+        "p20_dbfs": -140,
+        "p80_dbfs": -140,
+        "p95_dbfs": -140,
+        "frame_count": 50,
+        "expected_frames": 100,
+        "coverage": 0.5,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "50 of 100 frames: coverage 0.5 < 0.90 -> low_coverage, although the floor -140 would be silent_input."
+    },
+    {
+      "id": "qc-s8-silent-beats-clipped",
+      "description": "silent_input is evaluated before clipped.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-120,99],[-3,1,"clipped"]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "silent_input",
+        "floor_dbfs": -120,
+        "p20_dbfs": -120,
+        "p80_dbfs": -120,
+        "p95_dbfs": -120,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 1,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "99 non-clipped frames at -120 (floor -120 < -110) plus one clipped frame: silent_input outranks clipped."
     },
     {
       "id": "qc-13-prewindow-valid",
@@ -302,7 +601,7 @@
     },
     {
       "id": "qc-14-prewindow-burst-exactly-10",
-      "description": "Pre-window burst boundary: exactly 10 dB.",
+      "description": "Pre-window burst boundary: exactly 10.0 dB.",
       "purpose": "pre_window",
       "duration_ms": 2000,
       "runs": [[-50,30],[-40,10]],
@@ -321,22 +620,22 @@
         "nonfinite_frames": 0,
         "duration_ms": 2000
       },
-      "derivation": "n = 40: idx 0-29 = -50, 30-39 = -40. floor = sorted[19] = -50, p95 = sorted[37] = -40. p95 - floor = 10.00 <= 10: valid."
+      "derivation": "n = 40: idx 0-29 = -50, 30-39 = -40. floor = sorted[19] = -50, p95 = sorted[37] = -40. p95 - floor = 10.0 <= 10: valid."
     },
     {
-      "id": "qc-15-prewindow-burst-10.01",
-      "description": "Pre-window burst boundary: 10.01 dB.",
+      "id": "qc-15-prewindow-burst-10.1",
+      "description": "Pre-window burst boundary: 10.1 dB.",
       "purpose": "pre_window",
       "duration_ms": 2000,
-      "runs": [[-50,30],[-39.99,10]],
+      "runs": [[-50,30],[-39.9,10]],
       "expected": {
         "purpose": "pre_window",
         "valid": false,
         "invalid_reason": "burst_noise",
         "floor_dbfs": -50,
         "p20_dbfs": -50,
-        "p80_dbfs": -39.99,
-        "p95_dbfs": -39.99,
+        "p80_dbfs": -39.9,
+        "p95_dbfs": -39.9,
         "frame_count": 40,
         "expected_frames": 40,
         "coverage": 1.0,
@@ -344,11 +643,11 @@
         "nonfinite_frames": 0,
         "duration_ms": 2000
       },
-      "derivation": "p95 - floor = -39.99 - (-50) = 10.01 > 10: burst_noise."
+      "derivation": "p95 - floor = -39.9 - (-50) = 10.1 > 10: burst_noise."
     },
     {
       "id": "qc-16-prewindow-unstable-and-loud-is-valid",
-      "description": "Pre-window does not judge stability or absolute loudness (the TV judges rise and margin).",
+      "description": "Pre-window does not judge stability or absolute loudness (A1-06: the TV judges rise and margin).",
       "purpose": "pre_window",
       "duration_ms": 2000,
       "runs": [[-28,8],[-24,12],[-20,12],[-16,6],[-15,2]],
@@ -367,7 +666,7 @@
         "nonfinite_frames": 0,
         "duration_ms": 2000
       },
-      "derivation": "n = 40: idx 0-7 = -28, 8-19 = -24, 20-31 = -20, 32-37 = -16, 38-39 = -15. p20 = sorted[7] = -28, floor = sorted[19] = -24, p80 = sorted[31] = -20, p95 = sorted[37] = -16. p80 - p20 = 8 (would be unstable_floor for a quiet check) and floor -24 > -30 (would be too_loud), but for pre_window only coverage, clipping, non-finite and p95 - floor = 8 <= 10 are checked: valid."
+      "derivation": "n = 40: idx 0-7 = -28, 8-19 = -24, 20-31 = -20, 32-37 = -16, 38-39 = -15. p20 = sorted[7] = -28, floor = sorted[19] = -24, p80 = sorted[31] = -20, p95 = sorted[37] = -16. p80 - p20 = 8 (would be unstable_floor for a quiet check) and floor -24 > -30 (would be too_loud), but unstable_floor and too_loud do not exist for pre_window: only p95 - floor = 8 <= 10 is checked. Valid."
     },
     {
       "id": "qc-17-quiet-check-same-shape-is-unstable",
@@ -390,7 +689,7 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. p80 - p20 = -20 - (-28) = 8 > 6: unstable_floor (checked before burst and loudness)."
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = -20 - (-28) = 8 > 6: unstable_floor (checked before burst and loudness)."
     },
     {
       "id": "qc-18-prewindow-coverage-0.90",
@@ -459,7 +758,7 @@
         "nonfinite_frames": 0,
         "duration_ms": 5000
       },
-      "derivation": "21 finite frames of 100 expected: coverage 0.21 < 0.90. A clipped frame is also present; the reason order is low_coverage, clipped, ... so low_coverage is reported."
+      "derivation": "21 finite frames of 100 expected: coverage 0.21 < 0.90. A clipped frame is also present; low_coverage outranks clipped."
     },
     {
       "id": "qc-21-prewindow-clipped",
@@ -505,7 +804,99 @@
         "nonfinite_frames": 3,
         "duration_ms": 2000
       },
-      "derivation": "37 finite + 3 non-finite: coverage 37/40 = 0.925 >= 0.90; non-finite fraction 3/40 = 0.075 > 0.05: nonfinite."
+      "derivation": "37 finite + 3 non-finite: non-finite fraction 3/40 = 0.075 > 0.05: nonfinite. Coverage 37/40 = 0.925 would have passed."
+    },
+    {
+      "id": "qc-23-prewindow-clipped-beats-burst",
+      "description": "Pre-window priority: clipped outranks burst_noise.",
+      "purpose": "pre_window",
+      "duration_ms": 2000,
+      "runs": [[-50,20],[-30,19],[-1,1,"clipped"]],
+      "expected": {
+        "purpose": "pre_window",
+        "valid": false,
+        "invalid_reason": "clipped",
+        "floor_dbfs": -50,
+        "p20_dbfs": -50,
+        "p80_dbfs": -30,
+        "p95_dbfs": -30,
+        "frame_count": 40,
+        "expected_frames": 40,
+        "coverage": 1.0,
+        "clipped_frames": 1,
+        "nonfinite_frames": 0,
+        "duration_ms": 2000
+      },
+      "derivation": "39 non-clipped frames: sorted idx 0-19 = -50, 20-38 = -30. floor = sorted[ceil(19.5)-1 = 19] = -50, p20 = sorted[7] = -50, p80 = sorted[ceil(31.2)-1 = 31] = -30, p95 = sorted[ceil(37.05)-1 = 37] = -30: p95 - floor = 20 (a burst), but the clipped frame outranks it."
+    },
+    {
+      "id": "qc-24-quiet-unstable-beats-burst",
+      "description": "Quiet-check priority: unstable_floor outranks burst_noise and too_loud.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-40,20],[-20,30],[-20,30],[0,15],[0,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "unstable_floor",
+        "floor_dbfs": -20,
+        "p20_dbfs": -40,
+        "p80_dbfs": -20,
+        "p95_dbfs": 0,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = -20 - (-40) = 20 > 6: unstable_floor. p95 - floor = 20 (burst) and floor -20 > -30 (too loud) also hold but rank lower."
+    },
+    {
+      "id": "qc-25-quiet-burst-beats-too-loud",
+      "description": "Quiet-check priority: burst_noise outranks too_loud.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-23,20],[-20,30],[-20,30],[-8,15],[-8,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "burst_noise",
+        "floor_dbfs": -20,
+        "p20_dbfs": -23,
+        "p80_dbfs": -20,
+        "p95_dbfs": -8,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = 3 (stable). p95 - floor = -8 - (-20) = 12 > 10: burst_noise. floor -20 > -30 also holds but ranks lower."
+    },
+    {
+      "id": "qc-26-quiet-too-loud-only",
+      "description": "Quiet-check: only the loudness rule fails.",
+      "purpose": "quiet_check",
+      "duration_ms": 5000,
+      "runs": [[-23,20],[-20,30],[-20,30],[-18,15],[-18,5]],
+      "expected": {
+        "purpose": "quiet_check",
+        "valid": false,
+        "invalid_reason": "too_loud",
+        "floor_dbfs": -20,
+        "p20_dbfs": -23,
+        "p80_dbfs": -20,
+        "p95_dbfs": -18,
+        "frame_count": 100,
+        "expected_frames": 100,
+        "coverage": 1.0,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 5000
+      },
+      "derivation": "Blocks of 100 frames: sorted indices 0-19 = A, 20-49 = B, 50-79 = C, 80-94 = D, 95-99 = E. Nearest rank for n = 100: p20 = sorted[19] = A, floor = p50 = sorted[49] = B, p80 = sorted[79] = C, p95 = sorted[94] = D. Emitted values are rounded to 0.1 dB (Math.round, ties toward +infinity) and the dB rules are decided on the emitted values. p80 - p20 = 3, p95 - floor = 2, floor -20 > -30: too_loud."
     }
   ]
 }

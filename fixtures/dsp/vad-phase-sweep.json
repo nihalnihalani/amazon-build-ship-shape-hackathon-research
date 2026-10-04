@@ -1,0 +1,161 @@
+{
+  "note": "Sample-level sweep. Closed-form signal model: every sample is +-amplitude (alternating sign), so a frame's power is exactly the sample-weighted mean of amplitude squared and its level is 10*log10 of that. A burst REPLACES the background; a whole frame inside a +L dB burst is exactly floor + L dB. Frame length 2400 samples at 48 kHz, 2 s window (40 frames), session floor -60 dBFS (background amplitude 0.001), burst start = 24000 + offset samples, 40 offsets 0, 60, ... 2340 (every 1.25 ms across one frame).",
+  "sample_rate": 48000,
+  "frame_samples": 2400,
+  "window_samples": 96000,
+  "floor_dbfs": -60,
+  "background_amplitude": 0.001,
+  "burst_start_base_sample": 24000,
+  "offsets_samples": [0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160,2220,2280,2340],
+  "levels_db": [
+    10,
+    20
+  ],
+  "durations_ms": [
+    100,
+    125,
+    150,
+    175,
+    200,
+    250
+  ],
+  "asserted_hard_ends": [
+    {
+      "level_db": 10,
+      "duration_ms": 100,
+      "accepted": "none",
+      "derivation": "A burst of at most 100 ms touches at most 3 of the 50 ms frames (ceil(100/50) + 1 = 3), so it has at most 3 candidate frames < 4: never accepted at any phase."
+    },
+    {
+      "level_db": 20,
+      "duration_ms": 100,
+      "accepted": "none",
+      "derivation": "A burst of at most 100 ms touches at most 3 of the 50 ms frames (ceil(100/50) + 1 = 3), so it has at most 3 candidate frames < 4: never accepted at any phase."
+    },
+    {
+      "level_db": 20,
+      "duration_ms": 200,
+      "accepted": "all",
+      "derivation": "At +20 dB a 200 ms burst has 3 whole frames (rel exactly +20, the first opens the segment) plus two partial frames of fractions f and 1 - f. If the leading partial has f >= 0.0909 (1 + 99f >= 10) it opens and is a candidate: 4 candidates in a run of 4. Otherwise the trailing partial has 1 - f > 0.909 and (1 + 99(1 - f) >= 3.98) is a continuation candidate: 3 whole + 1 = 4 candidates in a run of 4. Always accepted."
+    },
+    {
+      "level_db": 10,
+      "duration_ms": 250,
+      "accepted": "all",
+      "derivation": "A 250 ms burst contains at least 4 whole 50 ms frames at any phase (250 = 5 frame widths, at most one partial frame at each end), each rel +level >= +10: the first opens the segment, so >= 4 consecutive candidates: always accepted."
+    },
+    {
+      "level_db": 20,
+      "duration_ms": 250,
+      "accepted": "all",
+      "derivation": "A 250 ms burst contains at least 4 whole 50 ms frames at any phase (250 = 5 frame widths, at most one partial frame at each end), each rel +level >= +10: the first opens the segment, so >= 4 consecutive candidates: always accepted."
+    }
+  ],
+  "recorded": {
+    "10": {
+      "100": {
+        "accepted_offsets": [],
+        "accepted": 0,
+        "of": 40
+      },
+      "125": {
+        "accepted_offsets": [],
+        "accepted": 0,
+        "of": 40
+      },
+      "150": {
+        "accepted_offsets": [],
+        "accepted": 0,
+        "of": 40
+      },
+      "175": {
+        "accepted_offsets": [0,2040,2100,2160,2220,2280,2340],
+        "accepted": 7,
+        "of": 40
+      },
+      "200": {
+        "accepted_offsets": [0,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160,2220,2280,2340],
+        "accepted": 27,
+        "of": 40
+      },
+      "250": {
+        "accepted_offsets": [0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160,2220,2280,2340],
+        "accepted": 40,
+        "of": 40
+      }
+    },
+    "20": {
+      "100": {
+        "accepted_offsets": [],
+        "accepted": 0,
+        "of": 40
+      },
+      "125": {
+        "accepted_offsets": [1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160],
+        "accepted": 15,
+        "of": 40
+      },
+      "150": {
+        "accepted_offsets": [120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160],
+        "accepted": 35,
+        "of": 40
+      },
+      "175": {
+        "accepted_offsets": [0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160,2220,2280,2340],
+        "accepted": 40,
+        "of": 40
+      },
+      "200": {
+        "accepted_offsets": [0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160,2220,2280,2340],
+        "accepted": 40,
+        "of": 40
+      },
+      "250": {
+        "accepted_offsets": [0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140,1200,1260,1320,1380,1440,1500,1560,1620,1680,1740,1800,1860,1920,1980,2040,2100,2160,2220,2280,2340],
+        "accepted": 40,
+        "of": 40
+      }
+    }
+  },
+  "hand_derived_rates": [
+    {
+      "level_db": 10,
+      "duration_ms": 150,
+      "accepted": 0,
+      "of": 40,
+      "derivation": "At +10 dB the leading partial frame (rel < +10 unless whole) cannot open the segment, so the candidates are the 2 whole frames plus at most the trailing partial: at most 3 < 4 at every phase (a frame-aligned burst has exactly 3 whole frames)."
+    },
+    {
+      "level_db": 20,
+      "duration_ms": 150,
+      "accepted": 35,
+      "of": 40,
+      "derivation": "At +20 dB: offsets k = 0 and 1 (0 and 60 samples) leave the trailing partial below +6 dB (f = 0.025: 1 + 99f = 3.5 < 3.98), giving 3 candidates; offsets k = 37..39 (2220, 2280, 2340 samples) leave the leading partial below the +10 dB open level (f <= 0.075: 1 + 99f < 10), giving 3 candidates; the other 35 offsets give 4 candidates in a run of 4."
+    },
+    {
+      "level_db": 10,
+      "duration_ms": 200,
+      "accepted": 27,
+      "of": 40,
+      "derivation": "At +10 dB the leading partial can never open the segment, so a 200 ms burst is accepted only if the trailing partial (fraction off/2400) is a +6 dB continuation: 1 + 9f >= 3.98 needs f >= 0.3312, i.e. offset >= 795 samples. Offset 0 is frame aligned (4 whole frames). Rejected offsets: 60..780 (13 offsets); accepted 1 + 26 = 27 of 40. THIS CONTRADICTS 'a 200 ms burst is always accepted' at +10 dB."
+    },
+    {
+      "level_db": 20,
+      "duration_ms": 200,
+      "accepted": 40,
+      "of": 40,
+      "derivation": "See the asserted derivation: always accepted at +20 dB."
+    }
+  ],
+  "recorded_rates_note": "Rates between the hard ends are RECORDED, not asserted as requirements (A1-01). The TypeScript test checks that the shipped implementation reproduces the recorded accepted offsets exactly (implementation agreement with the oracle).",
+  "known_deviation_from_amendment": {
+    "amendment": "AMENDMENTS-REV2 A1-01: 'bursts <= 100 ms never produce an accepted segment; >= 200 ms always do'.",
+    "finding": "With the A1-03 open threshold of +10 dB the 'always' end only holds from +20 dB (200 ms) or from 250 ms (any level >= +10 dB). A 200 ms burst at +10 dB is accepted at 27 of 40 phases (it is rejected when the leading partial frame, which cannot open the segment, takes most of the burst).",
+    "recorded": {
+      "level_db": 10,
+      "duration_ms": 200,
+      "accepted": 27,
+      "of": 40
+    }
+  }
+}
