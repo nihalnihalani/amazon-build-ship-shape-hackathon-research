@@ -1,9 +1,7 @@
-import { randomBytes } from 'node:crypto';
 import { expect } from 'vitest';
 import {
   MemoryRoomStore,
   RelayCore,
-  TYPE_SPECS,
   createRedactingLogger,
   parseWireText,
   type Action,
@@ -13,7 +11,9 @@ import {
   type RawFrame,
   type Role,
 } from '../../src/core/index.js';
-import { VALID_PAYLOADS } from './fixtures.js';
+import { buildEnvelope, uid, type SendOptions } from './envelope.js';
+
+export { uid, type SendOptions };
 
 export const PHONE_ORIGIN = 'https://phone.example.test';
 export const TV_PREVIEW_ORIGIN = 'https://tv-preview.example.test';
@@ -25,26 +25,6 @@ export interface Received {
   raw: string;
   env: Record<string, unknown>;
   payload: Record<string, unknown>;
-}
-
-export interface SendOptions {
-  payload?: Record<string, unknown>;
-  session?: string | null;
-  window?: string | null;
-  attempt?: string | null;
-  seq?: number;
-  gen?: number;
-  messageId?: string;
-  senderRole?: Role;
-  roomId?: string | null;
-  timestamp?: number;
-}
-
-let idCounter = 0;
-export function uid(prefix: string, len = 16): string {
-  idCounter += 1;
-  const body = `${idCounter}${randomBytes(12).toString('base64url')}`.padEnd(len, 'x').slice(0, len);
-  return `${prefix}_${body}`;
 }
 
 export class Client {
@@ -165,29 +145,7 @@ export class Rig {
   }
 
   buildMessage(c: Client, type: MessageType, o: SendOptions = {}): string {
-    const spec = TYPE_SPECS[type];
-    const payload = o.payload ?? VALID_PAYLOADS[type] ?? {};
-    const pick = (rule: string, given: string | null | undefined, dflt: string): string | null => {
-      if (given !== undefined) return given;
-      return rule === 'req' ? dflt : null;
-    };
-    const preAuth = spec.auth === 'pre';
-    const env = {
-      protocol_version: 1,
-      type,
-      message_id: o.messageId ?? uid('m'),
-      room_id: o.roomId !== undefined ? o.roomId : preAuth ? null : (c.roomId ?? null),
-      session_id: pick(spec.ids[0], o.session, 's_session000001'),
-      window_id: pick(spec.ids[1], o.window, 'w_window0000001'),
-      attempt_id: pick(spec.ids[2], o.attempt, 'a_attempt000001'),
-      sender_role: o.senderRole ?? c.role ?? spec.senders[0] ?? 'tv',
-      producer_generation: o.gen ?? (preAuth ? 0 : c.generation),
-      sequence: o.seq ?? c.nextSeq,
-      event_timestamp: o.timestamp ?? this.now,
-      payload,
-    };
-    if (o.seq === undefined) c.nextSeq += 1;
-    return JSON.stringify(env);
+    return buildEnvelope(c, type, this.now, o);
   }
 
   async send(c: Client, type: MessageType, o: SendOptions = {}): Promise<void> {
