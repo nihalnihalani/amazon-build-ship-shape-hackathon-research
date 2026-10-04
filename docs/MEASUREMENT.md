@@ -1,6 +1,7 @@
 # What Across the Room measures
 
-Status: documentation of ADR-0001 (revision 1) as implemented by `@atr/phone-mic-meter`.
+Status: documentation of ADR-0001 as amended by `docs/adr/AMENDMENTS-REV2.md` (revision 2), as
+implemented by `@atr/phone-mic-meter`.
 Every number below is a **product assumption** pending real-device evidence (T04 / T04A). None
 of it is a measured accuracy.
 
@@ -51,6 +52,7 @@ All formulas run on the phone, on the audio sample clock, with no raw audio kept
 | Clipping | A sample is clipped when `abs(x) >= 0.999`. A frame is clipped when at least 0.5 % of its samples are clipped. |
 | Non-finite | If any sample is NaN or infinite, the whole frame is non-finite: it is excluded from every statistic and counts against coverage. |
 | Display | The arc on the TV may be smoothed for readability. Scoring uses only the unsmoothed per-frame values. |
+| Rounding of emitted numbers | Everything the phone sends is rounded first (PK-06): dB values to 0.1 dB, coverage to 0.001, milliseconds to whole numbers; an exact tie rounds toward +infinity (-42.25 becomes -42.2). Rules that compare dB values (the quiet-check limits, the silent-input limit) are decided on the rounded numbers, so a receiver that recomputes them from the message gets the same answer. Counts and fractions (coverage, clipped and non-finite frames) are decided on the exact counts. |
 
 Worked example: a steady sine wave of amplitude 0.5 has `rms = 0.5 / sqrt(2) = 0.3536`, so
 `dbfs = 20 * log10(0.3536) = -9.03`. A signal of constant value 0.1 is exactly -20 dBFS.
@@ -64,41 +66,65 @@ has no percentile.
 ## The session floor: the quiet-room check
 
 Five seconds (100 frames) while the room is quiet. Using only finite, non-clipped frames:
-`floor` is the median, with `p20`, `p80` and `p95` alongside. The check is **valid** only if all
-of these hold:
+`floor` is the median, with `p20`, `p80` and `p95` alongside (all rounded to 0.1 dB). The check is
+**valid** only if none of these fires; when several do, the reason reported is the first listed
+(top to bottom):
 
-| Rule | Limit | Reason if broken |
-|---|---|---|
-| Coverage (finite frames / expected frames) | at least 0.90 | `low_coverage` |
-| Clipped frames | none | `clipped` |
-| Stable: `p80 - p20` | at most 6 dB | `unstable_floor` |
-| No bursts: `p95 - floor` | at most 10 dB | `burst_noise` |
-| Not a loud room: `floor` | at most -30 dBFS | `too_loud` |
-| Non-finite frames | at most 5 % of frames | `nonfinite` |
+| Reason | Rule |
+|---|---|
+| `interrupted` | the capture was interrupted |
+| `nonfinite` | non-finite frames exceed 5 % of the frames received (evaluated before coverage) |
+| `low_coverage` | finite frames / expected frames below 0.90 |
+| `silent_input` | `floor` below -110 dBFS: the microphone looks muted or blocked (digital silence used to pass the older rules) |
+| `clipped` | any clipped frame |
+| `unstable_floor` | `p80 - p20` above 6 dB |
+| `burst_noise` | `p95 - floor` above 10 dB |
+| `too_loud` | `floor` above -30 dBFS |
 
-Boundary values are valid (exactly 6.00 dB is stable, exactly -30 dBFS is quiet enough); a
-hundredth beyond is not. When several rules fail, the reason reported is the first listed above
-(coverage first, then clipping, and so on); a capture that was interrupted reports `interrupted`.
+Boundary values are valid (exactly 6.0 dB is stable, exactly -30.0 dBFS is quiet enough, exactly
+-110.0 dBFS is not silent); one step of 0.1 dB beyond is not.
+
+The **pre-window check** (2 seconds, 40 frames, before each window) uses a shorter list because the
+TV judges the floor's rise and the margin itself: `interrupted`, `nonfinite`, `low_coverage`,
+`silent_input`, `clipped` and `burst_noise`, in that order. It never reports `unstable_floor` or
+`too_loud`.
 
 ## Voice activity (level-based, not a voice classifier)
 
 Relative level `rel = dbfs - session floor`.
 
-1. A frame is a **candidate** when it is finite and `rel >= 6 dB`.
-2. The first candidate after silence is the **provisional onset**. Provisional activity is shown
-   live for display only.
+1. A segment **opens** on a finite frame with `rel >= 10 dB`. Frames between +6 and +10 dB do
+   nothing while no segment is open, so a room whose noise wanders a few dB above the floor does
+   not start one.
+2. Once open, a finite frame with `rel >= 6 dB` is a **candidate** (continuation). The opening frame
+   is the **provisional onset**; provisional activity is shown live for display only.
 3. A segment **continues** through quiet runs of fewer than 6 consecutive non-candidate frames
    (up to 250 ms are bridged). The 6th consecutive non-candidate frame (300 ms) **ends** it, and
    the segment ends at the end of its last candidate frame, so the waiting time adds no duration.
-4. A segment is **accepted** only with at least 4 candidate frames (200 ms of candidate
-   activity). Its onset is **backdated** to the provisional onset. Shorter segments, such as
-   100 ms or 150 ms transients, are rejected and contribute nothing.
+4. A segment is **accepted** only with at least 4 candidate frames in total (200 ms of candidate
+   activity) **and** a run of at least 3 consecutive candidate frames. The run rule means isolated
+   clicks never add up: four clicks 100 ms apart are rejected. Rejected segments contribute nothing.
 5. Frames missing because of a capture dropout count as non-candidates; non-finite frames too.
 
-`active_ms` is the sum over accepted segments of (end - onset); `longest_active_ms` is the longest
-one. Duration is less dependent on absolute calibration than level is, but it is **not immune** to
-gain control, noise and voice quality: automatic gain, noise suppression or a noisy room can move
-the detected onset and end.
+What this does and does not guarantee (from the sweep in `fixtures/dsp/vad-phase-sweep.json`, which
+shifts a burst across the 50 ms frame grid in 40 steps):
+
+- A burst of **100 ms or less is never accepted**, at any phase and level.
+- A burst of **250 ms or more is always accepted** once it is at least 10 dB above the floor.
+- Bursts of **125 - 175 ms are phase- and level-dependent**. For example a 150 ms burst at +20 dB is
+  accepted at 35 of 40 phases and at +10 dB at none. Do not read "150 ms is rejected" into this.
+- A **200 ms burst** is always accepted at about +20 dB, but at +10 dB only at 27 of 40 phases: the
+  frame before the opening frame is never a candidate. This is a finding against the wording of
+  amendment A1-01 ("200 ms or more always accepted"), recorded in the fixture.
+- A noisy room can still start a segment. In the synthetic AR(1) noise model
+  (`fixtures/dsp/vad-ar1-noise.json`, rooms that pass the quiet check, silent 8 s window) the chance of
+  a false accepted segment is below 1 % for noise with a spread of 2.5 dB or less and 3 - 17 % at 3.0 -
+  3.5 dB, which is about the widest spread the quiet check admits. The model is synthetic, not
+  measured room noise.
+
+`active_ms` is the sum over accepted segments of (end - onset) and **includes bridged gaps**;
+`longest_active_ms` is the longest one. Duration is less dependent on absolute calibration than
+level is, but it is **not immune** to gain control, noise and voice quality.
 
 ## Windows: calibration, vowel and phrase
 
@@ -109,12 +135,14 @@ end, one summary:
 - `frame_count` (frames received), `expected_frames = floor(duration_ms / 50)`,
   `coverage = finite frames / expected frames` (a dropout lowers coverage).
 - `active_ms`, `longest_active_ms`, `segments`, `onset_ms`.
-- `p50_active_dbfs` and `p95_active_dbfs` over the **accepted-active frames**: the finite frames
-  inside an accepted segment from its onset to its last candidate frame, including bridged gaps.
+- `p50_active_dbfs` and `p95_active_dbfs` over the **accepted-active frames**: the **candidate frames**
+  inside accepted segments. Bridged quiet frames inside a segment are excluded from the percentiles
+  and from the clipped fraction (but the time they span still counts in `active_ms`).
 - `peak_dbfs`: the largest sample magnitude over the whole window, as dBFS.
 - `clipped_frames` (every clipped frame), `nonfinite_frames`, `duration_ms`.
 
-A window is **invalid** (and is never scored) when, in this order of reporting:
+A window is **invalid** (and is never scored) when one of these holds; when several do, the first listed
+is reported (window order, which differs from the precheck order above):
 
 | Reason | Rule |
 |---|---|
@@ -122,7 +150,7 @@ A window is **invalid** (and is never scored) when, in this order of reporting:
 | `low_coverage` | coverage below 0.90 |
 | `clipped` | clipped frames exceed 2 % of accepted-active frames (clipped frames outside accepted activity do not count) |
 | `nonfinite` | non-finite frames exceed 5 % of frames received |
-| `no_voice` | no accepted segment; for calibration and phrase also `active_ms` below 400 |
+| `no_voice` | no accepted segment. Calibration windows also need `active_ms` of at least 400; **phrase and vowel windows need only one accepted segment** (so a one-syllable phrase of 200 ms is scored) |
 | `continuous_sound` | phrase windows only: activity covers more than 95 % of the window **and** no offset was observed |
 
 ## Calibration, the pre-window gate and the verdict (decided on the TV)
@@ -132,8 +160,9 @@ A window is **invalid** (and is never scored) when, in this order of reporting:
   activity's level above the floor. Otherwise the app says it is too quiet to set today's band.
 - **Before each window** a 2 second check measures the floor again. The window is blocked when the
   floor has risen by 6 dB or more, or when `cal_margin - rise < 10 dB`, or when that check is itself
-  invalid. Because an accepted calibration has `cal_margin >= 13`, an unchanged room (rise up to
-  3 dB) can never block.
+  invalid. Because an accepted calibration has `cal_margin >= 13`, the two margin rules (rise below 6
+  dB, margin minus rise at least 10 dB) never block an unchanged room (rise up to 3 dB); whether the
+  pre-window check is itself valid is a separate gate (see its reason list above).
 - **Verdict:** `reached` when the window's 95th percentile above the floor is at least
   `cal_margin - 1 dB`; otherwise `not_reached`. Invalid windows are `unscored`. Results within
   1 dB of the line are kept but flagged borderline. The wording is "Reached today's relative level
@@ -150,15 +179,21 @@ a non-finite flag) cross from the audio thread to the page.
 
 ## Limitations (read before trusting a result)
 
-- **Unqualified.** No physical phone has been qualified yet. Until the frozen T04 experiment is run
-  and reviewed, the app should show "Not yet qualified on this phone". Unit tests and fixtures prove
-  arithmetic and state handling, not that a microphone behaves.
+- **Unqualified.** No physical phone has been qualified yet. Until the frozen T04 experiment
+  (`docs/evaluation/T04-protocol.md`, revision 2) is run and reviewed, the app should show "Not yet
+  qualified on this phone". The experiment checks that the relative level is monotonic, follows a
+  known 12 dB digital step to within 2 dB (a compressing input fails), repeats with an upper
+  confidence bound of 1.5 dB on the spread over 15 repeats, and does not clip. Unit tests and
+  fixtures prove arithmetic and state handling, not that a microphone behaves.
 - **Browser settings are a request, not proof.** The page asks for automatic gain control, echo
   cancellation and noise suppression to be off, and records what the browser reports. A reported
   "off" does not prove the phone's operating system or hardware is not compressing or gating the
   signal. Anything the browser does not report is shown as unknown, never assumed off.
 - **Other sounds look like speech.** Level cannot tell a voice from a fan surge, a cough, music,
   television speech or a second person. The pre-window check is a detection aid, not a guarantee.
+- **Quiet speakers need a clear peak.** A segment only opens at 10 dB over the floor, so a voice
+  that never gets 10 dB above the quiet-room floor is `no_voice`, not a low score. This is the price
+  of the noise protection above.
 - **Room and placement change the number.** Moving the phone, the speaker's seat, a door or a
   curtain changes the level without any change in the person's voice. That is why the band is per
   session and cross-day comparison is off.
@@ -170,5 +205,5 @@ a non-finite flag) cross from the audio thread to the page.
 - **Secure origin and permission are required.** The phone page must be served over HTTPS and the
   user must allow the microphone. Safari does not support the gain-control constraint, so its
   behaviour is a test case, not an assumption.
-- **Assumptions, not instruments.** Thresholds (6 dB, 13 dB, -30 dBFS, 200 ms, ...) are engineering
-  choices, not clinical or regulatory limits, and may change after T04 / T04A.
+- **Assumptions, not instruments.** Thresholds (6 and 10 dB, 13 dB, -30 and -110 dBFS, 200 ms, ...) are
+  engineering choices, not clinical or regulatory limits, and may change after T04 / T04A.

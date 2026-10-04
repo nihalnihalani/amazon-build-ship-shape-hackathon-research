@@ -66,14 +66,17 @@ describe('valid phrase window', () => {
     expect(b).toEqual(a);
   });
 
-  it('p50 and p95 are nearest-rank over accepted-active frames, bridged gap frames included', () => {
-    // C(-45) x4, bridged gap(-61) x5, C(-40) x6 -> span of 15 frames
-    // sorted: -61 x5, -45 x4, -40 x6 ; p50 rank ceil(7.5) = 8 -> -45 ; p95 rank ceil(14.25) = 15 -> -40
+  it('p50 and p95 are nearest-rank over the candidate frames of accepted segments; bridged gap frames are excluded (A1-07)', () => {
+    // frames 5-8 at -45, frames 9-13 at -61 (5 bridged non-candidate frames), frames 14-19 at -40
+    // active_ms spans the gap (onset 250 ms to the end of frame 19 = 1000 ms): 750 ms
+    // candidate frames: 4 x -45 and 6 x -40 (n = 10): p50 = sorted[ceil(5)-1 = 4] = -40, p95 = sorted[9] = -40
+    // (if the 5 gap frames at -61 were included, p50 would be -45)
     const levels = [...runs([[Q, 5], [-45, 4], [-61, 5], [-40, 6], [Q, 20]])];
     const r = phrase(levels).finish('complete');
     expect(r.segments).toBe(1);
-    expect(r.active_ms).toBe(750); // 15 frames from onset (frame 5) to end of frame 19
-    expect(r.p50_active_dbfs).toBe(-45);
+    expect(r.active_ms).toBe(750);
+    expect(r.onset_ms).toBe(250);
+    expect(r.p50_active_dbfs).toBe(-40);
     expect(r.p95_active_dbfs).toBe(-40);
   });
 
@@ -95,7 +98,44 @@ describe('valid phrase window', () => {
   it('peak_dbfs is the largest sample over the whole window, including rejected transients', () => {
     const levels = runs([[Q, 10], [S, 20], [Q, 130]]);
     const r = phrase(levels, (i) => (i === 100 ? dbFrame(i, Q, { peak: 0.5 }) : undefined)).finish('complete');
-    expect(r.peak_dbfs).toBeCloseTo(-6.0206, 4); // 20*log10(0.5)
+    expect(r.peak_dbfs).toBe(-6); // 20*log10(0.5) = -6.0206 emitted to 0.1 dB
+  });
+});
+
+describe('result quantisation (PK-06)', () => {
+  it('p50, p95 and peak are emitted to 0.1 dB; coverage to 0.001; milliseconds as integers', () => {
+    // 20 speech frames at -45.26 dBFS: p50 = p95 = -45.26 -> -45.3 ; peak 20*log10(10^(-45.26/20)) -> -45.3
+    const r = phrase(runs([[Q, 10], [-45.26, 20], [Q, 130]])).finish('complete');
+    expect(r.p50_active_dbfs).toBe(-45.3);
+    expect(r.p95_active_dbfs).toBe(-45.3);
+    expect(r.peak_dbfs).toBe(-45.3);
+    for (const v of [r.active_ms, r.longest_active_ms, r.onset_ms, r.duration_ms]) {
+      expect(Number.isInteger(v)).toBe(true);
+    }
+    expect(r.coverage).toBe(1);
+  });
+
+  it('a non-integer sample-rate frame time is rounded to whole milliseconds and never exceeds the duration', () => {
+    // 22050 Hz: a 1103-sample frame is 50.02 ms long
+    const acc = new WindowAccumulator({ kind: 'phrase', maxDurationMs: 8000, sessionFloorDbfs: FLOOR, sampleRate: 22050 });
+    const len = (1103 * 1000) / 22050;
+    for (let i = 0; i < 160; i++) {
+      acc.push({ ...dbFrame(i, i < 2 ? Q : S), t_audio_ms: i * len, duration_ms: len });
+    }
+    const r = acc.finish('complete'); // activity runs to the end of the window
+    for (const v of [r.active_ms, r.longest_active_ms, r.onset_ms, r.duration_ms]) {
+      expect(Number.isInteger(v)).toBe(true);
+    }
+    expect(r.onset_ms).toBe(100); // 2 * 50.02 = 100.09 -> 100
+    expect(r.active_ms).toBeLessThanOrEqual(r.duration_ms);
+    expect(r.longest_active_ms).toBeLessThanOrEqual(r.active_ms);
+  });
+
+  it('an explicit duration shorter than the frames received is raised to the received audio time', () => {
+    const r = phrase(runs([[Q, 10], [S, 20], [Q, 70]])).finish('early_stop', { durationMs: 1000 }); // 100 frames received
+    expect(r.duration_ms).toBe(5000);
+    expect(r.expected_frames).toBe(100);
+    expect(r.frame_count).toBeLessThanOrEqual(r.expected_frames + 1);
   });
 });
 
@@ -119,28 +159,57 @@ describe('active duration and no_voice', () => {
     }
   });
 
-  it('phrase and calibration: 350 ms (7 frames) is accepted by the VAD but active_ms < 400 is no_voice', () => {
-    for (const kind of ['phrase', 'calibration'] as const) {
+  it('calibration: 350 ms (7 frames) is accepted by the VAD but active_ms < 400 is no_voice', () => {
+    const acc = accumulator('calibration', 8000);
+    fill(acc, runs([[Q, 10], [S, 7], [Q, 143]]));
+    const r = acc.finish('complete');
+    expect(r.segments).toBe(1);
+    expect(r.active_ms).toBe(350);
+    expect(r.invalid_reason).toBe('no_voice');
+  });
+
+  it('phrase and vowel: no_voice means no accepted segment, so 350 ms and even 200 ms are valid (A1-04)', () => {
+    for (const kind of ['phrase', 'vowel'] as const) {
+      for (const frames of [7, 4]) {
+        const acc = accumulator(kind, 8000);
+        fill(acc, runs([[Q, 10], [S, frames], [Q, 150 - frames]]));
+        const r = acc.finish('complete');
+        expect(r.segments, `${kind} ${frames}`).toBe(1);
+        expect(r.active_ms).toBe(frames * 50);
+        expect(r.valid, `${kind} ${frames}`).toBe(true);
+      }
+    }
+  });
+
+  it('phrase and vowel: 150 ms (3 frames) is rejected by the VAD, so no_voice', () => {
+    for (const kind of ['phrase', 'vowel'] as const) {
       const acc = accumulator(kind, 8000);
-      fill(acc, runs([[Q, 10], [S, 7], [Q, 143]]));
+      fill(acc, runs([[Q, 10], [S, 3], [Q, 147]]));
       const r = acc.finish('complete');
-      expect(r.segments).toBe(1);
-      expect(r.active_ms).toBe(350);
       expect(r.invalid_reason).toBe('no_voice');
+      expect(r.segments).toBe(0);
     }
   });
 
-  it('phrase and calibration: 400 ms (8 frames) is valid', () => {
-    for (const kind of ['phrase', 'calibration'] as const) {
+  it('calibration: 400 ms (8 frames) is valid', () => {
+    const acc = accumulator('calibration', 8000);
+    fill(acc, runs([[Q, 10], [S, 8], [Q, 142]]));
+    const r = acc.finish('complete');
+    expect(r.active_ms).toBe(400);
+    expect(r.valid).toBe(true);
+  });
+
+  it('a loud room at +6 .. +9.9 dB never opens a segment: no_voice, whatever the kind', () => {
+    for (const kind of ['calibration', 'phrase', 'vowel'] as const) {
       const acc = accumulator(kind, 8000);
-      fill(acc, runs([[Q, 10], [S, 8], [Q, 142]]));
+      fill(acc, runs([[-52, 160]])); // +8 dB over the -60 floor
       const r = acc.finish('complete');
-      expect(r.active_ms).toBe(400);
-      expect(r.valid).toBe(true);
+      expect(r.invalid_reason, kind).toBe('no_voice');
+      expect(r.segments).toBe(0);
     }
   });
 
-  it('vowel: the 400 ms minimum does not apply, one accepted segment (200 ms) is enough', () => {
+  it('vowel: one accepted segment (200 ms) is enough', () => {
     const acc = accumulator('vowel', 8000);
     fill(acc, runs([[Q, 10], [S, 4], [Q, 146]]));
     const r = acc.finish('complete');
@@ -165,7 +234,7 @@ describe('coverage', () => {
 
     const bad = phrase(runs([[Q, 10], [S, 20], [Q, 113]])).finish('complete', { durationMs: 8000 });
     expect(bad.frame_count).toBe(143);
-    expect(bad.coverage).toBe(143 / 160);
+    expect(bad.coverage).toBe(0.894); // 143/160 = 0.89375, emitted to 0.001; the rule uses the exact 143/160
     expect(bad.invalid_reason).toBe('low_coverage');
   });
 
@@ -240,6 +309,15 @@ describe('clipping rule: more than 2 % of accepted-active frames', () => {
     };
     expect(acc(4).valid).toBe(true);
     expect(acc(5).invalid_reason).toBe('clipped');
+  });
+
+  it('the clipped fraction uses candidate frames only: 1 clipped of 49 candidates (2.04 %) is invalid even though the span has 54 frames', () => {
+    // 20 candidates, 5 bridged quiet frames, 29 candidates (one clipped), then silence
+    const levels = runs([[Q, 10], [S, 20], [Q, 5], [S, 29], [Q, 96]]); // 160 frames
+    const r = phrase(levels, (i) => (i === 40 ? dbFrame(i, S, { clipped: true }) : undefined)).finish('complete');
+    expect(r.clipped_frames).toBe(1);
+    expect(r.active_ms).toBe(2700); // the span: frames 10-63 = 54 frames
+    expect(r.invalid_reason).toBe('clipped');
   });
 
   it('a clipped frame outside accepted activity is reported but does not invalidate', () => {
@@ -362,6 +440,18 @@ describe('level frames for live display', () => {
       active: true,
       clipped: true,
     });
+  });
+
+  it('level values are quantised: dbfs to 0.1 dB, t_audio_ms to an integer', () => {
+    const acc = accumulator('phrase', 8000);
+    const level = acc.push({ ...dbFrame(3, -45.26), t_audio_ms: 149.6 });
+    expect(level?.dbfs).toBe(-45.3);
+    expect(level?.t_audio_ms).toBe(150);
+    // an exact tie rounds toward +infinity, exactly like quantizeDb in @atr/protocol
+    expect(acc.push({ ...dbFrame(4, -45.25), t_audio_ms: 200.4 })?.dbfs).toBe(-45.2);
+    const zero = acc.push(dbFrame(5, -0.04));
+    expect(zero?.dbfs).toBe(0);
+    expect(Object.is(zero?.dbfs, -0)).toBe(false);
   });
 
   it('a non-finite frame is reported at the -140 floor, inactive and unclipped', () => {

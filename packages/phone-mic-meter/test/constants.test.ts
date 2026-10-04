@@ -13,8 +13,10 @@ describe('ADR-0001 constants', () => {
     expect(C.DBFS_MAX).toBe(20);
     expect(C.CLIP_SAMPLE).toBe(0.999);
     expect(C.CLIP_FRAME_FRACTION).toBe(0.005);
+    expect(C.VAD_OPEN_DB).toBe(10);
     expect(C.VAD_CANDIDATE_DB).toBe(6);
     expect(C.VAD_ACCEPT_MIN_FRAMES).toBe(4);
+    expect(C.VAD_ACCEPT_MIN_RUN).toBe(3);
     expect(C.VAD_END_GAP_FRAMES).toBe(6);
     expect(C.QUIET_CHECK_MS).toBe(5000);
     expect(C.PRECHECK_MS).toBe(2000);
@@ -22,6 +24,10 @@ describe('ADR-0001 constants', () => {
     expect(C.QUIET_STABLE_MAX_DB).toBe(6);
     expect(C.BURST_MAX_DB).toBe(10);
     expect(C.QUIET_FLOOR_MAX_DBFS).toBe(-30);
+    expect(C.SILENT_INPUT_FLOOR_DBFS).toBe(-110);
+    expect(C.DB_QUANTUM).toBe(0.1);
+    expect(C.COVERAGE_QUANTUM).toBe(0.001);
+    expect(C.VAD_FLOOR_RANGE_DBFS).toEqual({ min: -110, max: -30 });
     expect(C.WINDOW_COVERAGE_MIN).toBe(0.9);
     expect(C.WINDOW_CLIPPED_ACTIVE_FRACTION_MAX).toBe(0.02);
     expect(C.WINDOW_NONFINITE_FRACTION_MAX).toBe(0.05);
@@ -46,5 +52,10 @@ describe('ADR-0001 constants', () => {
     expect(calMargin - unchangedRoomRise < C.PRE_WINDOW_MARGIN_BLOCK_DB).toBe(false);
     expect(C.VERDICT_MARGIN_DB).toBe(1);
     expect(C.BORDERLINE_DB).toBe(1);
+  });
+
+  it('keeps the open threshold below the calibration margin (A1-03: 13 dB stays above 10 dB)', () => {
+    expect(C.CAL_MARGIN_MIN_DB).toBeGreaterThan(C.VAD_OPEN_DB);
+    expect(C.VAD_OPEN_DB).toBeGreaterThan(C.VAD_CANDIDATE_DB);
   });
 });

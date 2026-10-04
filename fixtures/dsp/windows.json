@@ -1,5 +1,5 @@
 {
-  "note": "Hand-derived expected values; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
+  "note": "Hand-derived expected values for ADR-0001 revision 2; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
   "cases": [
     {
       "id": "win-01-clean-phrase",
@@ -29,7 +29,7 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "Speech frames 10-29 at -45 (rel +15). Onset 10*50 = 500 ms, end 30*50 = 1500 ms, active 1000 ms. 20 active frames all -45: p50 = p95 = -45. Peak = -45. 160 frames = duration 8000 ms: coverage 1."
+      "derivation": "Speech frames 10-29 at -45 (rel +15 >= 10 opens). Onset 10*50 = 500 ms, end 30*50 = 1500 ms, active 1000 ms. 20 active (candidate) frames all -45: p50 = p95 = -45. Peak = -45. 160 frames = duration 8000 ms: coverage 1."
     },
     {
       "id": "win-02-silence",
@@ -59,11 +59,11 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "No candidate frame, so no segment: no_voice. Statistics over accepted-active frames are null. Peak is the loudest finite frame, -62."
+      "derivation": "No frame reaches +10, so no segment: no_voice. Statistics over accepted-active frames are null. Peak is the loudest finite frame, -62."
     },
     {
-      "id": "win-03-transient-150ms",
-      "description": "150 ms transient only.",
+      "id": "win-03-aligned-150ms-transient",
+      "description": "A frame-aligned 150 ms transient only.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
@@ -92,8 +92,8 @@
       "derivation": "3 candidate frames < 4: rejected, contributes nothing: no_voice. Peak still reports -45 (whole window)."
     },
     {
-      "id": "win-04-phrase-350ms",
-      "description": "350 ms is accepted by the VAD but too short for a phrase.",
+      "id": "win-04-phrase-350ms-is-valid",
+      "description": "CHANGED (A1-04): a 350 ms phrase is now valid.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
@@ -103,6 +103,66 @@
       },
       "expected": {
         "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 350,
+        "longest_active_ms": 350,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "Revision 1 reported no_voice because active_ms 350 < 400 applied to phrases. Revision 2: for phrase and vowel windows no_voice means no accepted segment. 7 candidate frames >= 4 with a run of 7 >= 3: accepted, active 350 ms, valid (a one-syllable phrase can now be scored)."
+    },
+    {
+      "id": "win-04b-phrase-200ms-is-valid",
+      "description": "A 200 ms phrase (the smallest accepted segment) is valid.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,4],[-62,146]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 200,
+        "longest_active_ms": 200,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "4 candidate frames, run 4: one accepted segment of 200 ms. Phrase windows need no more (A1-04)."
+    },
+    {
+      "id": "win-04c-calibration-350ms-is-no-voice",
+      "description": "Calibration keeps the 400 ms minimum.",
+      "kind": "calibration",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,7],[-62,143]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "calibration",
         "valid": false,
         "invalid_reason": "no_voice",
         "frame_count": 160,
@@ -119,12 +179,12 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "7 candidate frames >= 4: accepted segment of 7*50 = 350 ms. active_ms 350 < 400 for phrase: no_voice (fields still filled)."
+      "derivation": "Same data as win-04. One accepted segment of 350 ms, but a calibration window needs active_ms >= 400: no_voice (the fields are still filled)."
     },
     {
-      "id": "win-05-phrase-400ms",
-      "description": "400 ms is the phrase minimum.",
-      "kind": "phrase",
+      "id": "win-05-calibration-400ms",
+      "description": "400 ms is the calibration minimum.",
+      "kind": "calibration",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
       "runs": [[-62,10],[-45,8],[-62,142]],
@@ -132,7 +192,7 @@
         "reason": "complete"
       },
       "expected": {
-        "kind": "phrase",
+        "kind": "calibration",
         "valid": true,
         "invalid_reason": null,
         "frame_count": 160,
@@ -149,7 +209,7 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "8 candidate frames = 400 ms >= 400: valid."
+      "derivation": "8 candidate frames = 400 ms >= 400: valid for a calibration window."
     },
     {
       "id": "win-06-vowel-200ms",
@@ -179,7 +239,37 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "The 400 ms minimum applies to calibration and phrase only. 4 candidate frames = one accepted segment of 200 ms: valid for a vowel window."
+      "derivation": "4 candidate frames = one accepted segment of 200 ms: valid for a vowel window."
+    },
+    {
+      "id": "win-06b-vowel-150ms-no-voice",
+      "description": "A frame-aligned 150 ms burst is no_voice for a vowel window too.",
+      "kind": "vowel",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,3],[-62,147]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "vowel",
+        "valid": false,
+        "invalid_reason": "no_voice",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 0,
+        "longest_active_ms": 0,
+        "segments": 0,
+        "onset_ms": null,
+        "p50_active_dbfs": null,
+        "p95_active_dbfs": null,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "3 candidate frames < 4: no accepted segment, so no_voice."
     },
     {
       "id": "win-07-coverage-exactly-0.90",
@@ -214,7 +304,7 @@
     },
     {
       "id": "win-08-coverage-0.89375",
-      "description": "Coverage boundary: 143 of 160 frames.",
+      "description": "Coverage boundary: 143 of 160 frames (emitted as 0.894).",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
@@ -229,7 +319,7 @@
         "invalid_reason": "low_coverage",
         "frame_count": 143,
         "expected_frames": 160,
-        "coverage": 0.89375,
+        "coverage": 0.894,
         "active_ms": 1000,
         "longest_active_ms": 1000,
         "segments": 1,
@@ -241,7 +331,38 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "143/160 = 0.89375 < 0.90: low_coverage."
+      "derivation": "143/160 = 0.89375 < 0.90: low_coverage. The emitted coverage is rounded to 0.001: 893.75 -> 894 -> 0.894 (the verdict uses the exact counts)."
+    },
+    {
+      "id": "win-08b-coverage-rounds-up-but-rule-is-exact",
+      "description": "539 of 599 expected frames: coverage 0.89983 is emitted as 0.900 but the rule uses the exact counts.",
+      "kind": "vowel",
+      "max_duration_ms": 30000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,509]],
+      "finish": {
+        "reason": "early_stop",
+        "duration_ms": 29950
+      },
+      "expected": {
+        "kind": "vowel",
+        "valid": false,
+        "invalid_reason": "low_coverage",
+        "frame_count": 539,
+        "expected_frames": 599,
+        "coverage": 0.9,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 29950
+      },
+      "derivation": "A vowel window stopped early at 29950 ms: expected_frames = floor(29950/50) = 599. 539 frames received, all finite: 539/599 = 0.899833 < 0.90: low_coverage, although the emitted coverage rounds to 0.900 (x1000 = 899.83 -> 900). The payload carries the exact counts (frame_count - nonfinite_frames over expected_frames), so a receiver reaches the same verdict. One accepted segment of 1000 ms at -45."
     },
     {
       "id": "win-09-clipped-2pct-valid",
@@ -271,7 +392,7 @@
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "derivation": "Active frames 10-59 = 50. 1 clipped / 50 = 2.0 %, not > 2 %: valid. clipped_frames = 1."
+      "derivation": "Active frames 10-59 = 50 candidate frames. 1 clipped / 50 = 2.0 %, not > 2 %: valid. clipped_frames = 1."
     },
     {
       "id": "win-10-clipped-4pct-invalid",
@@ -302,6 +423,36 @@
         "duration_ms": 8000
       },
       "derivation": "2 / 50 = 4.0 % > 2 %: clipped."
+    },
+    {
+      "id": "win-10b-clipped-fraction-excludes-bridged-gap",
+      "description": "CHANGED (A1-07): the clipped fraction uses candidate frames only.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45,20],[-62,5],[-45,10],[-45,1,"clipped"],[-45,18],[-62,96]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "clipped",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 2700,
+        "longest_active_ms": 2700,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45,
+        "p95_active_dbfs": -45,
+        "peak_dbfs": -45,
+        "clipped_frames": 1,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "Frames 10-29 candidates, 30-34 five bridged quiet frames, 35-63 candidates (frame 45 clipped), then silence. Span = frames 10-63 = 54 frames = 2700 ms (the gap counts in active_ms). Candidate frames = 20 + 29 = 49; 1/49 = 2.04 % > 2 %: clipped. Counting the 5 bridged frames (revision 1) gave 1/54 = 1.85 %, valid."
     },
     {
       "id": "win-11-nonfinite-5pct-valid",
@@ -349,7 +500,7 @@
         "invalid_reason": "nonfinite",
         "frame_count": 160,
         "expected_frames": 160,
-        "coverage": 0.94375,
+        "coverage": 0.944,
         "active_ms": 1000,
         "longest_active_ms": 1000,
         "segments": 1,
@@ -361,7 +512,7 @@
         "nonfinite_frames": 9,
         "duration_ms": 8000
       },
-      "derivation": "Coverage 151/160 = 0.94375 passes; non-finite 9/160 = 0.05625 > 0.05: nonfinite."
+      "derivation": "Coverage 151/160 = 0.94375 (emitted 0.944) passes; non-finite 9/160 = 0.05625 > 0.05: nonfinite."
     },
     {
       "id": "win-13-continuous-phrase",
@@ -544,8 +695,8 @@
       "derivation": "Same data as win-01 but the capture was interrupted: invalid_reason interrupted."
     },
     {
-      "id": "win-19-gap-frames-inside-span",
-      "description": "Bridged gap frames are part of the accepted-active frames.",
+      "id": "win-19-bridged-gap-frames-are-excluded-from-percentiles",
+      "description": "CHANGED (A1-07): bridged non-candidate frames are not accepted-active frames.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
@@ -564,14 +715,104 @@
         "longest_active_ms": 750,
         "segments": 1,
         "onset_ms": 250,
-        "p50_active_dbfs": -45,
+        "p50_active_dbfs": -40,
         "p95_active_dbfs": -40,
         "peak_dbfs": -40,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 2000
       },
-      "derivation": "Frames 5-8 at -45, frames 9-13 at -61 (5 quiet frames: bridged), frames 14-19 at -40, then quiet. Span = frames 5-19 = 15 frames; onset 250 ms, end 20*50 = 1000 ms, active 750 ms. Sorted active levels: 5 x -61, 4 x -45, 6 x -40 (n = 15). p50 = sorted[ceil(7.5)-1 = 7] = -45. p95 = sorted[ceil(14.25)-1 = 14] = -40. Duration = 40 frames = 2000 ms."
+      "derivation": "Frames 5-8 at -45 (open), frames 9-13 at -61 (rel -1: 5 bridged non-candidate frames), frames 14-19 at -40 (rel +20, continuation), then quiet. active_ms still spans the gap: onset 250 ms, end 20*50 = 1000 ms, 750 ms. Accepted-active frames are the 10 candidate frames: 4 x -45 and 6 x -40. Sorted: -45 x4, -40 x6: p50 = sorted[ceil(5)-1 = 4] = -40, p95 = sorted[ceil(9.5)-1 = 9] = -40. (Revision 1 included the 5 gap frames at -61, giving p50 = -45.) Duration = 40 frames = 2000 ms."
+    },
+    {
+      "id": "win-20-quantisation-to-0.1-dB",
+      "description": "Emitted dB values are rounded to 0.1 dB (PK-06).",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-45.26,20],[-62,130]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 1000,
+        "longest_active_ms": 1000,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -45.3,
+        "p95_active_dbfs": -45.3,
+        "peak_dbfs": -45.3,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "20 speech frames at -45.26 (rel +14.74, opens). p50 = p95 = -45.26 -> x10 = -452.6 -> round -453 -> -45.3. Peak (frame peak equals its RMS) -> -45.3."
+    },
+    {
+      "id": "win-21-loud-room-is-no-voice",
+      "description": "A noisy room at +7 dB (below the open threshold) is no_voice.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-53,160]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": false,
+        "invalid_reason": "no_voice",
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 0,
+        "longest_active_ms": 0,
+        "segments": 0,
+        "onset_ms": null,
+        "p50_active_dbfs": null,
+        "p95_active_dbfs": null,
+        "peak_dbfs": -53,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "-53 - (-60) = +7 dB: above the old 6 dB candidate threshold (revision 1 would have scored this as continuous speech) but below the 10 dB open threshold: no segment, no_voice."
+    },
+    {
+      "id": "win-22-emitted-p95-rounds-onto-the-band-edge",
+      "description": "A raw p95 of rel +11.96 dB is emitted as +12.0 dB.",
+      "kind": "phrase",
+      "max_duration_ms": 8000,
+      "session_floor_dbfs": -60,
+      "runs": [[-62,10],[-48.04,30],[-62,120]],
+      "finish": {
+        "reason": "complete"
+      },
+      "expected": {
+        "kind": "phrase",
+        "valid": true,
+        "invalid_reason": null,
+        "frame_count": 160,
+        "expected_frames": 160,
+        "coverage": 1.0,
+        "active_ms": 1500,
+        "longest_active_ms": 1500,
+        "segments": 1,
+        "onset_ms": 500,
+        "p50_active_dbfs": -48,
+        "p95_active_dbfs": -48,
+        "peak_dbfs": -48,
+        "clipped_frames": 0,
+        "nonfinite_frames": 0,
+        "duration_ms": 8000
+      },
+      "derivation": "30 speech frames at -48.04 (rel +11.96, opens). p95 = -48.04 -> x10 = -480.4 -> round -480 -> -48.0, i.e. +12.0 dB above the -60 floor. With a calibration margin of 13 (band edge 12) the TV verdict on the emitted numbers is reached; the raw value would have been 0.04 dB under the edge. Quantisation moves a verdict by at most 0.05 dB at the edge."
     }
   ]
 }

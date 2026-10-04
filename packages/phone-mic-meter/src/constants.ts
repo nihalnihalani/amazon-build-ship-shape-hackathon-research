@@ -28,12 +28,16 @@ export const CLIP_FRAME_FRACTION = 0.005;
  */
 export const CMP_TOLERANCE_DB = 1e-9;
 
-// ---- ADR-0001 §3 voice activity --------------------------------------------
+// ---- ADR-0001 §3 voice activity (revision 2: A1-01, A1-02, A1-03) -----------
 
-/** Candidate frame: level at least this many dB above the session floor. */
+/** A segment OPENS on a finite frame at least this many dB above the session floor (A1-03). */
+export const VAD_OPEN_DB = 10;
+/** Once open, a finite frame at least this many dB above the session floor is a candidate (continuation). */
 export const VAD_CANDIDATE_DB = 6;
-/** A segment is accepted only with at least this many candidate frames (4 × 50 ms = 200 ms). */
+/** A segment is accepted only with at least this many candidate frames in total (4 × 50 ms = 200 ms). */
 export const VAD_ACCEPT_MIN_FRAMES = 4;
+/** ... AND a run of at least this many consecutive candidate frames (A1-02: isolated clicks never accumulate). */
+export const VAD_ACCEPT_MIN_RUN = 3;
 /** The N-th consecutive non-candidate frame ends a segment (N − 1 = 5 frames = 250 ms are bridged). */
 export const VAD_END_GAP_FRAMES = 6;
 
@@ -51,6 +55,11 @@ export const QUIET_STABLE_MAX_DB = 6;
 export const BURST_MAX_DB = 10;
 /** Quiet check: floor must be ≤ this level in dBFS (not a loud room). */
 export const QUIET_FLOOR_MAX_DBFS = -30;
+/**
+ * Quiet check and pre-window check: a floor BELOW this level (dBFS) means the microphone looks muted
+ * or blocked, reason `silent_input` (A1-05; provisional, tune at T04).
+ */
+export const SILENT_INPUT_FLOOR_DBFS = -110;
 /**
  * Precheck: more than this fraction of received frames being non-finite makes the precheck
  * invalid (`nonfinite`). ADR-0001 §2 names the reason but gives no number; the window rule
@@ -76,6 +85,13 @@ export const MAX_LEVEL_FRAMES = 700;
 /** Maximum window durations by kind (PROTOCOL.md `window.start`). */
 export const WINDOW_MAX_MS = { calibration: 6000, phrase: 8000, vowel: 30000 } as const;
 
+// ---- PK-06 quantisation of emitted values ------------------------------------
+
+/** Every emitted dB value is a multiple of this many dB. */
+export const DB_QUANTUM = 0.1;
+/** Every emitted coverage is a multiple of this value. */
+export const COVERAGE_QUANTUM = 0.001;
+
 // ---- TV-side constants (reference only; the authority is the TV verdict module) -
 
 /** ADR-0001 §4: calibration valid only when cal_margin ≥ this many dB. */
@@ -88,3 +104,5 @@ export const PRE_WINDOW_MARGIN_BLOCK_DB = 10;
 export const VERDICT_MARGIN_DB = 1;
 /** ADR-0001 §8: borderline when |window_rel_p95 − (cal_margin − 1)| < this many dB. */
 export const BORDERLINE_DB = 1;
+/** A1-10: `vad_floor_dbfs` range accepted from the TV, in dBFS. */
+export const VAD_FLOOR_RANGE_DBFS = { min: -110, max: -30 } as const;

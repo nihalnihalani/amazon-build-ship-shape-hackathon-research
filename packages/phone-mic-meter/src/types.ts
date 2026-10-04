@@ -1,5 +1,6 @@
 /**
- * Local mirrors of the PROTOCOL.md revision 1 §3.3 phone-observation payloads.
+ * Local mirrors of the PROTOCOL.md §3.3 phone-observation payloads (revision 1 field names, plus the
+ * revision 2 amendments: `silent_input`, quantised values).
  * Field names match PROTOCOL.md exactly. The lead switches these to imports from
  * @atr/protocol at integration; until then these are the structural contract.
  */
@@ -13,7 +14,8 @@ export type PrecheckInvalidReason =
   | 'burst_noise'
   | 'too_loud'
   | 'nonfinite'
-  | 'interrupted';
+  | 'interrupted'
+  | 'silent_input';
 
 export interface PrecheckResultPayload {
   purpose: PrecheckPurpose;

@@ -1,16 +1,16 @@
 {
-  "note": "Hand-derived expected values; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
-  "verdict_rule": "window_rel_p95 = p95_active_dbfs - session_floor_dbfs; reached when window_rel_p95 >= cal_margin_db - 1, otherwise not_reached; borderline when |window_rel_p95 - (cal_margin_db - 1)| < 1 (ADR-0001 section 8). All 20 cases are valid phrase windows below the band edge, so each expected verdict is not_reached.",
+  "note": "Hand-derived expected values for ADR-0001 revision 2; see README.md and tools/derive_fixtures.py. runs: [db, n] finite frames, [db, n, 'clipped'], [null, n] non-finite, ['gap', n] missing frames. 50 ms frames; 48 kHz timing (t_audio_ms = frame_index * 50). Not measurements of any real microphone.",
+  "verdict_rule": "window_rel_p95 = p95_active_dbfs - session_floor_dbfs; reached when window_rel_p95 >= cal_margin_db - 1, otherwise not_reached; borderline when |window_rel_p95 - (cal_margin_db - 1)| < 1 (ADR-0001 section 8). All 20 cases are valid phrase windows below the band edge, so each expected verdict is not_reached. Revision 2: speech must reach +10 dB to open a segment, so every case has at least one frame at or above +10 dB.",
   "cases": [
     {
-      "id": "soft-01-uniform-8dB",
-      "description": "Uniform soft speech 8 dB above the floor; calibration margin 13 dB.",
+      "id": "soft-01-uniform-just-opening",
+      "description": "Uniform soft speech exactly 10 dB above the floor (the open threshold); calibration margin 13 dB.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-60,20],[-52,30],[-60,110]],
+      "runs": [[-60,20],[-50,30],[-60,110]],
       "finish": {
         "reason": "complete"
       },
@@ -25,17 +25,17 @@
         "longest_active_ms": 1500,
         "segments": 1,
         "onset_ms": 1000,
-        "p50_active_dbfs": -52,
-        "p95_active_dbfs": -52,
-        "peak_dbfs": -52,
+        "p50_active_dbfs": -50,
+        "p95_active_dbfs": -50,
+        "peak_dbfs": -50,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 8,
+      "expected_window_rel_p95_db": 10,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -60, cal_margin 13, so band edge = 13 - 1 = 12 dB above the floor. Speech frames 20-49 at -52 (rel +8): 30 frames, onset 20*50 = 1000 ms, active 1500 ms, p50 = p95 = -52. window_rel_p95 = -52 - (-60) = 8 < 12: not_reached. |8 - 12| = 4, not borderline."
+      "derivation": "CHANGED from revision 1 (+8 dB uniform): speech that never reaches +10 dB can no longer open a segment and would be no_voice (unscored), not a soft scored window. Floor -60, cal_margin 13, band edge = 12 dB above the floor. 30 speech frames 20-49 at -50 (rel +10.0 opens): 30 candidate frames, onset 20*50 = 1000 ms, active 1500 ms, p50 = p95 = -50. window_rel_p95 = -50 - (-60) = 10 < 12: not_reached. |10 - 12| = 2: not borderline."
     },
     {
       "id": "soft-02-11.5dB-borderline",
@@ -70,17 +70,17 @@
       "expected_window_rel_p95_db": 11.5,
       "expected_verdict": "not_reached",
       "expected_borderline": true,
-      "derivation": "Edge 12. 30 speech frames at -48.5 (rel +11.5). p95 = -48.5, rel 11.5 < 12: not_reached. |11.5 - 12| = 0.5 < 1: borderline."
+      "derivation": "Edge 12. 30 speech frames at -48.5 (rel +11.5, opens). p95 = -48.5, rel 11.5 < 12: not_reached. |11.5 - 12| = 0.5 < 1: borderline. Unchanged from revision 1."
     },
     {
-      "id": "soft-03-11.01dB-borderline",
-      "description": "Soft speech 0.99 dB under the band edge.",
+      "id": "soft-03-11.1dB-borderline",
+      "description": "Soft speech 0.9 dB under the band edge.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-60,20],[-48.99,30],[-60,110]],
+      "runs": [[-60,20],[-48.9,30],[-60,110]],
       "finish": {
         "reason": "complete"
       },
@@ -95,27 +95,27 @@
         "longest_active_ms": 1500,
         "segments": 1,
         "onset_ms": 1000,
-        "p50_active_dbfs": -48.99,
-        "p95_active_dbfs": -48.99,
-        "peak_dbfs": -48.99,
+        "p50_active_dbfs": -48.9,
+        "p95_active_dbfs": -48.9,
+        "peak_dbfs": -48.9,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 11.01,
+      "expected_window_rel_p95_db": 11.1,
       "expected_verdict": "not_reached",
       "expected_borderline": true,
-      "derivation": "Edge 12. rel 11.01 < 12: not_reached. |11.01 - 12| = 0.99 < 1: borderline."
+      "derivation": "CHANGED from -48.99 (+11.01): emitted values are multiples of 0.1, so -48.99 would be emitted as -49.0 (+11.0, exactly 1.0 under the edge: not borderline). Edge 12; -48.9 is rel +11.1 < 12: not_reached. |11.1 - 12| = 0.9 < 1: borderline."
     },
     {
-      "id": "soft-04-11.99dB-borderline",
-      "description": "Soft speech 0.01 dB under the band edge.",
+      "id": "soft-04-11.9dB-borderline",
+      "description": "Soft speech 0.1 dB under the band edge (the closest value on the 0.1 dB grid).",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-60,20],[-48.01,30],[-60,110]],
+      "runs": [[-60,20],[-48.1,30],[-60,110]],
       "finish": {
         "reason": "complete"
       },
@@ -130,27 +130,27 @@
         "longest_active_ms": 1500,
         "segments": 1,
         "onset_ms": 1000,
-        "p50_active_dbfs": -48.01,
-        "p95_active_dbfs": -48.01,
-        "peak_dbfs": -48.01,
+        "p50_active_dbfs": -48.1,
+        "p95_active_dbfs": -48.1,
+        "peak_dbfs": -48.1,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 11.99,
+      "expected_window_rel_p95_db": 11.9,
       "expected_verdict": "not_reached",
       "expected_borderline": true,
-      "derivation": "Edge 12. rel 11.99 < 12 by 0.01: not_reached (the verdict is not rounded). Borderline: |11.99 - 12| = 0.01 < 1."
+      "derivation": "CHANGED from -48.01 (+11.99): -48.01 would be emitted as -48.0, i.e. exactly the band edge, which is reached. Edge 12; -48.1 is rel +11.9 < 12: not_reached by 0.1 dB. |11.9 - 12| = 0.1 < 1: borderline."
     },
     {
-      "id": "soft-05-9dB-floor-55",
-      "description": "Soft speech, floor -55, margin 15.",
+      "id": "soft-05-loud-opening-frame-soft-body",
+      "description": "A single opening frame at +10 dB followed by softer speech at +9 dB; floor -55, margin 15.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -55,
       "cal_margin_db": 15,
       "band_edge_rel_db": 14,
-      "runs": [[-55,15],[-46,40],[-55,105]],
+      "runs": [[-55,15],[-45,1],[-46,39],[-55,105]],
       "finish": {
         "reason": "complete"
       },
@@ -167,7 +167,7 @@
         "onset_ms": 750,
         "p50_active_dbfs": -46,
         "p95_active_dbfs": -46,
-        "peak_dbfs": -46,
+        "peak_dbfs": -45,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
@@ -175,7 +175,7 @@
       "expected_window_rel_p95_db": 9,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Edge = 14. 40 speech frames 15-54 at -46 (rel +9): onset 750 ms, active 2000 ms. rel p95 9 < 14. |9 - 14| = 5: not borderline."
+      "derivation": "CHANGED (hysteresis): the first frame is +10 dB and opens the segment; frames at +9 dB then continue it (>= 6). Edge 14. Frames 15-54 = 40 candidate frames: 39 x -46 and 1 x -45; onset 750 ms, active 2000 ms. Sorted: -46 x39, -45 x1: p50 = sorted[ceil(20)-1 = 19] = -46, p95 = sorted[ceil(38)-1 = 37] = -46 (the loud opening frame is the largest). rel p95 9 < 14: not_reached. |9 - 14| = 5: not borderline. Peak -45."
     },
     {
       "id": "soft-06-exactly-1dB-under-edge",
@@ -185,7 +185,7 @@
       "session_floor_dbfs": -70,
       "cal_margin_db": 16,
       "band_edge_rel_db": 15,
-      "runs": [[-70,10],[-63,20],[-61,20],[-56,4],[-70,106]],
+      "runs": [[-70,10],[-60,1],[-63,19],[-61,20],[-56,4],[-70,106]],
       "finish": {
         "reason": "complete"
       },
@@ -210,7 +210,7 @@
       "expected_window_rel_p95_db": 14,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -70, margin 16, edge 15. Active frames 10-53 (44 frames): 20 x -63 (rel +7), 20 x -61 (rel +9), 4 x -56 (rel +14). Sorted idx 0-19 = -63, 20-39 = -61, 40-43 = -56. p50 = sorted[ceil(22)-1 = 21] = -61. p95 = sorted[ceil(41.8)-1 = 41] = -56. rel p95 = 14 < 15: not_reached. |14 - 15| = 1.00 is not < 1: not borderline. active_ms = 44*50 = 2200, onset 500."
+      "derivation": "CHANGED (hysteresis): an opening frame at -60 (+10) precedes the +7 dB frames. Floor -70, margin 16, edge 15. Candidate frames 10-53 (44): 19 x -63 (rel +7, continuation), 20 x -61 (+9), 1 x -60 (+10), 4 x -56 (+14). Sorted: idx 0-18 = -63, 19-38 = -61, 39 = -60, 40-43 = -56. p50 = sorted[ceil(22)-1 = 21] = -61. p95 = sorted[ceil(41.8)-1 = 41] = -56. rel p95 = 14 < 15: not_reached. |14 - 15| = 1.00 is not < 1: not borderline. active_ms = 44*50 = 2200, onset 500."
     },
     {
       "id": "soft-07-loud-spike-below-5pct",
@@ -245,7 +245,7 @@
       "expected_window_rel_p95_db": 10,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -65, margin 18, edge 17. Active frames 15-94 (80 frames): 76 x -55 (rel +10), then 4 x -43 (rel +22). p95 = sorted[ceil(76)-1 = 75] = -55 (idx 76-79 are the spike). p50 = sorted[ceil(40)-1 = 39] = -55. rel p95 10 < 17: not_reached. Peak = -43 (whole window)."
+      "derivation": "Floor -65, margin 18, edge 17. Candidate frames 15-94 (80): 76 x -55 (rel +10, opens), then 4 x -43 (rel +22). p95 = sorted[ceil(76)-1 = 75] = -55 (idx 76-79 are the spike). p50 = sorted[ceil(40)-1 = 39] = -55. rel p95 10 < 17: not_reached. Peak = -43 (whole window). Unchanged from revision 1."
     },
     {
       "id": "soft-08-two-words",
@@ -280,7 +280,7 @@
       "expected_window_rel_p95_db": 15,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -48, margin 20, edge 19. Word A frames 10-21 at -34 [500, 1100] ms; 8 quiet frames 22-29 (the 6th, frame 27, ends it); word B frames 30-43 at -33 [1500, 2200]. active_ms 600 + 700 = 1300, longest 700, 2 segments. Active levels: 12 x -34, 14 x -33 (n = 26): p50 = sorted[ceil(13)-1 = 12] = -33, p95 = sorted[ceil(24.7)-1 = 24] = -33. rel p95 15 < 19: not_reached."
+      "derivation": "Floor -48, margin 20, edge 19. Word A frames 10-21 at -34 [500, 1100] ms; 8 quiet frames 22-29 (the 6th, frame 27, ends it); word B frames 30-43 at -33 [1500, 2200]. active_ms 600 + 700 = 1300, longest 700, 2 segments. Candidate frames: 12 x -34, 14 x -33 (n = 26): p50 = sorted[ceil(13)-1 = 12] = -33, p95 = sorted[ceil(24.7)-1 = 24] = -33. rel p95 15 < 19: not_reached. Unchanged from revision 1."
     },
     {
       "id": "soft-09-long-utterance-floor-40",
@@ -315,11 +315,11 @@
       "expected_window_rel_p95_db": 20,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -40, margin 25, edge 24. 100 speech frames 20-119 at -20 (rel +20): 5000 ms = 62.5 % of 8000, with an offset (40 quiet frames): not continuous. rel p95 20 < 24: not_reached."
+      "derivation": "Floor -40, margin 25, edge 24. 100 speech frames 20-119 at -20 (rel +20): 5000 ms = 62.5 % of 8000, with an offset (40 quiet frames): not continuous. rel p95 20 < 24: not_reached. Unchanged."
     },
     {
       "id": "soft-10-bridged-word-gaps",
-      "description": "Word gaps of 4 and 3 frames are bridged and counted in the span.",
+      "description": "Word gaps of 4 and 3 frames are bridged: they count in active_ms but not in the percentiles.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -62.5,
@@ -350,17 +350,17 @@
       "expected_window_rel_p95_db": 10,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -62.5, margin 14.5, edge 13.5. Speech frames 10-19, gap 20-23 (4 frames at rel +1, bridged), speech 24-33, gap 34-36 (3 frames at rel 0, bridged), speech 37-44. One segment, frames 10-44 (35 frames), onset 500 ms, end 45*50 = 2250, active 1750 ms. Sorted active levels: 3 x -62.5, 4 x -61.5, 28 x -52.5 (n = 35). p50 = sorted[ceil(17.5)-1 = 17] = -52.5, p95 = sorted[ceil(33.25)-1 = 33] = -52.5. rel p95 10 < 13.5: not_reached."
+      "derivation": "CHANGED derivation (A1-07): speech frames 10-19, gap 20-23 (4 frames at rel +1, bridged), speech 24-33, gap 34-36 (3 frames at rel 0, bridged), speech 37-44. One segment, frames 10-44 (35 frame span), onset 500 ms, end 45*50 = 2250: active_ms 1750 (the gaps are inside the span). Accepted-active frames are the 28 candidate frames, all -52.5 (rel +10.0): p50 = p95 = -52.5. (Revision 1 included the 7 gap frames, which only changed p50 on other data.) Floor -62.5, margin 14.5, edge 13.5: rel p95 10 < 13.5: not_reached."
     },
     {
-      "id": "soft-11-exactly-plus-6-candidates",
-      "description": "Speech frames exactly 6 dB above the floor are candidates.",
+      "id": "soft-11-exactly-plus-10-opens",
+      "description": "Speech exactly 10 dB above the floor opens the segment.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -58,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-58,10],[-52,20],[-58,130]],
+      "runs": [[-58,10],[-48,20],[-58,130]],
       "finish": {
         "reason": "complete"
       },
@@ -375,17 +375,17 @@
         "longest_active_ms": 1000,
         "segments": 1,
         "onset_ms": 500,
-        "p50_active_dbfs": -52,
-        "p95_active_dbfs": -52,
-        "peak_dbfs": -52,
+        "p50_active_dbfs": -48,
+        "p95_active_dbfs": -48,
+        "peak_dbfs": -48,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 6,
+      "expected_window_rel_p95_db": 10,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -58, edge 12. Frames at -52 are exactly +6.00 dB: candidates (>= 6). 20 frames 10-29 = 1000 ms accepted. p95 = -52, rel 6 < 12: not_reached."
+      "derivation": "CHANGED from the exact +6.00 dB case (below the open threshold now): floor -58, edge 12. Frames at -48 are +10.0: they open the segment. 20 frames 10-29 = 1000 ms. p95 = -48, rel 10 < 12: not_reached."
     },
     {
       "id": "soft-12-long-soft-6s",
@@ -420,17 +420,17 @@
       "expected_window_rel_p95_db": 12,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -66, margin 17, edge 16. 120 frames 10-129 at -54 (rel +12): 6000 ms = 75 % of 8000, offset observed (30 quiet frames). rel p95 12 < 16: not_reached."
+      "derivation": "Floor -66, margin 17, edge 16. 120 frames 10-129 at -54 (rel +12): 6000 ms = 75 % of 8000, offset observed (30 quiet frames). rel p95 12 < 16: not_reached. Unchanged."
     },
     {
       "id": "soft-13-rising-ramp",
-      "description": "Speech that rises in 1 dB steps and never reaches the edge.",
+      "description": "Speech that rises in 0.2 dB steps from the open threshold and never reaches the edge.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-60,10],[-54,20],[-53,20],[-52,20],[-51,20],[-50,20],[-60,50]],
+      "runs": [[-60,10],[-50,20],[-49.8,20],[-49.6,20],[-49.4,20],[-49.2,20],[-60,50]],
       "finish": {
         "reason": "complete"
       },
@@ -445,21 +445,21 @@
         "longest_active_ms": 5000,
         "segments": 1,
         "onset_ms": 500,
-        "p50_active_dbfs": -52,
-        "p95_active_dbfs": -50,
-        "peak_dbfs": -50,
+        "p50_active_dbfs": -49.6,
+        "p95_active_dbfs": -49.2,
+        "peak_dbfs": -49.2,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 10,
+      "expected_window_rel_p95_db": 10.8,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -60, edge 12. 100 active frames 10-109: 20 each at rel +6, +7, +8, +9, +10 (-54 ... -50). Sorted groups of 20. p50 = sorted[ceil(50)-1 = 49] = third group = -52. p95 = sorted[ceil(95)-1 = 94] = fifth group = -50. rel p95 10 < 12: not_reached."
+      "derivation": "CHANGED (hysteresis): the revision 1 ramp started at +6 dB and could not open. Floor -60, edge 12. 100 candidate frames 10-109 in groups of 20 at rel +10.0, +10.2, +10.4, +10.6, +10.8 (-50 ... -49.2). p50 = sorted[ceil(50)-1 = 49] = third group = -49.6. p95 = sorted[ceil(95)-1 = 94] = fifth group = -49.2. rel p95 10.8 < 12: not_reached. |10.8 - 12| = 1.2: not borderline."
     },
     {
       "id": "soft-14-decaying-speech",
-      "description": "Speech that decays (loudest first).",
+      "description": "Speech that decays (loudest first) down to exactly the +6 dB continuation threshold.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -54,
@@ -490,7 +490,7 @@
       "expected_window_rel_p95_db": 12,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -54, margin 21, edge 20. 40 active frames 10-49 in groups of 10 at -42, -44, -46, -48. Sorted ascending: -48 x10, -46 x10, -44 x10, -42 x10. p50 = sorted[ceil(20)-1 = 19] = -46. p95 = sorted[ceil(38)-1 = 37] = -42. rel p95 12 < 20: not_reached."
+      "derivation": "Floor -54, margin 21, edge 20. 40 candidate frames 10-49 in groups of 10 at -42 (rel +12, opens), -44 (+10), -46 (+8), -48 (+6.0 exactly: continuation). Sorted ascending: -48 x10, -46 x10, -44 x10, -42 x10. p50 = sorted[ceil(20)-1 = 19] = -46. p95 = sorted[ceil(38)-1 = 37] = -42. rel p95 12 < 20: not_reached."
     },
     {
       "id": "soft-15-rejected-loud-transient",
@@ -498,9 +498,9 @@
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -60,
-      "cal_margin_db": 13,
-      "band_edge_rel_db": 12,
-      "runs": [[-60,10],[-51,40],[-60,30],[-30,3],[-60,77]],
+      "cal_margin_db": 14,
+      "band_edge_rel_db": 13,
+      "runs": [[-60,10],[-49,40],[-60,30],[-30,3],[-60,77]],
       "finish": {
         "reason": "complete"
       },
@@ -515,17 +515,17 @@
         "longest_active_ms": 2000,
         "segments": 1,
         "onset_ms": 500,
-        "p50_active_dbfs": -51,
-        "p95_active_dbfs": -51,
+        "p50_active_dbfs": -49,
+        "p95_active_dbfs": -49,
         "peak_dbfs": -30,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 9,
+      "expected_window_rel_p95_db": 11,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -60, edge 12. Soft speech frames 10-49 at -51 (rel +9): 2000 ms accepted. Frames 80-82 at -30 (rel +30) are a 150 ms transient: 3 candidate frames < 4, rejected, contributes nothing to active_ms or the percentiles. p95 = -51, rel 9 < 12: not_reached. Peak = -30 (whole window)."
+      "derivation": "CHANGED level (was +9 dB, now below the open threshold): floor -60, margin 14, edge 13. Soft speech frames 10-49 at -49 (rel +11): 2000 ms accepted. Frames 80-82 at -30 (rel +30) are a frame-aligned 150 ms transient: 3 candidate frames < 4, rejected, contributes nothing to active_ms or the percentiles. p95 = -49, rel 11 < 13: not_reached. |11 - 13| = 2: not borderline. Peak = -30 (whole window)."
     },
     {
       "id": "soft-16-dropout-inside-speech",
@@ -535,7 +535,7 @@
       "session_floor_dbfs": -45,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-45,10],[-36,20],["gap",3],[-36,20],[-45,107]],
+      "runs": [[-45,10],[-35,20],["gap",3],[-35,20],[-45,107]],
       "finish": {
         "reason": "complete"
       },
@@ -545,22 +545,22 @@
         "invalid_reason": null,
         "frame_count": 157,
         "expected_frames": 160,
-        "coverage": 0.98125,
+        "coverage": 0.981,
         "active_ms": 2150,
         "longest_active_ms": 2150,
         "segments": 1,
         "onset_ms": 500,
-        "p50_active_dbfs": -36,
-        "p95_active_dbfs": -36,
-        "peak_dbfs": -36,
+        "p50_active_dbfs": -35,
+        "p95_active_dbfs": -35,
+        "peak_dbfs": -35,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 9,
+      "expected_window_rel_p95_db": 10,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -45, edge 12. Indices 0-9 quiet, 10-29 speech, 30-32 missing (dropout), 33-52 speech, 53-159 quiet. 157 frames received of 160 expected: coverage 157/160 = 0.98125 >= 0.90. The 3 missing frames count as non-candidates (gap 3, bridged): one segment, indices 10-52 = 43 frames, active 2150 ms; the 40 present frames at -36 give p50 = p95 = -36. rel 9 < 12: not_reached."
+      "derivation": "CHANGED level (was +9 dB): floor -45, edge 12. Indices 0-9 quiet, 10-29 speech at -35 (rel +10, opens), 30-32 missing (dropout), 33-52 speech, 53-159 quiet. 157 frames received of 160 expected: coverage 157/160 = 0.98125, emitted 0.981, >= 0.90. The 3 missing frames count as non-candidates (gap 3, bridged): one segment, indices 10-52 = 43 frames, active 2150 ms; the 40 present candidate frames at -35 give p50 = p95 = -35. rel 10 < 12: not_reached."
     },
     {
       "id": "soft-17-quiet-room-floor-72",
@@ -595,17 +595,17 @@
       "expected_window_rel_p95_db": 16,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -72, margin 19, edge 18. 30 speech frames at -56 (rel +16): p95 -56, rel 16 < 18: not_reached. |16 - 18| = 2: not borderline."
+      "derivation": "Floor -72, margin 19, edge 18. 30 speech frames at -56 (rel +16): p95 -56, rel 16 < 18: not_reached. |16 - 18| = 2: not borderline. Unchanged."
     },
     {
       "id": "soft-18-fractional-margin",
-      "description": "Fractional floor and margin: rel 12.49 against an edge of 12.5.",
+      "description": "Fractional floor and margin: rel 12.4 against an edge of 12.5.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -52.5,
       "cal_margin_db": 13.5,
       "band_edge_rel_db": 12.5,
-      "runs": [[-52.5,10],[-40.01,30],[-52.5,120]],
+      "runs": [[-52.5,10],[-40.1,30],[-52.5,120]],
       "finish": {
         "reason": "complete"
       },
@@ -620,17 +620,17 @@
         "longest_active_ms": 1500,
         "segments": 1,
         "onset_ms": 500,
-        "p50_active_dbfs": -40.01,
-        "p95_active_dbfs": -40.01,
-        "peak_dbfs": -40.01,
+        "p50_active_dbfs": -40.1,
+        "p95_active_dbfs": -40.1,
+        "peak_dbfs": -40.1,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 12.49,
+      "expected_window_rel_p95_db": 12.4,
       "expected_verdict": "not_reached",
       "expected_borderline": true,
-      "derivation": "Floor -52.5, margin 13.5, edge 12.5. 30 frames at -40.01: rel = -40.01 - (-52.5) = 12.49 < 12.5: not_reached. |12.49 - 12.5| = 0.01 < 1: borderline."
+      "derivation": "CHANGED from -40.01 (which would be emitted as -40.0, exactly the edge, reached). Floor -52.5, margin 13.5, edge 12.5. 30 frames at -40.1: rel = -40.1 - (-52.5) = 12.4 < 12.5: not_reached. |12.4 - 12.5| = 0.1 < 1: borderline."
     },
     {
       "id": "soft-19-margin-22",
@@ -665,17 +665,17 @@
       "expected_window_rel_p95_db": 20.5,
       "expected_verdict": "not_reached",
       "expected_borderline": true,
-      "derivation": "Floor -60, margin 22, edge 21. 40 frames at -39.5 (rel +20.5) < 21: not_reached. |20.5 - 21| = 0.5 < 1: borderline."
+      "derivation": "Floor -60, margin 22, edge 21. 40 frames at -39.5 (rel +20.5) < 21: not_reached. |20.5 - 21| = 0.5 < 1: borderline. Unchanged."
     },
     {
       "id": "soft-20-gap-5-bridged",
-      "description": "A 5-frame word gap is bridged; the gap frames sit inside the span.",
+      "description": "A 5-frame word gap is bridged; the gap frames count in active_ms only.",
       "kind": "phrase",
       "max_duration_ms": 8000,
       "session_floor_dbfs": -58,
       "cal_margin_db": 13,
       "band_edge_rel_db": 12,
-      "runs": [[-58,10],[-49,8],[-55,5],[-49,8],[-58,129]],
+      "runs": [[-58,10],[-48,8],[-55,5],[-48,8],[-58,129]],
       "finish": {
         "reason": "complete"
       },
@@ -690,17 +690,17 @@
         "longest_active_ms": 1050,
         "segments": 1,
         "onset_ms": 500,
-        "p50_active_dbfs": -49,
-        "p95_active_dbfs": -49,
-        "peak_dbfs": -49,
+        "p50_active_dbfs": -48,
+        "p95_active_dbfs": -48,
+        "peak_dbfs": -48,
         "clipped_frames": 0,
         "nonfinite_frames": 0,
         "duration_ms": 8000
       },
-      "expected_window_rel_p95_db": 9,
+      "expected_window_rel_p95_db": 10,
       "expected_verdict": "not_reached",
       "expected_borderline": false,
-      "derivation": "Floor -58, edge 12. Speech frames 10-17 at -49 (rel +9), gap frames 18-22 at -55 (rel +3, 5 frames: bridged), speech 23-30. One segment frames 10-30 (21 frames): onset 500, end 31*50 = 1550, active 1050 ms. Sorted: 5 x -55, 16 x -49 (n = 21). p50 = sorted[ceil(10.5)-1 = 10] = -49. p95 = sorted[ceil(19.95)-1 = 19] = -49. rel 9 < 12: not_reached."
+      "derivation": "CHANGED (level now +10 dB so that it opens; gap frames excluded from the percentiles): floor -58, edge 12. Speech frames 10-17 at -48 (rel +10), gap frames 18-22 at -55 (rel +3, 5 frames: bridged), speech 23-30. One segment frames 10-30 (21-frame span): onset 500, end 31*50 = 1550, active 1050 ms. Candidate frames: 16 x -48: p50 = p95 = -48. rel 10 < 12: not_reached."
     }
   ]
 }

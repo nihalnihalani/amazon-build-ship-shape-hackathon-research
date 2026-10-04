@@ -1,24 +1,30 @@
 /**
- * Window accumulator (ADR-0001 §6): consumes frames between `window.start` and
+ * Window accumulator (ADR-0001 §6, revision 2): consumes frames between `window.start` and
  * `window.stop`, emits live level frames, and produces the WindowResultPayload.
  *
- * Definitions fixed here where ADR-0001 leaves room (each is also in docs/MEASUREMENT.md):
+ * Definitions (each is also in docs/MEASUREMENT.md):
  *  - frame_count = frames received (finite or not); nonfinite_frames of them are non-finite.
  *  - coverage = finite_frames / expected_frames, capped to [0, 1]; expected_frames =
- *    floor(duration_ms / 50). Missing frames (a dropout) therefore lower coverage.
- *  - accepted-active frames = finite frames inside the span [onsetFrame, endFrame] of an
- *    accepted VAD segment (bridged hangover gaps of at most 250 ms are inside the span).
- *    p50_active_dbfs and p95_active_dbfs are nearest-rank over their dBFS values.
- *  - clipped_frames reports every clipped frame in the window; the `clipped` validity rule
- *    counts only clipped frames inside accepted activity (rejected segments contribute
- *    nothing), as a fraction of accepted-active frames, and fails when it exceeds 2 %.
+ *    floor(duration_ms / 50) with the emitted (integer) duration_ms. Missing frames (a dropout)
+ *    therefore lower coverage.
+ *  - accepted-active frames (A1-07) = the finite CANDIDATE frames inside the span of an accepted
+ *    VAD segment. Bridged non-candidate frames are excluded. p50_active_dbfs and p95_active_dbfs
+ *    are nearest-rank over their dBFS values. active_ms still spans bridged gaps (onset to the end
+ *    of the last candidate frame).
+ *  - clipped_frames reports every clipped frame in the window; the `clipped` validity rule counts
+ *    only clipped accepted-active frames, as a fraction of accepted-active frames, and fails when
+ *    it exceeds 2 %.
  *  - nonfinite validity: nonfinite_frames / frame_count > 5 %.
  *  - peak_dbfs = dBFS of the largest finite |x| over the whole window (null without finite frames).
- *  - continuous_sound (phrase only): active_ms / duration_ms > 0.95 AND the last accepted
- *    segment was still open when the window closed (no offset was observed).
+ *  - no_voice (A1-04): phrase and vowel windows, no accepted segment; calibration windows, no
+ *    accepted segment or active_ms < 400.
+ *  - continuous_sound (phrase only): active_ms / duration_ms > 0.95 AND the last accepted segment
+ *    was still open when the window closed (no offset was observed).
+ *  - Every emitted number is quantised (PK-06): dB to 0.1, coverage to 0.001, ms to integers.
+ *    Count- and ms-based rules use the exact counts and the emitted integer milliseconds.
  *
- * Invalid-reason priority (first match wins): interrupted, low_coverage, clipped,
- * nonfinite, no_voice, continuous_sound (the order of ADR-0001 §6, interrupted first).
+ * Invalid-reason priority (first match wins): interrupted, low_coverage, clipped, nonfinite,
+ * no_voice, continuous_sound.
  */
 
 import {
@@ -35,6 +41,7 @@ import {
 import { frameSamples, peakToDbfs } from './frame.js';
 import type { Frame } from './frame.js';
 import { percentile } from './percentile.js';
+import { quantizeCoverage, quantizeDb, quantizeMs } from './quantize.js';
 import type { AcceptedSegment } from './vad.js';
 import { VoiceActivityTracker } from './vad.js';
 import type { LevelPayload, WindowInvalidReason, WindowKind, WindowResultPayload } from './types.js';
@@ -63,6 +70,8 @@ interface FrameRecord {
   dbfs: number;
   clipped: boolean;
   peak: number;
+  /** VAD candidate (opening or continuation frame), as returned by the tracker for this frame. */
+  candidate: boolean;
 }
 
 export class WindowAccumulator {
@@ -118,18 +127,19 @@ export class WindowAccumulator {
     if (index <= this.highestIndex) return null;
 
     this.highestIndex = index;
+    const { candidate } = this.vad.push(frame);
     this.records.set(index, {
       finite: frame.finite,
       dbfs: frame.dbfs,
       clipped: frame.finite && frame.clipped,
       peak: frame.peak,
+      candidate,
     });
-    const { candidate } = this.vad.push(frame);
     this.emitted += 1;
     return {
       frame_index: index,
-      t_audio_ms: frame.t_audio_ms,
-      dbfs: frame.finite ? frame.dbfs : DBFS_MIN,
+      t_audio_ms: quantizeMs(frame.t_audio_ms),
+      dbfs: frame.finite ? quantizeDb(frame.dbfs) : DBFS_MIN,
       active: candidate,
       clipped: frame.finite && frame.clipped,
     };
@@ -145,6 +155,8 @@ export class WindowAccumulator {
         : Math.min(this.maxDurationMs, (this.highestIndex + 1) * this.frameDurationMs);
     let durationMs = options.durationMs ?? defaultDuration;
     if (!Number.isFinite(durationMs) || durationMs < 0) durationMs = 0;
+    // Elapsed audio time cannot be shorter than the audio that produced the frames received.
+    if (durationMs < defaultDuration) durationMs = defaultDuration;
     if (durationMs > this.maxDurationMs) durationMs = this.maxDurationMs;
 
     const segments = this.vad.finish();
@@ -154,9 +166,10 @@ export class WindowAccumulator {
 
   private summarize(
     reason: WindowFinishReason,
-    durationMs: number,
+    rawDurationMs: number,
     segments: AcceptedSegment[],
   ): WindowResultPayload {
+    const durationMs = quantizeMs(rawDurationMs);
     const expectedFrames = Math.floor(durationMs / FRAME_MS);
 
     let finiteFrames = 0;
@@ -173,32 +186,36 @@ export class WindowAccumulator {
       if (r.peak > peak) peak = r.peak;
     }
     const frameCount = this.records.size;
-    const coverage = expectedFrames === 0 ? 0 : Math.min(1, finiteFrames / expectedFrames);
+    const exactCoverage = expectedFrames === 0 ? 0 : Math.min(1, finiteFrames / expectedFrames);
 
-    // Accepted-active frames: finite frames inside accepted-segment spans.
+    // Accepted-active frames: finite candidate frames inside accepted-segment spans.
     const activeLevels: number[] = [];
     let activeClipped = 0;
     for (const seg of segments) {
       for (let i = seg.onsetFrame; i <= seg.endFrame; i++) {
         const r = this.records.get(i);
-        if (r === undefined || !r.finite) continue;
+        if (r === undefined || !r.finite || !r.candidate) continue;
         activeLevels.push(r.dbfs);
         if (r.clipped) activeClipped += 1;
       }
     }
 
-    let activeMs = 0;
-    let longestMs = 0;
+    let rawActiveMs = 0;
+    let rawLongestMs = 0;
     for (const seg of segments) {
       const span = seg.end_ms - seg.onset_ms;
-      activeMs += span;
-      if (span > longestMs) longestMs = span;
+      rawActiveMs += span;
+      if (span > rawLongestMs) rawLongestMs = span;
     }
+    // Emitted milliseconds never exceed the window duration (frame times of non-48 kHz rates can
+    // overshoot the duration cap by a fraction of a frame).
+    const activeMs = Math.min(quantizeMs(rawActiveMs), durationMs);
+    const longestMs = Math.min(quantizeMs(rawLongestMs), activeMs);
     const first = segments[0];
 
     const reasonCode = this.invalidReason({
       reason,
-      coverage,
+      exactCoverage,
       activeClipped,
       activeFrames: activeLevels.length,
       nonfiniteFrames,
@@ -208,20 +225,22 @@ export class WindowAccumulator {
       durationMs,
     });
 
+    const p50 = percentile(activeLevels, 50);
+    const p95 = percentile(activeLevels, 95);
     return {
       kind: this.kind,
       valid: reasonCode === null,
       invalid_reason: reasonCode,
       frame_count: frameCount,
       expected_frames: expectedFrames,
-      coverage,
+      coverage: quantizeCoverage(exactCoverage),
       active_ms: activeMs,
       longest_active_ms: longestMs,
       segments: segments.length,
-      onset_ms: first === undefined ? null : first.onset_ms,
-      p50_active_dbfs: percentile(activeLevels, 50),
-      p95_active_dbfs: percentile(activeLevels, 95),
-      peak_dbfs: peak < 0 ? null : peakToDbfs(peak),
+      onset_ms: first === undefined ? null : Math.min(quantizeMs(first.onset_ms), durationMs),
+      p50_active_dbfs: p50 === null ? null : quantizeDb(p50),
+      p95_active_dbfs: p95 === null ? null : quantizeDb(p95),
+      peak_dbfs: peak < 0 ? null : quantizeDb(peakToDbfs(peak)),
       clipped_frames: clippedFrames,
       nonfinite_frames: nonfiniteFrames,
       duration_ms: durationMs,
@@ -230,7 +249,7 @@ export class WindowAccumulator {
 
   private invalidReason(f: {
     reason: WindowFinishReason;
-    coverage: number;
+    exactCoverage: number;
     activeClipped: number;
     activeFrames: number;
     nonfiniteFrames: number;
@@ -240,7 +259,7 @@ export class WindowAccumulator {
     durationMs: number;
   }): WindowInvalidReason | null {
     if (f.reason === 'interrupted') return 'interrupted';
-    if (f.coverage < WINDOW_COVERAGE_MIN) return 'low_coverage';
+    if (f.exactCoverage < WINDOW_COVERAGE_MIN) return 'low_coverage';
     if (
       f.activeFrames > 0 &&
       f.activeClipped / f.activeFrames > WINDOW_CLIPPED_ACTIVE_FRACTION_MAX + CMP_TOLERANCE_DB
@@ -250,8 +269,10 @@ export class WindowAccumulator {
     if (f.frameCount > 0 && f.nonfiniteFrames / f.frameCount > WINDOW_NONFINITE_FRACTION_MAX) {
       return 'nonfinite';
     }
-    const needsMinimum = this.kind === 'calibration' || this.kind === 'phrase';
-    if (f.segmentCount === 0 || (needsMinimum && f.activeMs < MIN_ACTIVE_MS)) return 'no_voice';
+    // A1-04: only calibration keeps the 400 ms minimum; phrase and vowel need just an accepted segment.
+    if (f.segmentCount === 0 || (this.kind === 'calibration' && f.activeMs < MIN_ACTIVE_MS)) {
+      return 'no_voice';
+    }
     if (
       this.kind === 'phrase' &&
       f.durationMs > 0 &&

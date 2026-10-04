@@ -3,6 +3,8 @@ export * from './types.js';
 export * from './frame.js';
 export * from './framer.js';
 export * from './percentile.js';
+export * from './quantize.js';
+export * from './qualification.js';
 export * from './precheck.js';
 export * from './vad.js';
 export * from './window.js';
