@@ -19,6 +19,7 @@ import { startTv, type TvHarness } from '../src/tv-driver.js';
 
 const LOUD = -30; // dBFS synthetic tone: same level as calibration → reached
 const SOFT = -60; // 30 dB below calibration → below the band
+const ROOM = -75; // steady low room tone; true digital silence is invalid (silent_input, ADR rev 2 A1-05)
 const HIDDEN = new Set([3, 6, 9]);
 // Result-specific wording. The neutral rating prompt ("How loud did that feel?") is allowed.
 const VERDICT_WORDS = /reached|below|band|not scored|\bdB\b|too (quiet|soft|loud)|no voice|clipp/i;
@@ -77,16 +78,35 @@ describe('T12 local journey (relay + phone page + TV session core)', () => {
     await page.goto(`${relay.origin}/#code=${code}`);
     await page.click('#join');
     const confirm = await tv.waitFor((v) => v.screen === 'join_confirm' && !!v.pairing?.joinRequest, 'join confirm');
-    const digits = confirm.pairing!.joinRequest!.confirmDigits;
-    await page.waitForFunction((d) => document.body.innerText.includes(`does it show ${d}`), digits);
-    tv.act('accept_join');
+    // The phone shows the number; the TV user picks the matching choice (number matching, A3-06).
+    const phoneDigits = await page.waitForFunction(() => {
+      const m = /pick (\d{2})/.exec(document.body.innerText);
+      return m ? m[1] : null;
+    });
+    const digits = (await phoneDigits.jsonValue()) as string;
+    const jr = confirm.pairing!.joinRequest as unknown as { choices?: string[]; confirmDigits?: string };
+    if (jr.choices) {
+      expect(jr.choices).toHaveLength(3);
+      expect(new Set(jr.choices).size).toBe(3);
+      const idx = jr.choices.indexOf(digits);
+      expect(idx).toBeGreaterThanOrEqual(0);
+      expect(confirm.preferredAction).toBe('reject_join');
+      tv.act(`pick_choice_${idx + 1}` as never);
+    } else {
+      expect(jr.confirmDigits).toBe(digits);
+      tv.act('accept_join' as never);
+    }
+    // Phone-side confirmation (A3-01): nothing but join protocol and ping is sent before "Yes".
+    await page.waitForSelector('#confirm-yes', { state: 'visible', timeout: 15_000 });
+    const sentBeforeYes = phone.sent.map((m) => String(m.type));
+    expect(sentBeforeYes.every((t) => t === 'join.request' || t === 'ping')).toBe(true);
+    await page.click('#confirm-yes');
 
     // C. Microphone: explicit phone action, observed state only.
     await page.waitForSelector('#start-mic:not([hidden])');
-    await phone.silence().catch(() => undefined); // hooks exist once the test build loads
     await page.click('#start-mic');
     await page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open, not measuring'));
-    await phone.silence();
+    await phone.setLevel(ROOM);
 
     // D. Quiet check (silence) and calibration (LOUD for ~2 s inside the 6 s window).
     await tv.waitFor((v) => v.stage === 'quiet_check' && has(v, 'begin_quiet_check'), 'quiet check ready');
@@ -97,7 +117,7 @@ describe('T12 local journey (relay + phone page + TV session core)', () => {
     await sleep(300);
     await phone.setLevel(LOUD);
     await sleep(2000);
-    await phone.silence();
+    await phone.setLevel(ROOM);
     const cal = await tv.waitFor((v) => v.stage === 'calibration' && has(v, 'continue') && v.result !== null, 'calibration result', 30_000);
     expect(cal.result!.tone).not.toBe('not_scored');
     tv.act('continue');
@@ -108,7 +128,7 @@ describe('T12 local journey (relay + phone page + TV session core)', () => {
     await tv.waitFor((v) => v.stage === 'vowel_active' && capturing(v), 'vowel capture', 30_000);
     await phone.setLevel(LOUD);
     await sleep(3000);
-    await phone.silence();
+    await phone.setLevel(ROOM);
     await sleep(600);
     tv.act('stop_early');
     const vowel = await tv.waitFor((v) => v.stage === 'vowel_result', 'vowel result', 30_000);
@@ -136,7 +156,7 @@ describe('T12 local journey (relay + phone page + TV session core)', () => {
       await sleep(200);
       await phone.setLevel(level);
       await sleep(1500);
-      await phone.silence();
+      await phone.setLevel(ROOM);
       await sleep(700);
       tv.act('stop_early');
     };

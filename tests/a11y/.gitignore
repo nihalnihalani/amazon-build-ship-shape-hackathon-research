@@ -1,0 +1,4 @@
+# Screenshots are evidence regenerated on every run; a few small ones are committed under artifacts/committed/.
+artifacts/*.png
+artifacts/aria/
+!artifacts/committed/*.png

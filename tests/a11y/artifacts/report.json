@@ -1,0 +1,3219 @@
+{
+  "evidence_class": "web_preview",
+  "not_observed": [
+    "VoiceView",
+    "real D-pad / Vega focus engine",
+    "real UI-scale setting",
+    "Vega rendering and latency"
+  ],
+  "environment": {
+    "chrome": "154.0.8037.97",
+    "preview_url": "http://127.0.0.1:5179",
+    "commit": "4d4ef1ee655142b1a9b9fddd22cd86ae2be0749e",
+    "timestamp_utc": "2026-10-04T23:11:18.437Z",
+    "node": "v25.2.1",
+    "viewport": "1920x1124"
+  },
+  "screens": [
+    {
+      "name": "onboarding",
+      "mode": "fixture",
+      "screen": "screen-onboarding",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-continue",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "onboarding.png",
+        "sha256": "0d17aa684d52a1f347f253725652fb0b3a6e265ab6e4cc95460440fb9bdf1a78",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:I understand"
+      ]
+    },
+    {
+      "name": "home",
+      "mode": "fixture",
+      "screen": "screen-home",
+      "controls": 4,
+      "enabledControls": 4,
+      "preferredCount": 1,
+      "focused": "action-start_session",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 10,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "home.png",
+        "sha256": "131f8334c39150f744bdd5c5384c1bff81ee7fdd900318eff90e1f1bbdf161b7",
+        "committed": true
+      },
+      "ariaOrder": [
+        "button:Start session",
+        "button:History",
+        "button:Settings",
+        "button:Pair phone"
+      ]
+    },
+    {
+      "name": "pairing",
+      "mode": "fixture",
+      "screen": "screen-pairing",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-cancel",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "pairing.png",
+        "sha256": "21330d992aea04a0a485a8dd96b9fac33bd41884285438ddceb213d82d2f9ebd",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Cancel",
+        "button:Refresh code"
+      ]
+    },
+    {
+      "name": "join_confirm",
+      "mode": "fixture",
+      "screen": "screen-join_confirm",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-reject_join",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "join_confirm.png",
+        "sha256": "8252a60c1dd93dc7cdbd34024cd0df238f857343866c86c1333f853dc215d864",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Reject",
+        "button:Accept"
+      ]
+    },
+    {
+      "name": "permission_pending",
+      "mode": "fixture",
+      "screen": "screen-permission_pending",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-cancel",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 2,
+          "targets": [
+            "#atr-body-0",
+            "section[data-testid=\"permission-state\"]"
+          ]
+        },
+        {
+          "id": "landmark-unique",
+          "impact": "moderate",
+          "help": "Landmarks should have a unique role or role/label/title (i.e. accessible name) combination",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "permission_pending.png",
+        "sha256": "fe40cbb2128779f23b602283664c26a03addd6610de91ad53536ac6a9b5562f7",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Cancel"
+      ]
+    },
+    {
+      "name": "quiet_check",
+      "mode": "fixture",
+      "screen": "screen-quiet_check",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-cancel",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "quiet_check.png",
+        "sha256": "d623f14332f343335f42558c13a0866d29cc31eb95a0e0aba3d55b9223a4263e",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Cancel"
+      ]
+    },
+    {
+      "name": "calibration",
+      "mode": "fixture",
+      "screen": "screen-calibration",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-cancel",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": true,
+      "axe": [],
+      "screenshot": {
+        "file": "calibration.png",
+        "sha256": "b92109b3ea2dba44b7448ca419a3b87136e7924bb843089a28238c3ee857bbe4",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Cancel"
+      ]
+    },
+    {
+      "name": "vowel_ready",
+      "mode": "fixture",
+      "screen": "screen-vowel",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-begin_vowel",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "vowel_ready.png",
+        "sha256": "1e16b0fc8b3458dac8154048de39b77ec11752c6d895e49b3566ded09fbf7d49",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Begin",
+        "button:Skip"
+      ]
+    },
+    {
+      "name": "vowel_active",
+      "mode": "fixture",
+      "screen": "screen-vowel",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-stop_early",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": true,
+      "axe": [],
+      "screenshot": {
+        "file": "vowel_active.png",
+        "sha256": "de04179e2d4e59f94401d9a4675154c7880f06ce0d9bb9c8f7286d0c7f9aa3a1",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Stop"
+      ]
+    },
+    {
+      "name": "vowel_result",
+      "mode": "fixture",
+      "screen": "screen-vowel",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-continue",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "vowel_result.png",
+        "sha256": "4daf9ac83bfc6440181681a6c6489a2eebfac4c7620f1978d925f4ff8a08f19f",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Continue",
+        "button:Redo"
+      ]
+    },
+    {
+      "name": "phrase_ready",
+      "mode": "fixture",
+      "screen": "screen-phrase",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-begin_phrase",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "phrase_ready.png",
+        "sha256": "0e7af637b2d82ff5cd88ef15cee7ec59179134eebbc32d5b7fe4bc93bb920777",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Begin",
+        "button:Skip phrase"
+      ]
+    },
+    {
+      "name": "phrase_active_visible",
+      "mode": "fixture",
+      "screen": "screen-phrase",
+      "controls": 0,
+      "enabledControls": 0,
+      "preferredCount": 0,
+      "focused": null,
+      "focusTarget": "no_focusable_controls",
+      "ringContrast": null,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": true,
+      "axe": [],
+      "screenshot": {
+        "file": "phrase_active_visible.png",
+        "sha256": "ffceb82ac5e14b7434c993b8ed7b32a4952130bcbfbe6f4c0652b9d50fb49300",
+        "committed": false
+      },
+      "ariaOrder": []
+    },
+    {
+      "name": "phrase_active_hidden",
+      "mode": "fixture",
+      "screen": "screen-phrase",
+      "controls": 0,
+      "enabledControls": 0,
+      "preferredCount": 0,
+      "focused": null,
+      "focusTarget": "no_focusable_controls",
+      "ringContrast": null,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "phrase_active_hidden.png",
+        "sha256": "898cc5f3945cf7e430e21cf696e56cd7a29489f6538cec7028f1b3117c6d5e79",
+        "committed": true
+      },
+      "ariaOrder": []
+    },
+    {
+      "name": "response_rating",
+      "mode": "fixture",
+      "screen": "screen-response",
+      "controls": 3,
+      "enabledControls": 3,
+      "preferredCount": 1,
+      "focused": "action-rate_felt_normal",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 7,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "response_rating.png",
+        "sha256": "0583d48858d1ab4f34bee909a129a32834f85cff8dbffb176854bd8d56143946",
+        "committed": true
+      },
+      "ariaOrder": [
+        "button:Felt loud",
+        "button:Felt normal",
+        "button:Skip rating"
+      ]
+    },
+    {
+      "name": "response_listener_waiting",
+      "mode": "fixture",
+      "screen": "screen-response",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-keep_waiting",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "response_listener_waiting.png",
+        "sha256": "d1c377e310e2858c8613029a60901868c52cc2da04e8ec3f937799c8c3e6ef0c",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Keep waiting",
+        "button:Continue without listener response"
+      ]
+    },
+    {
+      "name": "reveal_reached",
+      "mode": "fixture",
+      "screen": "screen-reveal",
+      "controls": 3,
+      "enabledControls": 3,
+      "preferredCount": 1,
+      "focused": "action-next_phrase",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 8,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "reveal_reached.png",
+        "sha256": "c1ea0b6c86018393e8f97df0e60998735d7597f24861026303a5027c1897bd07",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Next phrase",
+        "button:Try again",
+        "button:Finish early"
+      ]
+    },
+    {
+      "name": "reveal_below",
+      "mode": "fixture",
+      "screen": "screen-reveal",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-try_again",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 5,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "reveal_below.png",
+        "sha256": "51cd488d1f9fdc1856046cb3df35e56878cd8910887f6e366b4d61b380c63969",
+        "committed": true
+      },
+      "ariaOrder": [
+        "button:Next phrase",
+        "button:Try again"
+      ]
+    },
+    {
+      "name": "reveal_not_scored",
+      "mode": "fixture",
+      "screen": "screen-reveal",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-try_again",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "reveal_not_scored.png",
+        "sha256": "99e1149a07ffd8edf263c38a74e5a88eb49194e2115c1a5eb4c92804142b94f0",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Try again",
+        "button:Next phrase"
+      ]
+    },
+    {
+      "name": "summary",
+      "mode": "fixture",
+      "screen": "screen-summary",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-done",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "summary.png",
+        "sha256": "fb16e670d1795851cb6f4560562171a7961cb4015b9748d98bc14f0e9648d7bd",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Done",
+        "button:View history"
+      ]
+    },
+    {
+      "name": "summary_incomplete",
+      "mode": "fixture",
+      "screen": "screen-summary",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-done",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "summary_incomplete.png",
+        "sha256": "6e531a8acffcb1d442d6b1001756e6515e3d3b7869b24948b9dfb2494ca300b4",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Done"
+      ]
+    },
+    {
+      "name": "history",
+      "mode": "fixture",
+      "screen": "screen-history",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-done",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "history.png",
+        "sha256": "1803fb2adf4bdc83e0a4818c1ee08c048b5de08eff5e5ef8e22ff281ee3364b9",
+        "committed": true
+      },
+      "ariaOrder": [
+        "button:Done"
+      ]
+    },
+    {
+      "name": "paused_or_invalid",
+      "mode": "fixture",
+      "screen": "screen-paused_or_invalid",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-retry",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "paused_or_invalid.png",
+        "sha256": "e6c5404fda4bc889caf54fa739e4eb9ce4b3d2262c80a77ab41907854627b9ec",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Pair again",
+        "button:End session"
+      ]
+    },
+    {
+      "name": "resume_or_discard",
+      "mode": "fixture",
+      "screen": "screen-resume_or_discard",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-resume_session",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "resume_or_discard.png",
+        "sha256": "1669cb67a142ec6c57aeae73a75902c83906c99924ad57d8eed211cc95c20c59",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Resume session",
+        "button:Discard session"
+      ]
+    },
+    {
+      "name": "settings",
+      "mode": "fixture",
+      "screen": "screen-settings",
+      "controls": 6,
+      "enabledControls": 6,
+      "preferredCount": 1,
+      "focused": "action-toggle_family_mode",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 10,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "settings.png",
+        "sha256": "cf50ee664d42de75e10e23b7b694d04ed66459945fa658f112dd1e9bbff6f442",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Family mode: Off",
+        "button:Reset today's band",
+        "button:Unpair phone",
+        "button:Delete local practice data",
+        "button:About",
+        "button:Diagnostics"
+      ]
+    },
+    {
+      "name": "confirm_dialog_destructive",
+      "mode": "fixture",
+      "screen": "screen-confirm_dialog",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-cancel_destructive",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-dialog-name",
+          "impact": "serious",
+          "help": "ARIA dialog and alertdialog nodes should have an accessible name",
+          "nodes": 1,
+          "targets": [
+            "div[role=\"alertdialog\"]"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "confirm_dialog_destructive.png",
+        "sha256": "4e1eb7801c0a7a0709c69f328392e8b4c56c308e9c46e9ec023562ea64ec80be",
+        "committed": true
+      },
+      "ariaOrder": [
+        "button:Cancel",
+        "button:Delete"
+      ]
+    },
+    {
+      "name": "confirm_dialog_wrong_preference",
+      "mode": "fixture",
+      "screen": "screen-confirm_dialog",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-cancel_destructive",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 6,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-dialog-name",
+          "impact": "serious",
+          "help": "ARIA dialog and alertdialog nodes should have an accessible name",
+          "nodes": 1,
+          "targets": [
+            "div[role=\"alertdialog\"]"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "confirm_dialog_wrong_preference.png",
+        "sha256": "747bf495c60b8cfcf7668854b5cf4efc0af808e72a17f98fd64273010918a88d",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Cancel",
+        "button:Delete"
+      ]
+    },
+    {
+      "name": "confirm_dialog_plain",
+      "mode": "fixture",
+      "screen": "screen-confirm_dialog",
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-confirm_destructive",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 5,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-dialog-name",
+          "impact": "serious",
+          "help": "ARIA dialog and alertdialog nodes should have an accessible name",
+          "nodes": 1,
+          "targets": [
+            "div[role=\"alertdialog\"]"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "confirm_dialog_plain.png",
+        "sha256": "e3d1fef998dfec522b6613c0c640fa462098024e53feeee9b04c208a5a7d3731",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Keep going",
+        "button:End session"
+      ]
+    },
+    {
+      "name": "about",
+      "mode": "fixture",
+      "screen": "screen-about",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-back",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [
+        {
+          "id": "aria-allowed-role",
+          "impact": "minor",
+          "help": "ARIA role should be appropriate for the element",
+          "nodes": 1,
+          "targets": [
+            "#atr-body-0"
+          ]
+        }
+      ],
+      "screenshot": {
+        "file": "about.png",
+        "sha256": "535612c5f93702c7cb11060a0d3283b0584ef93b25b356abe731b6672da2a26a",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Back"
+      ]
+    },
+    {
+      "name": "diagnostics",
+      "mode": "fixture",
+      "screen": "screen-diagnostics",
+      "controls": 1,
+      "enabledControls": 1,
+      "preferredCount": 1,
+      "focused": "action-back",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
+      "unnamed": [],
+      "disabledFocusable": [],
+      "reachable": {
+        "unreachable": [],
+        "presses": 0,
+        "ringViolations": 0
+      },
+      "footerOk": true,
+      "arcMeter": false,
+      "axe": [],
+      "screenshot": {
+        "file": "diagnostics.png",
+        "sha256": "798a2b5635b2f5a51663c41e08a71da866199ea250a87acca2a2ea6e65c1334c",
+        "committed": false
+      },
+      "ariaOrder": [
+        "button:Back"
+      ]
+    }
+  ],
+  "scale": [
+    {
+      "scale": 1,
+      "screen": "onboarding",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "home",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "pairing",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "join_confirm",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "permission_pending",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "quiet_check",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "calibration",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "vowel_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "vowel_active",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "vowel_result",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "phrase_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "phrase_active_visible",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "phrase_active_hidden",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "response_rating",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "response_listener_waiting",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "reveal_reached",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "reveal_below",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "reveal_not_scored",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "summary",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "summary_incomplete",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "history",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "paused_or_invalid",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "resume_or_discard",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "settings",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "confirm_dialog_destructive",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "confirm_dialog_wrong_preference",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "confirm_dialog_plain",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "about",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1,
+      "screen": "diagnostics",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "onboarding",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "home",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "pairing",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "join_confirm",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "permission_pending",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "quiet_check",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "calibration",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "vowel_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "vowel_active",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "vowel_result",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "phrase_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "phrase_active_visible",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "phrase_active_hidden",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "response_rating",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "response_listener_waiting",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "reveal_reached",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "reveal_below",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "reveal_not_scored",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "summary",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "summary_incomplete",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "history",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "paused_or_invalid",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "resume_or_discard",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "settings",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "confirm_dialog_destructive",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "confirm_dialog_wrong_preference",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "confirm_dialog_plain",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "about",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.25,
+      "screen": "diagnostics",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "onboarding",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "home",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1800,
+            "bottom": 1203,
+            "left": 120,
+            "top": 435
+          },
+          {
+            "testId": "action-pair_phone",
+            "tag": "button",
+            "right": 600,
+            "bottom": 1167,
+            "left": 120,
+            "top": 1011
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 531,
+            "bottom": 1127,
+            "left": 189,
+            "top": 1052
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1800,
+            "bottom": 1306,
+            "left": 120,
+            "top": 1227
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1800,
+            "bottom": 1306,
+            "left": 120,
+            "top": 1253
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "pairing",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "join_confirm",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "permission_pending",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "quiet_check",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "calibration",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "side-by-side",
+            "tag": "div",
+            "right": 1968,
+            "bottom": 949,
+            "left": -48,
+            "top": 244
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "vowel_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "vowel_active",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "vowel_result",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "phrase_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "phrase_active_visible",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "side-by-side",
+            "tag": "div",
+            "right": 1781,
+            "bottom": 1138,
+            "left": 139,
+            "top": 553
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 859,
+            "bottom": 1138,
+            "left": 211,
+            "top": 553
+          },
+          {
+            "testId": "arc-meter",
+            "tag": "div",
+            "right": 859,
+            "bottom": 1138,
+            "left": 211,
+            "top": 553
+          },
+          {
+            "testId": "arc-legend",
+            "tag": "div",
+            "right": 780,
+            "bottom": 1138,
+            "left": 291,
+            "top": 1078
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "phrase_active_hidden",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "response_rating",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "response_listener_waiting",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "reveal_reached",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "reveal_below",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "reveal_not_scored",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "summary",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "summary_incomplete",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "history",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "paused_or_invalid",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "resume_or_discard",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "settings",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "confirm_dialog_destructive",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "confirm_dialog_wrong_preference",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "confirm_dialog_plain",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "about",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 1.5,
+      "screen": "diagnostics",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "onboarding",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1172,
+            "left": 160,
+            "top": 916
+          },
+          {
+            "testId": "action-continue",
+            "tag": "button",
+            "right": 816,
+            "bottom": 1129,
+            "left": 144,
+            "top": 911
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1308,
+            "left": 160,
+            "top": 1204
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1308,
+            "left": 160,
+            "top": 1238
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "home",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1720,
+            "left": 160,
+            "top": 696
+          },
+          {
+            "testId": "action-open_history",
+            "tag": "button",
+            "right": 800,
+            "bottom": 1160,
+            "left": 160,
+            "top": 952
+          },
+          {
+            "testId": "action-open_settings",
+            "tag": "button",
+            "right": 800,
+            "bottom": 1416,
+            "left": 160,
+            "top": 1208
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 708,
+            "bottom": 1362,
+            "left": 252,
+            "top": 1262
+          },
+          {
+            "testId": "action-pair_phone",
+            "tag": "button",
+            "right": 800,
+            "bottom": 1672,
+            "left": 160,
+            "top": 1464
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 708,
+            "bottom": 1618,
+            "left": 252,
+            "top": 1518
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1856,
+            "left": 160,
+            "top": 1752
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1856,
+            "left": 160,
+            "top": 1786
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "pairing",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 2030,
+            "bottom": 1051,
+            "left": -110,
+            "top": 422
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1241,
+            "bottom": 976,
+            "left": -110,
+            "top": 496
+          },
+          {
+            "testId": "pairing-code",
+            "tag": "div",
+            "right": 1241,
+            "bottom": 976,
+            "left": -110,
+            "top": 576
+          },
+          {
+            "testId": "qr-code",
+            "tag": "div",
+            "right": 2030,
+            "bottom": 1051,
+            "left": 1401,
+            "top": 422
+          },
+          {
+            "testId": null,
+            "tag": "svg",
+            "right": 2030,
+            "bottom": 1051,
+            "left": 1401,
+            "top": 422
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 2030,
+            "bottom": 1051,
+            "left": 1401,
+            "top": 422
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 1962,
+            "bottom": 507,
+            "left": 1843,
+            "top": 490
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 1962,
+            "bottom": 524,
+            "left": 1945,
+            "top": 507
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 1928,
+            "bottom": 541,
+            "left": 1877,
+            "top": 524
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 1962,
+            "bottom": 541,
+            "left": 1945,
+            "top": 524
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 1928,
+            "bottom": 558,
+            "left": 1877,
+            "top": 541
+          },
+          {
+            "testId": null,
+            "tag": "rect",
+            "right": 1962,
+            "bottom": 558,
+            "left": 1945,
+            "top": 541
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "join_confirm",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "permission_pending",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "status-mic",
+            "tag": "div",
+            "right": 2075,
+            "bottom": 560,
+            "left": 160,
+            "top": 444
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 2033,
+            "bottom": 542,
+            "left": 202,
+            "top": 462
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1228,
+            "left": 160,
+            "top": 1124
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1228,
+            "left": 160,
+            "top": 1158
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "quiet_check",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "calibration",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "side-by-side",
+            "tag": "div",
+            "right": 2304,
+            "bottom": 1070,
+            "left": -384,
+            "top": 130
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 672,
+            "bottom": 868,
+            "left": -288,
+            "top": 332
+          },
+          {
+            "testId": "timer",
+            "tag": "div",
+            "right": 672,
+            "bottom": 868,
+            "left": -288,
+            "top": 332
+          },
+          {
+            "testId": "timer-label",
+            "tag": "div",
+            "right": 597,
+            "bottom": 812,
+            "left": -213,
+            "top": 732
+          },
+          {
+            "testId": "timer-bar",
+            "tag": "div",
+            "right": 672,
+            "bottom": 868,
+            "left": -288,
+            "top": 836
+          },
+          {
+            "testId": "timer-bar-fill",
+            "tag": "div",
+            "right": 352,
+            "bottom": 868,
+            "left": -288,
+            "top": 836
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 2208,
+            "bottom": 1070,
+            "left": 864,
+            "top": 130
+          },
+          {
+            "testId": "arc-meter",
+            "tag": "div",
+            "right": 2208,
+            "bottom": 1070,
+            "left": 864,
+            "top": 130
+          },
+          {
+            "testId": null,
+            "tag": "svg",
+            "right": 2208,
+            "bottom": 874,
+            "left": 864,
+            "top": 130
+          },
+          {
+            "testId": null,
+            "tag": "path",
+            "right": 2136,
+            "bottom": 802,
+            "left": 936,
+            "top": 202
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 2025,
+            "bottom": 990,
+            "left": 1047,
+            "top": 890
+          },
+          {
+            "testId": "arc-cue-text",
+            "tag": "div",
+            "right": 2025,
+            "bottom": 990,
+            "left": 1175,
+            "top": 890
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "vowel_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "vowel_active",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "side-by-side",
+            "tag": "div",
+            "right": 2093,
+            "bottom": 1062,
+            "left": -173,
+            "top": 42
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 461,
+            "bottom": 792,
+            "left": -77,
+            "top": 312
+          },
+          {
+            "testId": "timer",
+            "tag": "div",
+            "right": 461,
+            "bottom": 792,
+            "left": -77,
+            "top": 312
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 461,
+            "bottom": 712,
+            "left": -77,
+            "top": 312
+          },
+          {
+            "testId": "timer-value",
+            "tag": "div",
+            "right": 400,
+            "bottom": 712,
+            "left": -77,
+            "top": 312
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1997,
+            "bottom": 1062,
+            "left": 653,
+            "top": 42
+          },
+          {
+            "testId": "arc-meter",
+            "tag": "div",
+            "right": 1997,
+            "bottom": 1062,
+            "left": 653,
+            "top": 42
+          },
+          {
+            "testId": null,
+            "tag": "svg",
+            "right": 1997,
+            "bottom": 786,
+            "left": 653,
+            "top": 42
+          },
+          {
+            "testId": null,
+            "tag": "path",
+            "right": 1925,
+            "bottom": 714,
+            "left": 725,
+            "top": 114
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "vowel_result",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "phrase_ready",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1168,
+            "left": 160,
+            "top": 1064
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1168,
+            "left": 160,
+            "top": 1098
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "phrase_active_visible",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1760,
+            "bottom": 614,
+            "left": 160,
+            "top": 34
+          },
+          {
+            "testId": "phrase-counter",
+            "tag": "div",
+            "right": 1074,
+            "bottom": 134,
+            "left": 846,
+            "top": 34
+          },
+          {
+            "testId": "side-by-side",
+            "tag": "div",
+            "right": 2004,
+            "bottom": 1442,
+            "left": -84,
+            "top": 662
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 830,
+            "bottom": 1442,
+            "left": -34,
+            "top": 662
+          },
+          {
+            "testId": "arc-meter",
+            "tag": "div",
+            "right": 830,
+            "bottom": 1442,
+            "left": -34,
+            "top": 662
+          },
+          {
+            "testId": null,
+            "tag": "svg",
+            "right": 830,
+            "bottom": 1166,
+            "left": -34,
+            "top": 662
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 741,
+            "bottom": 1282,
+            "left": 54,
+            "top": 1182
+          },
+          {
+            "testId": "arc-cue-glyph",
+            "tag": "div",
+            "right": 150,
+            "bottom": 1280,
+            "left": 54,
+            "top": 1184
+          },
+          {
+            "testId": null,
+            "tag": "svg",
+            "right": 150,
+            "bottom": 1280,
+            "left": 54,
+            "top": 1184
+          },
+          {
+            "testId": null,
+            "tag": "path",
+            "right": 136,
+            "bottom": 1259,
+            "left": 67,
+            "top": 1205
+          },
+          {
+            "testId": "arc-cue-text",
+            "tag": "div",
+            "right": 741,
+            "bottom": 1282,
+            "left": 182,
+            "top": 1182
+          },
+          {
+            "testId": "arc-caption",
+            "tag": "div",
+            "right": 804,
+            "bottom": 1362,
+            "left": -9,
+            "top": 1282
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "phrase_active_hidden",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "response_rating",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1288,
+            "left": 160,
+            "top": 776
+          },
+          {
+            "testId": "action-rate_skip",
+            "tag": "button",
+            "right": 800,
+            "bottom": 1240,
+            "left": 160,
+            "top": 1032
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 708,
+            "bottom": 1186,
+            "left": 252,
+            "top": 1086
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1424,
+            "left": 160,
+            "top": 1320
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1424,
+            "left": 160,
+            "top": 1354
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "response_listener_waiting",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1208,
+            "left": 160,
+            "top": 696
+          },
+          {
+            "testId": "action-continue_without_listener",
+            "tag": "button",
+            "right": 1498,
+            "bottom": 1160,
+            "left": 160,
+            "top": 952
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1344,
+            "left": 160,
+            "top": 1240
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1344,
+            "left": 160,
+            "top": 1274
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "reveal_reached",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1248,
+            "left": 160,
+            "top": 1144
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1248,
+            "left": 160,
+            "top": 1178
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "reveal_below",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "reveal_not_scored",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "summary",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "summary",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1506,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1174,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 960,
+            "bottom": 1174,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 896,
+            "bottom": -190,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 896,
+            "bottom": -18,
+            "left": 160,
+            "top": -178
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 896,
+            "bottom": 74,
+            "left": 160,
+            "top": -6
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1174,
+            "left": 960,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 1696,
+            "bottom": -110,
+            "left": 960,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 1696,
+            "bottom": 142,
+            "left": 960,
+            "top": -98
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 1696,
+            "bottom": 1162,
+            "left": 960,
+            "top": 922
+          },
+          {
+            "testId": "summary-rule",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1330,
+            "left": 160,
+            "top": 1190
+          },
+          {
+            "testId": "summary-notes",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1506,
+            "left": 160,
+            "top": 1346
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "summary_incomplete",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "summary",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1506,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1174,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 960,
+            "bottom": 1174,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 896,
+            "bottom": -30,
+            "left": 160,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 896,
+            "bottom": 142,
+            "left": 160,
+            "top": -18
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1174,
+            "left": 960,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 1696,
+            "bottom": -110,
+            "left": 960,
+            "top": -270
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 1696,
+            "bottom": 142,
+            "left": 960,
+            "top": -98
+          },
+          {
+            "testId": "summary-line",
+            "tag": "div",
+            "right": 1696,
+            "bottom": 1162,
+            "left": 960,
+            "top": 922
+          },
+          {
+            "testId": "summary-rule",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1330,
+            "left": 160,
+            "top": 1190
+          },
+          {
+            "testId": "summary-notes",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1506,
+            "left": 160,
+            "top": 1346
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1426,
+            "left": 160,
+            "top": 1346
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "history",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "paused_or_invalid",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1172,
+            "left": 160,
+            "top": 916
+          },
+          {
+            "testId": "action-retry",
+            "tag": "button",
+            "right": 816,
+            "bottom": 1129,
+            "left": 144,
+            "top": 911
+          },
+          {
+            "testId": "action-cancel",
+            "tag": "button",
+            "right": 1504,
+            "bottom": 1124,
+            "left": 864,
+            "top": 916
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1308,
+            "left": 160,
+            "top": 1204
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1308,
+            "left": 160,
+            "top": 1238
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "resume_or_discard",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "settings",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [
+          {
+            "testId": "actions",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1720,
+            "left": 160,
+            "top": 696
+          },
+          {
+            "testId": "action-reset_calibration",
+            "tag": "button",
+            "right": 985,
+            "bottom": 1160,
+            "left": 160,
+            "top": 952
+          },
+          {
+            "testId": "action-unpair_phone",
+            "tag": "button",
+            "right": 1689,
+            "bottom": 1160,
+            "left": 1049,
+            "top": 952
+          },
+          {
+            "testId": "action-delete_local_data",
+            "tag": "button",
+            "right": 1183,
+            "bottom": 1416,
+            "left": 160,
+            "top": 1208
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1091,
+            "bottom": 1362,
+            "left": 252,
+            "top": 1262
+          },
+          {
+            "testId": "action-open_about",
+            "tag": "button",
+            "right": 800,
+            "bottom": 1672,
+            "left": 160,
+            "top": 1464
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 708,
+            "bottom": 1618,
+            "left": 252,
+            "top": 1518
+          },
+          {
+            "testId": "action-open_diagnostics",
+            "tag": "button",
+            "right": 1504,
+            "bottom": 1672,
+            "left": 864,
+            "top": 1464
+          },
+          {
+            "testId": null,
+            "tag": "div",
+            "right": 1412,
+            "bottom": 1618,
+            "left": 956,
+            "top": 1518
+          },
+          {
+            "testId": "footer-bar",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1856,
+            "left": 160,
+            "top": 1752
+          },
+          {
+            "testId": "footer",
+            "tag": "div",
+            "right": 1760,
+            "bottom": 1856,
+            "left": 160,
+            "top": 1786
+          }
+        ],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "confirm_dialog_destructive",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "confirm_dialog_wrong_preference",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "confirm_dialog_plain",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "about",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    },
+    {
+      "scale": 2,
+      "screen": "diagnostics",
+      "overflow": {
+        "horizontalScroll": false,
+        "outside": [],
+        "clippedText": []
+      }
+    }
+  ],
+  "store": {
+    "axe_summary": {
+      "byImpact": {
+        "minor": 14,
+        "moderate": 1,
+        "serious": 3
+      },
+      "byRule": {
+        "aria-allowed-role": {
+          "impact": "minor",
+          "screens": [
+            "onboarding",
+            "home",
+            "pairing",
+            "join_confirm",
+            "permission_pending",
+            "vowel_ready",
+            "vowel_result",
+            "phrase_ready",
+            "response_rating",
+            "response_listener_waiting",
+            "paused_or_invalid",
+            "resume_or_discard",
+            "settings",
+            "about"
+          ],
+          "nodes": 15
+        },
+        "landmark-unique": {
+          "impact": "moderate",
+          "screens": [
+            "permission_pending"
+          ],
+          "nodes": 1
+        },
+        "aria-dialog-name": {
+          "impact": "serious",
+          "screens": [
+            "confirm_dialog_destructive",
+            "confirm_dialog_wrong_preference",
+            "confirm_dialog_plain"
+          ],
+          "nodes": 3
+        }
+      }
+    },
+    "aria_dialog_name_offenders": [
+      "confirm_dialog_destructive",
+      "confirm_dialog_wrong_preference",
+      "confirm_dialog_plain"
+    ],
+    "scale_1_failing_screens": [],
+    "scale_1.25_failing_screens": [],
+    "scale_1.5_failing_screens": [
+      "home(5)",
+      "calibration(1)",
+      "phrase_active_visible(4)"
+    ],
+    "scale_2_failing_screens": [
+      "onboarding(4)",
+      "home(8)",
+      "pairing(12)",
+      "permission_pending(4)",
+      "calibration(12)",
+      "vowel_active(9)",
+      "phrase_ready(2)",
+      "phrase_active_visible(12)",
+      "response_rating(5)",
+      "response_listener_waiting(4)",
+      "reveal_reached(2)",
+      "summary(12)",
+      "summary_incomplete(12)",
+      "paused_or_invalid(5)",
+      "settings(11)"
+    ],
+    "journey": {
+      "join_confirm_preferred": "action-accept_join",
+      "p3_capture_shot": {
+        "file": "store_p3_blind_capture.png",
+        "sha256": "36e0bf522f46d0ed5c26c6d06fa5b8f2de4f082bf68d672b0e837b60c40900ad",
+        "committed": true
+      },
+      "live_log_entries": 26,
+      "phone_received": "room.create,join.confirm,session.begin,session.state,session.state,ack,precheck.start,ack,session.state,window.start,ack,session.state,session.state,session.state,precheck.start,ack,window.start,window.cancel,session.state,ack,session.state,session.state,precheck.start,ack,window.start,ack,ack,attempt.reveal,session.state,session.state,session.state,precheck.start,ack,window.start,ack,attempt.reveal,session.state,session.state,session.state,precheck.start,ack,window.start,ack,session.state,attempt.reveal,session.state,session.end"
+    },
+    "settings_disabled_controls": [
+      {
+        "id": "action-reset_calibration",
+        "tabIndex": 0,
+        "ariaDisabled": null
+      },
+      {
+        "id": "action-unpair_phone",
+        "tabIndex": 0,
+        "ariaDisabled": null
+      }
+    ]
+  },
+  "hashes": {
+    "aria_order_all_screens": "9f6aef94ea86a3db4c06bc5177a819d99ef69862ccba317d327fe1c7dda58a1f"
+  }
+}

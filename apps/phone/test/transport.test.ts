@@ -4,10 +4,38 @@ import { backoffDelay, Transport } from '../src/transport.js';
 import { FakeSocket, SocketRegistry } from './helpers/fakes.js';
 
 describe('backoff schedule (ADR-0006)', () => {
-  it('is 0.5, 1, 2, 4, 8 seconds and then stays at 8', () => {
+  const nominal = (): number => 0.5; // jitter factor exactly 1.0
+  it('nominal delays are 0.5, 1, 2, 4, 8 seconds and then stay at 8', () => {
     expect(RECONNECT_BACKOFF_MS).toEqual([500, 1000, 2000, 4000, 8000]);
-    expect([0, 1, 2, 3, 4, 5, 6, 20].map((n) => backoffDelay(n))).toEqual([500, 1000, 2000, 4000, 8000, 8000, 8000, 8000]);
-    expect(backoffDelay(-3)).toBe(500);
+    expect([0, 1, 2, 3, 4, 5, 6, 20].map((n) => backoffDelay(n, RECONNECT_BACKOFF_MS, nominal))).toEqual([500, 1000, 2000, 4000, 8000, 8000, 8000, 8000]);
+    expect(backoffDelay(-3, RECONNECT_BACKOFF_MS, nominal)).toBe(500);
+  });
+
+  it('jitter is +/-25 %: random 0 gives 75 %, random 1 gives 125 %, always inside that band', () => {
+    expect([0, 1, 2, 3, 4, 5].map((n) => backoffDelay(n, RECONNECT_BACKOFF_MS, () => 0))).toEqual([375, 750, 1500, 3000, 6000, 6000]);
+    expect([0, 1, 2, 3, 4, 5].map((n) => backoffDelay(n, RECONNECT_BACKOFF_MS, () => 1))).toEqual([625, 1250, 2500, 5000, 10000, 10000]);
+    for (let n = 0; n < 8; n++) {
+      const base = RECONNECT_BACKOFF_MS[Math.min(n, 4)] as number;
+      for (let i = 0; i <= 100; i++) {
+        const d = backoffDelay(n, RECONNECT_BACKOFF_MS, () => i / 100);
+        expect(d).toBeGreaterThanOrEqual(base * 0.75);
+        expect(d).toBeLessThanOrEqual(base * 1.25);
+      }
+    }
+  });
+
+  it('the default random source really varies the delay', () => {
+    const seen = new Set(Array.from({ length: 50 }, () => backoffDelay(4)));
+    expect(seen.size).toBeGreaterThan(10);
+    for (const d of seen) {
+      expect(d).toBeGreaterThanOrEqual(6000);
+      expect(d).toBeLessThanOrEqual(10000);
+    }
+  });
+
+  it('out-of-range or odd random() values are clamped, never producing a delay outside the band', () => {
+    expect(backoffDelay(0, RECONNECT_BACKOFF_MS, () => -5)).toBe(375);
+    expect(backoffDelay(0, RECONNECT_BACKOFF_MS, () => 7)).toBe(625);
   });
 });
 

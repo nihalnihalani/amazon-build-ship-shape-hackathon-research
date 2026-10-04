@@ -60,6 +60,8 @@ async function pair(page, mock) {
   await waitFor(() => mock.of('join.request').length > 0, { label: 'join.request' });
   mock.relay('join.pending', { join_id: ids.join(), confirm_digits: '12', expires_at: Date.now() + 60_000 }, { room_id: null });
   mock.relay('join.accepted', { room_id: ROOM, phone_credential: 'T'.repeat(43), credential_expires_at: Date.now() + 3_600_000, generation: 1 });
+  await page.waitForSelector('#confirm-self:not([hidden])');
+  await page.click('#confirm-yes'); // "Yes, that was me"
   await page.waitForSelector('#view-setup:not([hidden])');
 }
 

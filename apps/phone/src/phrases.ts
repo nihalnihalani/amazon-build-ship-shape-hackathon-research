@@ -18,6 +18,23 @@ export interface PhraseValidation {
   listMessage: string | null;
 }
 
+/** One plain sentence per rejection reason, shared by phrases, the cue word and the device name. */
+function problemSentence(subject: string, problem: TextProblem): string {
+  switch (problem) {
+    case 'invalid_characters':
+      return `${subject} contains a control character, which cannot be sent. Remove it.`;
+    case 'unsafe_character':
+      return `${subject} contains a character that cannot be shown safely (such as a text-direction control or an invisible separator). Remove it.`;
+    case 'invisible':
+      return `${subject} has nothing visible in it. Type some text.`;
+    case 'combining_run':
+      return `${subject} has more than 4 accent or combining marks in a row, which cannot be shown cleanly. Remove some.`;
+    case 'empty':
+    case 'too_long':
+      return `${subject} is not valid.`; // handled with counts by the callers
+  }
+}
+
 function rowMessage(index: number, problem: TextProblem, length: number): string {
   const n = index + 1;
   switch (problem) {
@@ -25,8 +42,8 @@ function rowMessage(index: number, problem: TextProblem, length: number): string
       return `Phrase ${n} is empty. Type a phrase or remove it.`;
     case 'too_long':
       return `Phrase ${n} is ${length} characters; the limit is ${LIMITS.phraseMaxCodePoints}.`;
-    case 'invalid_characters':
-      return `Phrase ${n} contains a control character, which cannot be sent. Remove it.`;
+    default:
+      return problemSentence(`Phrase ${n}`, problem);
   }
 }
 
@@ -70,7 +87,7 @@ export function validateCue(raw: string): CueValidation {
         message: `The cue word is ${check.length} characters; the limit is ${LIMITS.cueMaxCodePoints}.`,
       };
     default:
-      return { ok: false, text: check.text, message: 'The cue word contains a control character. Remove it.' };
+      return { ok: false, text: check.text, message: problemSentence('The cue word', check.problem ?? 'invalid_characters') };
   }
 }
 
@@ -85,5 +102,5 @@ export function validateDeviceLabel(raw: string): CueValidation {
     };
   }
   if (check.problem === 'empty') return { ok: false, text: check.text, message: 'Give this phone a short name.' };
-  return { ok: false, text: check.text, message: 'The device name contains a control character. Remove it.' };
+  return { ok: false, text: check.text, message: problemSentence('The device name', check.problem ?? 'invalid_characters') };
 }

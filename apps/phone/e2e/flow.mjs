@@ -82,6 +82,36 @@ try {
         }
       };
     }
+    // A8-03 probes: the page must make no sound and never vibrate.
+    window.__vibrate = 0;
+    window.__speech = 0;
+    window.__plays = 0;
+    window.__notifications = 0;
+    navigator.vibrate = () => {
+      window.__vibrate += 1;
+      return true;
+    };
+    if (window.speechSynthesis) {
+      const speak = window.speechSynthesis.speak.bind(window.speechSynthesis);
+      window.speechSynthesis.speak = (u) => {
+        window.__speech += 1;
+        return speak(u);
+      };
+    }
+    const play = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function (...a) {
+      window.__plays += 1;
+      return play.apply(this, a);
+    };
+    if (window.Notification) {
+      const N = window.Notification;
+      window.Notification = class extends N {
+        constructor(...a) {
+          super(...a);
+          window.__notifications += 1;
+        }
+      };
+    }
     window.__badges = [];
     const watch = () => {
       const b = document.getElementById('mic-badge');
@@ -116,8 +146,13 @@ try {
   check('join.request carries the code and device label, room null, generation 0', join.payload.pairing_code === 'ACDEFH' && join.payload.device_label === 'Browser' && join.room_id === null && join.producer_generation === 0, JSON.stringify(join.payload));
   relayMsg('join.pending', { join_id: ids.join(), confirm_digits: '47', expires_at: Date.now() + 60_000 }, { room_id: null });
   await page.waitForSelector('#pending:not([hidden])');
-  check('shows "Check the TV: does it show 47?"', (await page.textContent('#pending-heading')) === 'Check the TV: does it show 47?');
+  check('shows "On your TV, pick 47"', (await page.textContent('#pending-heading')) === 'On your TV, pick 47');
   relayMsg('join.accepted', { room_id: ROOM, phone_credential: TEST_CREDENTIAL, credential_expires_at: Date.now() + 3_600_000, generation: 1 });
+  await page.waitForSelector('#confirm-self:not([hidden])');
+  check('asks "Did you just pick 47 on your TV?" with Yes and No', (await page.textContent('#confirm-heading')) === 'Did you just pick 47 on your TV?' && (await page.textContent('#confirm-yes')) === 'Yes, that was me' && (await page.textContent('#confirm-no')) === 'No, cancel');
+  check('before Yes the phone has sent only join.request (no mic.state, no ack, no phrases)', received.map((m) => m.type).join(',') === 'join.request', received.map((m) => m.type).join(','));
+  check('before Yes the setup screen and Start microphone are not available', await page.evaluate(() => document.getElementById('view-setup').hidden && document.getElementById('start-mic').disabled));
+  await page.click('#confirm-yes');
   await page.waitForSelector('#view-setup:not([hidden])');
   await waitFor(() => phoneMsgs('mic.state').length > 0, { label: 'first mic.state' });
   const mic0 = lastOf('mic.state').payload;
@@ -243,6 +278,31 @@ try {
   const unacked = commandIds.filter((c) => !ackFor(c.id));
   check('every TV command received an ack', unacked.length === 0, unacked.map((c) => c.type).join(', '));
 
+  // ---- reconnect: jittered backoff and credential rotation (A6-02, A3-07) ----------------------
+  const resumes = () => phoneMsgs('auth.resume');
+  const N1 = 'n'.repeat(42) + '1';
+  const N2 = 'n'.repeat(42) + '2';
+  const lostAt = Date.now();
+  await socket.close({ code: 1011, reason: 'test: relay restart' });
+  await waitFor(() => resumes().length >= 1, { timeout: 8000, label: 'first auth.resume' });
+  const firstDelay = Date.now() - lostAt;
+  check('the page reconnected by itself after the relay dropped it (jittered backoff, about 0.4 to 0.7 s)', firstDelay >= 300 && firstDelay <= 1500, `${firstDelay} ms`);
+  check('the first resume presents the credential from join.accepted, with room null / generation 0 / sequence 0', resumes()[0].payload.credential === TEST_CREDENTIAL && resumes()[0].room_id === null && resumes()[0].producer_generation === 0 && resumes()[0].sequence === 0);
+  relayMsg('auth.ok', { role: 'phone', generation: 2, peer_connected: true, phone_paired: true, next_credential: N1 });
+  await waitFor(() => lastOf('mic.state')?.producer_generation === 2, { label: 'mic.state on generation 2' });
+  check('after auth.ok the phone is on generation 2, sequence restarted at 0, and mic.state is sent again', lastOf('mic.state').producer_generation === 2 && lastOf('mic.state').sequence === 0);
+  await socket.close({ code: 1011, reason: 'test: relay restart 2' });
+  await waitFor(() => resumes().length >= 2, { timeout: 8000, label: 'second auth.resume' });
+  check('the second resume presents the ROTATED credential (the first one was consumed)', resumes()[1].payload.credential === N1, resumes()[1].payload.credential.slice(-3));
+  relayMsg('auth.ok', { role: 'phone', generation: 3, peer_connected: true, phone_paired: true, next_credential: N2 });
+  await waitFor(() => lastOf('mic.state')?.producer_generation === 3, { label: 'mic.state on generation 3' });
+  await socket.close({ code: 1011, reason: 'test: relay restart 3' });
+  await waitFor(() => resumes().length >= 3, { timeout: 8000, label: 'third auth.resume' });
+  check('the third resume presents the next rotated credential', resumes()[2].payload.credential === N2);
+  relayMsg('auth.ok', { role: 'phone', generation: 4, peer_connected: true, phone_paired: true, next_credential: 'z'.repeat(43) });
+  await waitFor(() => lastOf('mic.state')?.producer_generation === 4, { label: 'mic.state on generation 4' });
+  check('no credential value appears anywhere in the page', !(await page.content()).includes(TEST_CREDENTIAL) && !(await page.content()).includes(N1));
+
   // ---- global checks ---------------------------------------------------------------
   check('every message the phone sent passed parseWireMessage', invalid.length === 0, invalid.join(' | '));
   check('no raw audio keys in any sent message', received.every((m) => !JSON.stringify(m.payload).match(/"(audio|pcm|samples|waveform|blob|buffer|data)"/i)));
@@ -250,6 +310,13 @@ try {
   check('no CSP violations during the whole flow', (await page.evaluate(() => window.__csp)).length === 0, JSON.stringify(await page.evaluate(() => window.__csp)));
   check('no page errors or console errors', problems.length === 0, problems.join(' | '));
   check('no browser storage was used', await page.evaluate(() => localStorage.length === 0 && sessionStorage.length === 0));
+  check('A5-02: no cookies, localStorage, sessionStorage, IndexedDB or Cache API entries', await page.evaluate(async () => {
+    const dbs = indexedDB.databases ? await indexedDB.databases() : [];
+    const keys = await caches.keys();
+    return document.cookie === '' && localStorage.length === 0 && sessionStorage.length === 0 && dbs.length === 0 && keys.length === 0;
+  }));
+  check('A5-02: the browser cookie jar is empty', (await context.cookies()).length === 0);
+  check('A8-03: the page never vibrated, spoke, played media or showed a notification', await page.evaluate(() => window.__vibrate === 0 && window.__speech === 0 && window.__plays === 0 && window.__notifications === 0), JSON.stringify(await page.evaluate(() => [window.__vibrate, window.__speech, window.__plays, window.__notifications])));
   check('no request left this machine', requests.every((u) => u.startsWith(site.origin)), requests.filter((u) => !u.startsWith(site.origin)).join(', '));
   const badges = await page.evaluate(() => window.__badges);
   check('the badge sequence never showed Measuring outside a run', badges.filter((b) => b === 'Measuring').length > 0 && badges.indexOf('Measuring') > badges.indexOf('Mic open, not measuring'), [...new Set(badges)].join(' > '));

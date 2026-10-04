@@ -6,12 +6,16 @@
   "type": "module",
   "description": "Cross-component integration and end-to-end tests (local relay + phone page in Chrome + headless TV session core)",
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p review/tsconfig.json --noEmit && tsc -p a11y/tsconfig.json --noEmit",
+    "test": "vitest run --config review/vitest.config.ts",
+    "test:review": "vitest run --config review/vitest.config.ts",
+    "test:review:strict": "QA_STRICT=1 vitest run --config review/vitest.config.ts",
+    "test:a11y": "node a11y/run-a11y.mjs",
     "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "devDependencies": {
     "@types/ws": "8.18.1",
+    "axe-core": "4.13.0",
     "playwright-core": "1.63.0",
     "ws": "8.18.3"
   }

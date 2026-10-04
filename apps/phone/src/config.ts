@@ -13,9 +13,12 @@ import {
   PHRASE_LENGTH_MAX,
 } from './ports/wire.js';
 
-/** ADR-0002: exact phone UI privacy wording. Do not paraphrase. */
+/**
+ * Exact phone UI privacy wording, from docs/adr/AMENDMENTS-REV2.md (A2-01, which supersedes the
+ * ADR-0002 revision 1 sentence). Do not paraphrase.
+ */
 export const PRIVACY_SENTENCE =
-  'Audio stays on this phone and is never saved or uploaded. Only levels, typed phrases, listener responses, and connection details are sent to the relay and TV.';
+  'Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.';
 
 /** PROTOCOL.md section 7 / ADR-0003: pairing code alphabet (22 characters, 6 long). */
 export const CODE_ALPHABET: string = PAIRING_ALPHABET;
@@ -35,8 +38,11 @@ export const LIMITS = {
 
 export const DEFAULT_CUE_WORD = 'Volume';
 
-/** ADR-0006: exponential backoff 0.5, 1, 2, 4, 8 s, capped at 8 s. */
+/** ADR-0006: exponential backoff 0.5, 1, 2, 4, 8 s, capped at 8 s, with +/-25 % jitter (A6-02). */
 export const RECONNECT_BACKOFF_MS: readonly number[] = [500, 1000, 2000, 4000, 8000];
+export const RECONNECT_JITTER = 0.25;
+/** A6-02: after this long without a successful connection, report `failed` and stop retrying. */
+export const FAILURE_WINDOW_MS = 120_000;
 /** PROTOCOL.md section 7: ping every 10 s; peer unknown after 25 s without traffic. */
 export const HEARTBEAT_MS = 10_000;
 export const LINK_DEAD_MS = 25_000;
