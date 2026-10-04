@@ -5,18 +5,22 @@
   "license": "MIT",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
-  "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "dev": "vite",
+    "build": "vite build",
+    "build:test": "vite build --mode test-audio",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "node e2e/smoke.mjs",
+    "e2e:flow": "node e2e/flow.mjs",
+    "e2e:production": "node e2e/production.mjs",
+    "e2e:all": "npm run build && npm run build:test && node e2e/smoke.mjs && node e2e/flow.mjs && node e2e/production.mjs"
+  },
+  "devDependencies": {
+    "@atr/phone-mic-meter": "*",
+    "@atr/protocol": "*",
+    "happy-dom": "^20.14.5",
+    "playwright-core": "^1.63.0",
+    "vite": "^7.3.6"
   }
 }

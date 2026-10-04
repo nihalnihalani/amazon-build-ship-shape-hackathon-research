@@ -1,0 +1,146 @@
+# Phone companion: state machine and behaviour
+
+Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 3, ADR-0001, 0002, 0003, 0004, 0006. Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
+
+## Layers
+
+| Layer | File | Knows about | Does not know about |
+|---|---|---|---|
+| Wire port | `src/ports/wire.ts` | envelopes, ids, sequence, strict parsing | DOM, audio |
+| Audio port | `src/ports/audio.ts` | microphone, worklet, local summaries | DOM, relay |
+| Controller | `src/controller.ts` | everything below as state; no DOM | markup |
+| View | `src/view.ts` | DOM only (text via `textContent`) | protocol |
+| Transport | `src/transport.ts` | one socket, heartbeat, retry timer | message meaning |
+| Wake lock | `src/wake-lock.ts` | Screen Wake Lock | everything else |
+
+## Invariants (each has a test)
+
+1. `getUserMedia` is reachable only from `PhoneController.startMic()`, which only the Start button's click handler calls. No join step, TV command, reconnect or visibility change opens the microphone.
+2. The mic state shown and sent is the audio port's **observed** state. The package announces `measuring` when a run is requested; the port reports `measuring` only after the first analysed frame has arrived. `Measuring` is the only level-related text on the phone: no meter, number, unit or verdict is ever rendered.
+3. `level` messages exist only while the window the TV started is open, valid and the page is visible, at most 700 per window, bound to session/window/attempt, `frame_index` increasing.
+4. Shutdown is complete and awaited: tracks stopped, worklet port closed, nodes disconnected, AudioContext closed, wake lock released, listener controls locked. "Mic off" is reported (and `session.end` acknowledged) only after the port says it is off.
+5. Nothing is persisted: no `localStorage`/`sessionStorage`/`IndexedDB`/`MediaRecorder`; credentials and phrases live in memory; a reload means pairing again.
+6. Every text the phone sends is `normalizeUserText(...)` output and passes the package validators before it is sent; invalid text is explained on the phone and never sent.
+7. Once a message is sent it is never resent automatically (phrases, cue, listener answer). A refusal is shown and the user acts again.
+
+## Screens and the join/pairing machine
+
+```
+            Join pressed                    socket open                 join.pending
+ join/idle ------------> join/connecting ---------------> (join.request sent) ----------> join/pending
+    ^  ^                       |  socket error/close                                  |  show "Check the TV: does it show NN?"
+    |  |                       v                                                       |
+    |  +---- join.rejected / error / close / Cancel (message shown) <------------------+
+    |                                                                                  | join.accepted
+    |                                                                                  v
+    |        pairAgain                       unpaired / revoked / expired / superseded
+ unpaired <------------------------------------------------------------------------ setup (paired)
+```
+
+* Code input: 6 characters from `ACDEFHJKMNPRTUVWXY3479`, case-insensitive (upper-cased), spaces and hyphens ignored. `#code=XXXXXX` fills the field once and is removed from the address bar (fragments are never sent to a server). It never auto-submits.
+* Device label: default `Android Chrome` (Android + Chrome user agent) else `Browser`; 1-24 code points.
+* Relay: `wss://<this host>/ws`. `?relay=` (ws/wss only) is honoured in the **test build only**.
+* Not a secure context: a banner says the microphone cannot work here; Start is disabled; the port never calls `getUserMedia`.
+* Credentials (`phone_credential`, room id) are held in the controller object only; they are not part of observable state and never reach the DOM.
+
+### Wire rules (PROTOCOL.md rev 2/3)
+
+| Moment | room_id | producer_generation | sequence |
+|---|---|---|---|
+| `join.request` | null | 0 | 0 |
+| `auth.resume` (every new connection) | null | 0 | 0 |
+| after `join.accepted` / `auth.ok` | the room | the generation from that message (starts at 1) | restarts at 0 |
+
+`mic.state` is sent immediately after every `join.accepted` and `auth.ok`, then on every change (state, settings, wake lock, visibility, session id), de-duplicated.
+
+## Transport and reconnect
+
+States (PROTOCOL.md section 6): `disconnected`, `connecting`, `authenticating`, `connected`, `reconnecting`, `failed`.
+
+* Heartbeat: `ping` every 10 s while connected. No inbound traffic for 25 s: the link is declared dead and reconnecting starts. The phone shows "Connection to the TV unknown", never "off".
+* Backoff after an unexpected close: 0.5, 1, 2, 4, 8 s, then 8 s; no jitter. Each attempt sends `auth.resume` with the in-memory credential. The schedule restarts after a successful `auth.ok`. "Reconnect now" skips the wait.
+* Link lost: any open window or precheck is aborted (levels stop at once) and an `interrupted` result is queued; it is delivered after `auth.ok` (or when the TV reappears, `peer.state`). A window is never resumed: the TV must send a fresh `window.start` with new ids.
+* Refusals while resuming: `revoked`, `expired`, `unauthorized`, `not_found`, `unauthenticated`, or `auth.ok` with `phone_paired: false` end the pairing (screen "This phone is no longer paired", capture shut down, no more retries). `superseded` does the same with its own wording. `rate_limited` keeps retrying. `origin_rejected` stops with `failed`.
+* Messages naming another room are ignored.
+
+## Microphone (audio port snapshot)
+
+States are the protocol's `MicStatePayload.state`:
+
+| State | Cause | UI badge | Start button |
+|---|---|---|---|
+| `off` | never opened, stopped, session ended, page hidden | Mic off | yes |
+| `permission_pending` | `getUserMedia` outstanding | Waiting for permission | hidden; Cancel shown |
+| `permission_denied` | NotAllowed / PermissionDenied | Permission denied (+ site settings steps) | yes |
+| `no_input` | NotFound, no audio track | No microphone found | yes |
+| `input_busy` | NotReadable / Abort; or track muted (`detail: track_muted`) | Microphone busy / muted | yes |
+| `constraints_unsupported` | Overconstrained | Settings not supported | yes, plus "Try browser default settings" |
+| `open_idle` | stream open, nothing analysed | Mic open, not measuring | hidden; Turn off shown |
+| `measuring` | first frame of a run observed | Measuring | hidden |
+| `error` | insecure context, no `mediaDevices`, worklet failed, track ended, context suspended/closed | specific wording per `detail` | yes |
+
+Settings (`auto_gain_control`, `echo_cancellation`, `noise_suppression`, `sample_rate`, `channel_count`) are what the browser reports; `null` means unknown. `supported.*` is `null` when `getSupportedConstraints()` is unavailable (revision 3). The page says these are reports and "do not prove the audio is unprocessed".
+
+* Cancel during `permission_pending` returns to `off`; a stream that arrives later is stopped by the package. Because the package keeps the abandoned `open()` promise until the browser settles it (an ignored prompt never does), the port swaps in a fresh capture instance on cancel/close so Start works again immediately (regression-tested).
+* Start while a session is muted/suspended/failed first releases the old session, then opens a fresh one.
+* `mode` in `mic.state` is self-reported context: `fixture_replay` (test build), `same_host` (localhost, "Same-Mac microphone mode"), else `physical_phone`.
+
+## Screen wake lock ("Keep this screen on")
+
+Wanted while the page is visible, the phone is paired and (the microphone is open or a TV session is active). One request at a time; state is what the browser did: `held`, `released` (browser or us), `rejected`, `unsupported`, `not_requested`. A browser release is reported and not re-requested in a loop. On return to visible it is re-requested only if a session is active.
+
+## Page visibility (background policy)
+
+`hidden`: any open window/precheck is invalidated (`window.result` / `precheck.result` with `valid:false`, `invalid_reason:'interrupted'`), the microphone is shut down completely (mobile browsers suspend capture in the background; keeping a dead stream "open" would be dishonest), `mic.state` reports `visibility: hidden` and then `off`. `visible`: nothing restarts; the user taps Start microphone again. Start is disabled while hidden and `window.start`/`precheck.start` are rejected with `page_hidden`.
+
+## TV commands and acknowledgements
+
+Every TV command gets an `ack` carrying the command's session/window/attempt ids.
+
+| Command | Applied when | Otherwise |
+|---|---|---|
+| `session.begin` | always (replaces an older session; resets cue count if the id changed) | |
+| `session.state` | known session; updates stage (neutral wording), cue count; defence in depth: a state naming no/another open attempt locks listener controls (outside `response_pending`) | `ignored_stale` unknown session |
+| `precheck.start` | session known, page visible, mic `open_idle`, no run active; runs locally for `duration_ms`, then one `precheck.result`, no level frames | `rejected` (`mic_not_open`, `busy`, `page_hidden`), `ignored_stale` (unknown session, closed window id), `applied/duplicate` |
+| `window.start` | same gates; streams `level`, then `window.result` at `max_duration_ms` or `window.stop` | same |
+| `window.stop` | matching open window: ack first, then `window.result` | `applied/already_closed` for a finished window; `rejected/precheck_not_stoppable`; `ignored_stale` unknown |
+| `window.cancel` | matching run: discard, no result | `applied/already_closed`, `ignored_stale` |
+| `listener.open` | session known, no capture running: binds Heard/Not heard/Cue to that window+attempt (idempotent; keeps an answer already given) | `rejected/capture_open`, `ignored_stale` |
+| `attempt.reveal` | locks the controls; a reveal for another attempt does not lock the open one | `applied/nothing_open`, `ignored_stale/other_attempt` |
+| `session.end` | stops capture completely, releases wake lock, reports `mic.state off`, then acks | `ignored_stale` |
+
+`listener.open.timeout_ms` is not enforced on the phone (the TV owns the timeout and "Keep waiting" / "Continue without listener response").
+
+## Listener controls (ADR-0004)
+
+Heard / Not heard (88 px tall) and Cue (shows the cue word, default `Volume`, editable in the settings panel: 1-12 code points, literal, memory only) are enabled only when: the TV opened them, no capture is running and the link is connected. One answer per attempt; Cue stays available until reveal or three cues. "Cues used: n of 3" is shown. Count = max(TV-reported, baseline + cues sent minus cues refused), so it never goes backwards and starts from the TV's count after a mid-session re-pair. Taps after `attempt.reveal` are never sent.
+
+## Acks for phone messages
+
+| Phone message | TV `applied` | TV `rejected` (for example a phrase window is open) | `ignored_stale` |
+|---|---|---|---|
+| `phrases.update` | "The TV saved N phrases." | "...could not save the phrases right now... press Save again after the current phrase window"; the list the TV confirmed is shown; no resend | n/a |
+| `cue` | feedback cleared | cue given back + "could not take the cue right now... try again"; `cue_limit` marks the limit reached | |
+| `listener.response` | stays answered | one more tap is allowed, with an explanation | "Too late... not counted" |
+
+Connection lost before an ack: `phrases.update` shows "Not sent... try again when it reconnects" instead of "sending" forever.
+
+## Phrase editor (R-F1)
+
+1-10 rows, each 1-60 code points after NFC + trim, control characters and unpaired surrogates rejected, live per-row messages, Save disabled until valid, editing disabled while measuring ("Editing is paused while measuring."). What was sent is listed back as plain text (a test proves `<img src=x onerror=alert(1)>` renders as text).
+
+## Build, CSP and the worklet (decision)
+
+* `npm run build` -> `dist/` (production); `npm run build:test` -> `dist-test/` (compile-time flag `__ATR_TEST_AUDIO__`; the synthetic-audio module, the persistent banner text and `window.__atrTestAudio` exist only there; a test builds production and asserts none of those strings ship).
+* The AudioWorklet module is `FRAME_PROCESSOR_SOURCE` from `@atr/phone-mic-meter`, written by the build as `frame-processor.js` next to `index.html` (content hash in the URL query) and loaded **by module URL from the page's own origin**. No Blob URL is used, so the CSP is `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' wss:; img-src 'self'; base-uri 'none'; form-action 'none'` (the test build also allows `ws:`). No inline script or style, no third-party origin.
+* Author CSS must not defeat the `hidden` attribute: `[hidden] { display: none !important; }` (a real-browser e2e run found `.btn { display: inline-block }` was showing "hidden" buttons).
+
+## Tests and evidence classes
+
+| Command (from the worktree root) | What it shows | Evidence class |
+|---|---|---|
+| `npm run typecheck -w @atr/phone` | types | automated |
+| `npm test -w @atr/phone` | state machine, wire shapes (an independent PROTOCOL.md checker AND the package parser), audio port against the real capture adapter with fake browser objects, view rendering, lifecycle/reconnect, production-bundle exclusions (builds both flavours) | automated (happy-dom, fakes) |
+| `npm run e2e:all -w @atr/phone` | real headless Chrome: render/join smoke; full flow with synthetic audio through the real AudioContext/AudioWorklet; production bundle with strict CSP | automated, synthetic or stubbed audio in desktop Chrome |
+
+None of these is a real-phone check. Pending: real Android Chrome permission prompt, AGC/echo/noise read-back on a real input, background/lock behaviour, wake-lock behaviour, capture indicator (see the task handoff).
