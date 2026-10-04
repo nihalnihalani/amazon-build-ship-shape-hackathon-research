@@ -118,6 +118,17 @@ Repeat: `cd tests && node a11y/run-a11y.mjs` (builds, serves on 5179 or a free p
 
 Commands (UTC 2026-10-04T23:15Z to 23:30Z): `npm run test:a11y -w @atr/tests` exit 0, 48 tests; `QA_STRICT=1 npm run test:a11y -w @atr/tests` exit 1, 4 fail / 44 pass.
 
+## 7b. Update: contract revision 2 (wave 2), T17-prep browser re-review deferred
+
+The session-core rework removed `accept_join` (number matching: `pick_choice_1..3` plus Reject, Reject preferred) and changed the wire input to raw text. The TV rework that renders it is not merged yet, so at this head the preview's join screen still has the old controls.
+
+- `tests/a11y/scripted-phone.ts` is rev 2 ready: raw text frames only, `requestJoin(digits)` exposes `confirmDigits`, and the e2e picks the choice whose label contains the digits with arrow keys and Enter (`pickMatchingChoice`); a new store-mode test checks that a wrong pick rejects and burns the code, that Reject and Back reject, and that the right pick pairs.
+- The store-mode groups (D and D2: the real store through the real screens, silent_input, link loss and rotation, the wrong-pick test and the A11Y-01 repro) are gated by `TV_UI_REV2=1` and skipped by default until the tv rework lands. `QA-09` in the browser is now a regular test (the rotation fix is in session-core) and is part of the gated group.
+- Ungated result at `7785c45` (`npm run test:a11y -w @atr/tests`, exit 0): 49 tests, 42 pass (including the expected-fail repros A11Y-02 and A11Y-03) and 7 skipped. `QA_STRICT=1` fails exactly A11Y-02 and A11Y-03. The artifacts in `tests/a11y/artifacts/` are from the last full run (revision 4 head), not regenerated, because a partial run would overwrite the store-mode evidence.
+- OBS-A2 (default focus Accept on a join request) is resolved by the contract (Reject is preferred); it still has to be confirmed in the rendered UI after the tv merge.
+
+The full T17-prep re-review (all groups, `TV_UI_REV2=1`) waits for the tv rework.
+
 ## 8. Checklist for the VVD / VoiceView / UI-scale session (all `pending_external` until done)
 
 Record the build id, VVD image, date, available UI-scale steps and VoiceView version; screen-record each run; label results `real_VVD` only when produced on the VVD. Use the store-driven flow (real copy), not the fixtures.

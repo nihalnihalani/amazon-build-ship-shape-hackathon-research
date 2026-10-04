@@ -465,7 +465,27 @@ describe('C. UI-scale layout gate (web_preview ?scale=; the shim applies one mul
 
 /* ================================================================== D. store mode */
 
-describe('D. store mode: real session store, scripted phone, keyboard only', () => {
+/**
+ * Number matching (A3-06, contract rev 2): the join screen offers three two-digit choices and Reject. Press the one
+ * that equals the digits the phone shows, using only the arrow keys and Enter. Returns the test id that was pressed.
+ */
+async function pickMatchingChoice(page: Page, digits: string, wrong = false): Promise<string> {
+  const picks = await page.$$eval('[data-testid^="action-pick_choice_"]', (els) =>
+    els.map((e) => ({ id: e.getAttribute('data-testid') ?? '', name: e.getAttribute('aria-label') ?? (e as HTMLElement).innerText })),
+  );
+  expect(picks.length, 'three number choices on the join screen').toBe(3);
+  const target = picks.find((p) => (wrong ? !p.name.includes(digits) : p.name.includes(digits)));
+  expect(target, `a choice that ${wrong ? 'differs from' : 'matches'} ${digits}`).toBeDefined();
+  await navigateTo(page, (target as { id: string }).id);
+  await press(page, 'Enter');
+  return (target as { id: string }).id;
+}
+
+/** Store-mode groups drive the real session store through the number-matching join UI, which the tv rework delivers. */
+const storeDescribe = process.env['TV_UI_REV2'] === '1' ? describe : describe.skip;
+
+
+storeDescribe('D. store mode: real session store, scripted phone, keyboard only', () => {
   it('home -> settings -> Delete dialog: Cancel focused, Back restores focus, history shows "No session" for every day, nothing written to localStorage', async () => {
     const page = await context.newPage();
     await page.addInitScript(LIVE_LOG_INIT);
@@ -565,7 +585,9 @@ describe('D. store mode: real session store, scripted phone, keyboard only', () 
     await wait('join_confirm');
     const joinInfo = await inspect(page);
     storeShots['join_confirm_preferred'] = joinInfo.controls.find((c) => c.preferred)?.testId ?? null;
-    await press(page, 'Enter'); // focus is on Accept in the real store view
+    expect(storeShots['join_confirm_preferred']).toBe('action-reject_join'); // A3-06: Reject is the safe default
+    expect(await activeId(page)).toBe('action-reject_join');
+    await pickMatchingChoice(page, phone.confirmDigits);
     await wait('quiet_check', 15_000);
     expect(await activeId(page)).toBe('action-begin_quiet_check');
     // The phone's bank must be applied before any window opens (an update during a window is rejected).
@@ -755,14 +777,48 @@ async function pairToQuiet(page: Page, phone: ScriptedPhone): Promise<void> {
   await page.waitForSelector('[data-testid="screen-pairing"]');
   phone.requestJoin();
   await page.waitForSelector('[data-testid="screen-join_confirm"]');
-  await press(page, 'Enter');
+  await pickMatchingChoice(page, phone.confirmDigits);
   await page.waitForSelector('[data-testid="screen-quiet_check"]', { timeout: 15_000 });
   await page.waitForSelector('[data-testid="action-begin_quiet_check"]');
 }
 
 const micChip = (page: Page): Promise<string> => page.$eval('[data-testid="status-mic"]', (e) => e.getAttribute('aria-label') ?? '');
 
-describe('D2. protocol revision 4 in the real UI (scripted phone speaks revision 4 frames)', () => {
+storeDescribe('D2. protocol revision 4 and contract revision 2 in the real UI (scripted phone)', () => {
+  it('a wrong number pick rejects the phone, burns the code and says so; Reject and Back also reject; the right pick then pairs', async () => {
+    const page = await context.newPage();
+    const phone = new ScriptedPhone(page, {});
+    await phone.install();
+    await page.goto(`${PREVIEW_URL}/?mode=store`);
+    await page.waitForSelector('[data-testid="screen-onboarding"]');
+    await press(page, 'Enter');
+    await page.waitForSelector('[data-testid="screen-home"]');
+    await press(page, 'Enter');
+    await page.waitForSelector('[data-testid="screen-pairing"]');
+    phone.requestJoin();
+    await page.waitForSelector('[data-testid="screen-join_confirm"]');
+    const join = await inspect(page);
+    expect(join.bodyText).toContain('Name the phone gave: QA scripted phone');
+    expect(join.bodyText).not.toMatch(/confirm digits/i);
+    await pickMatchingChoice(page, phone.confirmDigits, true); // a decoy
+    await page.waitForSelector('[data-testid="screen-pairing"]');
+    expect(phone.last('join.confirm')?.payload['decision']).toBe('reject');
+    expect(await page.$eval('[data-testid="banner"]', (e) => e.getAttribute('aria-label'))).toContain('That number did not match. Pair again.');
+    expect(await page.$('[data-testid="pairing-code"]')).toBeNull(); // the burned code is not shown
+    // Back on the next request rejects as well.
+    phone.requestJoin();
+    await page.waitForSelector('[data-testid="screen-join_confirm"]');
+    await press(page, 'Escape');
+    await page.waitForSelector('[data-testid="screen-pairing"]');
+    expect(phone.last('join.confirm')?.payload['decision']).toBe('reject');
+    phone.requestJoin();
+    await page.waitForSelector('[data-testid="screen-join_confirm"]');
+    await pickMatchingChoice(page, phone.confirmDigits);
+    await page.waitForSelector('[data-testid="screen-quiet_check"]', { timeout: 15_000 });
+    expect(phone.last('join.confirm')?.payload['decision']).toBe('accept');
+    await page.close();
+  });
+
   it('silent_input: the quiet check fails with Try again focused, the footer stays, and a good check recovers', async () => {
     const page = await context.newPage();
     const phone = new ScriptedPhone(page, { silentFirstQuietCheck: true });
@@ -808,7 +864,7 @@ describe('D2. protocol revision 4 in the real UI (scripted phone speaks revision
     await page.close();
   });
 
-  defect('QA-09', 'real TV code in the browser: after auth.ok rotates the credential, the second reconnect still presents the original (consumed) credential', async () => {
+  it('QA-09 (fixed in wave 2): after auth.ok rotates the credential, the second reconnect presents the rotated credential', async () => {
     const page = await context.newPage();
     const phone = new ScriptedPhone(page, {});
     await phone.install();
@@ -822,6 +878,7 @@ describe('D2. protocol revision 4 in the real UI (scripted phone speaks revision
     report.store['credential_trail'] = { resumedCount: phone.resumed.length, secondIsRotated: phone.resumed[1] === phone.rotated[0] };
     await page.close();
     expect(phone.resumed[1]).toBe(phone.rotated[0]);
+    expect(phone.resumed[0]).toBe(CREDENTIAL);
   });
 });
 
