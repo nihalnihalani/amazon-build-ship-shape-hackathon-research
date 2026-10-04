@@ -16,29 +16,34 @@ import {
   PHRASE_WINDOW_MS,
   PRE_WINDOW_MS,
   QUIET_CHECK_MS,
-  QUIET_LEAD_MS,
   RESULT_GRACE_MS,
   SEEN_IDS_MAX,
+  SILENT_FLOOR_DBFS,
   STARTER_PHRASES,
+  QUIET_FLOOR_MAX_DBFS,
   VOWEL_MAX_MS,
 } from './constants.js';
 import type { ActionId, LinkView, RemoteKey, TvStage, TvView } from './contract.js';
 import { COPY } from './copy.js';
+import { buildChoices } from './matching.js';
 import type { Core, DialogKind, Effect, Env, Event, InternalEvent, Paused, PausedFrom, Session, Sub, Win, WinKind } from './model.js';
 import type { AttemptRecord, EndReason, SessionRecord, VowelRecord } from './records.js';
 import {
   attemptsAt,
   currentAttempt,
   hasStartedAttempt,
+  isBlindPending,
   isHiddenPosition,
+  isListenerEdition,
   linkUp,
   micOpen,
+  quietLeadMs,
 } from './selectors.js';
 import { DEFAULT_SETTINGS } from './storage.js';
 import type { Checkpoint } from './storage.js';
 import { validateCue, validatePhraseBank } from './text.js';
 import { evaluateCalibration, evaluateGate, evaluateQuietCheck, evaluateWindow } from './verdict.js';
-import { HEARTBEAT_INTERVAL_MS, MessageIdDedupe } from '@atr/protocol';
+import { HEARTBEAT_INTERVAL_MS, MessageIdDedupe, quantizeDb } from '@atr/protocol';
 import type { MessageOf } from '@atr/protocol';
 import { parseInbound } from './wire.js';
 import type { AckOutcome, Ids, Inbound, Outbound, PrecheckResultPayload, WindowResultPayload } from './wire.js';
@@ -77,15 +82,24 @@ export function initialCore(env: Env): Core {
     joinAccepted: false,
     peerConnected: false,
     phonePaired: false,
+    phoneGeneration: null,
     pairOnly: false,
     mic: { state: null, mode: null },
     session: null,
     win: null,
     level: null,
     cue: null,
-    pendingCancels: [],
+    pendingOut: [],
     deleting: false,
     deleteRemaining: 0,
+    deleteOutcome: null,
+    relayCleanup: 'none',
+    cleanupDeadline: null,
+    screenReader: false,
+    deferred: { texts: [], stage: null },
+    lastBanner: null,
+    corruptKeys: 0,
+    nfcOk: env.nfcSelfTest(),
     lastStateSig: '',
     lastSentAt: 0,
     staleLevelAckWindow: null,
@@ -128,6 +142,9 @@ export class Machine {
         break;
       case 'wire':
         this.onWire(event.message);
+        break;
+      case 'a11y':
+        s.screenReader = event.screenReader;
         break;
       case 'app':
         this.onApp(event.event);
@@ -201,7 +218,35 @@ export class Machine {
   private after(): void {
     const s = this.s;
     if (s.cue !== null && s.now >= s.cue.expiresAt) s.cue = null;
+    this.trackDeferred();
     this.syncSessionState();
+  }
+
+  /** True while a precheck or capture is open, or a hidden attempt waits for its reveal (A8-01, A4-03). */
+  private quiet(): boolean {
+    return this.s.win !== null || isBlindPending(currentAttempt(this.s.session));
+  }
+
+  /**
+   * A8-01: a banner that appears while the TV must stay silent is shown but not announced; its text is queued and
+   * announced once the capture has closed (after the reveal for a hidden attempt). It stays in the announcement
+   * for the rest of that stage, so the text does not change under a screen reader.
+   */
+  private trackDeferred(): void {
+    const s = this.s;
+    const d = s.deferred;
+    const text = this.view().banner?.text ?? null;
+    if (this.quiet()) {
+      if (text !== null && text !== s.lastBanner && !d.texts.includes(text)) d.texts.push(text);
+      d.stage = null;
+    } else if (d.texts.length > 0) {
+      if (d.stage === null) d.stage = s.stage;
+      else if (d.stage !== s.stage) {
+        d.texts = [];
+        d.stage = null;
+      }
+    }
+    s.lastBanner = text;
   }
 
   /** Sends session.state when the stage, position, cue count or open listener attempt changed. */
@@ -221,13 +266,17 @@ export class Machine {
       s.stage === 'response_pending' && sess.familyMode && sess.listenerOpenSent && attempt && attempt.listener === null
         ? attempt.attemptId
         : null;
-    const sig = `${s.stage}|${position}|${sess.cuesUsed}|${listenerOpen ?? ''}`;
+    // QA-05: the phone never learns that an attempt was blind, so response_pending and reveal are not sent. From the
+    // capture start until the next phrase_ready or the summary it sees phrase_active; listener.open is the explicit
+    // signal that the listener may answer.
+    const phoneStage: TvStage = s.stage === 'response_pending' || s.stage === 'reveal' ? 'phrase_active' : s.stage;
+    const sig = `${phoneStage}|${position}|${sess.cuesUsed}|${listenerOpen ?? ''}`;
     if (sig === s.lastStateSig) return;
     s.lastStateSig = sig;
     this.send({
       type: 'session.state',
       ids: { sessionId: sess.sessionId },
-      payload: { stage: s.stage, phrase_position: position, cues_used: sess.cuesUsed, listener_open_attempt: listenerOpen },
+      payload: { stage: phoneStage, phrase_position: position, cues_used: sess.cuesUsed, listener_open_attempt: listenerOpen },
     });
   }
 
@@ -273,6 +322,7 @@ export class Machine {
     this.tickWindow();
     this.tickListener();
     this.tickPairing();
+    this.tickCleanup();
     this.tickHeartbeat();
   }
 
@@ -297,6 +347,7 @@ export class Machine {
         const data = event.data;
         s.future = data.status === 'future_version';
         s.futureVersion = data.futureVersion;
+        s.corruptKeys = data.corruptKeys;
         if (!s.future) {
           s.settings = data.settings;
           s.phraseBank = data.phrases ?? [...STARTER_PHRASES];
@@ -306,7 +357,7 @@ export class Machine {
         if (s.checkpoint !== null && !s.future) {
           this.go('resume_or_discard');
         } else {
-          this.go('idle');
+          this.go('idle', 'ready', data.pruneFailed ? { kind: 'warning', text: COPY.banner.storageFailed } : null);
           s.idleScreen = s.settings.onboarded || s.future ? 'home' : 'onboarding';
         }
         break;
@@ -318,6 +369,10 @@ export class Machine {
         break;
       case 'send_failed':
         this.bump('send_errors');
+        break;
+      case 'record_not_saved':
+        // QA-07: the checkpoint was kept, so the work can be recovered on the next launch.
+        s.banner = { kind: 'error', text: COPY.banner.recordNotSaved };
         break;
       case 'storage_failed':
         if (s.banner === null) s.banner = { kind: 'warning', text: COPY.banner.storageFailed };
@@ -331,12 +386,14 @@ export class Machine {
           s.checkpoint = null;
           s.future = false;
           s.futureVersion = null;
+          s.corruptKeys = 0;
           s.deleteRemaining = 0;
-          s.banner = { kind: 'info', text: COPY.banner.deleted };
+          s.deleteOutcome = 'deleted';
         } else {
           s.deleteRemaining = event.result.remaining.length;
-          s.banner = { kind: 'error', text: COPY.banner.deleteFailed };
+          s.deleteOutcome = 'failed';
         }
+        this.deleteBanner();
         break;
     }
   }
@@ -376,9 +433,17 @@ export class Machine {
           if (s.dialog !== null) s.restoreFocus = 'cancel';
         }
         break;
-      case 'accept_join':
+      case 'pick_choice_1':
+        this.pickChoice(0);
+        break;
+      case 'pick_choice_2':
+        this.pickChoice(1);
+        break;
+      case 'pick_choice_3':
+        this.pickChoice(2);
+        break;
       case 'reject_join':
-        this.answerJoin(action === 'accept_join');
+        this.rejectJoin();
         break;
       case 'refresh_code':
         if (s.roomId === null || s.link === 'failed' || s.link === 'offline') this.connect();
@@ -433,16 +498,18 @@ export class Machine {
       case 'rate_skip':
         this.rate('skipped');
         break;
-      case 'keep_waiting':
-        if (s.session) {
-          s.session.listenerOffered = false;
-          s.session.listenerDeadline = s.now + LISTENER_WAIT_MS;
-        }
+      case 'keep_waiting': {
+        // A4-04: a fresh listener.open with a fresh timeout, so the phone keeps its controls open.
+        const a = currentAttempt(s.session);
+        if (s.session && a && a.state === 'response_pending' && a.listener === null) this.openListener(a);
         break;
+      }
       case 'continue_without_listener': {
         const a = currentAttempt(s.session);
         if (a && a.state === 'response_pending' && a.listener === null) {
           a.listener = 'missing';
+          // Records "missing" and tells the phone to lock its listener controls right away (A4-04).
+          this.lockListener(a);
           this.checkRevealReady();
         }
         break;
@@ -531,7 +598,7 @@ export class Machine {
         this.bump('inputs_ignored');
         return;
       case 'pairing':
-        if (s.joinRequest !== null) this.answerJoin(false);
+        if (s.joinRequest !== null) this.rejectJoin();
         else this.leaveRequest();
         return;
       case 'summary':
@@ -587,6 +654,8 @@ export class Machine {
       this.leaveSession();
     } else if (kind === 'delete') {
       s.deleting = true;
+      s.deleteOutcome = null;
+      this.relayCleanupForDelete();
       this.fx.push({ kind: 'delete_all' });
     } else if (kind === 'reset') {
       const sess = s.session;
@@ -602,6 +671,7 @@ export class Machine {
       this.send({ type: 'unpair', payload: {} });
       s.phonePaired = false;
       s.peerConnected = false;
+      s.phoneGeneration = null;
       s.mic = { state: null, mode: null };
       s.banner = { kind: 'info', text: 'The phone was unpaired.' };
     }
@@ -634,6 +704,8 @@ export class Machine {
       listenerOffered: false,
       listenerOpenSent: false,
       beginSent: false,
+      revealSent: [],
+      listenerOpenAttempts: [],
       quietFailure: null,
       ended: null,
     };
@@ -656,7 +728,8 @@ export class Machine {
 
   private startSession(): void {
     const s = this.s;
-    s.session = this.newSession([...s.phraseBank], s.settings.familyMode);
+    // Listener Edition makes the listener's answer the primary outcome, so the listener check is always on.
+    s.session = this.newSession([...s.phraseBank], s.settings.familyMode || isListenerEdition(s));
     s.lastStateSig = '';
     if (linkUp(s) && s.roomId !== null && s.phonePaired && s.peerConnected) this.enterPermission();
     else this.enterPairing(false);
@@ -693,13 +766,107 @@ export class Machine {
     if (s.now >= s.codeExpiresAt && !s.joinAccepted && s.joinRequest === null) this.requestRefresh();
   }
 
-  private answerJoin(accept: boolean): void {
+  /**
+   * Number matching (A3-06): the right number accepts the phone, a wrong number rejects it. Either way a
+   * reject burns the code at the relay, which sends a fresh pairing.code; until then no code is shown.
+   */
+  private pickChoice(index: number): void {
     const s = this.s;
     const join = s.joinRequest;
     if (!join) return;
-    this.send({ type: 'join.confirm', payload: { join_id: join.joinId, decision: accept ? 'accept' : 'reject' } });
+    const picked = join.choices[index];
+    if (picked === join.confirmDigits) {
+      this.send({ type: 'join.confirm', payload: { join_id: join.joinId, decision: 'accept' } });
+      s.joinRequest = null;
+      s.joinAccepted = true;
+      return;
+    }
+    this.bump('join_mismatches');
+    this.send({ type: 'join.confirm', payload: { join_id: join.joinId, decision: 'reject' } });
+    this.burnCode();
+    s.banner = { kind: 'warning', text: COPY.join.mismatch };
+  }
+
+  private rejectJoin(): void {
+    const s = this.s;
+    const join = s.joinRequest;
+    if (!join) return;
+    this.send({ type: 'join.confirm', payload: { join_id: join.joinId, decision: 'reject' } });
+    this.burnCode();
+  }
+
+  /** A TV reject or a wrong pick burns the code (A3-02): never keep showing a code that is dead. */
+  private burnCode(): void {
+    const s = this.s;
     s.joinRequest = null;
-    s.joinAccepted = accept;
+    s.joinAccepted = false;
+    s.code = null;
+    s.codeExpiresAt = null;
+    s.refreshRequested = false;
+  }
+
+  /**
+   * A5-01: deleting local data also ends the pairing at the relay: a best-effort unpair and room.close. The relay
+   * does not acknowledge them, so "confirmed" means the relay then closed our connection; if it has not within
+   * 5 s the cleanup is reported as not confirmed. Credentials and room identity are dropped either way.
+   */
+  private relayCleanupForDelete(): void {
+    const s = this.s;
+    if (s.roomId !== null && linkUp(s)) {
+      this.send({ type: 'unpair', payload: {} });
+      this.send({ type: 'room.close', payload: {} });
+      s.relayCleanup = 'pending';
+      s.cleanupDeadline = s.now + 5000;
+    } else if (s.roomId !== null || s.relayCleanup !== 'confirmed') {
+      s.relayCleanup = 'not_confirmed';
+      s.cleanupDeadline = null;
+    }
+    s.roomId = null;
+    s.credential = null;
+    s.generation = 0;
+    s.code = null;
+    s.codeExpiresAt = null;
+    s.joinRequest = null;
+    s.joinAccepted = false;
+    s.phonePaired = false;
+    s.peerConnected = false;
+    s.phoneGeneration = null;
+    s.pendingOut = [];
+    s.mic = { state: null, mode: null };
+    s.authed = false;
+    this.fx.push({ kind: 'bind', roomId: null, generation: 0 });
+  }
+
+  private cleanupText(): string {
+    switch (this.s.relayCleanup) {
+      case 'pending':
+        return COPY.banner.relayCleanupPending;
+      case 'confirmed':
+        return COPY.banner.relayCleanupConfirmed;
+      case 'not_confirmed':
+        return COPY.banner.relayCleanupNotConfirmed;
+      default:
+        return '';
+    }
+  }
+
+  /** Banner for the last delete: success is only claimed after the key listing verified it. */
+  private deleteBanner(): void {
+    const s = this.s;
+    if (s.deleteOutcome === 'deleted') {
+      s.banner = { kind: 'info', text: `${COPY.banner.deleted} ${this.cleanupText()}`.trim() };
+    } else if (s.deleteOutcome === 'failed') {
+      s.banner = { kind: 'error', text: `${COPY.banner.deleteFailed} ${this.cleanupText()}`.trim() };
+    }
+  }
+
+  private tickCleanup(): void {
+    const s = this.s;
+    if (s.relayCleanup !== 'pending' || s.cleanupDeadline === null || s.now < s.cleanupDeadline) return;
+    s.relayCleanup = 'not_confirmed';
+    s.cleanupDeadline = null;
+    this.fx.push({ kind: 'close', reason: 'delete_cleanup_timeout' });
+    this.deleteBanner();
   }
 
   private onTransport(state: LinkView): void {
@@ -709,15 +876,25 @@ export class Machine {
       s.authed = false;
       if (s.roomId !== null && s.credential !== null) {
         this.send({ type: 'auth.resume', payload: { room_id: s.roomId, role: 'tv', credential: s.credential } });
-      } else {
+      } else if (s.stage === 'pairing') {
         this.send({
           type: 'room.create',
           payload: { client: { app_version: this.env.appVersion, platform: this.env.platform } },
         });
+      } else {
+        // No pairing is wanted (for example the relay closed the room after a delete): do not create a room.
+        this.fx.push({ kind: 'close', reason: 'no_room_wanted' });
       }
       return;
     }
-    if (state === 'reconnecting' || state === 'offline' || state === 'failed') this.onLinkDown();
+    if (state === 'reconnecting' || state === 'offline' || state === 'failed') {
+      if (s.relayCleanup === 'pending') {
+        s.relayCleanup = 'confirmed';
+        s.cleanupDeadline = null;
+        this.deleteBanner();
+      }
+      this.onLinkDown();
+    }
   }
 
   /** Link loss: the phone state becomes unknown (never "off") and any open window is cancelled and unscored. */
@@ -730,6 +907,11 @@ export class Machine {
     if (s.win !== null) this.cancelWindow('link_lost');
   }
 
+  /**
+   * The relay ended this pairing (expired, unauthorized, revoked ...). A `revoked` role means a consumed credential
+   * was presented (A3-07): the pairing may be compromised. Either way the TV drops the room and, if a session or
+   * the pairing screen was open, goes back to pairing with a fresh room; an open window is cancelled and unscored.
+   */
   private pairingLost(code: string): void {
     const s = this.s;
     s.authed = false;
@@ -739,30 +921,68 @@ export class Machine {
     s.codeExpiresAt = null;
     s.phonePaired = false;
     s.peerConnected = false;
+    s.phoneGeneration = null;
     s.joinRequest = null;
     s.joinAccepted = false;
     s.mic = { state: null, mode: null };
     s.link = 'offline';
     s.generation = 0;
-    s.pendingCancels = [];
+    s.pendingOut = [];
     this.fx.push({ kind: 'bind', roomId: null, generation: 0 });
     this.fx.push({ kind: 'close', reason: code });
     if (s.win !== null) this.cancelWindow('link_lost');
-    s.pendingCancels = [];
-    s.banner = { kind: 'error', text: COPY.banner.pairingLost };
+    s.pendingOut = [];
+    const sess = s.session;
+    const inFlow = sess !== null || s.stage === 'pairing';
+    if (sess) {
+      // A new phone means a new floor and band: the old ones belonged to the old pairing.
+      sess.beginSent = false;
+      sess.floorDbfs = null;
+      sess.calMarginDb = null;
+      sess.lastCalibration = null;
+      sess.currentAttemptId = null;
+    }
+    const banner = { kind: 'error' as const, text: code === 'revoked' ? COPY.banner.pairingCompromised : COPY.banner.pairingLost };
+    if (inFlow) {
+      this.enterPairing(false);
+    }
+    s.banner = banner;
   }
 
-  private flushCancels(): void {
+  /** Commands for the phone are forwarded by the relay, so they wait for an authenticated link and a connected phone. */
+  private static readonly TO_PHONE = new Set(['window.cancel', 'session.end', 'window.stop', 'attempt.reveal']);
+
+  /**
+   * Sends a command that must reach the other side (it stops capture or ends something). If the link or the phone is
+   * not there it is queued, and flushed after auth.ok or when the phone returns (QA-03). The queue is bounded.
+   */
+  private deliver(message: Outbound): void {
     const s = this.s;
-    if (!linkUp(s) || !s.peerConnected || s.pendingCancels.length === 0) return;
-    for (const m of s.pendingCancels) this.send(m);
-    s.pendingCancels = [];
+    const needsPeer = Machine.TO_PHONE.has(message.type);
+    if (linkUp(s) && (!needsPeer || s.peerConnected)) {
+      this.send(message);
+      return;
+    }
+    const key = JSON.stringify([message.type, 'ids' in message ? message.ids : null]);
+    if (s.pendingOut.some((m) => JSON.stringify([m.type, 'ids' in m ? m.ids : null]) === key)) return;
+    if (s.pendingOut.length < 8) s.pendingOut.push(message);
+  }
+
+  private flushPending(): void {
+    const s = this.s;
+    if (!linkUp(s) || s.pendingOut.length === 0) return;
+    const keep: Outbound[] = [];
+    for (const m of s.pendingOut) {
+      if (Machine.TO_PHONE.has(m.type) && !s.peerConnected) keep.push(m);
+      else this.send(m);
+    }
+    s.pendingOut = keep;
   }
 
   private onPhoneConnected(): void {
     const s = this.s;
     s.lastStateSig = '';
-    this.flushCancels();
+    this.flushPending();
     if (s.stage !== 'pairing' || !s.peerConnected || !s.phonePaired) return;
     if (s.pairOnly || !s.session) {
       s.pairOnly = false;
@@ -889,18 +1109,28 @@ export class Machine {
       this.send({ type: 'join.confirm', payload: { join_id: p.join_id, decision: 'reject' } });
       return;
     }
-    s.joinRequest = { joinId: p.join_id, deviceLabel: p.device_label, confirmDigits: p.confirm_digits, expiresAt: p.expires_at };
+    s.joinRequest = {
+      joinId: p.join_id,
+      deviceLabel: p.device_label,
+      confirmDigits: p.confirm_digits,
+      choices: buildChoices(p.confirm_digits, (n) => this.env.randomBytes(n)),
+      expiresAt: p.expires_at,
+    };
   }
 
   private onAuthOk(m: Msg<'auth.ok'>): void {
     const s = this.s;
     s.authed = true;
     s.generation = m.payload.generation;
+    // A3-07: a resume consumes the credential that was presented; the one to use next comes back here.
+    // Memory only: it is never projected, persisted or logged.
+    s.credential = m.payload.next_credential;
     this.fx.push({ kind: 'bind', roomId: s.roomId, generation: s.generation });
     s.peerConnected = m.payload.peer_connected;
     s.phonePaired = m.payload.phone_paired;
     s.mic = { state: null, mode: s.mic.mode };
     s.lastStateSig = '';
+    this.flushPending(); // commands that could not be sent while the link was down (QA-03)
     if (s.peerConnected) this.onPhoneConnected();
   }
 
@@ -917,8 +1147,15 @@ export class Machine {
       s.phonePaired = true;
       s.joinAccepted = false;
     }
+    // A3-07: a new phone generation means the phone connection was replaced or re-established. Whatever the
+    // old connection was measuring is cancelled and unscored; the phone's microphone state is unknown again.
+    const generation = m.payload.generation;
+    const reconnected = s.phoneGeneration !== null && generation !== s.phoneGeneration;
+    s.phoneGeneration = generation;
     s.mic = { state: null, mode: s.mic.mode };
+    if (reconnected && s.win !== null) this.cancelWindow('interrupted', 'phone_reconnected');
     this.onPhoneConnected();
+    if (reconnected) s.banner = { kind: 'info', text: COPY.banner.phoneReconnected };
   }
 
   private onRelayError(m: Msg<'error'>): void {
@@ -980,7 +1217,7 @@ export class Machine {
       }
       return;
     }
-    const gate = evaluateGate(p, sess.floorDbfs ?? p.floor_dbfs ?? 0, sess.calMarginDb);
+    const gate = evaluateGate(p, sess.floorDbfs ?? p.floor_dbfs ?? 0, this.bandMargin());
     if (!gate.pass) {
       this.blocked(w, gate.reason);
       return;
@@ -1005,6 +1242,10 @@ export class Machine {
       sess.currentAttemptId = w.attemptId;
       this.persistCheckpoint();
       this.pause('phrase', reason);
+    } else if (w.kind === 'calibration') {
+      this.pause('calibration', reason);
+    } else if (w.kind === 'quiet_check') {
+      this.pause('quiet_check', reason);
     } else {
       this.pause('vowel', reason);
     }
@@ -1026,6 +1267,10 @@ export class Machine {
     }
     if (m.payload.frame_index <= w.lastFrameIndex) {
       this.bump('duplicates');
+      return;
+    }
+    if (m.payload.t_audio_ms < 50 * m.payload.frame_index - 1) {
+      this.bump('integrity_errors'); // PK-02: a frame cannot be timestamped before its own index allows
       return;
     }
     w.lastFrameIndex = m.payload.frame_index;
@@ -1070,7 +1315,7 @@ export class Machine {
       return;
     }
     if (w.kind === 'vowel') {
-      const verdict = evaluateWindow('vowel', p, floor, sess.calMarginDb);
+      const verdict = evaluateWindow('vowel', p, floor, this.bandMargin());
       const rec: VowelRecord =
         verdict.kind === 'invalid'
           ? { windowId: w.windowId, valid: false, reason: verdict.reason, longestActiveMs: null, verdict: null, borderline: false }
@@ -1090,52 +1335,81 @@ export class Machine {
     this.onPhraseResult(w, p, floor);
   }
 
+  /** The band margin the verdict uses: none in Listener Edition (band verdicts are not shown). */
+  private bandMargin(): number | null {
+    const sess = this.s.session;
+    if (!sess || isListenerEdition(this.s)) return null;
+    return sess.calMarginDb;
+  }
+
   private onPhraseResult(w: Win, p: WindowResultPayload, floor: number): void {
     const s = this.s;
     const sess = s.session;
     if (!sess) return;
     const a = sess.attempts.find((x) => x.attemptId === w.attemptId);
     if (!a) return;
-    const verdict = evaluateWindow('phrase', p, floor, sess.calMarginDb);
+    const verdict = evaluateWindow('phrase', p, floor, this.bandMargin());
     a.activeMs = p.active_ms;
     a.longestActiveMs = p.longest_active_ms;
     sess.currentAttemptId = a.attemptId;
     if (verdict.kind === 'invalid') {
-      // Invalid windows skip the response phase and show as "Not scored" with the reason (ADR-0004).
-      a.state = 'invalid';
       a.verdict = 'unscored';
       a.reason = verdict.reason;
+      a.borderline = false;
+      // A4-01: for a hidden first attempt the reason (too quiet, too loud, ...) is level-derived, so an invalid
+      // window waits behind the same neutral prompt as a valid one. An interruption is not level-derived and
+      // keeps the immediate path, like the speaker's own Cancel.
+      if (a.hidden && verdict.reason !== 'interrupted') {
+        this.enterResponse(a);
+        return;
+      }
+      a.state = 'invalid';
       this.persistCheckpoint();
       this.go('reveal');
       return;
     }
     if (verdict.kind === 'no_band') {
       a.verdict = 'unscored';
-      a.reason = 'no_band';
+      a.reason = isListenerEdition(s) ? 'listener_edition' : 'no_band';
       a.borderline = false;
     } else {
       a.verdict = verdict.reached ? 'reached' : 'not_reached';
       a.borderline = verdict.borderline;
     }
     a.state = 'capture_closed';
-    const needRating = a.hidden;
-    const needListener = sess.familyMode;
-    if (!needRating && !needListener) {
+    if (!a.hidden && !sess.familyMode) {
       this.reveal(a);
       return;
     }
+    this.enterResponse(a);
+  }
+
+  /**
+   * The response phase: hidden first attempts wait for the speaker's rating, family mode waits for the listener.
+   * Valid and invalid hidden windows take exactly this path (same prompt, same listener.open).
+   */
+  private enterResponse(a: AttemptRecord): void {
+    const s = this.s;
+    const sess = s.session;
+    if (!sess) return;
     a.state = 'response_pending';
-    if (needListener) {
-      sess.listenerOpenSent = true;
-      sess.listenerDeadline = s.now + LISTENER_WAIT_MS;
-      sess.listenerOffered = false;
-      this.send({
-        type: 'listener.open',
-        ids: { sessionId: sess.sessionId, windowId: a.windowId, attemptId: a.attemptId },
-        payload: { timeout_ms: LISTENER_OPEN_TIMEOUT_MS },
-      });
-    }
+    s.overlay = null; // Settings and Diagnostics are unavailable between capture close and reveal (A4-03)
+    if (sess.familyMode) this.openListener(a);
     this.go('response_pending');
+  }
+
+  private openListener(a: AttemptRecord): void {
+    const sess = this.s.session;
+    if (!sess) return;
+    sess.listenerOpenSent = true;
+    if (!sess.listenerOpenAttempts.includes(a.attemptId)) sess.listenerOpenAttempts.push(a.attemptId);
+    sess.listenerDeadline = this.s.now + LISTENER_WAIT_MS;
+    sess.listenerOffered = false;
+    this.send({
+      type: 'listener.open',
+      ids: { sessionId: sess.sessionId, windowId: a.windowId, attemptId: a.attemptId },
+      payload: { timeout_ms: LISTENER_OPEN_TIMEOUT_MS },
+    });
   }
 
   private rate(rating: 'felt_loud' | 'felt_normal' | 'skipped'): void {
@@ -1154,16 +1428,24 @@ export class Machine {
     if (ratingDone && listenerDone) this.reveal(a);
   }
 
-  /** Reveal locks the attempt: verdict, rating and on-time listener response are final. */
-  private reveal(a: AttemptRecord): void {
+  /** attempt.reveal locks the phone's listener controls; it is sent once per attempt. */
+  private lockListener(a: AttemptRecord): void {
     const sess = this.s.session;
-    if (!sess) return;
-    a.state = 'revealed';
+    if (!sess || sess.revealSent.includes(a.attemptId)) return;
+    sess.revealSent.push(a.attemptId);
     this.send({
       type: 'attempt.reveal',
       ids: { sessionId: sess.sessionId, windowId: a.windowId, attemptId: a.attemptId },
       payload: {},
     });
+  }
+
+  /** Reveal locks the attempt: verdict, rating and on-time listener response are final. */
+  private reveal(a: AttemptRecord): void {
+    const sess = this.s.session;
+    if (!sess) return;
+    a.state = 'revealed';
+    this.lockListener(a);
     this.go('reveal');
     this.persistCheckpoint();
   }
@@ -1176,20 +1458,38 @@ export class Machine {
       return;
     }
     const a = sess.attempts.find((x) => x.attemptId === m.attempt_id && x.windowId === m.window_id);
-    if (!a) {
+    // Unsolicited (the TV never opened the listener for this attempt): the same ack for every case (A4-01).
+    if (!a || !sess.listenerOpenAttempts.includes(a.attemptId)) {
       this.stale(m);
       return;
     }
     const response = m.payload.response;
-    if (a.state === 'response_pending' && a.listener === null) {
+    if (a.state === 'response_pending') {
+      if (a.listener !== null && a.listener !== 'missing') {
+        this.ack(m, 'rejected', 'already_answered'); // first on-time response wins (A4-05)
+        return;
+      }
+      if (a.listener === 'missing') {
+        // The speaker already continued without a listener response: this one is late, never on time.
+        if (a.lateListener !== null) {
+          this.ack(m, 'rejected', 'already_answered');
+          return;
+        }
+        a.lateListener = response;
+        this.ack(m, 'applied', 'late');
+        return;
+      }
       a.listener = response;
       this.ack(m, 'applied', '');
       this.checkRevealReady();
       return;
     }
-    const valid = a.verdict === 'reached' || a.verdict === 'not_reached' || a.reason === 'no_band';
-    if (a.state === 'revealed' && valid && (a.listener === 'missing' || a.listener === null) && a.lateListener === null) {
-      // Late: stored and listed separately, never in the primary agreement denominator.
+    if (a.state === 'revealed') {
+      if (a.listener === 'heard' || a.listener === 'not_heard' || a.lateListener !== null) {
+        this.ack(m, 'rejected', 'already_answered');
+        return;
+      }
+      // Late: stored and acked applied/late; never in the primary agreement denominator (A4-05).
       a.lateListener = response;
       this.ack(m, 'applied', 'late');
       this.persistCheckpoint();
@@ -1220,6 +1520,8 @@ export class Machine {
     }
     sess.cuesUsed += 1;
     s.cue = { text, expiresAt: s.now + CUE_CHIP_MS };
+    // The chip is visual; a hidden attempt waiting for reveal must not be interrupted by speech (A8-01).
+    if (this.quiet()) s.deferred.texts.push(COPY.cue(text));
     if (s.settings.cueWord !== text) {
       s.settings = { ...s.settings, cueWord: text };
       this.persist({ op: 'settings', settings: s.settings });
@@ -1263,7 +1565,8 @@ export class Machine {
       phase: 'lead',
       windowId: this.freshWindowId(sess),
       attemptId: this.freshId('a_', (id) => sess.attempts.some((a) => a.attemptId === id)),
-      leadUntil: s.now + QUIET_LEAD_MS,
+      leadUntil: s.now + this.leadMs(),
+      leadMs: this.leadMs(),
       precheckAt: null,
       captureAt: null,
       closingAt: null,
@@ -1301,6 +1604,10 @@ export class Machine {
     }
     s.win = w;
     s.level = null;
+  }
+
+  private leadMs(): number {
+    return quietLeadMs(this.s);
   }
 
   private tickWindow(): void {
@@ -1383,6 +1690,13 @@ export class Machine {
     const s = this.s;
     const sess = s.session;
     if (!sess) return;
+    // window.start.vad_floor_dbfs must lie in -110 .. -30. A floor outside that cannot come from an accepted quiet
+    // check; if it ever does, the window is refused with the muted-or-blocked copy instead of sending a bad command.
+    const floor = sess.floorDbfs;
+    if (floor === null || floor < SILENT_FLOOR_DBFS || floor > QUIET_FLOOR_MAX_DBFS) {
+      this.blocked(w, 'silent_input');
+      return;
+    }
     // A precheck and the capture that follows it are two measurements: the capture gets its own window_id and
     // keeps the attempt_id. The phone treats window ids as single-use, and stale filtering is per window_id.
     if (w.precheckAt !== null) w.windowId = this.freshWindowId(sess, w.windowId);
@@ -1395,7 +1709,7 @@ export class Machine {
         kind: w.kind === 'quiet_check' ? 'calibration' : w.kind,
         phrase_position: w.kind === 'phrase' ? w.position : null,
         max_duration_ms: w.maxMs,
-        vad_floor_dbfs: sess.floorDbfs ?? 0,
+        vad_floor_dbfs: quantizeDb(floor),
       },
     });
     if (w.kind === 'phrase') {
@@ -1429,9 +1743,8 @@ export class Machine {
 
   private sendCancel(w: Win, reason: 'user_cancel' | 'interrupted' | 'link_lost' | 'timeout' | 'session_end'): void {
     const s = this.s;
-    const message: Outbound = { type: 'window.cancel', ids: this.ids(w), payload: { reason } };
-    if (linkUp(s) && s.peerConnected) this.send(message);
-    else if (s.pendingCancels.length < 5) s.pendingCancels.push(message);
+    void s;
+    this.deliver({ type: 'window.cancel', ids: this.ids(w), payload: { reason } });
   }
 
   /**
@@ -1490,6 +1803,11 @@ export class Machine {
           a.borderline = false;
           sess.currentAttemptId = a.attemptId;
         }
+        // A4-01: a hidden capture that closed by timeout waits behind the same neutral prompt as any other close.
+        if (a && w.hidden && reason === 'timeout' && (w.phase === 'capture' || w.phase === 'closing')) {
+          this.enterResponse(a);
+          break;
+        }
         this.persistCheckpoint();
         if (user) this.go('reveal');
         else this.pause('phrase', key);
@@ -1521,6 +1839,8 @@ export class Machine {
     if (!sess) return;
     const position = sess.phraseIdx + 1;
     if (!sess.skipped.includes(position)) sess.skipped.push(position);
+    // The cursor moved, so the bank is fixed for this session: a later phrases.update applies to the next session (QA-04).
+    sess.phraseStarted = true;
     this.advance();
   }
 
@@ -1555,10 +1875,17 @@ export class Machine {
     const now = this.s.now;
     const attempts = sess.attempts.map((a): AttemptRecord => {
       const copy = { ...a };
-      // A held verdict for an unrevealed attempt is never written to storage.
+      // A4-02: nothing about an unrevealed attempt is written to storage: no verdict, reason, window numbers,
+      // speaker rating or listener answer. On resume it becomes an interrupted, unscored attempt.
       if (forCheckpoint && IN_FLIGHT.includes(copy.state)) {
         copy.verdict = null;
+        copy.reason = null;
         copy.borderline = false;
+        copy.activeMs = null;
+        copy.longestActiveMs = null;
+        copy.rating = null;
+        copy.listener = null;
+        copy.lateListener = null;
       }
       return copy;
     });
@@ -1588,7 +1915,7 @@ export class Machine {
       version: 1,
       savedAt: s.now,
       stage: s.stage,
-      phrases: [...sess.phrases],
+      phraseCount: sess.phrases.length,
       phraseIdx: sess.phraseIdx,
       record: this.recordOf(sess, 'interrupted', true),
     };
@@ -1600,13 +1927,14 @@ export class Machine {
     s.records = s.records.filter((r) => r.sessionId !== record.sessionId);
     s.records.push(record);
     s.records.sort((a, b) => a.endedAt - b.endedAt);
-    this.persist({ op: 'session', record, all: [...s.records] });
-    this.persist({ op: 'clear_checkpoint' });
+    // The record is written first and the checkpoint is cleared only after that write succeeded: a crash between the
+    // two leaves a checkpoint for a session that already has a saved record (dropped on launch), never the reverse.
+    this.persist({ op: 'finalize', record, all: [...s.records] });
   }
 
   private endWire(sess: Session, reason: 'completed' | 'user_exit' | 'discarded' | 'error'): void {
     if (sess.beginSent && sess.ended === null) {
-      this.send({ type: 'session.end', ids: { sessionId: sess.sessionId }, payload: { reason } });
+      this.deliver({ type: 'session.end', ids: { sessionId: sess.sessionId }, payload: { reason } });
     }
   }
 
@@ -1648,14 +1976,15 @@ export class Machine {
     const s = this.s;
     const cp = s.checkpoint;
     if (!cp) return;
-    const sess = this.newSession([...cp.phrases], cp.record.familyMode);
+    // Phrase text is never in the checkpoint (A5-04): the saved bank is used, so a changed bank can differ.
+    const sess = this.newSession([...s.phraseBank], cp.record.familyMode);
     sess.sessionId = cp.record.sessionId;
     sess.startedAt = cp.record.startedAt;
     sess.attempts = cp.record.attempts.map((a) => ({ ...a }));
     sess.vowels = cp.record.vowels.map((v) => ({ ...v }));
     sess.skipped = [...cp.record.skipped];
     sess.cuesUsed = cp.record.cuesUsed;
-    sess.phraseIdx = Math.min(cp.phraseIdx, Math.max(0, cp.phrases.length - 1));
+    sess.phraseIdx = Math.min(cp.phraseIdx, Math.max(0, sess.phrases.length - 1));
     sess.resumed = true;
     sess.phraseStarted = sess.attempts.length > 0;
     const interrupted = sess.attempts.filter((a) => IN_FLIGHT.includes(a.state)).length;
@@ -1700,7 +2029,10 @@ export class Machine {
           a.borderline = false;
         }
       }
-      if (record.attempts.length > 0 || record.vowels.length > 0) this.saveRecord(record);
+      // A finished record is never overwritten as "discarded" (QA-02).
+      const existing = s.records.find((r) => r.sessionId === record.sessionId);
+      const finished = existing !== undefined && (existing.complete || existing.endedAt >= cp.savedAt);
+      if (!finished && (record.attempts.length > 0 || record.vowels.length > 0)) this.saveRecord(record);
       else this.persist({ op: 'clear_checkpoint' });
     }
     s.checkpoint = null;

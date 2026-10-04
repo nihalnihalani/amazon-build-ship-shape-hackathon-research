@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LABEL_NO_BAND } from '../src/index.js';
 import { CREDENTIAL, FLOOR, ROOM, boot } from './helpers.js';
+import type { Harness } from './helpers.js';
 
 describe('duplicate input protection', () => {
   it('repeated OK or actions cannot start two windows or skip an active window', async () => {
@@ -389,13 +390,15 @@ describe('link loss and interruption', () => {
     expect(h.view.stage).toBe('phrase_ready');
   });
 
-  it('a relay error that revokes the pairing clears the room and reports it', async () => {
+  it('a relay error that ends the pairing clears the room, goes back to pairing and reports it', async () => {
     const h = await boot();
     h.setupToPhrases();
-    h.relayError('revoked');
+    h.relayError('expired');
     expect(h.view.mic).toBe('not_paired');
-    expect(h.view.banner?.text).toContain('pairing');
-    expect(h.transport.closes).toContain('revoked');
+    expect(h.view.stage).toBe('pairing');
+    expect(h.view.banner?.text).toBe('The pairing with the relay was lost. Pair again.');
+    expect(h.transport.closes).toContain('expired');
+    expect(h.transport.connects).toHaveLength(2); // a fresh room is requested
     h.relayError('rate_limited');
     expect(h.view.banner?.text).toContain('rate_limited');
   });
@@ -445,11 +448,11 @@ describe('timeouts', () => {
 });
 
 describe('gate through the full flow', () => {
-  it('rise 5.99 dB passes and 6.0 dB blocks (band margin 20)', async () => {
+  it('rise 5.9 dB passes and 6.0 dB blocks (band margin 20)', async () => {
     const pass = await boot();
     pass.setupToPhrases();
     pass.beginAndLead('begin_phrase');
-    pass.answerPrecheck({}, 5.99);
+    pass.answerPrecheck({}, 5.9);
     expect(pass.view.stage).toBe('phrase_active');
     expect(pass.of('window.start').filter((m) => m.payload.kind === 'phrase')).toHaveLength(1);
 
@@ -463,7 +466,7 @@ describe('gate through the full flow', () => {
     expect(block.actionIds()).toEqual(['retry', 'skip_phrase', 'finish_early']);
   });
 
-  it('with a band margin of 13, margin - rise below 10 blocks (rise 3.01) and exactly 10 passes (rise 3)', async () => {
+  it('with a band margin of 13, margin - rise below 10 blocks (rise 3.1) and exactly 10 passes (rise 3)', async () => {
     const make = async (rise: number) => {
       const h = await boot();
       h.startAndPair();
@@ -475,7 +478,7 @@ describe('gate through the full flow', () => {
       return h.view.stage;
     };
     expect(await make(3)).toBe('phrase_active');
-    expect(await make(3.01)).toBe('paused_or_invalid');
+    expect(await make(3.1)).toBe('paused_or_invalid');
   });
 
   it('an invalid precheck blocks with its own reason', async () => {
@@ -501,7 +504,7 @@ describe('gate through the full flow', () => {
     expect(h.view.stage).toBe('phrase_ready');
     h.runPhrase({});
     expect(h.view.stage).toBe('reveal');
-    expect(h.view.result?.label).toBe("Reached today's relative level band");
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
   });
 });
 
@@ -513,40 +516,65 @@ describe('quiet check re-validation on the TV', () => {
     h.answerPrecheck(over);
     return h;
   }
+  /** The check was accepted (calibration is next) or shown as failed: never merely "still waiting". */
+  const accepted = (h: Harness): boolean => {
+    if (h.view.stage === 'calibration') return true;
+    expect(h.view.title).toBe('Quiet check did not pass');
+    return false;
+  };
+  const spread = (hi: number) => ({ p20_dbfs: -51, p80_dbfs: hi, p95_dbfs: hi });
 
   it('accepts every boundary value and rejects just beyond each', async () => {
-    expect((await quietWith({ p20_dbfs: -51, p80_dbfs: -45 })).view.stage).toBe('calibration'); // 6 dB stable
-    expect((await quietWith({ p20_dbfs: -51, p80_dbfs: -44.9 })).view.stage).toBe('quiet_check');
-    expect((await quietWith({ p95_dbfs: -40 })).view.stage).toBe('calibration'); // 10 dB burst
-    expect((await quietWith({ p95_dbfs: -39.9 })).view.stage).toBe('quiet_check');
-    expect((await quietWith({ floor_dbfs: -30, p20_dbfs: -31, p80_dbfs: -29, p95_dbfs: -27 })).view.stage).toBe('calibration');
-    expect((await quietWith({ floor_dbfs: -29.9, p20_dbfs: -31, p80_dbfs: -29, p95_dbfs: -27 })).view.stage).toBe('quiet_check');
-    expect((await quietWith({ coverage: 0.9 })).view.stage).toBe('calibration');
-    expect((await quietWith({ coverage: 0.89 })).view.stage).toBe('quiet_check');
-    expect((await quietWith({ clipped_frames: 1 })).view.stage).toBe('quiet_check');
+    expect(accepted(await quietWith(spread(-45)))).toBe(true); // 6.0 dB stable
+    // A phone that wrongly says valid is overruled for every numeric rule the protocol does not already enforce
+    expect(accepted(await quietWith(spread(-44.9)))).toBe(false); // 6.1 dB spread, claimed valid
+    expect(accepted(await quietWith({ p95_dbfs: -40 }))).toBe(true); // 10.0 dB burst
+    expect(accepted(await quietWith({ p95_dbfs: -39.9 }))).toBe(false);
+    expect(accepted(await quietWith({ floor_dbfs: -30, p20_dbfs: -31, p80_dbfs: -29, p95_dbfs: -27 }))).toBe(true);
+    expect(accepted(await quietWith({ floor_dbfs: -29.9, p20_dbfs: -31, p80_dbfs: -29, p95_dbfs: -27 }))).toBe(false);
+    expect(accepted(await quietWith({ floor_dbfs: -110, p20_dbfs: -111, p80_dbfs: -109, p95_dbfs: -107 }))).toBe(true);
+    expect(accepted(await quietWith({ floor_dbfs: -110.1, p20_dbfs: -111, p80_dbfs: -109, p95_dbfs: -107 }))).toBe(false);
+    expect(accepted(await quietWith({ coverage: 0.9 }))).toBe(true);
+    // coverage and clipping are enforced by the protocol for a valid result, so the phone must say invalid
+    expect(accepted(await quietWith({ coverage: 0.89, valid: false, invalid_reason: 'low_coverage' }))).toBe(false);
+    expect(accepted(await quietWith({ clipped_frames: 1, valid: false, invalid_reason: 'clipped' }))).toBe(false);
   });
 
   it('even when the phone says valid, a failed TV check shows its reason with retry', async () => {
-    const h = await quietWith({ clipped_frames: 2 });
+    const h = await quietWith({ floor_dbfs: -20, p20_dbfs: -21, p80_dbfs: -19, p95_dbfs: -17 }); // too loud, claimed valid
     expect(h.view.stage).toBe('quiet_check');
     expect(h.view.title).toBe('Quiet check did not pass');
-    expect(h.view.body.join(' ')).toContain('too strong');
+    expect(h.view.body.join(' ')).toContain('too loud');
     expect(h.actionIds()).toEqual(['retry', 'cancel']);
     h.ui('retry');
     h.runQuiet();
     expect(h.view.stage).toBe('calibration');
   });
 
-  it('shows the phone-reported reason for an invalid quiet check', async () => {
-    const h = await quietWith({ valid: false, invalid_reason: 'too_loud' });
-    expect(h.view.body.join(' ')).toContain('too loud');
-    const g = await quietWith({ valid: false, invalid_reason: 'burst_noise' });
-    expect(g.view.body.join(' ')).toContain('sudden sound');
+  it('shows the reason, including the muted-or-blocked copy for a silent floor (A1-05)', async () => {
+    const loud = await quietWith({ valid: false, invalid_reason: 'too_loud', floor_dbfs: -20, p20_dbfs: -21, p80_dbfs: -19, p95_dbfs: -17 });
+    expect(loud.view.body.join(' ')).toContain('too loud');
+    const burst = await quietWith({ valid: false, invalid_reason: 'burst_noise', p95_dbfs: -38 });
+    expect(burst.view.body.join(' ')).toContain('sudden sound');
+    // a phone that reports valid for a floor of -115 dBFS is overruled; the phone's own silent_input is accepted too
+    const silent = await quietWith({ floor_dbfs: -115, p20_dbfs: -116, p80_dbfs: -114, p95_dbfs: -112 });
+    expect(silent.view.title).toBe('Quiet check did not pass');
+    expect(silent.view.body.join(' ')).toBe('The phone microphone looks muted or blocked.');
+    const reported = await quietWith({ valid: false, invalid_reason: 'silent_input', floor_dbfs: -115, p20_dbfs: -116, p80_dbfs: -114, p95_dbfs: -112 });
+    expect(reported.view.body.join(' ')).toBe('The phone microphone looks muted or blocked.');
+  });
+
+  it('a phone claim that disagrees with its own numbers is shown as inconsistent, not scored', async () => {
+    const h = await quietWith({ valid: false, invalid_reason: 'unstable_floor' }); // the numbers are stable
+    expect(h.view.title).toBe('Quiet check did not pass');
+    expect(h.view.body.join(' ')).toContain('inconsistent');
+    const g = await quietWith({ valid: false, invalid_reason: 'clipped', clipped_frames: 0 });
+    expect(g.view.body.join(' ')).toContain('inconsistent');
   });
 });
 
 describe('calibration', () => {
-  it('accepts margin 13.0 and rejects 12.99 with the exact "too quiet" guidance', async () => {
+  it('accepts margin 13.0 and rejects 12.9 with the exact "too quiet" guidance', async () => {
     const ok = await boot();
     ok.startAndPair();
     ok.runQuiet();
@@ -556,7 +584,7 @@ describe('calibration', () => {
     const no = await boot();
     no.startAndPair();
     no.runQuiet();
-    no.runCalibration(12.99);
+    no.runCalibration(12.9);
     expect(no.view.result?.label).toBe("Today's band was not set");
     expect(no.view.body.join(' ')).toBe(
       "Too quiet to set today's band. Try once more from your seat, or check the phone is on its mark.",
@@ -592,7 +620,7 @@ describe('calibration', () => {
     h.ui('continue');
     h.ui('skip_vowel');
     h.runPhrase({ rel: 25 });
-    expect(h.view.result?.label).toBe("Reached today's relative level band");
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
   });
 
   it('continuing without a band runs phrases unscored, labelled, with the listener still available', async () => {
@@ -622,7 +650,7 @@ describe('calibration', () => {
     expect(h.view.body.join(' ')).toContain('No voice');
     h.ui('retry');
     h.beginAndLead('begin_calibration');
-    h.answerWindow({ coverage: 0.85 });
+    h.answerWindow({ valid: false, reason: 'low_coverage', coverage: 0.85 });
     expect(h.view.body.join(' ')).toContain('enough audio');
     h.ui('retry');
     h.beginAndLead('begin_calibration');
@@ -711,7 +739,8 @@ describe('skip, finish early and summary counts', () => {
     h.runPhrase({ rel: 25 });
     h.ui('next_phrase');
     h.ui('skip_phrase'); // position 2 skipped, never attempted
-    h.runPhrase({ valid: false, reason: 'no_voice' }); // position 3 (hidden) invalid
+    h.runPhrase({ valid: false, reason: 'no_voice', rating: 'skipped' }); // position 3 (blind), invalid: rated, then revealed
+    expect(h.view.result?.label).toBe('Not scored');
     h.ui('skip_phrase'); // skipped after an invalid attempt
     h.ui('finish_early');
     expect(h.last('session.end').payload).toEqual({ reason: 'user_exit' });
@@ -737,34 +766,38 @@ describe('skip, finish early and summary counts', () => {
     const h = await boot();
     h.setupToPhrases(); // band margin 20 -> edge 19
     h.runPhrase({ rel: 19.5 });
-    expect(h.view.result).toMatchObject({ label: "Reached today's relative level band", borderline: true });
+    expect(h.view.result).toMatchObject({ label: "Reached today's relative level band (unqualified phone)", borderline: true });
     expect(h.view.result?.detail).toContain('Borderline');
     h.ui('next_phrase');
     h.runPhrase({ rel: 18.5 });
-    expect(h.view.result).toMatchObject({ label: "Below today's relative level band", borderline: true });
+    expect(h.view.result).toMatchObject({ label: "Below today's relative level band (unqualified phone)", borderline: true });
     h.ui('next_phrase');
     h.runPhrase({ rel: 20, rating: 'skipped' }); // position 3 (blind), exactly 1 dB from the edge: reached, not borderline
-    expect(h.view.result).toMatchObject({ label: "Reached today's relative level band", borderline: false });
+    expect(h.view.result).toMatchObject({ label: "Reached today's relative level band (unqualified phone)", borderline: false });
     h.ui('next_phrase');
     h.runPhrase({ rel: 19 }); // exactly on the edge: reached
-    expect(h.view.result?.label).toBe("Reached today's relative level band");
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
     h.ui('finish_early');
     expect(h.view.summary?.borderlineCount).toBe(3);
   });
 
-  it('a window result that is valid but without enough voice or coverage is unscored with a reason', async () => {
+  it('unscored windows carry their reason; a short but accepted segment is valid (A1-04); the TV adds its own timing check', async () => {
     const h = await boot();
     h.setupToPhrases();
-    h.runPhrase({ coverage: 0.85 });
+    h.runPhrase({ valid: false, reason: 'low_coverage', coverage: 0.85 });
     expect(h.view.result?.label).toBe('Not scored');
     expect(h.view.result?.detail).toContain('enough audio');
     h.ui('try_again');
-    h.runPhrase({ activeMs: 399 });
-    expect(h.view.result?.detail).toContain('No voice');
+    h.runPhrase({ activeMs: 399 }); // phrase and vowel windows are valid with any accepted segment
+    expect(h.view.result?.label).toBe("Reached today's relative level band (unqualified phone)");
     h.ui('try_again');
     h.runPhrase({ valid: false, reason: 'continuous_sound' });
     expect(h.view.result?.detail).toContain('continued');
+    h.ui('try_again');
+    h.runPhrase({ duration: 8600 }); // longer than the commanded 8000 ms plus 500 ms: TV-local reason integrity
+    expect(h.view.result?.label).toBe('Not scored');
+    expect(h.view.result?.detail).toContain('inconsistent');
     h.ui('finish_early');
-    expect(h.view.summary?.invalidReasons).toEqual({ low_coverage: 1, no_voice: 1, continuous_sound: 1 });
+    expect(h.view.summary?.invalidReasons).toEqual({ low_coverage: 1, continuous_sound: 1, integrity: 1 });
   });
 });

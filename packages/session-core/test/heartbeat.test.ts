@@ -128,8 +128,8 @@ describe('relay heartbeat', () => {
   });
 });
 
-describe('wire inputs: text frames and decoded objects', () => {
-  it('accepts a raw string, a decoded plain object and a null-prototype object', async () => {
+describe('wire inputs are raw text frames only (PK-09)', () => {
+  it('accepts a raw string and refuses every other kind of input, counting it as unparseable', async () => {
     const h = await boot();
     h.ui('start_session');
     h.transportState('connected');
@@ -140,22 +140,23 @@ describe('wire inputs: text frames and decoded objects', () => {
       tv_credential: 'C'.repeat(43),
       credential_expires_at: h.clock.now() + 3_600_000,
       generation: 1,
-    })); // string (what a WebSocket adapter dispatches from event.data)
+    })); // string: what a WebSocket adapter dispatches from event.data
     expect(h.view.pairing?.code).toBe(PAIRING_CODE);
-    h.wire(JSON.parse(h.relay('pairing.code', { pairing_code: 'WXY347', code_expires_at: h.clock.now() + 600_000 }))); // object
-    expect(h.view.pairing?.code).toBe('WXY347');
-    const bare = Object.assign(Object.create(null) as object, JSON.parse(h.relay('pairing.code', { pairing_code: 'ACDEFH', code_expires_at: h.clock.now() + 600_000 })));
-    h.wire(bare);
-    expect(h.view.pairing?.code).toBe('ACDEFH');
-    // a binary frame (ArrayBuffer, typed array) or other non-text input is refused, never applied
+    const frame = h.relay('pairing.code', { pairing_code: 'WXY347', code_expires_at: h.clock.now() + 600_000 });
+    // a decoded object, a null-prototype object, a binary frame and other values are refused, never applied
+    h.wire(JSON.parse(frame));
+    h.wire(Object.assign(Object.create(null) as object, JSON.parse(frame)));
     h.wire(new ArrayBuffer(8));
     h.wire(new Uint8Array([1, 2, 3]));
     h.wire(42);
     h.wire(null);
-    expect(h.view.pairing?.code).toBe('ACDEFH');
+    h.wire(undefined);
+    expect(h.view.pairing?.code).toBe(PAIRING_CODE);
+    h.wire(frame);
+    expect(h.view.pairing?.code).toBe('WXY347');
     h.ui('cancel');
     h.ui('open_settings');
     h.ui('open_diagnostics');
-    expect(Number(h.view.diagnostics?.messages_unparseable)).toBe(4);
+    expect(Number(h.view.diagnostics?.messages_unparseable)).toBe(7);
   });
 });

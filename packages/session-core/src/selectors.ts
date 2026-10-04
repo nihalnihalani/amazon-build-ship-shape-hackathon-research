@@ -1,6 +1,6 @@
 /** Small read-only helpers shared by the machine and the view projection. */
 
-import { HIDDEN_POSITIONS } from './constants.js';
+import { HIDDEN_POSITIONS, QUIET_LEAD_MS, QUIET_LEAD_SCREEN_READER_MS } from './constants.js';
 import type { LinkView, MicView } from './contract.js';
 import type { Core, Session } from './model.js';
 import type { AttemptRecord } from './records.js';
@@ -68,3 +68,26 @@ export const hasStartedAttempt = (session: Session, position: number): boolean =
   attemptsAt(session, position).some((a) => a.started);
 
 export const winActive = (s: Core): boolean => s.win !== null;
+
+/** A9-02: the failed qualification forces Listener Edition; a configured Listener Edition behaves the same way. */
+export const isListenerEdition = (s: Core): boolean =>
+  s.settings.qualification === 'failed' || s.settings.measurementMode === 'listener_edition';
+
+/**
+ * True while nothing derived from level or verdict may reach the view: a hidden first attempt is in its quiet
+ * lead, precheck or capture, or waits behind the neutral prompt for its reveal (A4-03, A8-01).
+ */
+export function isBlindNow(s: Core): boolean {
+  if (s.win !== null && s.win.kind === 'phrase' && s.win.hidden) return true;
+  return s.stage === 'response_pending' && isBlindPending(currentAttempt(s.session));
+}
+
+/**
+ * Quiet lead after the OK press (ADR-0008). With the TV screen reader on it is longer (A8-02) so the announced
+ * script can finish; both values are configurable in settings and shown in Diagnostics.
+ */
+export function quietLeadMs(s: Core): number {
+  return s.screenReader
+    ? (s.settings.quietLeadScreenReaderMs ?? QUIET_LEAD_SCREEN_READER_MS)
+    : (s.settings.quietLeadMs ?? QUIET_LEAD_MS);
+}

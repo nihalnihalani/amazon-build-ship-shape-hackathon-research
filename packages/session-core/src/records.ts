@@ -80,6 +80,8 @@ export interface SummaryInput {
   complete: boolean;
   calMarginDb: number | null;
   familyMode: boolean;
+  /** A9-02: band verdicts are not shown; the listener's answers are the primary outcome. */
+  listenerEdition?: boolean;
 }
 
 const isScored = (a: AttemptRecord): boolean =>
@@ -87,7 +89,7 @@ const isScored = (a: AttemptRecord): boolean =>
 
 /** A valid window in a session with no band: unscored by design, not invalid (ADR-0001 listener-only mode). */
 const isUnscoredByDesign = (a: AttemptRecord): boolean =>
-  a.state === 'revealed' && a.verdict === 'unscored' && a.reason === 'no_band';
+  a.state === 'revealed' && a.verdict === 'unscored' && (a.reason === 'no_band' || a.reason === 'listener_edition');
 
 /** Eligible for agreement: scored and an on-time heard/not_heard response (ADR-0004). */
 const isEligible = (a: AttemptRecord): boolean =>
@@ -182,15 +184,31 @@ export function deriveSummary(input: SummaryInput): SummaryView {
   // structured fields, which the UI renders itself; nothing here repeats a count.
   const lines: string[] = [];
   if (!input.complete) lines.push(SUMMARY_COPY.incomplete);
-  lines.push(input.calMarginDb === null ? SUMMARY_COPY.noBand : SUMMARY_COPY.countingRules);
-  if (input.familyMode) {
-    if (agreement.hidden.eligible === 0) lines.push(`Agreement on blind checks: ${SUMMARY_COPY.noEligible}`);
-    if (agreement.visible.eligible === 0) lines.push(`Agreement on visible attempts: ${SUMMARY_COPY.noEligible}`);
+  if (input.listenerEdition === true) {
+    // Listener Edition has no structured field for the listener counts, so they are stated here.
+    let heard = 0;
+    let notHeard = 0;
+    let missing = 0;
+    for (const a of attempts) {
+      if (a.state !== 'revealed' || a.listener === null) continue;
+      if (a.listener === 'heard') heard += 1;
+      else if (a.listener === 'not_heard') notHeard += 1;
+      else missing += 1;
+    }
+    lines.push(SUMMARY_COPY.listenerEdition);
+    lines.push(`Listener answers: heard ${heard}, not heard ${notHeard}, no response ${missing}.`);
     if (lateListenerResponses > 0) lines.push(SUMMARY_COPY.lateNote);
   } else {
-    lines.push(SUMMARY_COPY.listenerOff);
+    lines.push(input.calMarginDb === null ? SUMMARY_COPY.noBand : SUMMARY_COPY.countingRules);
+    if (input.familyMode) {
+      if (agreement.hidden.eligible === 0) lines.push(`Agreement on blind checks: ${SUMMARY_COPY.noEligible}`);
+      if (agreement.visible.eligible === 0) lines.push(`Agreement on visible attempts: ${SUMMARY_COPY.noEligible}`);
+      if (lateListenerResponses > 0) lines.push(SUMMARY_COPY.lateNote);
+    } else {
+      lines.push(SUMMARY_COPY.listenerOff);
+    }
+    if (borderlineCount > 0) lines.push(SUMMARY_COPY.borderlineNote);
   }
-  if (borderlineCount > 0) lines.push(SUMMARY_COPY.borderlineNote);
   lines.push(SUMMARY_COPY.relativeOnly);
 
   return {

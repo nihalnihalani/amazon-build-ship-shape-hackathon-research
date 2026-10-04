@@ -8,6 +8,7 @@ export const FOOTER = 'Not a medical device. Does not diagnose or treat any cond
 export const LABEL_RELATIVE = 'Relative level, this session only';
 export const LABEL_FIXTURE = 'Fixture replay';
 export const LABEL_NO_BAND = 'No band set: results not scored';
+export const LABEL_LISTENER_EDITION = 'Listener Edition';
 export const LABEL_SAME_HOST = 'Same-device microphone mode';
 export const METER_CAPTION = 'Relative level, this session only';
 export const PRIVACY_LINE =
@@ -21,16 +22,21 @@ export const SUMMARY_COPY = {
     'Reached counts use the best valid attempt for each phrase. Blind checks use the first valid attempt, with the meter hidden.',
   listenerOff: 'Listener check was off for this session.',
   noEligible: 'No eligible listener responses',
+  listenerEdition:
+    "Listener Edition: the listener's answers are the primary outcome. Band results are not shown.",
   lateNote: 'Late listener responses are listed separately and are not counted in agreement.',
   borderlineNote: 'Some results were close to the band edge. Their verdicts are kept and counted separately.',
   relativeOnly: 'Levels are relative to the room in this session only. They are not sound pressure levels.',
 };
+
+export const UNQUALIFIED_SUFFIX = ' (unqualified phone)';
 
 export const RESULT_COPY = {
   reached: "Reached today's relative level band",
   below: "Below today's relative level band",
   notScored: 'Not scored',
   noBand: LABEL_NO_BAND,
+  listenerPending: 'Listener answer pending',
   borderline: "Borderline: within 1 dB of today's band edge. The result is kept.",
 };
 
@@ -49,6 +55,9 @@ export const REASON_COPY: Record<string, string> = {
   burst_noise: 'A sudden sound was picked up. Try again when the room is quiet.',
   too_loud: 'The room is too loud for a reliable check. Reduce background sound and try again.',
   session_ended: 'The session ended before this result was shown.',
+  silent_input: 'The phone microphone looks muted or blocked.',
+  integrity: "The phone's measurement was inconsistent, so it was not scored. Try again.",
+  phone_reconnected: 'The phone reconnected, so the window was not scored.',
   unknown: 'The window could not be scored.',
 };
 
@@ -81,6 +90,7 @@ export const COPY = {
     settings: 'Settings',
     pair: 'Pair phone',
     noSessions: 'No sessions saved on this TV yet.',
+    corrupt: 'Some saved data on this TV could not be read and is being ignored. You can delete it in Settings.',
     futureData:
       'Data from a newer version is stored on this TV. Nothing is saved until you delete it in Settings.',
   },
@@ -93,6 +103,7 @@ export const COPY = {
     waiting: 'Waiting for the phone',
     connecting: 'Connecting to the relay',
     waitingConnect: 'Phone accepted. Waiting for it to connect.',
+    gettingCode: 'Getting a new code.',
     refresh: 'New code',
     retryConnect: 'Try again',
     cancel: 'Cancel',
@@ -100,14 +111,16 @@ export const COPY = {
     paired: 'Phone paired. Choose Start session when you are ready.',
   },
   join: {
-    title: 'Allow this phone?',
-    body: (label: string, digits: string) => [
-      `A phone named "${label}" wants to join.`,
-      `Check that the phone shows the same two digits: ${digits}.`,
+    title: 'A phone wants to join',
+    body: (label: string) => [
+      'A phone wants to join. Pick the number shown on the phone.',
+      `Name the phone gave: ${label}`,
     ],
-    accept: 'Accept',
+    pickLabel: (digits: string) => digits,
+    pickHint: 'Choose this number only if it is the number shown on the phone.',
     reject: 'Reject',
     expired: 'The join request expired.',
+    mismatch: 'That number did not match. Pair again.',
   },
   permission: {
     title: 'Start the microphone on the phone',
@@ -184,7 +197,7 @@ export const COPY = {
     tryAgain: 'Try again',
   },
   response: {
-    title: 'How loud did that feel?',
+    title: 'How did that feel?',
     ratingBody: ['Choose how loud that phrase felt to you. You can skip the rating.'],
     feltLoud: 'Felt loud',
     feltNormal: 'Felt normal',
@@ -221,6 +234,7 @@ export const COPY = {
     mic: 'The phone microphone stopped, so the window was not scored.',
     interrupted: 'The window was interrupted, so it was not scored.',
     timeout: 'The phone did not answer in time, so the window was not scored.',
+    phoneReconnected: 'The phone reconnected, so the window was not scored.',
   },
   summary: {
     title: 'Session summary',
@@ -248,6 +262,11 @@ export const COPY = {
     positioning:
       'Positioning: place the phone upright beside the TV with its microphone facing the room, about 2.5 to 3 metres from your seat. Do not move it during practice.',
     measurement: 'Measurement: relative level compared with the room, this session only.',
+    qualification: (state: string) => `Phone qualification: ${state}`,
+    qualNotRun: 'not run (Not yet qualified on this phone)',
+    qualPassed: 'passed',
+    qualFailed: 'failed (Listener Edition is used and band results are hidden)',
+    corrupt: 'Some saved data on this TV could not be read and is being ignored. You can delete it here.',
     familyOn: 'Family mode: on. A listener answers on the phone after each phrase.',
     familyOff: 'Family mode: off.',
     familyToggle: 'Family mode',
@@ -267,7 +286,11 @@ export const COPY = {
   about: {
     title: 'About',
     storage:
-      'Practice data is stored unencrypted on this TV. Phrases and summaries are kept for 30 days and can be deleted in Settings.',
+      'Practice data is stored unencrypted on this TV. Session summaries keep positions and counts only, never phrase text, cue words or phone names, for 8 days. Your phrase bank stays on this TV until you delete it in Settings.',
+    relayLine:
+      "This TV tells the relay and your phone which practice step you are on and the room's background level. It does not send your results, ratings or history.",
+    abuseLine:
+      "The relay keeps short-lived abuse-prevention counters (counts only) keyed by a keyed hash of the connection's network address. The key changes at least daily and the counters expire within an hour.",
     version: (v: string) => `Version ${v}`,
   },
   diagnostics: { title: 'Diagnostics' },
@@ -304,14 +327,22 @@ export const COPY = {
     micUnknown: 'Phone state unknown.',
     micNotOpen: 'The phone microphone is not open. Start it on the phone.',
     storageFailed: 'Could not save to this TV. Practice can continue; this result may not be kept.',
+    recordNotSaved:
+      'Could not save this session to the TV. It is kept so you can recover it the next time the app starts.',
     deleteFailed: 'Some saved data could not be removed. Try again or restart the app.',
     deleted: 'All local practice data was deleted.',
     future: 'Data from a newer version is stored on this TV.',
     phrasesSaved: 'New phrases saved. They apply to the next session.',
     cancelledWindow: 'Window cancelled. It was not scored.',
     pairingLost: 'The pairing with the relay was lost. Pair again.',
+    pairingCompromised: 'Pairing may be compromised. Pair again.',
     relayError: (code: string) => `The relay reported: ${code}.`,
     resetDone: "Today's band was cleared. Set it again to score phrases.",
+    phoneReconnected: 'Phone reconnected.',
+    nfcFailed: 'Text normalisation is unavailable on this TV. Typed phrases may not display as entered.',
+    relayCleanupPending: 'Relay cleanup in progress.',
+    relayCleanupConfirmed: 'Relay cleanup confirmed.',
+    relayCleanupNotConfirmed: 'Relay cleanup not confirmed.',
   },
   mic: {
     waiting: 'Waiting for the microphone permission on the phone.',
@@ -328,3 +359,26 @@ export const COPY = {
     listener: 'Listener edition',
   },
 };
+
+const NUMBER_WORDS = [
+  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
+];
+
+/** Seconds as a word for spoken scripts: 3000 ms is "three seconds", 30000 ms is "thirty seconds". */
+export function secondsWords(ms: number): string {
+  const seconds = Math.round(ms / 1000);
+  let word: string;
+  if (seconds >= 0 && seconds < NUMBER_WORDS.length) word = NUMBER_WORDS[seconds] as string;
+  else if (seconds === 30) word = 'thirty';
+  else word = String(seconds);
+  return seconds === 1 ? `${word} second` : `${word} seconds`;
+}
+
+/**
+ * A8-02: the fixed script for screen-reader sessions. The measurement starts after the quiet lead, so the user
+ * is told to wait exactly that long after the message ends, then speak.
+ */
+export function speakScript(leadMs: number, lasts: string): string {
+  return `After this message, wait ${secondsWords(leadMs)}, then speak. Measurement lasts ${lasts}.`;
+}
