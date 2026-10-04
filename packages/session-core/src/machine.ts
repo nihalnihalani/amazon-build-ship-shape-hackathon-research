@@ -286,7 +286,7 @@ export class Machine {
           this.go('resume_or_discard');
         } else {
           this.go('idle');
-          s.idleScreen = s.settings.onboarded ? 'home' : 'onboarding';
+          s.idleScreen = s.settings.onboarded || s.future ? 'home' : 'onboarding';
         }
         break;
       }
@@ -605,6 +605,13 @@ export class Machine {
       quietFailure: null,
       ended: null,
     };
+  }
+
+  /** A new identifier that does not collide with one already recorded (matters after a resume). */
+  private freshId(prefix: string, taken: (id: string) => boolean): string {
+    let id = this.env.newId(prefix);
+    for (let i = 0; i < 8 && taken(id); i += 1) id = this.env.newId(prefix);
+    return id;
   }
 
   private startSession(): void {
@@ -1212,8 +1219,8 @@ export class Machine {
     const w: Win = {
       kind,
       phase: 'lead',
-      windowId: this.env.newId('w_'),
-      attemptId: this.env.newId('a_'),
+      windowId: this.freshId('w_', (id) => sess.attempts.some((a) => a.windowId === id) || sess.vowels.some((v) => v.windowId === id)),
+      attemptId: this.freshId('a_', (id) => sess.attempts.some((a) => a.attemptId === id)),
       leadUntil: s.now + QUIET_LEAD_MS,
       precheckAt: null,
       captureAt: null,

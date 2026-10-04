@@ -194,6 +194,10 @@ export class Harness {
     return this.store.getView();
   }
 
+  stage(): string {
+    return this.view.stage;
+  }
+
   actionIds(): ActionId[] {
     return this.view.actions.filter((a) => a.disabled !== true).map((a) => a.id);
   }
@@ -473,7 +477,7 @@ export class Harness {
   runPhrase(o: PhraseOpts = {}): void {
     this.beginAndLead('begin_phrase');
     this.answerPrecheck({}, o.rise ?? 0);
-    if (this.view.stage !== 'phrase_active') return;
+    if (this.stage() !== 'phrase_active') return;
     const start = this.last('window.start');
     this.level(0, FLOOR + 2, false);
     this.advance(500);
@@ -484,21 +488,23 @@ export class Harness {
       { rel: o.rel, valid: o.valid, reason: o.reason, activeMs: o.activeMs, coverage: o.coverage },
       start,
     );
-    if (this.view.stage === 'response_pending') {
+    if (this.stage() === 'response_pending') {
       if (o.rating !== undefined && this.actionIds().includes('rate_skip')) {
         this.ui(o.rating === 'felt_loud' ? 'rate_felt_loud' : o.rating === 'felt_normal' ? 'rate_felt_normal' : 'rate_skip');
       }
-      if (o.listener !== undefined) this.listener(o.listener);
+      // answer only when the TV opened the listener for this very attempt (family mode)
+      const opened = this.of('listener.open').some((m) => m.attempt_id === start.attempt_id);
+      if (o.listener !== undefined && opened && this.stage() === 'response_pending') this.listener(o.listener);
     }
   }
 
   /** Complete every remaining phrase quickly (reached for visible, ratings skipped, listener heard if family). */
   finishAllPhrases(o: PhraseOpts = {}): void {
     let guard = 0;
-    while (this.view.stage === 'phrase_ready' && guard < 20) {
+    while (this.stage() === 'phrase_ready' && guard < 20) {
       guard += 1;
       this.runPhrase({ rating: 'skipped', listener: 'heard', ...o });
-      if (this.view.stage === 'reveal') this.ui('next_phrase');
+      if (this.stage() === 'reveal') this.ui('next_phrase');
     }
   }
 }

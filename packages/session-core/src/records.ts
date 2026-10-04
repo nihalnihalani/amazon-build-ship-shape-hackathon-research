@@ -201,7 +201,9 @@ export function deriveSummary(input: SummaryInput): SummaryView {
       `Reached today's relative level band: ${reachedVisible} of ${scoredVisible} phrases (best valid attempt per phrase).`,
     );
     lines.push(
-      `Blind checks, first attempt with the meter hidden: reached ${reachedHidden} of ${scoredHidden} (first valid attempt).`,
+      scoredHidden === 0
+        ? 'Blind checks, first attempt with the meter hidden: none scored.'
+        : `Blind checks, first attempt with the meter hidden: reached ${reachedHidden} of ${scoredHidden} (first valid attempt).`,
     );
   }
   if (scoredHidden > 0 || ratings.feltLoud + ratings.feltNormal + ratings.skipped > 0) {
