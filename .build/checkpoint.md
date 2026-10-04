@@ -1,6 +1,6 @@
 # Checkpoint
 
-Updated: 2026-10-05 05:30 IST by Opus lead (claude-opus-5-5).
+Updated: 2026-10-05 07:00 IST by Opus lead (claude-opus-5-5).
 
 ## Resume instruction
 
@@ -16,24 +16,27 @@ T00–T02 (environment, compatibility, ADRs) → dispatching T05 (protocol), T06
 - ADR-0001..0009 and docs/PROTOCOL.md v1 frozen.
 - Blockers: B-001 Rosetta/Vega SDK, B-002 physical Android phone, B-003 AWS root credentials + spend authorization, B-004 physical Fire TV, B-005 publication authorization.
 
-## Active teammates
+## Active teammates (rework wave for ADR revision 2)
 
-| Name | Role | Task | Worktree | Branch | State |
-|---|---|---|---|---|---|
-| contracts | research-contracts | T05, T01, rev 3 | ../atr-worktrees/contracts | wt/contracts | done, merged |
-| dsp | audio-dsp | T06, T04 protocol doc | ../atr-worktrees/dsp | wt/dsp | done, merged |
-| tv | vega-tv | T09 code, ten-foot-meter, web preview | ../atr-worktrees/tv | wt/tv | done, merged (native blocked B-001) |
-| session | vega-tv core | session-core | ../atr-worktrees/session | wt/session | done, merged |
-| relay | relay-cloud | T07 + AWS adapter/IaC (not deployed) | ../atr-worktrees/relay | wt/relay | running |
-| phone | phone-companion | T08 | ../atr-worktrees/phone | wt/phone | running |
-| security | security-review | T02 review, threat model | ../atr-worktrees/security | wt/security | running |
-| qa | qa-accessibility | T11/T13/T14 review, T17 prep | ../atr-worktrees/qa | wt/qa | running |
+| Name | Task now | Branch | Notes |
+|---|---|---|---|
+| contracts | Protocol revision 4 (AMENDMENTS-REV2 P rows, PK-01..13, DEF-002 doc) | wt/contracts | others wait for it for next_credential + invariants |
+| dsp | VAD hysteresis 10/6 dB, run>=3, silent_input, reasons, quantisation, qualification analysis (slope criterion), fixtures | wt/dsp | |
+| session | Contract rev 2 (merge lead/contract-rev2), A4-01 blocker, number matching, integrity, delete+relay cleanup, a11y lead, qualification suffix | wt/session | rotation after rev 4 |
+| relay | Abuse counters (HMAC source), code burning, exp. delay, origin_state, SQS deadline, processInbound, canonical forward | wt/relay | rotation after rev 4 |
+| phone | A3-01 phone confirmation, new privacy copy, listener locks, no-storage test, terminal reconnect + jitter | wt/phone | rotation after rev 4 |
+| tv | Contract rev 2 UI (number matching), visual-only banners while capturing, screen-reader input, adapter jitter/failed | wt/tv | |
+| qa | Independent review T11/T13/T14 + T17 prep (web preview, Playwright) | wt/qa | started before rework; findings may overlap |
 
-Integration branch head after session/TV integration: see `git log -1 build/across-the-room`.
+## Integration plan for this wave
 
-## Next lead actions
+1. Merge contracts rev 4 first → notify session/relay/phone to finish rotation.
+2. Merge dsp → session (with contract rev 2) → tv → relay → phone, rerunning root build/typecheck/test after each.
+3. Rerun T12 e2e (tests/e2e/local-journey.test.ts); extend it for: number matching, phone Yes confirmation, hidden invalid window path, silent_input, rotation on resume.
+4. Then security re-review at the integrated commit (T16) and qa (T17/T18).
 
-1. Merge relay and phone when they hand off; rerun root build/typecheck/test (relay/phone stubs currently have no tests, so root `npm test` fails until they land).
-2. Build T12: tests/e2e local journey (local relay with dev cert + phone dist-test in system Chrome with synthetic audio + headless TV driver tests/src/tv-driver.ts).
-3. Apply accepted findings from security (T02) and qa reviews as rework tasks.
-4. Spawn release-docs after T12.
+## Key facts for a resumed session
+
+- T12 local journey passed at commit recorded in EV-0022 (before rework). DEF-001 heartbeat and DEF-002 window_id fixed.
+- Contract revision 2 lives on branch `lead/contract-rev2` until session/tv adapt.
+- Blockers B-001..B-005 unchanged (see blockers.md); owner questions asked in chat, unanswered.

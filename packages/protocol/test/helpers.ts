@@ -72,3 +72,15 @@ export function assertWellFormed(r: ParseResult): void {
     expect(r.ref_message_id === null || MESSAGE_ID_RE.test(r.ref_message_id)).toBe(true);
   }
 }
+
+/** Apply several path patches (same path syntax as `patched`). */
+export function patchedMany(message: Json, patches: Record<string, unknown>): Json {
+  let out = message;
+  for (const [path, value] of Object.entries(patches)) out = patched(out, path, value);
+  return out;
+}
+
+export function codeOf(message: unknown): string {
+  const r = validateMessageObject(message, OPTS);
+  return r.ok ? 'ok' : r.code;
+}

@@ -12,6 +12,7 @@
  */
 
 import {
+  COMBINING_RUN_MAX,
   CUE_LENGTH_MAX,
   CUE_LENGTH_MIN,
   DEVICE_LABEL_LENGTH_MAX,
@@ -94,19 +95,72 @@ export function utf8ByteLength(input: string): number {
   return bytes;
 }
 
+// ---------------------------------------------------------------------------
+// Display safety (revision 4, PK-03). Reference: docs/security/probes/text_policy_sketch.mjs.
+// Patterns are built from strings with doubled backslashes: no look-behind, no \p{...} property
+// escapes and no `u` flag, so the rule also runs on Hermes. This file stays pure ASCII.
+// ---------------------------------------------------------------------------
+
+/**
+ * Characters that must not appear in phrases, cues, device labels or app_version:
+ * U+2028/2029 line and paragraph separators, U+202A-202E embeddings and overrides,
+ * U+2066-2069 isolates, U+2060-2064 invisible operators, U+FEFF, U+FFF9-FFFF (specials,
+ * noncharacters, the replacement character), U+FDD0-FDEF, tag characters U+E0000-E007F
+ * and the plane-end noncharacters U+xFFFE/U+xFFFF of planes 1 to 16.
+ */
+const FORBIDDEN_CHARS = new RegExp(
+  '[\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\u2060-\\u2064\\uFEFF\\uFFF9-\\uFFFF\\uFDD0-\\uFDEF]' +
+    '|\\uDB40[\\uDC00-\\uDC7F]' +
+    '|[\\uD83F\\uD87F\\uD8BF\\uD8FF\\uD93F\\uD97F\\uD9BF\\uD9FF\\uDA3F\\uDA7F\\uDABF\\uDAFF\\uDB3F\\uDB7F\\uDBBF\\uDBFF][\\uDFFE\\uDFFF]',
+);
+
+/** A string made only of whitespace and invisible fillers renders as blank. */
+const INVISIBLE_ONLY = new RegExp(
+  '^[\\s\\u00AD\\u034F\\u061C\\u115F\\u1160\\u17B4\\u17B5\\u180B-\\u180E\\u200B-\\u200F\\u2800\\u3164\\uFE00-\\uFE0F\\uFFA0]*$',
+);
+
+/** More than four consecutive combining marks stack off the line box on a TV. */
+const COMBINING_RUN = new RegExp(
+  '[\\u0300-\\u036F\\u0483-\\u0489\\u0591-\\u05BD\\u0610-\\u061A\\u064B-\\u065F\\u1AB0-\\u1AFF\\u1DC0-\\u1DFF\\u20D0-\\u20FF\\uFE20-\\uFE2F]{' +
+    String(COMBINING_RUN_MAX + 1) +
+    ',}',
+);
+
+export type DisplayVerdict = 'ok' | 'forbidden_char' | 'no_visible_content' | 'combining_run';
+
+/**
+ * Display-safety verdict for text shown on a TV or phone. Rejects bidi controls
+ * (U+202A-202E, U+2066-2069), line and paragraph separators, invisible operators,
+ * tag characters, noncharacters, strings that are blank to the eye and runs of more
+ * than four combining marks. Keeps NFC text, ZWJ (U+200D), ZWNJ (U+200C), LRM, RLM
+ * and ALM (U+200E, U+200F, U+061C), soft hyphen inside words, emoji sequences and
+ * variation selectors. An empty string is reported `no_visible_content`; callers check
+ * length first.
+ */
+export function displaySafe(s: string): DisplayVerdict {
+  if (FORBIDDEN_CHARS.test(s)) return 'forbidden_char';
+  if (INVISIBLE_ONLY.test(s)) return 'no_visible_content';
+  if (COMBINING_RUN.test(s)) return 'combining_run';
+  return 'ok';
+}
+
 export type TextRejection =
   | 'not_string'
   | 'lone_surrogate'
   | 'control_chars'
   | 'not_normalized'
   | 'too_short'
-  | 'too_long';
+  | 'too_long'
+  | 'forbidden_char'
+  | 'no_visible_content'
+  | 'combining_run';
 
 export type TextCheck = { ok: true } | { ok: false; reason: TextRejection };
 
 /**
  * Validate user text. Order: type, lone surrogate, control characters,
- * normalization (must equal NFC + trim of itself), then length in code points.
+ * normalization (must equal NFC + trim of itself), length in code points, then
+ * display safety (`displaySafe`, revision 4).
  */
 export function validateUserText(value: unknown, min: number, max: number): TextCheck {
   if (typeof value !== 'string') return { ok: false, reason: 'not_string' };
@@ -116,6 +170,8 @@ export function validateUserText(value: unknown, min: number, max: number): Text
   const length = codePointLength(value);
   if (length < min) return { ok: false, reason: 'too_short' };
   if (length > max) return { ok: false, reason: 'too_long' };
+  const display = displaySafe(value);
+  if (display !== 'ok') return { ok: false, reason: display };
   return { ok: true };
 }
 
