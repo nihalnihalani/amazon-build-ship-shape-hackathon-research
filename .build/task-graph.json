@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T04:25:42+05:30",
+ "updated_at": "2026-10-05T04:25:54+05:30",
  "states": [
   "pending",
   "ready",
@@ -53,7 +53,8 @@
     "EV-0013",
     "EV-0015",
     "EV-0018",
-    "EV-0021"
+    "EV-0021",
+    "EV-0025"
    ],
    "commit": null,
    "blocker": null
@@ -297,9 +298,11 @@
     "services/relay"
    ],
    "reviewer": "security-review",
-   "evidence_refs": [],
-   "commit": null,
-   "blocker": null
+   "evidence_refs": [
+    "EV-0024"
+   ],
+   "commit": "20d5e48",
+   "blocker": "ADR rev 2 rework (relay rows)"
   },
   {
    "id": "T08",
