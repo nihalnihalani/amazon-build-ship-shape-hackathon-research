@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T06:05:28+05:30",
+ "updated_at": "2026-10-05T06:44:03+05:30",
  "states": [
   "pending",
   "ready",
@@ -462,7 +462,7 @@
     "T11"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "in_review",
    "attempts": 2,
    "acceptance_criteria": [
     "Full journey pair\u2192deletion over local relay with real phone page code and TV session core"
@@ -473,10 +473,11 @@
    "reviewer": "qa-accessibility",
    "evidence_refs": [
     "EV-0022",
-    "EV-0035"
+    "EV-0035",
+    "EV-0037"
    ],
-   "commit": "9035535",
-   "blocker": "DEF-003 session.begin before phone Yes"
+   "commit": "1e34358",
+   "blocker": null
   },
   {
    "id": "T12H",
@@ -584,7 +585,7 @@
     "T14"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "in_review",
    "attempts": 1,
    "acceptance_criteria": [
     "Fault injection: delay, out-of-order, dropout, expiry, partial windows, noisy input, floor change, reconnect"
@@ -594,10 +595,11 @@
    ],
    "reviewer": "qa-accessibility",
    "evidence_refs": [
-    "EV-0036"
+    "EV-0036",
+    "EV-0038"
    ],
-   "commit": null,
-   "blocker": "Runs after relay rev 4 rework merges"
+   "commit": "1e34358",
+   "blocker": null
   },
   {
    "id": "T16",
@@ -639,7 +641,7 @@
     "R-U3",
     "R-U4"
    ],
-   "owner": "qa-accessibility",
+   "owner": "qa",
    "cwd": null,
    "dependencies": [
     "T13",
@@ -647,7 +649,7 @@
     "T15"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "Remote-only journey, focus, VoiceView, UI scale, contrast, leak checks"
@@ -656,9 +658,11 @@
     "docs/evaluation/a11y-*"
    ],
    "reviewer": null,
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0039"
+   ],
    "commit": null,
-   "blocker": null
+   "blocker": "Web-preview gate passes (EV-0039); VoiceView/real D-pad/UI scale on VVD pending B-001"
   },
   {
    "id": "T18",
@@ -687,7 +691,9 @@
     "evidence automated"
    ],
    "reviewer": null,
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0040"
+   ],
    "commit": null,
    "blocker": null
   },
