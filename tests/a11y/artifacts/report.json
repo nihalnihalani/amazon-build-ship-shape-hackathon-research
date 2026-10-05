@@ -9,8 +9,8 @@
   "environment": {
     "chrome": "154.0.8037.97",
     "preview_url": "http://127.0.0.1:5179",
-    "commit": "bb546b98a0689bc28aab3cf684e4b70e0bee457a",
-    "timestamp_utc": "2026-10-05T01:11:31.356Z",
+    "commit": "6291c9051c08134c9e8608204eb23d57ed3a8561",
+    "timestamp_utc": "2026-10-05T04:09:28.960Z",
     "node": "v25.2.1",
     "viewport": "1920x1124"
   },
@@ -448,7 +448,7 @@
       "axe": [],
       "screenshot": {
         "file": "phrase_active_visible.png",
-        "sha256": "622375633a0c1bacad415c67f42b76404f00e5e4689105f82eebc8b4f8d45a05",
+        "sha256": "45db58aa1f417e5584b586c6f4ad9d700f57abc4904fcf206fa9be543e10fe3d",
         "committed": false
       },
       "ariaOrder": [
@@ -589,7 +589,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_reached.png",
-        "sha256": "ac0f8cf55ba860ed4fe15904eae1cec49ec1d34fc937401b3a42a610eb93e632",
+        "sha256": "968a3780b756f4e63a319cc939efaa7c7b639a0577ac30be843ddb479a64adf0",
         "committed": false
       },
       "ariaOrder": [
@@ -739,7 +739,7 @@
       "axe": [],
       "screenshot": {
         "file": "history.png",
-        "sha256": "491f66c05d55d9bdc82ee5c0dc64b3dcfd91bd4eacb25def889c64ecd3c4a5f7",
+        "sha256": "115bb69b09a24f2d90e307694a0b65f1e154d9179aa5004c4dfab68ad243d1cf",
         "committed": true
       },
       "ariaOrder": [
@@ -994,7 +994,7 @@
       ],
       "screenshot": {
         "file": "about.png",
-        "sha256": "45063e48c7f5553f493b1b4b9391de47ea381689e8ff44a534e8b5a7b2bfaf15",
+        "sha256": "c3cd0a92a16e28c997e78a18d573338173a543275e236312feb1e595b4ea44f9",
         "committed": false
       },
       "ariaOrder": [
@@ -2055,8 +2055,8 @@
     {
       "scale": 1.5,
       "screen": "about",
-      "scrolls": false,
-      "overflowPx": 0,
+      "scrolls": true,
+      "overflowPx": 212,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2404,7 +2404,7 @@
       "scale": 2,
       "screen": "about",
       "scrolls": true,
-      "overflowPx": 347,
+      "overflowPx": 917,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2464,19 +2464,20 @@
     "scale_1_failures": [],
     "scale_1_horizontal_clipping": [],
     "scale_1_screens_that_scroll": [],
-    "scale_1_max_focus_settle_ms": 3,
+    "scale_1_max_focus_settle_ms": 2,
     "scale_1.25_failures": [],
     "scale_1.25_horizontal_clipping": [],
     "scale_1.25_screens_that_scroll": [],
-    "scale_1.25_max_focus_settle_ms": 4,
+    "scale_1.25_max_focus_settle_ms": 2,
     "scale_1.5_failures": [],
     "scale_1.5_horizontal_clipping": [],
     "scale_1.5_screens_that_scroll": [
       "phrase_active_visible(6px)",
       "summary(231px)",
-      "summary_incomplete(231px)"
+      "summary_incomplete(231px)",
+      "about(212px)"
     ],
-    "scale_1.5_max_focus_settle_ms": 3,
+    "scale_1.5_max_focus_settle_ms": 2,
     "scale_2_failures": [],
     "scale_2_horizontal_clipping": [],
     "scale_2_screens_that_scroll": [
@@ -2501,7 +2502,7 @@
       "history(362px)",
       "paused_or_invalid(378px)",
       "settings(594px)",
-      "about(347px)"
+      "about(917px)"
     ],
     "scale_2_max_focus_settle_ms": 3,
     "ring_clipped_by_scroller": [],
@@ -2529,8 +2530,8 @@
       }
     ],
     "screen_reader_lead_ms": {
-      "on": 3203,
-      "off": 1605
+      "on": 3195,
+      "off": 1691
     },
     "silent_input_quiet_check_text": "Quiet check did not pass\nPhone microphone: Microphone open, not measuring\nRelay: Connected\nFixture replay\nThe phone microphone looks muted or blocked.\nTry again\nCancel\nQuiet check did not pass. The phone microphone looks muted or blocked.\nNot a medical device. Does not diagnose or treat any condition.",
     "link_loss_focus": {
