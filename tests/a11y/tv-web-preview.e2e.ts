@@ -571,11 +571,11 @@ describe('C. UI-scale layout gate at 1.0, 1.25, 1.5 and 2.0 (web_preview ?scale=
     });
   }
 
-  defect('A11Y-05', 'at UI scale 2.0 content is clipped horizontally: the number-matching choices on join_confirm and the timer plus meter row on calibration are wider than the screen', () => {
+  it('A11Y-05 (fixed): at UI scale 2.0 no content is clipped horizontally: the number-matching choices wrap and the timer and meter row wraps', () => {
     expect(report.store['scale_2_horizontal_clipping']).toEqual([]);
   });
 
-  defect('A11Y-04', 'the screen scroller clips the focus ring (the 6 px ring and the 1.05 scale grow beyond the control box): the left edge of left-aligned controls is cut by about 8 px on every screen at every scale, and at 2.0 the bottom of the last control by a few px', () => {
+  it('A11Y-04 (fixed): the screen scroller no longer clips the focus ring (the scroll area keeps an inset for the 6 px ring and the 1.05 scale)', () => {
     report.store['ring_clipped_by_scroller'] = ringClipped;
     expect(ringClipped).toEqual([]);
   });

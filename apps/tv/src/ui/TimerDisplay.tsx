@@ -37,7 +37,7 @@ export function TimerDisplay({
   const countdown = timer.maxMs !== null;
   const shown = countdown ? String(remainingSeconds(timer)) : formatSeconds(timer.elapsedMs);
   const fraction = countdown && timer.maxMs !== null && timer.maxMs > 0 ? Math.min(1, Math.max(0, 1 - timer.elapsedMs / timer.maxMs)) : 0;
-  const barWidth = ui.size(compact ? 420 : 480);
+  const barWidth = ui.size(compact ? 420 : 480, compact ? 520 : 600);
   const barHeight = ui.size(compact ? 12 : 16);
   return (
     <View
@@ -47,9 +47,9 @@ export function TimerDisplay({
       aria-label={timer.label + ': ' + shown + ' ' + text.timerSeconds}
       aria-hidden={capturing}
       importantForAccessibility={capturing ? 'no-hide-descendants' : 'auto'}
-      style={{ alignItems: 'center' }}
+      style={{ alignItems: 'center', maxWidth: '100%' }}
     >
-      <View style={{ flexDirection: 'row', alignItems: compact ? 'center' : 'flex-end' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: compact ? 'center' : 'flex-end' }}>
         <AppText testID="timer-value" kind={compact ? 'label' : 'counter'} bold>
           {shown}
         </AppText>

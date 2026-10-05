@@ -56,6 +56,12 @@ export function ScreenFrame({
 }: ScreenFrameProps): React.ReactElement {
   const ui = useUiScale();
   const orientation = !view.capturing && view.actions.length > 1 ? text.orientationActions : undefined;
+  // A11Y-04: the scroll area clips anything outside its padding box, and a focused control (6 px ring, 1.05 scale) grows
+  // beyond its layout box. The page padding is split: `inset` stays inside the scroll area (and the footer, so text
+  // keeps one left edge) and only the remainder is outside it, so the visible layout is unchanged.
+  const inset = ui.size(layout.ringInset);
+  const insetBottom = ui.size(layout.ringInsetBottom);
+  const outer = Math.max(0, ui.space(layout.pagePadding) - inset);
   return (
     <View
       testID={'screen-' + view.screen}
@@ -63,12 +69,12 @@ export function ScreenFrame({
       style={{
         flex: 1,
         backgroundColor: colors.background,
-        paddingHorizontal: ui.space(layout.pagePadding),
+        paddingHorizontal: outer,
         paddingVertical: ui.space(ui.factor >= layout.largeScaleFactor ? layout.pageVerticalPaddingLarge : layout.pageVerticalPadding),
       }}
     >
       {/* Everything except the footer scrolls when it is taller than the canvas (large UI scales); the footer stays put. */}
-      <FocusScrollView resetKey={view.screen + ':' + view.stage}>
+      <FocusScrollView resetKey={view.screen + ':' + view.stage} inset={{ x: inset, bottom: insetBottom }}>
         {/* Title and status chips share one row; the chips wrap under a long title instead of taking a row of their own. */}
         <View testID="header" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           {hideTitle ? null : (
@@ -127,8 +133,10 @@ export function ScreenFrame({
           />
         )}
       </FocusScrollView>
-      <Announcer announcement={view.announcement} capturing={view.capturing} />
-      <Footer text={view.footer} />
+      <View style={{ paddingHorizontal: inset }}>
+        <Announcer announcement={view.announcement} capturing={view.capturing} />
+        <Footer text={view.footer} />
+      </View>
     </View>
   );
 }
