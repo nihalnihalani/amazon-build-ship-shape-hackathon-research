@@ -21,6 +21,7 @@ import {
   SILENT_FLOOR_DBFS,
   STARTER_PHRASES,
   QUIET_FLOOR_MAX_DBFS,
+  BEGIN_RESEND_MIN_MS,
   VOWEL_MAX_MS,
 } from './constants.js';
 import type { ActionId, LinkView, RemoteKey, TvStage, TvView } from './contract.js';
@@ -37,6 +38,7 @@ import {
   isHiddenPosition,
   isListenerEdition,
   linkUp,
+  measureReady,
   micOpen,
   quietLeadMs,
 } from './selectors.js';
@@ -164,10 +166,10 @@ export class Machine {
     this.s.counters[name] = (this.s.counters[name] ?? 0) + 1;
   }
 
-  private send(message: Outbound): void {
+  private send(message: Outbound, track?: 'session.begin'): void {
     this.bump('sent');
     this.s.lastSentAt = this.s.now;
-    this.fx.push({ kind: 'send', message });
+    this.fx.push(track === undefined ? { kind: 'send', message } : { kind: 'send', message, track });
   }
 
   private persist(op: Extract<Effect, { kind: 'persist' }>['op']): void {
@@ -371,6 +373,11 @@ export class Machine {
       case 'send_failed':
         this.bump('send_errors');
         break;
+      case 'sent': {
+        const sess = s.session;
+        if (event.track === 'session.begin' && sess && sess.beginMessageIds.length < 16) sess.beginMessageIds.push(event.messageId);
+        break;
+      }
       case 'record_not_saved':
         // QA-07: the checkpoint was kept, so the work can be recovered on the next launch.
         s.banner = { kind: 'error', text: COPY.banner.recordNotSaved };
@@ -705,6 +712,9 @@ export class Machine {
       listenerOffered: false,
       listenerOpenSent: false,
       beginSent: false,
+      beginAcked: false,
+      beginMessageIds: [],
+      lastBeginAt: null,
       revealSent: [],
       listenerOpenAttempts: [],
       quietFailure: null,
@@ -938,6 +948,9 @@ export class Machine {
     if (sess) {
       // A new phone means a new floor and band: the old ones belonged to the old pairing.
       sess.beginSent = false;
+      sess.beginAcked = false;
+      sess.beginMessageIds = [];
+      sess.lastBeginAt = null;
       sess.floorDbfs = null;
       sess.calMarginDb = null;
       sess.lastCalibration = null;
@@ -1001,13 +1014,53 @@ export class Machine {
     this.go('permission_pending');
     if (!sess.beginSent) {
       sess.beginSent = true;
-      this.send({
+      this.sendBegin(sess);
+    }
+    // Practice goes on only when the microphone is open AND the phone acked this session.begin (DEF-003); until then
+    // this screen stays and says it is waiting for the phone.
+    if (measureReady(s)) this.enterQuiet();
+  }
+
+  private sendBegin(sess: Session): void {
+    sess.lastBeginAt = this.s.now;
+    this.send(
+      {
         type: 'session.begin',
         ids: { sessionId: sess.sessionId },
         payload: { family_mode: sess.familyMode, phrase_count: sess.phrases.length, cues_max: 3 },
-      });
+      },
+      'session.begin',
+    );
+  }
+
+  /**
+   * Defence in depth for DEF-003: the phone showed it does not know the current session (a mic.state without it or
+   * for another one, or an ack saying unknown_session). Send session.begin again with the same session id and
+   * payload, then the current session.state (the next sync sends it). At most once per 2 s.
+   */
+  private resendBegin(): void {
+    const s = this.s;
+    const sess = s.session;
+    if (!sess || !sess.beginSent || sess.ended !== null || !linkUp(s) || !s.peerConnected) return;
+    if (sess.lastBeginAt !== null && s.now - sess.lastBeginAt < BEGIN_RESEND_MIN_MS) return;
+    this.bump('begin_resends');
+    this.sendBegin(sess);
+    s.lastStateSig = '';
+  }
+
+  private onAck(m: Msg<'ack'>): void {
+    const s = this.s;
+    const sess = s.session;
+    if (!sess || sess.ended !== null) return;
+    if (m.payload.detail === 'unknown_session') {
+      this.resendBegin();
+      return;
     }
-    if (micOpen(s)) this.enterQuiet();
+    if (m.payload.outcome === 'applied' && sess.beginMessageIds.includes(m.payload.acked_message_id)) {
+      const first = !sess.beginAcked;
+      sess.beginAcked = true;
+      if (first && s.stage === 'permission_pending' && micOpen(s)) this.enterQuiet();
+    }
   }
 
   private enterQuiet(): void {
@@ -1061,6 +1114,7 @@ export class Machine {
         this.bump('pongs');
         break;
       case 'ack':
+        this.onAck(m);
         break;
       case 'error':
         this.onRelayError(m);
@@ -1174,7 +1228,9 @@ export class Machine {
   private onMicState(m: Msg<'mic.state'>): void {
     const s = this.s;
     s.mic = { state: m.payload.state, mode: m.payload.mode };
-    if (s.stage === 'permission_pending' && micOpen(s)) {
+    const sess = s.session;
+    if (sess && sess.beginSent && sess.ended === null && m.session_id !== sess.sessionId) this.resendBegin();
+    if (s.stage === 'permission_pending' && measureReady(s)) {
       this.enterQuiet();
       return;
     }
@@ -1561,7 +1617,7 @@ export class Machine {
   private beginWindow(kind: WinKind): void {
     const s = this.s;
     const sess = s.session;
-    if (!sess || !micOpen(s) || s.win !== null) return;
+    if (!sess || !measureReady(s) || s.win !== null) return;
     const w: Win = {
       kind,
       phase: 'lead',

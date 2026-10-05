@@ -301,6 +301,7 @@ describe('vad floor guard (protocol revision 4: window.start.vad_floor_dbfs is -
     } } });
     const s = m.s;
     (s as { session: unknown }).session = (m as unknown as { newSession(p: string[], f: boolean): unknown }).newSession(['One.', 'Two.'], false);
+    (s.session as { beginAcked: boolean }).beginAcked = true; // the phone acked this session's session.begin
     s.link = 'connected';
     s.authed = true;
     s.roomId = ROOM;

@@ -64,6 +64,7 @@ import {
   isHiddenPosition,
   isListenerEdition,
   linkView,
+  measureReady,
   micOpen,
   micView,
   quietLeadMs,
@@ -203,6 +204,7 @@ function derivedFlowBanner(s: Core, v: TvView): Banner | null {
   if (s.session && s.stage !== 'pairing' && s.stage !== 'permission_pending') {
     if (v.mic === 'unknown') return { kind: 'warning', text: COPY.banner.micUnknown };
     if (!micOpen(s) && s.win === null) return { kind: 'warning', text: COPY.banner.micNotOpen };
+    if (micOpen(s) && !s.session.beginAcked && s.win === null) return { kind: 'info', text: COPY.banner.waitingPhone };
   }
   return null;
 }
@@ -338,6 +340,7 @@ function diagnosticsOf(s: Core, env: Env): Record<string, string> {
     duplicates_dropped: String(c.duplicates ?? 0),
     integrity_errors: String(c.integrity_errors ?? 0),
     clock_date_invalid: String(c.clock_date_invalid ?? 0),
+    session_begin_resends: String(c.begin_resends ?? 0),
     join_mismatches: String(c.join_mismatches ?? 0),
     inputs_ignored: String(c.inputs_ignored ?? 0),
     cues_used: isBlindNow(s) ? 'redacted' : String(sess?.cuesUsed ?? 0),
@@ -485,12 +488,13 @@ function micStatusLine(v: TvView): string | null {
 }
 
 function projectPermission(v: TvView, s: Core): string {
-  void s;
   v.screen = 'permission_pending';
   v.title = COPY.permission.title;
   v.body = [...COPY.permission.body];
   const line = micStatusLine(v);
   if (line !== null) v.body.push(line);
+  // DEF-003: the phone has not acked this session yet, so nothing can be measured.
+  if (s.session && s.session.beginSent && !s.session.beginAcked) v.body.push(COPY.permission.waitingPhone);
   v.actions = [act('cancel', COPY.permission.cancel)];
   v.preferredAction = null;
   return `${v.title}. ${COPY.permission.body[0] ?? ''}`;
@@ -554,7 +558,7 @@ function captureActions(w: Win, stopLabel: string, cancelLabel: string): { actio
 function projectQuiet(v: TvView, s: Core): string {
   v.screen = 'quiet_check';
   v.title = COPY.quiet.title;
-  const open = micOpen(s);
+  const open = measureReady(s);
   if (s.win !== null) {
     v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.quiet.running, COPY.phrase.cancelHint];
     v.timer = timerFor(s, s.win, COPY.quiet.running);
@@ -584,7 +588,7 @@ function projectCalibration(v: TvView, s: Core): string {
   v.screen = 'calibration';
   v.title = COPY.calibration.title;
   const session = s.session;
-  const open = micOpen(s);
+  const open = measureReady(s);
   const hasBand = session !== null && session.calMarginDb !== null;
   if (s.win !== null) {
     v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.calibration.running, COPY.phrase.cancelHint];
@@ -698,7 +702,7 @@ function projectVowel(v: TvView, s: Core): string {
   v.body = [...COPY.vowel.readyBody];
   if (s.screenReader) v.body.push(speakScript(quietLeadMs(s), `up to ${secondsWords(VOWEL_MAX_MS)}`));
   v.actions = [
-    act('begin_vowel', COPY.vowel.begin, { hint: BEGIN_HINT, disabled: !micOpen(s) }),
+    act('begin_vowel', COPY.vowel.begin, { hint: BEGIN_HINT, disabled: !measureReady(s) }),
     act('skip_vowel', COPY.vowel.skip),
     act('open_settings', COPY.home.settings),
   ];
@@ -785,7 +789,7 @@ function projectPhrase(v: TvView, s: Core): string {
     if (blindNext) v.body.push(COPY.phrase.blind);
     else if (priorStarted) v.body.push(COPY.phrase.retryNote);
     v.actions = [
-      act('begin_phrase', COPY.phrase.begin, { hint: BEGIN_HINT, disabled: !micOpen(s) }),
+      act('begin_phrase', COPY.phrase.begin, { hint: BEGIN_HINT, disabled: !measureReady(s) }),
       act('skip_phrase', COPY.phrase.skip),
       act('finish_early', COPY.phrase.finish),
       act('open_settings', COPY.home.settings),
@@ -885,7 +889,7 @@ function projectPaused(v: TvView, s: Core): string {
   const reason = p?.reason ?? 'interrupted';
   const text = pausedText(reason);
   v.body = [text, COPY.paused.retryHint];
-  const open = micOpen(s);
+  const open = measureReady(s);
   const from = p?.from ?? 'phrase';
   const retry = act('retry', COPY.paused.retry, { hint: COPY.paused.retryHint, disabled: !open });
   if (from === 'phrase') {

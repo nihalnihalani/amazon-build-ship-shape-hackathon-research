@@ -177,6 +177,11 @@ export class Harness {
   views: TvView[] = [];
   /** Session floor the fake phone reports (dBFS). */
   floor = FLOOR;
+  /** A phone that acks every session.begin as applied before it reports its microphone (DEF-003). */
+  autoAck = true;
+  /** The session the fake phone knows (set when it acks a session.begin); mic.state carries it. */
+  phoneSession: string | null = null;
+  private ackedBegins = new Set<string>();
   private phoneSeq = 0;
   private relaySeq = 0;
   deps!: SessionStoreDeps;
@@ -374,10 +379,23 @@ export class Harness {
     return { s: cmd.session_id, w: cmd.window_id, a: cmd.attempt_id };
   }
 
+  /** The phone acks session.begin messages the TV has sent that it has not acked yet. */
+  ackPendingBegins(outcome: 'applied' | 'ignored_stale' | 'rejected' = 'applied', detail = ''): void {
+    for (const m of this.of('session.begin')) {
+      if (this.ackedBegins.has(m.message_id)) continue;
+      this.ackedBegins.add(m.message_id);
+      this.wire(
+        this.envelope('ack', 'phone', { acked_message_id: m.message_id, outcome, detail }, { s: m.session_id }),
+      );
+      if (outcome === 'applied') this.phoneSession = m.session_id;
+    }
+  }
+
   micState(
     state: 'off' | 'permission_pending' | 'permission_denied' | 'no_input' | 'input_busy' | 'constraints_unsupported' | 'open_idle' | 'measuring' | 'error',
     mode: 'physical_phone' | 'same_host' | 'fixture_replay' = 'physical_phone',
   ): void {
+    if (this.autoAck) this.ackPendingBegins();
     this.wire(
       this.envelope('mic.state', 'phone', {
         state,
@@ -386,7 +404,7 @@ export class Harness {
         wake_lock: 'held',
         visibility: 'visible',
         mode,
-      }),
+      }, { s: this.phoneSession }),
     );
   }
 

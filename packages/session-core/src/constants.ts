@@ -85,6 +85,8 @@ export const LEVEL_SMOOTHING = 0.5;
 
 /** Remembered recent message ids for duplicate suppression. */
 export const SEEN_IDS_MAX = 256;
+/** DEF-003: session.begin is re-sent at most this often when the phone shows it does not know the session. */
+export const BEGIN_RESEND_MIN_MS = 2000;
 
 /** Original calibration sentence (not a household phrase, not third-party text). */
 export const CALIBRATION_PHRASE = 'The weather is lovely today.';
