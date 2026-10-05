@@ -21,6 +21,7 @@ export const FLOOR = -50;
 export const CONFIRM_DIGITS = '42';
 
 export interface TvMessage {
+  message_id: string;
   type: string;
   payload: Record<string, unknown>;
   session_id: string | null;
@@ -192,6 +193,9 @@ export class ScriptedPhone {
     });
   }
 
+  /** The session the TV last began; the phone names it in mic.state after acking session.begin (DEF-003). */
+  private beganSessionId: string | null = null;
+
   micState(state: PayloadMap['mic.state']['state']): void {
     this.sendPhone('mic.state', {
       state,
@@ -200,11 +204,11 @@ export class ScriptedPhone {
       wake_lock: 'held',
       visibility: 'visible',
       mode: 'fixture_replay',
-    });
+    }, this.beganSessionId === null ? undefined : { message_id: '', type: 'mic.state', payload: {}, session_id: this.beganSessionId, window_id: null, attempt_id: null });
   }
 
   cue(text: string, sessionId: string): void {
-    this.sendPhone('cue', { text }, { session_id: sessionId, window_id: null, attempt_id: null, type: 'cue', payload: {} });
+    this.sendPhone('cue', { text }, { message_id: '', session_id: sessionId, window_id: null, attempt_id: null, type: 'cue', payload: {} });
   }
 
   dropLink(): void {
@@ -247,6 +251,9 @@ export class ScriptedPhone {
         }
         break;
       case 'session.begin':
+        // DEF-003: the TV starts no measurement before the phone acked session.begin as applied.
+        this.sendPhone('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, m);
+        this.beganSessionId = m.session_id;
         if (!this.bankSent && this.opts.bank !== undefined) {
           this.bankSent = true;
           this.later(delay * 5, () => {
