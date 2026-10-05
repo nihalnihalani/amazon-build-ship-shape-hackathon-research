@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 export const PREVIEW_URL = process.env['TV_PREVIEW_URL'] ?? 'http://127.0.0.1:5179';
-export const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+export const CHROME_PATH = process.env['ATR_CHROME'] ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 export const FOOTER_TEXT = 'Not a medical device. Does not diagnose or treat any condition.';
 /** The preview canvas is 1920 x 1080 below a 44 px banner; this viewport makes the page scale exactly 1.0. */
 export const VIEWPORT = { width: 1920, height: 1124 } as const;

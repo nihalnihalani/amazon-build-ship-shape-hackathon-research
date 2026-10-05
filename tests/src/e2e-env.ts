@@ -29,6 +29,8 @@ export interface RelayEnv {
 }
 
 export function buildArtifacts(): void {
+  // Built once by the e2e global setup before any test module imports @atr/session-core (QA-E2E-04).
+  if (process.env.ATR_E2E_BUILT === '1') return;
   const run = (args: string[]) => execFileSync('npm', args, { cwd: ROOT, stdio: 'pipe' });
   run(['run', 'build', '-w', '@atr/protocol']);
   run(['run', 'build', '-w', '@atr/phone-mic-meter']);

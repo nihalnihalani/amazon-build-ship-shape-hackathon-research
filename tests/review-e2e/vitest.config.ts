@@ -5,5 +5,5 @@ import { defineConfig } from 'vitest/config';
 //   npx vitest run --config review-e2e/vitest.config.ts
 // Strict mode (defect repros fail instead of being expected-fail): QA_STRICT=1
 export default defineConfig({
-  test: { include: ['review-e2e/*.test.ts'], testTimeout: 180_000, hookTimeout: 120_000, fileParallelism: false },
+  test: { include: ['review-e2e/*.test.ts'], globalSetup: ['./e2e-global-setup.ts'], testTimeout: 180_000, hookTimeout: 120_000, fileParallelism: false },
 });
