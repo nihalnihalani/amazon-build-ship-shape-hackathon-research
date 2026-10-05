@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T09:07:28+05:30",
+ "updated_at": "2026-10-05T09:57:41+05:30",
  "states": [
   "pending",
   "ready",
@@ -338,7 +338,7 @@
     "T07"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "HTTPS phone page with pairing, permission states, mic badge, listener controls, phrase/cue editor, shutdown",
@@ -350,10 +350,11 @@
    "reviewer": "qa-accessibility",
    "evidence_refs": [
     "EV-0019",
-    "EV-0043"
+    "EV-0043",
+    "EV-0050"
    ],
    "commit": "982910a",
-   "blocker": "real_phone checks pending B-002"
+   "blocker": "Real Android permission/AGC/lifecycle checks are part of T19 (B-002)"
   },
   {
    "id": "T09",
@@ -595,7 +596,7 @@
     "T14"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "Fault injection: delay, out-of-order, dropout, expiry, partial windows, noisy input, floor change, reconnect"
@@ -607,7 +608,8 @@
    "evidence_refs": [
     "EV-0036",
     "EV-0038",
-    "EV-0048"
+    "EV-0048",
+    "EV-0050"
    ],
    "commit": "1e34358",
    "blocker": null
@@ -708,7 +710,8 @@
    "evidence_refs": [
     "EV-0040",
     "EV-0042",
-    "EV-0048"
+    "EV-0048",
+    "EV-0050"
    ],
    "commit": null,
    "blocker": null
