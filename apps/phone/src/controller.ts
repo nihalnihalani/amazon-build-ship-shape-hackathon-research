@@ -210,6 +210,13 @@ export class PhoneController {
   private readonly pendingCues = new Set<string>();
   /** Credential is held but the user has not yet said "Yes, that was me". */
   private userConfirmed = false;
+  /**
+   * DEF-003: the TV announces its session right after it accepts the join, i.e. before the person
+   * taps Yes. The latest `session.begin` and `session.state` are kept (not acted on, nothing sent)
+   * and applied right after Yes. Everything else that arrives before Yes is dropped.
+   */
+  private heldSessionBegin: Extract<Command, { type: 'session.begin' }> | null = null;
+  private heldSessionState: Extract<Command, { type: 'session.state' }> | null = null;
   private failTimer: ReturnType<typeof setTimeout> | null = null;
   private listenerTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingResponse: string | null = null;
@@ -341,6 +348,7 @@ export class PhoneController {
       return;
     }
     this.purpose = 'join';
+    this.dropHeld();
     this.patch({
       join: { ...join, phase: 'connecting', message: null, codeMessage: null, deviceLabelMessage: null },
       unpairedReason: null,
@@ -376,7 +384,13 @@ export class PhoneController {
       join: { ...this.state.join, phase: 'idle', confirmDigits: null, message: null, code: '' },
     });
     this.lastMicKey = null;
-    this.publishMic();
+    this.publishMic(); // mic.state first
+    // Then the session the TV announced while the question was on screen (DEF-003), in order.
+    const begin = this.heldSessionBegin;
+    const state = this.heldSessionState;
+    this.dropHeld();
+    if (begin !== null) this.onSessionBegin(begin);
+    if (state !== null) this.onSessionState(state);
     this.flushPending();
     this.syncWakeLock();
   }
@@ -395,6 +409,7 @@ export class PhoneController {
     this.factory.clearAuth();
     this.credential = null;
     this.userConfirmed = false;
+    this.dropHeld();
     this.clearFailureWindow();
     this.patch({
       screen: 'join',
@@ -544,8 +559,10 @@ export class PhoneController {
         if (this.userConfirmed) this.onAck(msg.payload.acked_message_id, msg.payload.outcome, msg.payload.detail);
         return;
       default:
+        if (!COMMAND_TYPES.has(msg.type)) return;
         // TV commands are acted on (and acknowledged) only once the user confirmed the pairing.
-        if (COMMAND_TYPES.has(msg.type) && this.userConfirmed && this.state.screen === 'setup') this.onCommand(msg as Command);
+        if (this.userConfirmed && this.state.screen === 'setup') this.onCommand(msg as Command);
+        else if (this.credential !== null && this.state.join.phase === 'confirming') this.holdUntilConfirmed(msg as Command);
     }
   }
 
@@ -648,6 +665,26 @@ export class PhoneController {
     this.patch({ notice: `The relay refused a message (${code}).` });
   }
 
+  /**
+   * While waiting for "Yes, that was me": remember only the latest session.begin and the latest
+   * session.state (no ack, no state change, nothing sent). Measurement commands and anything else
+   * are dropped.
+   */
+  private holdUntilConfirmed(msg: Command): void {
+    if (msg.type === 'session.begin') {
+      this.heldSessionBegin = msg;
+      // A newer session makes a held state of another session obsolete.
+      if (this.heldSessionState !== null && this.heldSessionState.session_id !== msg.session_id) this.heldSessionState = null;
+    } else if (msg.type === 'session.state') {
+      this.heldSessionState = msg;
+    }
+  }
+
+  private dropHeld(): void {
+    this.heldSessionBegin = null;
+    this.heldSessionState = null;
+  }
+
   /** TV acknowledgements of phone messages: phrases.update, cue and listener.response. */
   private onAck(ackedId: string, outcome: AckOutcome, detail: string): void {
     if (this.pendingPhrases !== null && this.pendingPhrases.id === ackedId) {
@@ -739,7 +776,18 @@ export class PhoneController {
   }
 
   private onSessionBegin(msg: Extract<Command, { type: 'session.begin' }>): void {
-    if (this.state.session !== null && this.state.session.sessionId !== msg.session_id) {
+    const current = this.state.session;
+    if (current !== null && current.sessionId === msg.session_id) {
+      // A repeat for the session already running (the TV resends it defensively): acknowledge it
+      // and change nothing about progress. Stage, position, cue count and any open window stay as
+      // they are; only the announced configuration is refreshed if it differs.
+      if (current.familyMode !== msg.payload.family_mode || current.phraseCount !== msg.payload.phrase_count) {
+        this.patch({ session: { ...current, familyMode: msg.payload.family_mode, phraseCount: msg.payload.phrase_count } });
+      }
+      this.ackFor(msg, 'applied');
+      return;
+    }
+    if (current !== null && current.sessionId !== msg.session_id) {
       this.abortRun('discard');
       this.lockListener();
     }
@@ -1207,6 +1255,7 @@ export class PhoneController {
     this.pendingResponse = null;
     this.resetCues();
     this.userConfirmed = false;
+    this.dropHeld();
     this.clearFailureWindow();
     this.clearListenerTimer();
     this.patch({ session: null, micNotice: null });

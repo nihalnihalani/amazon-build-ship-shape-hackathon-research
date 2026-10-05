@@ -152,11 +152,31 @@ try {
   check('asks "Did you just pick 47 on your TV?" with Yes and No', (await page.textContent('#confirm-heading')) === 'Did you just pick 47 on your TV?' && (await page.textContent('#confirm-yes')) === 'Yes, that was me' && (await page.textContent('#confirm-no')) === 'No, cancel');
   check('before Yes the phone has sent only join.request (no mic.state, no ack, no phrases)', received.map((m) => m.type).join(',') === 'join.request', received.map((m) => m.type).join(','));
   check('before Yes the setup screen and Start microphone are not available', await page.evaluate(() => document.getElementById('view-setup').hidden && document.getElementById('start-mic').disabled));
+
+  // DEF-003: the TV announces its session right after accepting the join, while the question is on screen.
+  const earlyBegin = tvMsg('session.begin', { family_mode: true, phrase_count: 4, cues_max: 3 }, { session_id: SESSION });
+  const earlyState = tvMsg('session.state', { stage: 'permission_pending', phrase_position: 0, cues_used: 0, listener_open_attempt: null }, { session_id: SESSION });
+  const droppedWindow = ids.window();
+  const droppedAttempt = ids.attempt();
+  const droppedPrecheck = tvMsg('precheck.start', { purpose: 'quiet_check', duration_ms: 5000 }, { session_id: SESSION, window_id: droppedWindow, attempt_id: droppedAttempt });
+  commandIds.splice(commandIds.findIndex((c) => c.id === droppedPrecheck), 1); // dropped on purpose: it must NOT be acked
+  await new Promise((r) => setTimeout(r, 600));
+  check('DEF-003: session.begin / session.state / precheck.start before Yes are not acknowledged and nothing else is sent', received.map((m) => m.type).join(',') === 'join.request', received.map((m) => m.type).join(','));
+  check('DEF-003: held messages change nothing on the page (still the question, Start disabled)', await page.evaluate(() => !document.getElementById('confirm-self').hidden && document.getElementById('view-setup').hidden && document.getElementById('start-mic').disabled));
   await page.click('#confirm-yes');
   await page.waitForSelector('#view-setup:not([hidden])');
+  const earlyBeginAck = await waitAck(earlyBegin, 'the early session.begin');
+  const earlyStateAck = await waitAck(earlyState, 'the early session.state');
+  const orderOf = (m) => received.findIndex((x) => x.message_id === m.message_id);
+  const firstMic = received.findIndex((x) => x.type === 'mic.state');
+  check('DEF-003: after Yes the first message is mic.state, then the held begin is acked applied, then the held state', firstMic === 1 && orderOf(earlyBeginAck) > firstMic && orderOf(earlyStateAck) > orderOf(earlyBeginAck), received.slice(0, 5).map((m) => m.type).join(','));
+  check('DEF-003: both acks say applied and carry the session id', earlyBeginAck.payload.outcome === 'applied' && earlyStateAck.payload.outcome === 'applied' && earlyBeginAck.session_id === SESSION && earlyStateAck.session_id === SESSION);
+  check('DEF-003: the page shows the TV step from the held session.state', /TV step: Setting up\./.test(await page.textContent('#session')), await page.textContent('#session'));
+  await new Promise((r) => setTimeout(r, 300));
+  check('DEF-003: the measurement command received before Yes was dropped for good (never acked, never run)', !ackFor(droppedPrecheck) && phoneMsgs('precheck.result').length === 0);
   await waitFor(() => phoneMsgs('mic.state').length > 0, { label: 'first mic.state' });
-  const mic0 = lastOf('mic.state').payload;
-  check('first mic.state says off, visible, fixture_replay, wake lock not requested', mic0.state === 'off' && mic0.visibility === 'visible' && mic0.mode === 'fixture_replay' && mic0.wake_lock === 'not_requested', JSON.stringify(mic0));
+  const mic0 = phoneMsgs('mic.state')[0].payload;
+  check('the first mic.state (sent right after Yes) says off, visible, fixture_replay, wake lock not requested', mic0.state === 'off' && mic0.visibility === 'visible' && mic0.mode === 'fixture_replay' && mic0.wake_lock === 'not_requested', JSON.stringify(mic0));
   check('authenticated messages use generation 1 and sequence 0 first', lastOf('mic.state').producer_generation === 1 && phoneMsgs('mic.state')[0].sequence === 0);
   check('no microphone request before the tap (badge says Mic off)', (await page.textContent('#mic-badge')) === 'Mic off');
 
@@ -174,20 +194,35 @@ try {
   // ---- session + quiet check ------------------------------------------------------
   const beginId = tvMsg('session.begin', { family_mode: true, phrase_count: 4, cues_max: 3 }, { session_id: SESSION });
   const beginAck = await waitAck(beginId, 'session.begin');
-  check('session.begin acknowledged applied, bound to the session', beginAck.payload.outcome === 'applied' && beginAck.session_id === SESSION && beginAck.window_id === null);
+  check('a repeated session.begin (the TV resends it defensively) is acked applied, bound to the session', beginAck.payload.outcome === 'applied' && beginAck.session_id === SESSION && beginAck.window_id === null);
+  check('the repeat did not reset progress: the TV step from the earlier session.state is still shown', /TV step: Setting up\./.test(await page.textContent('#session')), await page.textContent('#session'));
 
+  // A silent input (digital silence) must be reported as silent_input and shown as "muted or blocked".
   await page.evaluate(() => window.__atrTestAudio.setSilence());
+  const w0 = ids.window();
+  const a0 = ids.attempt();
+  tvMsg('precheck.start', { purpose: 'quiet_check', duration_ms: 5000 }, { session_id: SESSION, window_id: w0, attempt_id: a0 });
+  await waitFor(() => phoneMsgs('precheck.result').length > 0, { timeout: 15_000, label: 'silent precheck.result' });
+  const silent = lastOf('precheck.result');
+  check('a silent input is reported as silent_input (floor below -110 dBFS)', silent.window_id === w0 && silent.payload.valid === false && silent.payload.invalid_reason === 'silent_input' && silent.payload.floor_dbfs <= -110, JSON.stringify(silent.payload));
+  await page.waitForFunction(() => !document.getElementById('mic-notice').hidden);
+  check('the phone says "The microphone looks muted or blocked"', /The microphone looks muted or blocked/.test(await page.textContent('#mic-notice')));
+
+  // A real quiet room: a steady -60 dBFS sine gives a valid quiet check and clears the notice.
+  await page.evaluate(() => window.__atrTestAudio.setLevelDbfs(-60));
   const w1 = ids.window();
   const a1 = ids.attempt();
   const preId = tvMsg('precheck.start', { purpose: 'quiet_check', duration_ms: 5000 }, { session_id: SESSION, window_id: w1, attempt_id: a1 });
   await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Measuring', null, { timeout: 5000 });
   const preAck = await waitAck(preId, 'precheck.start');
   check('precheck.start acknowledged applied with the command ids', preAck.payload.outcome === 'applied' && preAck.window_id === w1 && preAck.attempt_id === a1);
-  await waitFor(() => phoneMsgs('precheck.result').length > 0, { timeout: 15_000, label: 'precheck.result' });
+  await waitFor(() => phoneMsgs('precheck.result').length > 1, { timeout: 15_000, label: 'precheck.result' });
   const pre = lastOf('precheck.result');
-  check('quiet check result bound to the command ids, valid, silent floor', pre.window_id === w1 && pre.attempt_id === a1 && pre.payload.valid === true && pre.payload.floor_dbfs <= -100, JSON.stringify(pre.payload));
+  check('quiet check result bound to the command ids, valid, floor about -60 dBFS (expected from the sine amplitude, tolerance 1 dB)', pre.window_id === w1 && pre.attempt_id === a1 && pre.payload.valid === true && Math.abs(pre.payload.floor_dbfs + 60) <= 1, JSON.stringify(pre.payload));
   check('quiet check frame accounting: 100 expected frames, full coverage', pre.payload.expected_frames === 100 && pre.payload.frame_count === 100 && pre.payload.coverage === 1, `frames ${pre.payload.frame_count}/${pre.payload.expected_frames}`);
-  check('no level frames were sent during the precheck', phoneMsgs('level').length === 0);
+  check('no level frames were sent during the prechecks', phoneMsgs('level').length === 0);
+  check('the notice is gone after a good quiet check', await page.evaluate(() => document.getElementById('mic-notice').hidden));
+  check('every dB value on the wire is on the 0.1 dB grid (revision 4)', [pre.payload.floor_dbfs, pre.payload.p20_dbfs, pre.payload.p80_dbfs, pre.payload.p95_dbfs].every((v) => Math.abs(v * 10 - Math.round(v * 10)) < 1e-6));
   await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Mic open, not measuring');
 
   // ---- calibration window with a -30 dBFS sine --------------------------------------
