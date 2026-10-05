@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T05:45:43+05:30",
+ "updated_at": "2026-10-05T06:05:28+05:30",
  "states": [
   "pending",
   "ready",
@@ -593,7 +593,9 @@
     "tests/fault"
    ],
    "reviewer": "qa-accessibility",
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0036"
+   ],
    "commit": null,
    "blocker": "Runs after relay rev 4 rework merges"
   },
