@@ -10,7 +10,12 @@ import type { AttemptRecord, EndReason, SessionRecord, VowelRecord } from './rec
 import type { MicMode, MicStateName, Outbound } from './wire.js';
 
 export type WinKind = 'quiet_check' | 'calibration' | 'vowel' | 'phrase';
-export type WinPhase = 'lead' | 'precheck' | 'capture' | 'closing';
+/**
+ * lead: quiet lead after OK. precheck: the room check. starting: window.start was sent and the TV waits for the first
+ * level frame (DEF-007): no prompt, no timer. capture: the first frame arrived, the timer and the maximum count from it.
+ * closing: the stop was sent, the result is awaited.
+ */
+export type WinPhase = 'lead' | 'precheck' | 'starting' | 'capture' | 'closing';
 
 export interface Win {
   kind: WinKind;
@@ -22,6 +27,9 @@ export interface Win {
   /** Length of the quiet lead used for this window (1500 ms, or longer with a screen reader on). */
   leadMs: number;
   precheckAt: number | null;
+  /** When window.start was sent (the first frame must arrive within RESULT_GRACE_MS of it). */
+  startSentAt: number | null;
+  /** When the first level frame of this window arrived: the speaker's prompt, the timer and the maximum start here. */
   captureAt: number | null;
   closingAt: number | null;
   /** Maximum capture time (ms) for calibration/vowel/phrase; precheck duration for quiet_check. */
@@ -161,6 +169,14 @@ export interface Core {
    * down; flushed after auth.ok and when the phone is back (QA-03).
    */
   pendingOut: Outbound[];
+  /** Tracked sends whose message_id has not been reported yet. */
+  tagged: { tag: number; kind: 'session.begin' | 'deliver'; message: Outbound }[];
+  nextTag: number;
+  /**
+   * Recently sent must-deliver commands by message_id. If the relay answers one with peer_offline the phone never
+   * got it, so exactly that command goes back into the queue (DEF-005).
+   */
+  sentDeliver: { messageId: string; message: Outbound }[];
   deleting: boolean;
   deleteRemaining: number;
   /** Outcome of the last delete: success is only ever claimed after the key listing verified it. */
@@ -193,7 +209,7 @@ export type InternalEvent =
   | { type: 'record_not_saved' }
   | { type: 'send_failed' }
   /** The store tells the machine the message_id it gave a tracked message. */
-  | { type: 'sent'; track: 'session.begin'; messageId: string }
+  | { type: 'sent'; tag: number; messageId: string }
   | { type: 'delete_done'; result: DeleteResult };
 
 export type Event = TvInput | { kind: 'internal'; event: InternalEvent };
@@ -208,7 +224,8 @@ export type PersistOp =
   | { op: 'clear_checkpoint' };
 
 export type Effect =
-  | { kind: 'send'; message: Outbound; track?: 'session.begin' }
+  /** `tag` asks the store to report the message_id it assigns (acks and error references name it). */
+  | { kind: 'send'; message: Outbound; tag?: number }
   /** Tell the outbox the room and authenticated generation (restarts the sequence when either changes). */
   | { kind: 'bind'; roomId: string | null; generation: number }
   | { kind: 'connect' }

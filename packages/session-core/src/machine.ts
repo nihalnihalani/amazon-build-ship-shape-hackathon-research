@@ -93,6 +93,9 @@ export function initialCore(env: Env): Core {
     level: null,
     cue: null,
     pendingOut: [],
+    tagged: [],
+    nextTag: 1,
+    sentDeliver: [],
     deleting: false,
     deleteRemaining: 0,
     deleteOutcome: null,
@@ -166,10 +169,18 @@ export class Machine {
     this.s.counters[name] = (this.s.counters[name] ?? 0) + 1;
   }
 
-  private send(message: Outbound, track?: 'session.begin'): void {
+  private send(message: Outbound, track?: 'session.begin' | 'deliver'): void {
     this.bump('sent');
     this.s.lastSentAt = this.s.now;
-    this.fx.push(track === undefined ? { kind: 'send', message } : { kind: 'send', message, track });
+    if (track === undefined) {
+      this.fx.push({ kind: 'send', message });
+      return;
+    }
+    const tag = this.s.nextTag;
+    this.s.nextTag += 1;
+    this.s.tagged.push({ tag, kind: track, message });
+    if (this.s.tagged.length > 32) this.s.tagged.shift();
+    this.fx.push({ kind: 'send', message, tag });
   }
 
   private persist(op: Extract<Effect, { kind: 'persist' }>['op']): void {
@@ -374,8 +385,17 @@ export class Machine {
         this.bump('send_errors');
         break;
       case 'sent': {
+        const index = s.tagged.findIndex((t) => t.tag === event.tag);
+        if (index < 0) break;
+        const [entry] = s.tagged.splice(index, 1);
+        if (!entry) break;
         const sess = s.session;
-        if (event.track === 'session.begin' && sess && sess.beginMessageIds.length < 16) sess.beginMessageIds.push(event.messageId);
+        if (entry.kind === 'session.begin') {
+          if (sess && sess.beginMessageIds.length < 16) sess.beginMessageIds.push(event.messageId);
+        } else {
+          s.sentDeliver.push({ messageId: event.messageId, message: entry.message });
+          if (s.sentDeliver.length > 16) s.sentDeliver.shift();
+        }
         break;
       }
       case 'record_not_saved':
@@ -923,7 +943,7 @@ export class Machine {
    * was presented (A3-07): the pairing may be compromised. Either way the TV drops the room and, if a session or
    * the pairing screen was open, goes back to pairing with a fresh room; an open window is cancelled and unscored.
    */
-  private pairingLost(code: string): void {
+  private pairingLost(code: string, detail = ''): void {
     const s = this.s;
     s.authed = false;
     s.roomId = null;
@@ -956,7 +976,9 @@ export class Machine {
       sess.lastCalibration = null;
       sess.currentAttemptId = null;
     }
-    const banner = { kind: 'error' as const, text: code === 'revoked' ? COPY.banner.pairingCompromised : COPY.banner.pairingLost };
+    // A revoked credential may mean someone else used it; a room the TV or the relay closed is not suspicious.
+    const compromised = code === 'revoked' && detail !== 'room_closed';
+    const banner = { kind: 'error' as const, text: compromised ? COPY.banner.pairingCompromised : COPY.banner.pairingLost };
     if (inFlow) {
       this.enterPairing(false);
     }
@@ -974,7 +996,7 @@ export class Machine {
     const s = this.s;
     const needsPeer = Machine.TO_PHONE.has(message.type);
     if (linkUp(s) && (!needsPeer || s.peerConnected)) {
-      this.send(message);
+      this.send(message, needsPeer ? 'deliver' : undefined);
       return;
     }
     const key = JSON.stringify([message.type, 'ids' in message ? message.ids : null]);
@@ -988,7 +1010,7 @@ export class Machine {
     const keep: Outbound[] = [];
     for (const m of s.pendingOut) {
       if (Machine.TO_PHONE.has(m.type) && !s.peerConnected) keep.push(m);
-      else this.send(m);
+      else this.send(m, Machine.TO_PHONE.has(m.type) ? 'deliver' : undefined);
     }
     s.pendingOut = keep;
   }
@@ -1213,16 +1235,60 @@ export class Machine {
     if (reconnected) s.banner = { kind: 'info', text: COPY.banner.phoneReconnected };
   }
 
+  /**
+   * Relay errors. Only signals that the pairing itself is gone send the TV back to pairing: the room expired or was
+   * closed, a revoked or expired credential, a superseded TV connection, a failed resume of the TV's own, or a room
+   * the relay no longer knows while the TV is resuming. `not_found` with `peer_offline` says the PHONE is temporarily
+   * offline: the room and the session stay (DEF-005).
+   */
   private onRelayError(m: Msg<'error'>): void {
     const s = this.s;
-    const code = m.payload.code;
+    const { code, detail, ref_message_id: ref } = m.payload;
     this.bump('relay_errors');
-    if (['expired', 'revoked', 'unauthorized', 'unauthenticated', 'not_found', 'superseded'].includes(code)) {
-      this.pairingLost(code);
+    if (code === 'not_found' && detail === 'peer_offline') {
+      this.onPeerOffline(ref);
+      return;
+    }
+    if (code === 'not_found' && detail === 'no_such_join') {
+      // The join the TV answered is gone (expired or already settled): not a lost pairing.
+      s.joinRequest = null;
+      s.joinAccepted = false;
+      s.banner = { kind: 'info', text: COPY.join.expired };
+      return;
+    }
+    const resuming = !s.authed; // an error before auth.ok answers the TV's own resume (or room.create)
+    const roomLost =
+      code === 'expired' ||
+      code === 'revoked' ||
+      code === 'superseded' ||
+      (code === 'unauthorized' && (resuming || detail === 'resume_failed')) ||
+      (code === 'not_found' && resuming);
+    if (roomLost) {
+      this.pairingLost(code, detail);
       return;
     }
     if (code === 'cue_limit') return;
     s.banner = { kind: 'warning', text: COPY.banner.relayError(code) };
+  }
+
+  /**
+   * The relay could not deliver a command because the phone is not connected. The phone is temporarily offline: its
+   * microphone state is unknown, an open window is cancelled and unscored, and the command that was dropped goes back
+   * into the queue to be flushed when peer.state says the phone is back. The room and the session are kept.
+   */
+  private onPeerOffline(ref: string | null): void {
+    const s = this.s;
+    this.bump('peer_offline_errors');
+    s.peerConnected = false;
+    s.mic = { state: null, mode: s.mic.mode };
+    if (ref !== null) {
+      const i = s.sentDeliver.findIndex((e) => e.messageId === ref);
+      if (i >= 0) {
+        const [entry] = s.sentDeliver.splice(i, 1);
+        if (entry) this.deliver(entry.message);
+      }
+    }
+    if (s.win !== null) this.cancelWindow('link_lost');
   }
 
   private onMicState(m: Msg<'mic.state'>): void {
@@ -1318,7 +1384,7 @@ export class Machine {
     const s = this.s;
     const sess = s.session;
     const w = this.matchWin(m);
-    if (!w || !sess || (w.phase !== 'capture' && w.phase !== 'closing')) {
+    if (!w || !sess || (w.phase !== 'starting' && w.phase !== 'capture' && w.phase !== 'closing')) {
       this.stale(m);
       return;
     }
@@ -1331,6 +1397,12 @@ export class Machine {
       return;
     }
     w.lastFrameIndex = m.payload.frame_index;
+    if (w.phase === 'starting') {
+      // DEF-007: the first frame is the phone's proof that it is measuring. Only now does the speaker's prompt, the
+      // timer and the window maximum begin; this holds for blind windows too (frames are validated, never shown).
+      w.phase = 'capture';
+      w.captureAt = s.now;
+    }
     // Validated, never rendered for blind windows: nothing is derived from the level.
     if (w.hidden || sess.floorDbfs === null) return;
     const rel = m.payload.dbfs - sess.floorDbfs;
@@ -1346,7 +1418,7 @@ export class Machine {
     const s = this.s;
     const sess = s.session;
     const w = this.matchWin(m);
-    if (!w || !sess || (w.phase !== 'capture' && w.phase !== 'closing') || w.kind === 'quiet_check') {
+    if (!w || !sess || (w.phase !== 'starting' && w.phase !== 'capture' && w.phase !== 'closing') || w.kind === 'quiet_check') {
       this.stale(m);
       return;
     }
@@ -1490,7 +1562,7 @@ export class Machine {
     const sess = this.s.session;
     if (!sess || sess.revealSent.includes(a.attemptId)) return;
     sess.revealSent.push(a.attemptId);
-    this.send({
+    this.deliver({
       type: 'attempt.reveal',
       ids: { sessionId: sess.sessionId, windowId: a.windowId, attemptId: a.attemptId },
       payload: {},
@@ -1626,6 +1698,7 @@ export class Machine {
       leadUntil: s.now + this.leadMs(),
       leadMs: this.leadMs(),
       precheckAt: null,
+      startSentAt: null,
       captureAt: null,
       closingAt: null,
       maxMs: 0,
@@ -1681,6 +1754,10 @@ export class Machine {
         if (s.now >= (w.precheckAt ?? s.now) + duration + RESULT_GRACE_MS) this.cancelWindow('timeout');
         break;
       }
+      case 'starting':
+        // No level frame within the grace time: the phone did not start measuring. Nothing was captured.
+        if (s.now >= (w.startSentAt ?? s.now) + RESULT_GRACE_MS) this.cancelWindow('timeout', 'no_start');
+        break;
       case 'capture':
         if (!w.stopSent && s.now >= (w.captureAt ?? s.now) + w.maxMs + 500) {
           w.stopSent = true;
@@ -1758,8 +1835,9 @@ export class Machine {
     // A precheck and the capture that follows it are two measurements: the capture gets its own window_id and
     // keeps the attempt_id. The phone treats window ids as single-use, and stale filtering is per window_id.
     if (w.precheckAt !== null) w.windowId = this.freshWindowId(sess, w.windowId);
-    w.phase = 'capture';
-    w.captureAt = s.now;
+    w.phase = 'starting';
+    w.startSentAt = s.now;
+    w.captureAt = null;
     this.send({
       type: 'window.start',
       ids: this.ids(w),
@@ -1839,7 +1917,7 @@ export class Machine {
           sess.vowels.push({
             windowId: w.windowId,
             valid: false,
-            reason: user ? 'cancelled' : key === 'timeout' ? 'timeout' : 'interrupted',
+            reason: user ? 'cancelled' : key === 'timeout' || key === 'no_start' ? key : 'interrupted',
             longestActiveMs: null,
             verdict: null,
             borderline: false,
@@ -1857,8 +1935,11 @@ export class Machine {
         if (a) {
           a.state = user ? 'cancelled' : 'invalid';
           a.verdict = 'unscored';
-          a.reason = user ? 'cancelled' : key === 'timeout' ? 'timeout' : 'interrupted';
+          a.reason = user ? 'cancelled' : key === 'timeout' || key === 'no_start' ? key : 'interrupted';
           a.borderline = false;
+          // DEF-007: the speaker was never prompted and no frame was shown or scored, so this try never started: it does
+          // not use up a blind check (same rule as a gate block).
+          if (w.phase === 'starting') a.started = false;
           sess.currentAttemptId = a.attemptId;
         }
         // A4-01: a hidden capture that closed by timeout waits behind the same neutral prompt as any other close.

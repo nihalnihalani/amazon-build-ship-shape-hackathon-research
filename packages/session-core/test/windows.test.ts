@@ -28,6 +28,7 @@ describe('duplicate input protection', () => {
     h.ui('finish_early');
     h.ui('begin_phrase');
     expect(h.view.stage).toBe('phrase_active');
+    h.phoneStartsMeasuring();
     h.ok();
     h.ok();
     h.ok();
@@ -54,6 +55,11 @@ describe('duplicate input protection', () => {
     h.ui('cancel');
     expect(h.of('window.cancel')).toHaveLength(0);
     h.answerPrecheck();
+    expect(h.view.actions).toEqual([]); // window.start sent, waiting for the phone's first frame (DEF-007)
+    h.ok();
+    h.ui('stop_early');
+    expect(h.of('window.stop')).toHaveLength(0);
+    h.phoneStartsMeasuring();
     expect(h.view.actions.map((a) => a.id)).toEqual(['stop_early', 'cancel']); // capture
     expect(h.view.preferredAction).toBe('stop_early');
     h.back();
@@ -99,6 +105,7 @@ describe('cancel, Back and stale traffic', () => {
     h.setupToPhrases();
     h.beginAndLead('begin_phrase');
     h.answerPrecheck();
+    h.phoneStartsMeasuring();
     const start = h.last('window.start');
     h.back();
     expect(h.last('window.cancel')).toMatchObject({ window_id: start.window_id, attempt_id: start.attempt_id });
@@ -422,6 +429,7 @@ describe('timeouts', () => {
     h.setupToPhrases();
     h.beginAndLead('begin_phrase');
     h.answerPrecheck();
+    h.phoneStartsMeasuring();
     h.advance(8499);
     expect(h.of('window.stop')).toHaveLength(0);
     h.advance(1);
@@ -678,6 +686,7 @@ describe('sustained vowel', () => {
     h.ui('continue');
     h.beginAndLead('begin_vowel');
     h.answerPrecheck();
+    h.phoneStartsMeasuring();
     h.advance(2000);
     expect(h.view.timer).toMatchObject({ elapsedMs: 2000, maxMs: 30000 });
     h.back();

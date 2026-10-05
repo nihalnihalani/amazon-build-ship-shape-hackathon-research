@@ -506,6 +506,17 @@ function clampElapsed(elapsed: number, max: number): number {
   return Math.max(0, Math.min(elapsed, max));
 }
 
+/**
+ * The one line that says what is happening in a window. The speaker's prompt ("Say ... now") appears only once the
+ * phone has started measuring (DEF-007): before that the TV is waiting, getting the room checked, or getting ready.
+ */
+function windowLine(w: Win, running: string): string {
+  if (w.phase === 'lead') return COPY.phrase.lead;
+  if (w.phase === 'precheck') return COPY.phrase.precheck;
+  if (w.phase === 'starting') return COPY.phrase.starting;
+  return running;
+}
+
 function timerFor(s: Core, w: Win, captureLabel: string): TimerView | null {
   const now = s.now;
   if (w.phase === 'lead') {
@@ -519,8 +530,10 @@ function timerFor(s: Core, w: Win, captureLabel: string): TimerView | null {
       label: w.kind === 'quiet_check' ? COPY.quiet.running : COPY.phrase.precheck,
     };
   }
+  // DEF-007: no timer until the phone's first level frame has arrived.
+  if (w.phase === 'starting' || w.captureAt === null) return null;
   return {
-    elapsedMs: clampElapsed(now - (w.captureAt ?? now), w.maxMs),
+    elapsedMs: clampElapsed(now - w.captureAt, w.maxMs),
     maxMs: w.maxMs,
     label: captureLabel,
   };
@@ -591,7 +604,7 @@ function projectCalibration(v: TvView, s: Core): string {
   const open = measureReady(s);
   const hasBand = session !== null && session.calMarginDb !== null;
   if (s.win !== null) {
-    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.calibration.running, COPY.phrase.cancelHint];
+    v.body = [windowLine(s.win, COPY.calibration.running), COPY.phrase.cancelHint];
     v.timer = timerFor(s, s.win, COPY.calibration.running);
     v.meter = meterFor(s, s.win);
     v.actions = [];
@@ -680,8 +693,8 @@ function projectVowel(v: TvView, s: Core): string {
   const session = s.session;
   const hasBand = session !== null && session.calMarginDb !== null;
   if (s.stage === 'vowel_active' && s.win !== null) {
-    v.title = COPY.vowel.running;
-    v.body = [s.win.phase === 'lead' ? COPY.phrase.lead : COPY.vowel.running, COPY.phrase.cancelHint];
+    v.title = s.win.phase === 'capture' || s.win.phase === 'closing' ? COPY.vowel.running : COPY.vowel.readyTitle;
+    v.body = [windowLine(s.win, COPY.vowel.running), COPY.phrase.cancelHint];
     v.timer = timerFor(s, s.win, COPY.vowel.timerLabel);
     v.meter = meterFor(s, s.win);
     const c = captureActions(s.win, COPY.vowel.stop, COPY.phrase.cancel);
@@ -807,7 +820,7 @@ function projectPhrase(v: TvView, s: Core): string {
       attemptNumber: w.attemptNumber,
     };
     v.title = `Phrase ${v.phrase.position} of ${total}`;
-    const line = w.phase === 'lead' ? COPY.phrase.lead : w.phase === 'precheck' ? COPY.phrase.precheck : COPY.phrase.running;
+    const line = windowLine(w, COPY.phrase.running);
     v.body = [line, COPY.phrase.cancelHint];
     if (w.hidden) v.body.push(COPY.phrase.blind);
     v.timer = timerFor(s, w, COPY.vowel.timerLabel);
@@ -914,6 +927,8 @@ function pausedText(reason: string): string {
       return COPY.paused.mic;
     case 'timeout':
       return COPY.paused.timeout;
+    case 'no_start':
+      return COPY.paused.noStart;
     case 'phone_reconnected':
       return COPY.paused.phoneReconnected;
     case 'interrupted':
