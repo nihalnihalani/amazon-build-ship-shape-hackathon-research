@@ -93,14 +93,9 @@ export const text = {
   fatalBody: 'The practice display stopped unexpectedly. Close the app and open it again.',
   fatalStoreMissing: 'The session engine is not available in this build.',
   aboutVersion: 'Version',
-  aboutStorage:
-    'Practice data stays on this TV, stored unencrypted. Delete it in Settings. Sound is never recorded or sent by this TV.',
-  aboutLicenseHeading: 'Licences',
-  aboutLicenses: [
-    'Across the Room: MIT licence.',
-    'qrcode-generator: MIT licence.',
-    'React Native and React: MIT licence.',
-    'Vega packages: used under the Amazon Vega SDK licence terms.',
-  ],
+  // The privacy and storage disclosure has ONE source: the About lines in view.body (session-core). Nothing here repeats it.
+  // One compact paragraph (the About screen must not scroll at UI scales up to 1.25).
+  aboutLicences:
+    'Licences: MIT for this app, qrcode-generator, React Native and React; the Vega packages are used under the Amazon Vega SDK licence terms.',
   levelRelativeNote: 'Relative level, this session only',
 } as const;
