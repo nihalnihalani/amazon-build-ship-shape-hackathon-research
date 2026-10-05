@@ -131,7 +131,7 @@ Recorded honestly; constants stay product assumptions pending T04.
 | Item | Measured (fixtures, seeded) | Decision |
 |---|---|---|
 | A1-01 burst acceptance | ≤ 100 ms never accepted; 200 ms always accepted at +20 dB but only 27/40 phases at +10 dB (the frame before the opening frame can never be a candidate); 250 ms always accepted at +10 and +20 dB | Wording corrected: "≤ 100 ms never; ≥ 250 ms always at +10 and +20 dB; 200 ms always at +20 dB and phase-dependent at +10 dB". No extra rule added. |
-| A1-03 false activity | P(active ≥ 1 segment \| silent 8 s window) < 1 % for noise spread ≤ 2.5 dB; 4.4 %, 3.5 % and 16.5 % for the three noisiest AR(1) models at the edge of quiet-check validity | Target not met for the noisiest admissible rooms. Kept the 10 dB open threshold (raising it would reject soft speakers before T04 data exists). Consequence is a silent window scored `below` instead of `no_voice`, never a false `reached` (that needs p95 ≥ margin − 1 ≥ 12 dB). Recorded as a limitation in MEASUREMENT.md; T04 re-tunes. |
+| A1-03 false activity | P(active ≥ 1 segment \| silent 8 s window) < 1 % for noise spread ≤ 2.5 dB; 4.4 %, 3.5 % and 16.5 % for the three noisiest AR(1) models at the edge of quiet-check validity | Target not met for the noisiest admissible rooms. Kept the 10 dB open threshold (raising it would reject soft speakers before T04 data exists). Consequence is usually a silent window scored `below` instead of `no_voice`; a false `reached` is very unlikely but possible (T16 N-05 simulation, unconditioned AR(1) model: 0.015 %, 0.3 % and 2.3 % for the three noisiest admissible rooms). Erratum: the revision of this row before T16 said "never a false reached", which was an over-claim. Recorded as a limitation in MEASUREMENT.md; T04 re-tunes. |
 | PK-06 tie rounding | `quantizeDb` uses `Math.round` (ties toward +∞, e.g. −42.25 → −42.2) | Accepted: the protocol package is the single rounding authority; the DSP matches it. |
 
 ## Supply-chain decision (A7-01 exception, 2026-10-05)
@@ -139,6 +139,22 @@ Recorded honestly; constants stay product assumptions pending T04.
 - Root workspace: `npm audit --omit=dev` reports 0 vulnerabilities after bumping vitest to 3.2.7 and the tests workspace `ws` to 8.22.0. `npm audit` (including dev) reports 2 moderate findings in vitest/@vitest/mocker whose fix is a breaking major upgrade (vitest 4); accepted for development use only (the test UI server is never run in CI or production).
 - `apps/tv`: `npm audit --omit=dev` reports 70 findings (5 critical, 44 high), all inside React Native and Vega build/CLI tooling. None of the affected packages is in the 27-package Metro runtime bundle (`docs/release/tv-bundle-packages.json`). Accepted as a documented exception for build-time tooling pending upstream Vega/RN releases; re-audit at every SDK bump and before any public release. This exception does not cover any package that ships in the bundle.
 - The five `@amazon-devices/*` packages are proprietary (Amazon Program Materials License Agreement); they are dependencies, never vendored into this MIT repository (THIRD_PARTY_NOTICES.md).
+
+## T16 security gate decisions (2026-10-05)
+
+Gate verdict: pass-with-residuals for the local relay, phone page and TV session core (docs/security/T16_GATE.md). All new findings accepted:
+
+| Finding | Decision | Owner |
+|---|---|---|
+| N-01 | Phone retries a refused `auth.resume` for 30 s (supersede-guard window plus margin) before concluding the pairing is lost; message "Could not reconnect". | H |
+| N-02 | CSP `connect-src 'self'` plus the configured relay origin only; drop `blob:` from `worker-src`. | R (local server, template), H (page meta) |
+| N-03 | Production phone build takes the relay URL at build time (`VITE_ATR_RELAY_URL`); TV uses `phonePageOrigin` (contract rev 3) for QR/link; template CSP names the API host. | H, S, T, R |
+| N-05 | Wording corrected (above); T04 adds negative case "silent speaker in the real quiet room, 0 of 10 reached". | L, D, docs |
+| N-06 | Dev CA validity 90 days. | R |
+| N-07 | Phone clears phrase state with the credential on unpair/room close/discarded session. | H |
+| N-08..N-11, N-13 | T04 revision 3: frozen nominal levels enforced, strict C7, full planned trial list with exclusion reasons, no params override, `percentile.ts` hashed, finite-input validation; re-freeze and re-review. | D |
+| N-12 | Phone measurement budget: 5 min cumulative capture per session, ≥ 1 s cooldown between windows, mic auto-off after 10 min without a TV command (visible message). | H |
+| N-14 | ADR-0002 body quote updated to the revision 2 sentence. | L |
 
 ## Requirement wording
 

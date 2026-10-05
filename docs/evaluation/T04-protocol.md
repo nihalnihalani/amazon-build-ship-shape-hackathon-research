@@ -515,12 +515,12 @@ forms are stored separately by the operator).
 
 | Field | Value |
 |---|---|
-| Reviewer | pending |
-| Date | pending |
-| Approving commit | pending |
-| Freeze hash: SHA-256 of this protocol + criteria (`python3 fixtures/dsp/tools/freeze_hash.py`) | pending |
-| Recorded in `.build/evidence.jsonl` by the lead (commit SHA and hash, before the first trial) | pending |
-| Changes requested before freeze | pending |
+| Reviewer | security (`claude-sonnet-5-5`), independent of the author (audio-dsp) |
+| Date | 2026-10-05 |
+| Approving commit | none: revision 2 REJECTED at `da018d7` (docs/security/T16_GATE.md §7) |
+| Freeze hash: SHA-256 of this protocol + criteria (`python3 fixtures/dsp/tools/freeze_hash.py`) | `3ba1fdff6444e079e1b2b6c6e57330c3dded1d54e884681cce4087347ef4d820` (revision 2, not approved) |
+| Recorded in `.build/evidence.jsonl` by the lead (commit SHA and hash, before the first trial) | EV-0030 (revision 2 freeze); revision 3 must be re-frozen and re-recorded |
+| Changes requested before freeze | T16_GATE.md §7 items 1–8 (N-08, N-09, N-10, N-11, N-13, finite inputs, N-05 negative case, re-freeze) |
 
 **Reminder (A9-04).** Before the first trial the lead records one line in `.build/evidence.jsonl`
 with the commit SHA and the SHA-256 of this protocol plus its criteria, produced by

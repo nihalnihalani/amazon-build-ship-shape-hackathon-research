@@ -1,6 +1,9 @@
 /**
  * Contract between the authoritative TV session core (@atr/session-core) and the
- * TV user interface (apps/tv). Frozen at revision 2 by the lead (2026-10-05).
+ * TV user interface (apps/tv). Frozen at revision 3 by the lead (2026-10-05).
+ *
+ * Revision 3 (T16 N-03): optional phonePageOrigin so the QR/link can point at the phone page host
+ * (CloudFront on AWS) when it differs from the relay host.
  *
  * Revision 2 (docs/adr/AMENDMENTS-REV2.md): number-matching join confirmation (A3-06) replaces
  * accept_join; the correct confirm digits are no longer in the view. New input { kind: 'a11y' }
@@ -280,6 +283,11 @@ export interface SessionStoreDeps {
   storage: StoragePort;
   transport: TransportPort;
   relayUrl: string;
+  /**
+   * HTTPS origin that serves the phone page, e.g. https://d123.cloudfront.net. The QR code and link use
+   * `${phonePageOrigin}/#code=<CODE>`. When absent, the relay URL's https origin is used (local relay).
+   */
+  phonePageOrigin?: string;
   /** Random bytes for identifiers; falls back to a non-cryptographic generator if absent. */
   randomBytes?: (n: number) => Uint8Array;
   appVersion: string;

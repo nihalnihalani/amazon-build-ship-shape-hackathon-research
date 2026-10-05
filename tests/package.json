@@ -11,7 +11,8 @@
     "test:review": "vitest run --config review/vitest.config.ts",
     "test:review:strict": "QA_STRICT=1 vitest run --config review/vitest.config.ts",
     "test:a11y": "node a11y/run-a11y.mjs",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:security": "vitest run --config security/vitest.config.ts"
   },
   "devDependencies": {
     "@types/ws": "8.18.2",

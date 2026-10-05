@@ -22,7 +22,9 @@ Raw audio, PCM, waveforms, audio blobs and recordings never leave the phone and 
 
 ### Phone UI wording (exact)
 
-> Audio stays on this phone and is never saved or uploaded. Only levels, typed phrases, listener responses, and connection details are sent to the relay and TV.
+> Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.
+
+(Revision 2 wording, A2-01; the revision 1 sentence is superseded.)
 
 Forbidden claims: "end-to-end encrypted", "no data leaves the household", "only numbers", "relay never inspects payloads".
 
