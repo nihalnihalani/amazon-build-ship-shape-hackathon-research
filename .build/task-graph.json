@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T05:25:01+05:30",
+ "updated_at": "2026-10-05T05:30:52+05:30",
  "states": [
   "pending",
   "ready",
@@ -374,7 +374,8 @@
    "reviewer": "lead",
    "evidence_refs": [
     "EV-0014",
-    "EV-0017"
+    "EV-0017",
+    "EV-0033"
    ],
    "commit": "e4b87ea",
    "blocker": "Code, typecheck and jest verified (EV-0014); native build/VVD render/doctor/vpt pending B-001"
