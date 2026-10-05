@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T06:44:03+05:30",
+ "updated_at": "2026-10-05T06:45:33+05:30",
  "states": [
   "pending",
   "ready",
@@ -611,7 +611,7 @@
     "R-X1",
     "R-M1"
    ],
-   "owner": "security-review",
+   "owner": "security",
    "cwd": null,
    "dependencies": [
     "T08",
@@ -620,15 +620,15 @@
     "T15"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Threat model, adversarial tests, network/storage/log audit, privacy copy matches transmitted data"
    ],
    "expected_outputs": [
     "docs/security/*"
    ],
-   "reviewer": null,
+   "reviewer": "lead",
    "evidence_refs": [],
    "commit": null,
    "blocker": null
@@ -672,7 +672,7 @@
     "R-V2",
     "R-O4"
    ],
-   "owner": "qa-accessibility",
+   "owner": "qa",
    "cwd": null,
    "dependencies": [
     "T06",
@@ -682,15 +682,15 @@
     "T17"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Clean clone install/build/test passes; CI workflow; requirement-evidence matrix"
    ],
    "expected_outputs": [
     "evidence automated"
    ],
-   "reviewer": null,
+   "reviewer": "lead",
    "evidence_refs": [
     "EV-0040"
    ],
@@ -812,14 +812,14 @@
     "R-H-1",
     "R-H-2"
    ],
-   "owner": "release-docs",
+   "owner": "docs",
    "cwd": null,
    "dependencies": [
     "T22"
    ],
    "required": true,
-   "status": "pending",
-   "attempts": 0,
+   "status": "in_progress",
+   "attempts": 1,
    "acceptance_criteria": [
     "Submission package prepared; publication only after authorization"
    ],
@@ -829,7 +829,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Prepared only; publication requires owner authorization (B-005) and a VVD demo (B-001)"
   },
   {
    "id": "T24",
