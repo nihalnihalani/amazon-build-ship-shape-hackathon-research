@@ -38,10 +38,16 @@ export const PHRASE_FONT_SIZES: readonly number[] = [96, 88, 80, 72];
 
 export const layout = {
   pagePadding: 80,
-  pageVerticalPadding: 32,
+  pageVerticalPadding: 26,
   /** Vertical page padding from the large-scale factor on (the scaled value grows, so the base shrinks). */
-  pageVerticalPaddingLarge: 24,
+  pageVerticalPaddingLarge: 22,
   focusRing: 6,
+  /**
+   * Room reserved inside the scrolling area so the focus ring is never clipped. The 6 px ring and the 1.05 scale grow a
+   * control by 2.5 % of its size per side: up to about 20 px sideways for the widest control, about 5 px at the bottom.
+   */
+  ringInset: 24,
+  ringInsetBottom: 12,
   focusScale: 1.05,
   /** Full-size dial (the component default; no screen uses it once body text, banner and controls share the screen). */
   arcRadius: 300,

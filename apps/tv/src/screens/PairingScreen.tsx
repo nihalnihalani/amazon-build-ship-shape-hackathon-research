@@ -36,7 +36,7 @@ export function PairingScreen(props: ScreenProps): React.ReactElement {
   const code = pairing?.code ?? null;
   return (
     <ScreenFrame {...props} describedBy={['atr-pair-code']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', maxWidth: '100%' }}>
         <View style={{ alignItems: 'center', marginRight: ui.space(80) }}>
           <AppText kind="muted">{text.pairingCodeLabel}</AppText>
           {code !== null ? (
@@ -88,7 +88,7 @@ export function JoinConfirmScreen(props: ScreenProps): React.ReactElement {
           <AppText testID="join-device" nativeID="atr-join-device" kind="label" numberOfLines={2} center>
             {text.joinNamePrefix + ' ' + join.deviceLabel}
           </AppText>
-          <View testID="join-choices" style={{ flexDirection: 'row', justifyContent: 'center', marginTop: ui.space(40) }}>
+          <View testID="join-choices" style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: ui.space(40), maxWidth: '100%' }}>
             {join.choices.map((choice, index) => {
               const id = PICK_ACTIONS[index] as (typeof PICK_ACTIONS)[number];
               const fromView = view.actions.find((a) => a.id === id);

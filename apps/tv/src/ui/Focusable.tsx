@@ -56,7 +56,8 @@ export function Focusable({ action, preferred, onPress, describedBy, text, large
         if (!disabled) onPress(action.id);
       }}
       style={{
-        minWidth: ui.size(large ? 280 : 320),
+        // Large (number) buttons cap at 420 px so three of them and their gaps fit one row at any UI scale.
+        minWidth: large ? ui.size(280, 420) : ui.size(320),
         minHeight: ui.size(large ? 180 : 80),
         paddingHorizontal: ui.space(40),
         paddingVertical: ui.space(12),

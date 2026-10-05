@@ -93,11 +93,11 @@ export function ArcMeter({
       aria-label={label}
       aria-hidden={capturing}
       importantForAccessibility={capturing ? 'no-hide-descendants' : 'auto'}
-      style={side ? { flexDirection: 'row', alignItems: 'center' } : { alignItems: 'center' }}
+      style={side ? { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', maxWidth: '100%' } : { alignItems: 'center', maxWidth: '100%' }}
     >
       {dial}
       {side ? (
-        <View style={{ marginLeft: ui.space(48), alignItems: 'flex-start' }}>
+        <View style={{ marginLeft: ui.space(48), alignItems: 'flex-start', flexShrink: 1, maxWidth: '100%' }}>
           {texts}
         </View>
       ) : (

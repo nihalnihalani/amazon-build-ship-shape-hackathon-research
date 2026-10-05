@@ -47,9 +47,12 @@ export function FocusScrollView({
   children,
   enabled = true,
   resetKey,
+  inset,
 }: {
   children: React.ReactNode;
   enabled?: boolean;
+  /** Padding (px) inside the scroll area, room for the focus ring (A11Y-04): `x` left and right, `bottom` at the end. */
+  inset?: { x: number; bottom: number };
   /** When this changes (a new screen or stage) the content scrolls back to the top. */
   resetKey?: string;
 }): React.ReactElement {
@@ -58,6 +61,15 @@ export function FocusScrollView({
   const marginRef = useRef(ui.space(32));
   marginRef.current = ui.space(32);
   const focusEpoch = useRef(0);
+  // The last control that took focus. A control focused at mount (preferred focus) is focused BEFORE the scroll area has
+  // been measured, so its reveal would be skipped; it is revealed again when the layout arrives or changes.
+  const lastFocus = useRef<unknown>(null);
+  const keyRef = useRef(resetKey);
+  if (keyRef.current !== resetKey) {
+    // A new screen or stage: forget the previous screen's control (render phase, i.e. before the new controls focus).
+    keyRef.current = resetKey;
+    lastFocus.current = null;
+  }
   const scroller: FocusScroller = useMemo(
     () =>
       createFocusScroller({
@@ -72,6 +84,7 @@ export function FocusScrollView({
   const api = useMemo<FocusScrollApi>(
     () => ({
       onControlFocus(node) {
+        lastFocus.current = node;
         focusEpoch.current += 1;
         void scroller.reveal(node);
       },
@@ -114,14 +127,25 @@ export function FocusScrollView({
         ref={scrollRef}
         testID="screen-scroll"
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingLeft: inset?.x ?? 0,
+          paddingRight: inset?.x ?? 0,
+          paddingBottom: inset?.bottom ?? 0,
+        }}
         focusable={false}
         showsVerticalScrollIndicator={false}
         bounces={false}
         scrollEventThrottle={16}
         onScroll={onScroll}
-        onContentSizeChange={(_w, h) => scroller.setContentHeight(h)}
-        onLayout={(event) => scroller.setViewportHeight(event.nativeEvent.layout.height)}
+        onContentSizeChange={(_w, h) => {
+          scroller.setContentHeight(h);
+          if (lastFocus.current !== null) void scroller.reveal(lastFocus.current);
+        }}
+        onLayout={(event) => {
+          scroller.setViewportHeight(event.nativeEvent.layout.height);
+          if (lastFocus.current !== null) void scroller.reveal(lastFocus.current);
+        }}
       >
         {children}
       </ScrollView>

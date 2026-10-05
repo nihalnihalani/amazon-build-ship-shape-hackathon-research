@@ -13,14 +13,18 @@ import type { ScreenProps } from '../ui/ScreenFrame';
 import { TimerDisplay } from '../ui/TimerDisplay';
 import { useUiScale } from '../ui/scale';
 
-/** Timer and dial next to each other so a 160 px counter and a full dial both fit one 1080 px screen. */
+/**
+ * Timer and dial next to each other so a 160 px counter and a full dial both fit one 1080 px screen. When they no
+ * longer fit side by side (large UI scales) the second wraps below the first and each is limited to the row width, so
+ * its text wraps instead of being clipped; nothing ever needs horizontal scrolling.
+ */
 function SideBySide({ children }: { children: React.ReactNode }): React.ReactElement {
   const ui = useUiScale();
   const items = React.Children.toArray(children);
   return (
-    <View testID="side-by-side" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+    <View testID="side-by-side" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', maxWidth: '100%' }}>
       {items.map((child, index) => (
-        <View key={index} style={{ marginHorizontal: ui.space(48) }}>
+        <View key={index} style={{ marginHorizontal: ui.space(48), marginVertical: ui.space(8), maxWidth: '100%' }}>
           {child}
         </View>
       ))}
