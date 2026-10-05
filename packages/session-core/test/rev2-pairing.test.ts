@@ -275,7 +275,7 @@ describe('A3-07 phone supersede and credential rotation', () => {
   it('with no session and not pairing, a lost pairing only reports it', async () => {
     const h = await boot();
     h.pairOnly();
-    h.relayError('unauthorized');
+    h.relayError('unauthorized', 'resume_failed');
     expect(h.view.screen).toBe('home');
     expect(h.view.banner?.text).toBe('The pairing with the relay was lost. Pair again.');
   });

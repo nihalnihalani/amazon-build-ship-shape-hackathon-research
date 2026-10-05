@@ -611,6 +611,14 @@ export class Rig {
     );
   }
 
+  /**
+   * DEF-007: the fake phone starts measuring. Its first level frame (frame 0) is what moves the TV from "starting the
+   * phone's measurement" into its capture phase (prompt, timer, stop control).
+   */
+  startMeasuring(cmd?: Sent, dbfs: number = FLOOR + 2): void {
+    this.level(0, dbfs, true, false, cmd);
+  }
+
   listenerResponse(response: 'heard' | 'not_heard', cmd?: Sent): void {
     const open = cmd ?? this.last('listener.open');
     this.phoneSend('listener.response', { response }, this.idsOf(open));
@@ -681,10 +689,14 @@ export class Rig {
     this.precheckResult(o.rise ?? 0);
     if (this.view.stage !== 'phrase_active') return null;
     const start = this.last('window.start');
-    const captureView = this.view;
+    // DEF-007: the TV enters its capture phase on the FIRST level frame of the window, so the fake phone starts
+    // measuring (sends frame 0) right after window.start and the capture view is read once that frame has arrived.
+    const levels = o.levels ?? [FLOOR + 2];
     let frame = 0;
-    for (const db of o.levels ?? [FLOOR + 2]) {
+    let captureView = this.view;
+    for (const db of levels) {
       this.level(frame, db, true, false, start);
+      if (frame === 0) captureView = this.view;
       frame += 1;
     }
     this.advance(o.captureMs ?? 400);

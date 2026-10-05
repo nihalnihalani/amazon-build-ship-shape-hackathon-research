@@ -369,8 +369,8 @@ export class Harness {
   pairingCode(code: string): void {
     this.wire(this.relay('pairing.code', { pairing_code: code, code_expires_at: this.clock.now() + 600_000 }));
   }
-  relayError(code: string): void {
-    this.wire(this.relay('error', { code, ref_message_id: null, detail: '' }));
+  relayError(code: string, detail = '', ref: string | null = null): void {
+    this.wire(this.relay('error', { code, ref_message_id: ref, detail }));
   }
 
   /* ----------------------------- phone-originated */
@@ -481,6 +481,11 @@ export class Harness {
   answerWindowWith(payload: Json, cmdIn?: Sent): void {
     const cmd = cmdIn ?? this.last('window.start');
     this.wire(this.envelope('window.result', 'phone', payload, this.ids(cmd)));
+  }
+
+  /** The phone's first level frame of the last window.start: the TV's capture phase starts here (DEF-007). */
+  phoneStartsMeasuring(frame = 0): void {
+    this.level(frame, this.floor + 3, false);
   }
 
   answerWindow(o: Parameters<Harness['windowPayload']>[1] = {}, cmdIn?: Sent): void {

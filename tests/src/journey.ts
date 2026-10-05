@@ -14,6 +14,11 @@ export const ROOM = -75;
 export const has = (v: TvView, id: string) => v.actions.some((a) => a.id === id && !a.disabled);
 export const capturing = (v: TvView) => has(v, 'stop_early');
 
+/** Wait until the phone page itself reports that it is measuring (first frame observed on the phone). */
+export async function phoneMeasuring(phone: PhoneEnv): Promise<void> {
+  await phone.page.waitForFunction(() => /^Measuring/.test(document.querySelector('#mic-badge')?.textContent ?? ''), undefined, { timeout: 20_000 });
+}
+
 export async function pairAndStartMic(
   tv: TvHarness,
   phone: PhoneEnv,
@@ -56,12 +61,16 @@ export async function quietAndCalibrate(tv: TvHarness, phone: PhoneEnv): Promise
   tv.act('begin_quiet_check');
   await tv.waitFor((v) => v.stage === 'calibration' && has(v, 'begin_calibration'), 'calibration ready', 30_000);
   tv.act('begin_calibration');
-  await tv.waitFor((v) => v.stage === 'calibration' && v.timer !== null && v.capturing, 'calibration capture', 30_000);
-  await sleep(300);
+  await tv.waitFor((v) => v.stage === 'calibration' && v.capturing, 'calibration capture', 30_000);
+  await phoneMeasuring(phone);
+  await sleep(200);
   await phone.setLevel(LOUD);
   await sleep(2000);
   await phone.setLevel(ROOM);
-  await tv.waitFor((v) => v.stage === 'calibration' && has(v, 'continue') && v.result !== null, 'calibration result', 30_000);
+  const cal = await tv.waitFor((v) => v.stage === 'calibration' && has(v, 'continue') && v.result !== null, 'calibration result', 30_000);
+  if (cal.result!.tone === 'not_scored' || /too quiet|not set|no band/i.test(`${cal.result!.label} ${cal.result!.detail ?? ''}`)) {
+    throw new Error(`calibration not accepted: ${JSON.stringify(cal.result)} body=${JSON.stringify(cal.body)}`);
+  }
   tv.act('continue');
   await tv.waitFor((v) => v.stage === 'vowel_ready', 'vowel ready');
   tv.act('skip_vowel');
@@ -77,6 +86,7 @@ export async function beginCapture(tv: TvHarness, label: string): Promise<void> 
 /** A normal visible attempt at `level`; returns the revealed view. */
 export async function visibleAttempt(tv: TvHarness, phone: PhoneEnv, level: number, label: string): Promise<TvView> {
   await beginCapture(tv, label);
+  await phoneMeasuring(phone);
   await sleep(200);
   await phone.setLevel(level);
   await sleep(1500);

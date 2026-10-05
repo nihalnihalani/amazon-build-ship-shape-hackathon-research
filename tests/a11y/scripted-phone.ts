@@ -193,9 +193,6 @@ export class ScriptedPhone {
     });
   }
 
-  /** The session the TV last began; the phone names it in mic.state after acking session.begin (DEF-003). */
-  private beganSessionId: string | null = null;
-
   micState(state: PayloadMap['mic.state']['state']): void {
     this.sendPhone('mic.state', {
       state,
@@ -204,7 +201,7 @@ export class ScriptedPhone {
       wake_lock: 'held',
       visibility: 'visible',
       mode: 'fixture_replay',
-    }, this.beganSessionId === null ? undefined : { message_id: '', type: 'mic.state', payload: {}, session_id: this.beganSessionId, window_id: null, attempt_id: null });
+    });
   }
 
   cue(text: string, sessionId: string): void {
@@ -251,9 +248,10 @@ export class ScriptedPhone {
         }
         break;
       case 'session.begin':
-        // DEF-003: the TV starts no measurement before the phone acked session.begin as applied.
-        this.sendPhone('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, m);
-        this.beganSessionId = m.session_id;
+        // DEF-003: the TV starts no measurement before it knows the phone applied this session.begin.
+        this.later(delay, () =>
+          this.sendPhone('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, m),
+        );
         if (!this.bankSent && this.opts.bank !== undefined) {
           this.bankSent = true;
           this.later(delay * 5, () => {

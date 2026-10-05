@@ -50,6 +50,7 @@ export const REASON_COPY: Record<string, string> = {
   interrupted: 'The window was interrupted, so it was not scored.',
   cancelled: 'The window was cancelled, so it was not scored.',
   timeout: 'The phone did not answer in time, so the window was not scored.',
+  no_start: 'The phone did not start measuring. Try again.',
   room_noisier: "The room is noisier than when we set today's band. Wait for quiet and try again.",
   unstable_floor: 'The room sound changed during the check. Wait for quiet and try again.',
   burst_noise: 'A sudden sound was picked up. Try again when the room is quiet.',
@@ -187,6 +188,7 @@ export const COPY = {
     skip: 'Skip phrase',
     finish: 'Finish early',
     running: 'Say the phrase now',
+    starting: "Starting the phone's measurement…",
     stop: 'Stop now',
     stopHint: 'Press OK to stop early. Back cancels this window.',
     cancelHint: 'Press Back to cancel this window.',
@@ -235,6 +237,7 @@ export const COPY = {
     mic: 'The phone microphone stopped, so the window was not scored.',
     interrupted: 'The window was interrupted, so it was not scored.',
     timeout: 'The phone did not answer in time, so the window was not scored.',
+    noStart: 'The phone did not start measuring. Try again.',
     phoneReconnected: 'The phone reconnected, so the window was not scored.',
   },
   summary: {

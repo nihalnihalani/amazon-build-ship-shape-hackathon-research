@@ -73,6 +73,7 @@ describe('relay heartbeat', () => {
     h.ui('continue');
     h.beginAndLead('begin_vowel');
     h.answerPrecheck(); // window.start was just sent
+    h.phoneStartsMeasuring(); // the capture has started
     h.clearSent();
     h.advance(9_999);
     expect(h.of('ping')).toHaveLength(0);

@@ -183,6 +183,7 @@ describe('QA-12 / QA-12b cue announcements', () => {
       }
       h.beginAndLead('begin_phrase');
       h.answerPrecheck();
+      h.phoneStartsMeasuring();
       if (timeout) {
         h.advance(8500);
         h.advance(3000);
