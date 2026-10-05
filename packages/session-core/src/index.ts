@@ -28,5 +28,5 @@ export {
 } from './storage.js';
 export type { Settings, V0Snapshot, V1Snapshot } from './storage.js';
 export { normalizeText, validateCue, validatePhrase, validatePhraseBank } from './text.js';
-export { phoneJoinUrl, relaySocketUrl } from './urls.js';
+export { phoneJoinUrl, relaySocketUrl, validatePhonePageOrigin } from './urls.js';
 export { FOOTER, LABEL_FIXTURE, LABEL_LISTENER_EDITION, LABEL_NO_BAND, LABEL_RELATIVE } from './copy.js';

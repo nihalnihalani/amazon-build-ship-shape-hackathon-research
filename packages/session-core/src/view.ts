@@ -310,6 +310,10 @@ function diagnosticsOf(s: Core, env: Env): Record<string, string> {
     // enforced here as well).
     stage: isBlindNow(s) ? 'redacted' : s.stage,
     platform: env.platform,
+    // Contract revision 3. Only a valid origin is ever shown; an invalid value is never echoed.
+    phone_page_origin:
+      env.phonePageOrigin ??
+      (env.phonePageOriginInvalid === true ? 'relay origin (phonePageOrigin option invalid, ignored)' : 'relay origin'),
     app_version: env.appVersion,
     fixture_mode: env.fixtureMode ? 'yes' : 'no',
     storage_blocked_by_newer_version: s.future ? 'yes' : 'no',
@@ -425,7 +429,7 @@ function projectIdle(v: TvView, s: Core, env: Env): string {
 
 function projectPairing(v: TvView, s: Core, env: Env): string {
   const code = s.code;
-  const qr = code !== null ? phoneJoinUrl(env.relayUrl, code) : null;
+  const qr = code !== null ? phoneJoinUrl(env.relayUrl, code, env.phonePageOrigin) : null;
   v.pairing = {
     code,
     codeExpiresAt: s.codeExpiresAt,
