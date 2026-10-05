@@ -134,6 +134,12 @@ Recorded honestly; constants stay product assumptions pending T04.
 | A1-03 false activity | P(active ≥ 1 segment \| silent 8 s window) < 1 % for noise spread ≤ 2.5 dB; 4.4 %, 3.5 % and 16.5 % for the three noisiest AR(1) models at the edge of quiet-check validity | Target not met for the noisiest admissible rooms. Kept the 10 dB open threshold (raising it would reject soft speakers before T04 data exists). Consequence is a silent window scored `below` instead of `no_voice`, never a false `reached` (that needs p95 ≥ margin − 1 ≥ 12 dB). Recorded as a limitation in MEASUREMENT.md; T04 re-tunes. |
 | PK-06 tie rounding | `quantizeDb` uses `Math.round` (ties toward +∞, e.g. −42.25 → −42.2) | Accepted: the protocol package is the single rounding authority; the DSP matches it. |
 
+## Supply-chain decision (A7-01 exception, 2026-10-05)
+
+- Root workspace: `npm audit --omit=dev` reports 0 vulnerabilities after bumping vitest to 3.2.7 and the tests workspace `ws` to 8.22.0. `npm audit` (including dev) reports 2 moderate findings in vitest/@vitest/mocker whose fix is a breaking major upgrade (vitest 4); accepted for development use only (the test UI server is never run in CI or production).
+- `apps/tv`: `npm audit --omit=dev` reports 70 findings (5 critical, 44 high), all inside React Native and Vega build/CLI tooling. None of the affected packages is in the 27-package Metro runtime bundle (`docs/release/tv-bundle-packages.json`). Accepted as a documented exception for build-time tooling pending upstream Vega/RN releases; re-audit at every SDK bump and before any public release. This exception does not cover any package that ships in the bundle.
+- The five `@amazon-devices/*` packages are proprietary (Amazon Program Materials License Agreement); they are dependencies, never vendored into this MIT repository (THIRD_PARTY_NOTICES.md).
+
 ## Requirement wording
 
 R-M6 says "seven" inherited conflicts; the master prompt lists eight in §8 (the ADR-0001 context said four). Read R-M6 as "all inherited conflicts in master prompt §8". ADR_REVIEW.md §2 maps each to its resolution.
