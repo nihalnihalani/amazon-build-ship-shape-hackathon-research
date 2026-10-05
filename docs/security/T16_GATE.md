@@ -12,7 +12,7 @@
 
 Why it is not a plain pass: two findings of major severity are open (N-01, N-03), the T04 qualification analysis has two major integrity holes (N-08, N-09), and every AWS and device check is pending. Why it is not a fail: no blocker is open. The three blockers from T02 (A3-01 confirmation on the phone, A4-01 hidden-meter leak, A9-01 compression passing the criteria) are closed or closed-with-residual with the residual stated; no privacy claim in the shipped copy is contradicted by what the code sends, stores or logs; no credential, code, phrase, cue or label appears in a relay log; no audio-like payload leaves the phone.
 
-*Update, same day: the residual fixes are merged and re-verified (section 12). Conditions 3 and 4 below are met; condition 1 now reduces to the AWS deployment checks (the repository side of N-03 is closed); condition 2 is superseded by the approval of revision 3 (section 11).*
+*Update, same day: the residual fixes are merged and re-verified (sections 12 and 13; the final gate statement is in section 13.3). Conditions 3 and 4 below are met; condition 1 now reduces to the AWS deployment checks (the repository side of N-03 is closed); condition 2 is superseded by the approval of revision 3 (section 11).*
 
 Conditions attached to the verdict (the gate does **not** cover these until they are met):
 
@@ -430,6 +430,8 @@ Head `15f345b` (the phone fixes `3a3110c` and the relay fixes `c2f779e`, merged;
 
 ### 12.3 New residual R26 [minor]: the budget and the idle limit bound a runaway session, not a hostile TV
 
+*Closed at `6291c90`: see section 13.*
+
 Both limits are bypassed by the party they were meant to bound. The budget belongs to the session id the TV announces (`onSessionBegin` resets it for any new id, and the phone owner's own unit test pins that), so a TV that announces a new session id every 5 minutes starts a new budget each time; the slow test shows the first window of the new session being applied right after the old budget was used up. The idle clock restarts on any TV command, refused ones included, so a TV that sends one command every 9 minutes keeps the microphone open without end (`l`, third test, 27 minutes). What does hold: windows are at most 30 s with a 1 s pause, the page must be visible, the Measuring badge shows, and the person can stop the microphone. The data at stake is level and voice-activity timing, the same as at N-12, so I rate it minor, but the code comment that the limits mean a paired TV "cannot use the phone as an open-ended ambient-sound monitor" is not true for a TV that wants to.
 
 Recommended fix (phone owner, not required for the gate): reset the budget only on the person's Start-microphone tap, not on a TV-announced session id, and say "Tap Start microphone to continue" in the notice. Then a hostile TV gets at most one budget per tap, and the idle limit is only a convenience. The cost is that someone who keeps the microphone open across several sessions must tap again after 5 minutes of listening in total.
@@ -454,3 +456,64 @@ Recommended fix (phone owner, not required for the gate): reset the budget only 
 | 6 | `python3 fixtures/dsp/tools/freeze_hash.py` | 0 | `b9b93100...9c66`, unchanged (EV-0046, EV-0047) |
 
 Residual register: R14 (N-01), R19 (N-02), R21 (N-07) and R12 (N-06) are closed; R17 (N-12) is replaced by R26; R22 (N-03) now means only the AWS deployment checks listed in section 8. Open findings of the gate: N-15 (info). Open residuals: R15, R24, R25, R26 and the pending_external items.
+
+## 13. R26 closure, final residual register and final gate statement (2026-10-05)
+
+Head `6291c90` (the phone's `0aa899f`: R26 hardening and the paced outbox QA-E2E-01; `wt/security` fast-forwarded from `16d3fd9`). I was asked not to rerun the full suite (the lead is running the full matrix at this head), so this section says exactly what I ran and what I read.
+
+### 13.1 R26: closed
+
+The fix: the capture budget (5 minutes, prechecks and windows) resets only in `startMic()`, which the view calls from exactly two click handlers (Start microphone and its relaxed-constraints variant); `session.begin` with a new id and `session.end` no longer reset it. The idle clock (10 minutes) restarts only when a `precheck.start` or `window.start` is accepted; `session.state`, stale and refused commands do not.
+
+| Check | How | Result |
+|---|---|---|
+| Who can reset the budget | code review of `controller.ts` at `6291c90`: `resetBudget()` has one caller (`startMic`), `startMic` has two callers, both click handlers in `view.ts` | a TV message, a session id or a reconnect cannot start a new budget; the notice now tells the person what does ("Turn the microphone off and start it again") |
+| Who can restart the idle clock | same review: `restartIdleClock()` is called only after an accepted precheck or window start | as stated |
+| Idle clock on the real page (`l-idle-limit`, page clock, **run at `6291c90`: 4 tests, exit 0, 21 s**) | an accepted `window.start` at minute 9 keeps the microphone open at minute 18 and it is off by 19.5; a `window.start` the phone refuses (`ignored_stale:window_closed`) at minute 9 does not, the microphone is off by 10.5; an accepted `session.state` (`applied`) at minute 9 does not, off by 10.5 with the plain message; with no command it is off by 10 | R26's idle half is closed black box |
+| Budget on the real page (`slow/n12-budget`, real time) | the rewrite asserts that after the budget is used up a window in a TV-announced new session id is `rejected:budget`, and that the person's Stop then Start microphone gives a new budget (an applied window). I read it against the page (selectors `#stop-mic` and `#start-mic` exist, the badge texts match the ones other tests use) and found it faithful to the finding | **not re-executed at `6291c90`**: it takes 5.5 minutes of real time and the machine is under the lead's matrix (load average 8). Its last run was at `15f345b` in the pre-fix form (R26 open). Run it once the matrix has finished: `npx vitest run --config security/vitest.slow.config.ts` from `tests/` |
+| The phone owner's unit tests | `measurement-budget.test.ts` has R26 cases for new session ids, `session.end`, housekeeping commands, one command every 9 minutes and refused commands | not run by me separately at this head (they are in the lead's matrix) |
+
+**The phone owner's rewrites of my records.** `l-idle-limit.test.ts`: faithful, with two weaknesses that I fixed. The "session.state does not keep it open" test only required that the command was acknowledged in some way, so a refusal would have passed it for the wrong reason; it now requires `applied`. There was no case for a refused measurement command; I added one (`window_closed`). I also made each test start the microphone from a known state (it turns it off first when an earlier test left it open) and the refused-command test self-contained (it runs its own measurement first). `slow/n12-budget.test.ts`: faithful (see the table).
+
+What the fix leaves, by design: a paired TV can still obtain up to 5 minutes of capture per Start-microphone tap (windows of at most 30 s with a 1 s pause), and the microphone stays open for up to 10 minutes after its last accepted measurement start; the page must be visible and the Measuring badge shows. Only the person's tap extends that. This is the intended limit, not a defect, and the level and voice-activity timing data at stake are the same as before.
+
+**The paced outbox (QA-E2E-01) arrived in the same merge.** I did a targeted read only, for what it could retain: the outbox and the resend map `recentCritical` hold acks and numeric results (never phrase text, cue text or labels), both are cleared when the credential is dropped (`resetOutbox(false)` in the unpair and credential paths), and a message is only queued after the join confirmation (`PRE_CONFIRM_TYPES` still applies in `submit`). This is not a review of its pacing or retry logic.
+
+### 13.2 Final residual register (local scope)
+
+Closed since T02 or since the first gate run: R14 (half-open reconnect, N-01), R16 (T04 analysis holes), R17 and R26 (measurement limits), R19 (CSP, N-02), R21 (phrases after delete, N-07). Reduced: R12 (the development CA is name-constrained and now 90 days), R22 (AWS topology: closed in the repository, deployment checks pending_external).
+
+| ID | Risk | Final status | Owner |
+|---|---|---|---|
+| R1 | A compromised relay operator sees all payloads and can forge both roles; no end-to-end authentication | accepted and disclosed | lead |
+| R2 | A compromised TV process holds the TV credential | reduced (2 h lifetime with rotation; reuse closes the room) | lead |
+| R3 | The TV's AsyncStorage is unencrypted | accepted and disclosed; no phrase text in summaries | lead |
+| R4 | Covert channels in permitted fields | reduced (quantisation, audio guard), not eliminated | lead |
+| R5 | TV speech or VoiceView during a window counts as voice | accepted; T17 measures | qa |
+| R6 | Per-source limits behind shared NAT | accepted; tuning at staging | relay |
+| R7 | The pairing code is visible on the TV | reduced (number matching, burn on reject) | lead |
+| R8 | Non-browser clients forge Origin | accepted (credentials and TV confirmation are the control) | lead |
+| R9 | Hermes `normalize` unverified | pending_external (VVD) | tv |
+| R10 | API Gateway, WAF and CloudFront limits unverified | pending_external | relay |
+| R11 | A paired malicious phone fabricates self-consistent results | accepted (no stream cross-check by decision) | lead |
+| R12 | A user CA on the phone widens its trust | reduced: name-constrained, 90 days, removal step | lead |
+| R13 | Denial of wallet | template read only; load test pending_external | relay |
+| R15 | 60 s grace after a lost `auth.ok` lets a thief with the consumed credential obtain the next one | accepted by the relay owner, confirmed by test | relay |
+| R18 | `apps/tv` build and CLI tooling advisories (70, 5 critical); none of the 27 bundled packages carries one of its own | accepted exception recorded by the lead; re-audit at every SDK bump | lead |
+| R20 | A silent window can be scored `reached` in the noisiest admissible rooms (0.04 % to 4.8 % per window) | documented (LIMITATIONS.md, MEASUREMENT.md); T04 records N8 | dsp |
+| R22 | AWS deployment of the N-03 topology unverified | pending_external | relay |
+| R23 | Two dev-only vitest moderates | accepted for development use | lead |
+| R24 | T04: exclusion reasons are self-declared | open; required of the T04A harness review (mechanical reasons, machine-timestamped live log, excluded attempts printed, first-attempts-only sensitivity run) | dsp |
+| R25 | T04: N8 is reported, not gated, so a phone can be `passed` with a nonzero N8 | accepted decision (section 11.2) | lead |
+| N-15 | info: an inherited property name is not refused as an unknown negative-case id | open, harmless; changes the T04 hash, so only with a revision 4 | dsp |
+
+### 13.3 Final gate statement (local scope)
+
+**PASS WITH RESIDUALS, final, for the local scope: the local relay, the phone page and the TV session core as built, on a development machine.** At `6291c90`:
+
+- **Findings:** all 66 T02 findings and the 14 findings of the first gate run are closed or closed-with-residual, except the two pending_external T02 items (A3-09, A8-04) and N-15 (info). No finding of blocker, major or minor severity is open. No `it.fails` remains in `tests/security`.
+- **Privacy claims** in the shipped copy match what the code sends, stores and logs for the journey tested (network, storage and log audits); no audio-like payload leaves the phone; no credential, code, phrase, cue or label is logged.
+- **Evidence:** my full suite last ran at `15f345b`: 12 files, 129 tests, exit 0, plus the slow real-time budget test (321 s, exit 0, in its pre-fix form). At `6291c90` I ran only the file whose behaviour changed (`l-idle-limit`, 4 tests, exit 0) and read the rest of the diff; **I have not seen a full run of the suite at `6291c90`: the lead's matrix is that run, and this statement holds if it is green.** The slow budget test should be run once at `6291c90` when the machine is free.
+- **Residuals** are those in 13.2: accepted risks, T04's R24 and R25, and the pending_external items below. T04 protocol revision 3 is approved for the protocol, the analysis and the freeze procedure only (section 11); the harness that will produce its trial list needs its own review.
+- **Not covered by this statement, still pending_external (section 8):** every AWS check (staging deadlines, API Gateway origin policy, WAF, throttles and load, logs and storage on the real services, CloudFront headers, real DynamoDB conditional writes, the deployed N-03 topology); every device check (VVD VoiceView timing, Unicode on the TV, Hermes `normalize`, the text component on Vega); every real-phone check (microphone lifecycle, Android Chrome behaviour, all T04 trials).
+- **Evidence class:** automated (desktop Chrome 154, Node v25.2.1, local relay, headless TV), web_preview (TV UI in a browser) and documentation_only (code and IaC reading). Nothing here is real_phone, real_VVD or AWS.
