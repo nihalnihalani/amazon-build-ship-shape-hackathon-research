@@ -77,9 +77,19 @@ async function tvCommand(): Promise<Msg> {
   return tv.client.inbox.slice(from).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === id) as Msg;
 }
 
+/** Starts the microphone with the person's tap, first turning it off when an earlier test left it open. */
+async function startFresh(): Promise<void> {
+  if (await phone.page.isVisible('#stop-mic')) {
+    await phone.page.click('#stop-mic');
+    await phone.page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent === 'Mic off');
+  }
+  await phone.page.click('#start-mic');
+  await phone.page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open'));
+}
+
 let measurementCounter = 0;
 /** A measurement the phone accepts: window.start, then window.cancel straight away so nothing keeps running. */
-async function startMeasurement(): Promise<Msg> {
+async function startMeasurement(): Promise<Msg & { ids: { session_id: string; window_id: string; attempt_id: string } }> {
   measurementCounter += 1;
   const tag = String(measurementCounter).padStart(4, '0');
   const ids = { session_id: SESSION, window_id: `w_secidle${tag}`, attempt_id: `a_secidle${tag}` };
@@ -89,7 +99,7 @@ async function startMeasurement(): Promise<Msg> {
   const ack = tv.client.inbox.slice(from).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === id) as Msg;
   tv.send('window.cancel', { reason: 'user_cancel' }, ids);
   await sleep(300);
-  return ack;
+  return Object.assign(ack, { ids });
 }
 
 describe('N-12 idle microphone limit (page clock)', () => {
@@ -106,8 +116,7 @@ describe('N-12 idle microphone limit (page clock)', () => {
   });
 
   it('a measurement command the phone accepts restarts the 10 minutes: a window.start at minute 9 keeps it open at minute 18 and it goes off by minute 20', async () => {
-    await phone.page.click('#start-mic');
-    await phone.page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open'));
+    await startFresh();
     expect((await phone.page.innerText('body')).replace(/\s+/g, ' ')).not.toContain(IDLE_TEXT); // starting it again clears the message
     await forward(9);
     expect((await startMeasurement()).payload['outcome']).toBe('applied');
@@ -117,11 +126,26 @@ describe('N-12 idle microphone limit (page clock)', () => {
     expect(await badge()).toBe('Mic off');
   });
 
-  it('R26 (closed): a TV that sends one session.state every 9 minutes does not keep the microphone open: it is off by minute 10', async () => {
-    await phone.page.click('#start-mic');
-    await phone.page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open'));
+  it('R26 (closed): a measurement command the phone REFUSES (a window id that already ran) does not restart it either', async () => {
+    await startFresh();
+    const first = await startMeasurement(); // runs and is cancelled at once: its window id is now closed
+    expect(first.payload['outcome']).toBe('applied');
     await forward(9);
-    expect((await tvCommand()).payload['outcome']).toBeDefined(); // acknowledged, but it is housekeeping
+    const from = tv.client.inbox.length;
+    // The same window id again: the phone refuses it as `window_closed` (a command that reaches the phone but starts nothing).
+    const id = tv.send('window.start', { kind: 'vowel', phrase_position: null, max_duration_ms: 20_000, vad_floor_dbfs: -60 }, first.ids);
+    await tv.client.waitUntil(() => tv.client.inbox.slice(from).some((m) => m.type === 'ack' && m.payload['acked_message_id'] === id), 8000, 'ack for the refused window.start');
+    const ack = tv.client.inbox.slice(from).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === id) as Msg;
+    expect(`${String(ack.payload['outcome'])}:${String(ack.payload['detail'])}`).toBe('ignored_stale:window_closed');
+    await forward(1.5); // 10.5 minutes after the one accepted measurement start, and no later one
+    expect(await badge()).toBe('Mic off');
+  });
+
+  it('R26 (closed): a TV that sends one session.state every 9 minutes does not keep the microphone open: it is off by minute 10', async () => {
+    await startFresh();
+    await forward(9);
+    const ack = await tvCommand();
+    expect(`${String(ack.payload['outcome'])}`, 'session.state is accepted by the phone, so the missing restart is not because it was refused').toBe('applied');
     expect(await badge()).toMatch(/Mic open/);
     await forward(1.5); // 10.5 minutes since the microphone opened
     expect(await badge()).toBe('Mic off');
