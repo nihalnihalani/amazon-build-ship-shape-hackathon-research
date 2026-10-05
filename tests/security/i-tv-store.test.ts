@@ -5,11 +5,13 @@
  *   A3-06   number matching: three distinct choices, Reject preferred, no Accept; a wrong pick rejects and burns the code
  *   PK-09   a decoded object is not a wire frame
  *   TM-G3   a frame claiming sender_role tv, or a relay-only type claimed by the phone role, changes nothing
+ *   N-03    the TV half: the QR and the shown link carry phonePageOrigin (an https origin), code in the fragment only
  *
  * Evidence class: automated (headless TV session core, local relay, raw sockets).
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { startTv, type TvHarness } from '../src/tv-driver.js';
+import { createSessionStore, phoneJoinUrl, validatePhonePageOrigin } from '@atr/session-core';
+import { MemoryStorage, NodeWsTransport, startTv, systemClock, type TvHarness } from '../src/tv-driver.js';
 import { RawClient, envelope, requestJoin, sleep, startSecRelay, type Msg, type SecRelay } from './helpers.js';
 
 let relay: SecRelay;
@@ -104,5 +106,69 @@ describe('A3-06: number matching on the real TV store with a real relay', () => 
     const accepted = await j.client.next('join.accepted');
     expect(String(accepted.payload['phone_credential'])).toMatch(/^[A-Za-z0-9_-]{43}$/);
     j.client.close();
+  }, 120_000);
+});
+
+describe('N-03 TV half: the QR payload points at the page host, never at the relay host, and the code is in the fragment only', () => {
+  const PAGE = 'https://d1234abcd.cloudfront.net';
+
+  it('a valid phonePageOrigin is used verbatim and nothing else is accepted as an origin: http, a path (even "/"), user info, a query, a fragment, whitespace, odd ports, non-strings', () => {
+    expect(validatePhonePageOrigin(PAGE)).toBe(PAGE);
+    expect(validatePhonePageOrigin('HTTPS://D1234ABCD.CloudFront.NET')).toBe(PAGE);
+    expect(validatePhonePageOrigin('https://phone.example.test:8443')).toBe('https://phone.example.test:8443');
+    for (const bad of ['http://d1234abcd.cloudfront.net', PAGE + '/', PAGE + '/app', 'https://user@d1234abcd.cloudfront.net', PAGE + '?x=1', PAGE + '#f', ' ' + PAGE, PAGE + ' ', 'https://d1234abcd.cloudfront.net:0', 'https://d1234abcd.cloudfront.net:70000', 'https://exa mple.test', 'https://a.test\\evil.test', 'wss://d1234abcd.cloudfront.net', '//d1234abcd.cloudfront.net', 'javascript:alert(1)', '', null, undefined, 42, {}]) {
+      expect(validatePhonePageOrigin(bad), String(bad)).toBeNull();
+    }
+    // an invalid override never reaches the QR: the relay's own https origin is used
+    expect(phoneJoinUrl('wss://relay.example.test/ws', 'ACDEFH', 'https://evil.test/path')).toBe('https://relay.example.test/#code=ACDEFH');
+    expect(phoneJoinUrl('wss://relay.example.test/ws', 'ACDEFH', PAGE)).toBe(`${PAGE}/#code=ACDEFH`);
+    // a code is encoded, never placed in the query
+    expect(phoneJoinUrl('wss://relay.example.test/ws', 'A&B?=#', PAGE)).toBe(`${PAGE}/#code=A%26B%3F%3D%23`);
+  });
+
+  it('the real store, against a real relay, shows the QR and link as <phonePageOrigin>/#code=<CODE>; with an invalid origin it falls back to the relay origin, never to the rejected value', async () => {
+    const own = await startSecRelay();
+    const mk = async (phonePageOrigin: string): Promise<{ qr: string; code: string; dispose: () => void }> => {
+      const transport = new NodeWsTransport({ ca: own.ca });
+      const clock = systemClock();
+      const store = createSessionStore({ clock, storage: new MemoryStorage(), transport, relayUrl: own.wsUrl, appVersion: '0.1.0-test', platform: 'test', fixtureMode: false, phonePageOrigin });
+      transport.bind((i) => store.dispatch(i));
+      await store.ready();
+      const ticker = setInterval(() => store.dispatch({ kind: 'timer', now: clock.now() }), 100);
+      const waitFor = async (pred: () => boolean, label: string): Promise<void> => {
+        const end = Date.now() + 20_000;
+        while (!pred()) {
+          if (Date.now() > end) throw new Error(`timeout: ${label}; screen=${store.getView().screen}`);
+          await sleep(50);
+        }
+      };
+      if (store.getView().screen === 'onboarding') store.dispatch({ kind: 'ui', action: 'continue' });
+      await waitFor(() => store.getView().screen === 'home', 'home');
+      store.dispatch({ kind: 'ui', action: 'start_session' });
+      await waitFor(() => !!store.getView().pairing?.qrPayload, 'a QR payload');
+      const view = store.getView();
+      return {
+        qr: String(view.pairing?.qrPayload),
+        code: String(view.pairing?.code),
+        dispose: () => {
+          clearInterval(ticker);
+          store.dispose();
+          transport.close('test end');
+        },
+      };
+    };
+    try {
+      const good = await mk(PAGE);
+      expect(good.qr).toBe(`${PAGE}/#code=${good.code}`);
+      expect(good.qr).not.toContain('?');
+      expect(good.qr).not.toContain(String(own.port)); // the relay host and port are not in the QR
+      good.dispose();
+      const bad = await mk('https://user@evil.example/app');
+      expect(bad.qr).toBe(`${own.origin}/#code=${bad.code}`); // the relay origin, never the rejected value
+      expect(bad.qr).not.toContain('evil.example');
+      bad.dispose();
+    } finally {
+      await own.stop();
+    }
   }, 120_000);
 });

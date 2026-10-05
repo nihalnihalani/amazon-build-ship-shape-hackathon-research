@@ -12,6 +12,8 @@
 
 Why it is not a plain pass: two findings of major severity are open (N-01, N-03), the T04 qualification analysis has two major integrity holes (N-08, N-09), and every AWS and device check is pending. Why it is not a fail: no blocker is open. The three blockers from T02 (A3-01 confirmation on the phone, A4-01 hidden-meter leak, A9-01 compression passing the criteria) are closed or closed-with-residual with the residual stated; no privacy claim in the shipped copy is contradicted by what the code sends, stores or logs; no credential, code, phrase, cue or label appears in a relay log; no audio-like payload leaves the phone.
 
+*Update, same day: the residual fixes are merged and re-verified (section 12). Conditions 3 and 4 below are met; condition 1 now reduces to the AWS deployment checks (the repository side of N-03 is closed); condition 2 is superseded by the approval of revision 3 (section 11).*
+
 Conditions attached to the verdict (the gate does **not** cover these until they are met):
 
 1. **AWS is not cleared.** Every AWS-only check is `pending_external` (section 8) and finding N-03 (the phone page and the relay are on different hosts in the template, and the production phone build cannot be told the relay URL) must be resolved before any staging deployment.
@@ -397,3 +399,58 @@ Fix, inside `tests/security` only:
 Status of the T16 findings at `0353f10`: closed and verified: N-04, N-05 (wording in `docs/LIMITATIONS.md` and `docs/MEASUREMENT.md`), N-08, N-09, N-10, N-11, N-13, N-14. Routed and not yet in the head (their tests still record the defect and pass as `it.fails` or as a recorded behaviour): N-01, N-02, N-03 (the TV half, `phonePageOrigin`, is merged; the phone build still dials its own host), N-06, N-07, N-12. When each fix lands its `it.fails` will fail loudly: flip it to `it`.
 
 Residual register additions: **R24** self-declared exclusion reasons (section 11.1; owner dsp and the T04A harness); **R25** N8 is a reported value, so a phone can be `passed` with a nonzero N8 (section 11.2; owner lead). R16 is closed: the five T04 analysis holes are fixed; R24 and R25 replace it.
+
+## 12. Residual closure after the phone and relay fixes (2026-10-05)
+
+Head `15f345b` (the phone fixes `3a3110c` and the relay fixes `c2f779e`, merged; `wt/security` fast-forwarded from `bd571f2`). Evidence class automated and documentation_only; nothing real_phone, real_VVD or AWS.
+
+### 12.1 Closure status
+
+| ID | Status at `15f345b` | Evidence and what remains |
+|---|---|---|
+| N-01 half-open reconnect | closed | `d` (raw TV, half-open proxy, real phone page): the phone's resumes were refused with the generic `unauthorized` while the relay held the old socket (7 resumes, 6 refusals, 1 `auth.ok`), the same credential was presented until one succeeded (a refusal does not consume it), the refusal text says nothing about why, the page never showed "no longer paired" and the link came back (the test takes 38 s). Remains: a credential that really was revoked also gets 30 s of retries (about 7 attempts, under the 10 per minute per-room resume limit) and then "Could not reconnect", which is honest |
+| N-02 CSP | closed | `d` and `c`: the server header and the page's meta policy, parsed per directive; the relay's `connect-src` follows `ATR_RELAY_ORIGINS` exactly (this origin, its own wss origin and the configured origins verbatim, no scheme-only source, `worker-src 'self'`); seven unsafe relay-origin configurations are refused at start. See 12.2 (a) for why the earlier check could not have failed |
+| N-03 topology | closed in the repository; deployment pending_external | phone: `f` builds the production page for real (relay URL baked into the bundle and the page's CSP; unset gives `'self'` only; six bad values fail the build); TV: `i` real store against a real relay (QR and link are `<phonePageOrigin>/#code=<CODE>`, fragment only, the relay host and port are not in it, an invalid origin falls back to the relay origin and never to the rejected value; 20 invalid shapes refused); template: `f` (outputs `RelayWssUrl` and `PhonePageOrigin`, CSP host equals the output host, both functions allow the CloudFront origin). Not verified: a real CloudFront page opening a real API Gateway socket with its own `Origin`; a phone bundle is stage-specific (infra/README.md) |
+| N-06 dev CA | closed | `f`: the CA is valid 90 days, the server certificate never outlives it (89 days) and the name constraints remain |
+| N-07 phrases after delete | closed | `e`: after the TV deleted and closed the room, a scan of the whole phone DOM (text, every control value, every attribute) finds none of the six household phrases, and the same phrases were present while paired (positive control); the unpair and discard paths are covered by the phone package's `phrase-clearing` tests (run in root `npm test`) |
+| N-12 measurement limits | closed with a residual (R26) | cooldown (`d`), budget (`slow/n12-budget`, real time) and idle limit (`l`, page clock) each verified black box, see 12.2 (c); R26 below |
+| N-04, N-05, N-14 | closed earlier | section 11.5 |
+| N-15 | open, info | unchanged; changes the T04 hash, so only with a revision 4 |
+
+### 12.2 The three points you asked me to check
+
+**(a) The N-02 meta-policy check was vacuous: confirmed, and fixed.** It cut the policy with `split(/\s+/)` after a regex that ran to the closing quote, so a source followed by a semicolon (`wss:;`) never equalled `wss:`. I replaced it with a parser that splits on `;` first, applies the same rules to the server header and to the page's meta policy, and proves itself against the revision 1 policies it must flag (`wss:;` hiding behind the semicolon, `blob:`, `ws:`, a wildcard host, a bare `*`). The first run of the new check failed on the production page in my worktree: `apps/phone/dist` was stale and still said `connect-src 'self' wss:`. `tests/security/global-setup.ts` now builds the production phone page (without a relay URL from the environment) as well as the packages, so the suite cannot read a stale page again.
+
+**(b) The N-01 rig: the diagnosis was incomplete.** I ran the two variants separately. With the heartbeat but without loopback relay origins the test fails exactly as reported (the raw TV waits for `join.requested` and times out, because the phone page cannot open a socket to the proxy's random port: the relay's CSP no longer allows any `wss:` host). With loopback relay origins (`ATR_RELAY_ORIGINS=wss://localhost:*,wss://127.0.0.1:*`, as `tests/src/e2e-env.ts` now sets) but without the heartbeat, it passes. So the cause was the CSP in my rig, not a missing heartbeat. I fixed both (the heartbeat is kept because a real TV sends one) and added wire assertions that prove the retry path, not just the end state.
+
+**(c) The N-12 rewrite is faithful, and I extended what is verified.** The phone owner's rewrite asserts the cooldown the finding asked for (5 of 15 chained windows applied, 10 refused, every refusal `rejected:cooldown`); that is what my record becomes once the control exists. I added one assertion that a refused window measured nothing: every `level` frame the phone sent belongs to an applied window. The other two limits were only claimed "by unit tests", so I verified them on the real page:
+
+- **Budget, real time (`security/slow`, opt-in, 321 s):** ten vowel windows of 30 s were applied (30,000 ms each), the eleventh command was refused with `budget`, the person was told once ("5 minutes of listening"), a precheck was refused with `budget` too, and a first window in a session id the TV announced afterwards was applied.
+- **Idle limit, page clock (`l-idle-limit`, 6 s):** the microphone was still open at 9 minutes without a TV command and off by 10 with the plain message, still paired and connected; a TV command at minute 9 kept it open at minute 18 and it went off by minute 20.
+
+### 12.3 New residual R26 [minor]: the budget and the idle limit bound a runaway session, not a hostile TV
+
+Both limits are bypassed by the party they were meant to bound. The budget belongs to the session id the TV announces (`onSessionBegin` resets it for any new id, and the phone owner's own unit test pins that), so a TV that announces a new session id every 5 minutes starts a new budget each time; the slow test shows the first window of the new session being applied right after the old budget was used up. The idle clock restarts on any TV command, refused ones included, so a TV that sends one command every 9 minutes keeps the microphone open without end (`l`, third test, 27 minutes). What does hold: windows are at most 30 s with a 1 s pause, the page must be visible, the Measuring badge shows, and the person can stop the microphone. The data at stake is level and voice-activity timing, the same as at N-12, so I rate it minor, but the code comment that the limits mean a paired TV "cannot use the phone as an open-ended ambient-sound monitor" is not true for a TV that wants to.
+
+Recommended fix (phone owner, not required for the gate): reset the budget only on the person's Start-microphone tap, not on a TV-announced session id, and say "Tap Start microphone to continue" in the notice. Then a hostile TV gets at most one budget per tap, and the idle limit is only a convenience. The cost is that someone who keeps the microphone open across several sessions must tap again after 5 minutes of listening in total.
+
+### 12.4 Changes to `tests/security`
+
+- Plain `it` everywhere: no `it.fails` remains (`grep` over `tests/security`). N-01, N-02, N-03, N-06 and N-07 were flipped; N-03 and N-06 were strengthened (see 12.1).
+- `d`: the N-02 parser and its self-test; N-01 with the relay origins, the heartbeat and the wire assertions; the N-12 no-measurement-on-refusal assertion.
+- `c`: seven refused relay-origin configurations and the header-follows-configuration test. `i`: the TV half of N-03. `e`: the whole-DOM scan for N-07. `f`: N-06 (server certificate) and N-03 (real production builds, template).
+- New `l-idle-limit.test.ts` (3 tests, page clock) and `slow/n12-budget.test.ts` with `vitest.slow.config.ts` (opt-in, about 5.5 minutes: `npx vitest run --config security/vitest.slow.config.ts` from `tests/`; not part of `npm run test:security`).
+- `global-setup.ts` builds the production phone page; `tsconfig.json` includes the phone's vite typings (the phone config now reads `import.meta.env`).
+
+### 12.5 Results at `15f345b`
+
+| # | Command | Exit | Result |
+|---|---|---|---|
+| 1 | `git merge --ff-only build/across-the-room` | 0 | `15f345b` |
+| 2 | `npm run build`, `npm run typecheck` (root), `npx tsc -p security/tsconfig.json --noEmit` (in `tests/`) | 0, 0, 0 | |
+| 3 | `npx vitest run --config security/vitest.config.ts --reporter=verbose` (in `tests/`) | 0 | **12 files, 129 tests passed**, 278 s including the global build; no skipped test, no `it.fails` (per file: a 15, b 13, c 11, d 9, e 15, f 26, g 9, h 2, i 4, j 18, k 4, l 3) |
+| 4 | `npx vitest run --config security/vitest.slow.config.ts` (in `tests/`) | 0 | 1 test, 321 s (budget in real time, R26) |
+| 5 | `npm test` (root) | 0 | 3,712 passed, 2 skipped: protocol 921, phone-mic-meter 497, ten-foot-meter 49, session-core 392, relay 1,135 (+2 skipped), phone 555, tests/review 163 |
+| 6 | `python3 fixtures/dsp/tools/freeze_hash.py` | 0 | `b9b93100...9c66`, unchanged (EV-0046, EV-0047) |
+
+Residual register: R14 (N-01), R19 (N-02), R21 (N-07) and R12 (N-06) are closed; R17 (N-12) is replaced by R26; R22 (N-03) now means only the AWS deployment checks listed in section 8. Open findings of the gate: N-15 (info). Open residuals: R15, R24, R25, R26 and the pending_external items.

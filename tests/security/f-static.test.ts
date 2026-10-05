@@ -14,8 +14,9 @@
  * Evidence class: documentation_only / static (C) and automated; nothing here touches AWS.
  */
 import { describe, expect, it } from 'vitest';
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { MESSAGE_TYPES, type MessageType } from '@atr/protocol';
 import { ROOT, samplePayload } from './helpers.js';
@@ -115,17 +116,45 @@ describe('SEC-I01 infrastructure as code (infra/template.yaml), no AWS call', ()
     expect(code).toMatch(/Header: Permissions-Policy\s*\n\s*Value: microphone=\(self\)/);
   });
 
-  it('N-03 (phone side fixed; AWS topology still pending_external): the page host and the relay host are the same host, or the clients are told the relay URL', () => {
-    // The phone page dials wss://<page host>/ws (apps/phone/src/config.ts) and the TV builds the QR from the relay host
-    // (packages/session-core/src/urls.ts). On AWS the page is served by CloudFront and the socket lives on execute-api.
-    // For both to work the distribution needs an origin and a /ws behaviour for the WebSocket API, or the phone build
-    // must be given the relay URL. Neither exists in the template.
-    const hasWsBehaviour = /CacheBehaviors:[\s\S]*PathPattern: ['"]?\/ws/.test(code);
-    const hasApiOrigin = /Origins:[\s\S]*execute-api/.test(code);
-    const phoneConfig = read('apps/phone/src/config.ts');
-    const phoneKnowsRelay = /VITE_RELAY|import\.meta\.env\.[A-Z_]*RELAY/.test(phoneConfig);
-    expect(hasWsBehaviour && hasApiOrigin || phoneKnowsRelay).toBe(true);
-  });
+  it('N-03 (fixed in the repository; deployment pending_external): the clients are told where the relay is, the CSP names exactly the API host, and the relay allows exactly the page origin', () => {
+    // Template: the two outputs, the CSP host and the relay's allowed origin come from the same resources.
+    expect(code).toMatch(/Outputs:[\s\S]*RelayWssUrl:[\s\S]*Value: !Sub 'wss:\/\/\$\{RelayApi\}\.execute-api\.\$\{AWS::Region\}\.\$\{AWS::URLSuffix\}\/\$\{Stage\}'/);
+    expect(code).toMatch(/PhonePageOrigin:[\s\S]*Value: !Sub 'https:\/\/\$\{PhoneDistribution\.DomainName\}'/);
+    expect(code).toMatch(/connect-src 'self' wss:\/\/\$\{RelayApi\}\.execute-api\.\$\{AWS::Region\}\.\$\{AWS::URLSuffix\};/);
+    expect(code).not.toMatch(/connect-src[^;]*\bwss:[ ;]/);
+    expect((code.match(/ALLOWED_ORIGINS: !If[\s\S]*?'https:\/\/\$\{PhoneDistribution\.DomainName\}'/g) ?? []).length, 'both functions allow the CloudFront origin').toBe(2);
+    // Phone: a production build with the relay URL bakes it into the bundle and the page's own CSP, and nothing else changes.
+    const outDir = mkdtempSync(path.join(os.tmpdir(), 'atr-sec-phone-'));
+    try {
+      const build = (url: string | undefined, dir: string) =>
+        spawnSync('npx', ['vite', 'build', '--outDir', dir, '--emptyOutDir'], {
+          cwd: path.join(ROOT, 'apps/phone'),
+          env: { ...process.env, ...(url === undefined ? {} : { VITE_ATR_RELAY_URL: url }) },
+          encoding: 'utf8',
+        });
+      const relay = 'wss://abc123.execute-api.eu-west-1.amazonaws.com/staging';
+      const ok = build(relay, path.join(outDir, 'with'));
+      expect(ok.status, ok.stderr).toBe(0);
+      const html = readFileSync(path.join(outDir, 'with/index.html'), 'utf8');
+      const meta = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)"/i.exec(html)?.[1] ?? '';
+      expect(/connect-src ([^;]*)/.exec(meta)?.[1]).toBe("'self' wss://abc123.execute-api.eu-west-1.amazonaws.com");
+      const assets = readdirSync(path.join(outDir, 'with/assets')).filter((f) => f.endsWith('.js'));
+      const bundle = assets.map((f) => readFileSync(path.join(outDir, 'with/assets', f), 'utf8')).join('\n');
+      expect(bundle).toContain(relay);
+      expect(bundle).not.toMatch(/__atrTestAudio|Synthetic test audio/);
+      // Unset: same origin, nothing else in connect-src.
+      const none = build(undefined, path.join(outDir, 'none'));
+      expect(none.status, none.stderr).toBe(0);
+      expect(/connect-src ([^;]*)/.exec(readFileSync(path.join(outDir, 'none/index.html'), 'utf8'))?.[1]).toBe("'self'");
+      // Values that could smuggle data or downgrade the transport fail the build instead of shipping.
+      for (const bad of ['ws://x.example/ws', 'https://x.example/ws', 'wss://user:pw@x.example/ws', 'wss://x.example/ws?token=1', 'wss://x.example/ws#frag', 'not a url']) {
+        const r = build(bad, path.join(outDir, 'bad'));
+        expect(r.status, `a build with VITE_ATR_RELAY_URL=${bad} must fail`).not.toBe(0);
+      }
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  }, 180_000);
 });
 
 describe('SEC-P03 privacy copy and the transmitted fields', () => {
@@ -431,12 +460,20 @@ describe('re-review of rework items in the shipped code', () => {
     expect(text).not.toMatch(/DNS:\.?(com|net|org)\b/);
   });
 
-  it.fails('OPEN FINDING N-06: the development CA is short-lived (at most 90 days), as AMENDMENTS-REV2 A6-03 states', async () => {
+  it('N-06 (fixed): the development CA is valid for at most 90 days and the server certificate never outlives it, both still name-constrained', async () => {
     const { certDir } = await import('./helpers.js');
-    const dates = execFileSync('openssl', ['x509', '-in', path.join(certDir(), 'ca.crt'), '-noout', '-startdate', '-enddate'], { encoding: 'utf8' });
-    const start = Date.parse(/notBefore=(.*)/.exec(dates)?.[1] ?? '');
-    const end = Date.parse(/notAfter=(.*)/.exec(dates)?.[1] ?? '');
-    expect((end - start) / 86_400_000).toBeLessThanOrEqual(90);
+    const end = (file: string): { start: number; end: number } => {
+      const dates = execFileSync('openssl', ['x509', '-in', path.join(certDir(), file), '-noout', '-startdate', '-enddate'], { encoding: 'utf8' });
+      return { start: Date.parse(/notBefore=(.*)/.exec(dates)?.[1] ?? ''), end: Date.parse(/notAfter=(.*)/.exec(dates)?.[1] ?? '') };
+    };
+    const ca = end('ca.crt');
+    const server = end('server.crt');
+    expect((ca.end - ca.start) / 86_400_000).toBeLessThanOrEqual(90);
+    expect((ca.end - ca.start) / 86_400_000).toBeGreaterThan(80); // not a degenerate value
+    expect(server.end, 'the server certificate must not outlive the CA').toBeLessThanOrEqual(ca.end);
+    expect((server.end - server.start) / 86_400_000).toBeLessThanOrEqual(90);
+    const text = execFileSync('openssl', ['x509', '-in', path.join(certDir(), 'ca.crt'), '-noout', '-text'], { encoding: 'utf8' });
+    expect(text).toMatch(/Name Constraints: critical/);
   });
 
   it('A7-01: npm audit of the runtime dependencies reports no high or critical advisory (root workspace); results are printed for the gate record', () => {

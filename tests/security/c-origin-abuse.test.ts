@@ -5,8 +5,10 @@
  *   SEC-A11  Origin matrix (handshake and per-role operations), production configuration, platform value
  *   SEC-A03  brute force: exponential delay, valid-code budget, connect budget, concurrency cap, live-room cap
  *   SEC-A02  65 s deadline while a join is pending, expiry burns the code
+ *   N-02     ATR_RELAY_ORIGINS: what the relay may add to the page's connect-src, and what it refuses
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import https from 'node:https';
 import {
   RawClient,
   createRoom,
@@ -156,6 +158,14 @@ describe('SEC-A11 production configuration', () => {
       ['an origin with a path', { env: { ATR_ALLOWED_ORIGINS: 'https://phone.example.test/app' } }],
       ['a plain-http non-local origin', { env: { ATR_ALLOWED_ORIGINS: 'http://phone.example.test' } }],
       ['no TLS material and no insecure flag', { env: { ATR_TLS_CERT: '/nonexistent/server.crt' } }],
+      // N-02: the origins the relay adds to the page's connect-src are exact, wss in production, never a wildcard host
+      ['production with a loopback relay origin', { phoneOrigin: 'https://phone.example.test', env: { ATR_ENV: 'production', ATR_RELAY_ORIGINS: 'wss://localhost:*' } }],
+      ['production with a ws:// relay origin', { phoneOrigin: 'https://phone.example.test', env: { ATR_ENV: 'production', ATR_RELAY_ORIGINS: 'ws://relay.example.test' } }],
+      ['a wildcard host', { env: { ATR_RELAY_ORIGINS: 'wss://*.example.test' } }],
+      ['a wildcard port on a non-loopback host', { env: { ATR_RELAY_ORIGINS: 'wss://relay.example.test:*' } }],
+      ['a relay origin with a path', { env: { ATR_RELAY_ORIGINS: 'wss://relay.example.test/ws' } }],
+      ['a scheme-only relay origin', { env: { ATR_RELAY_ORIGINS: 'wss:' } }],
+      ['plain ws to a non-loopback host in development', { env: { ATR_RELAY_ORIGINS: 'ws://relay.example.test' } }],
     ];
     for (const [label, opts] of cases) {
       const out = await relayConfigOutcome(opts);
@@ -344,4 +354,34 @@ describe('SEC-A02 a pending join: deadline 65 s, unanswered join expires, burns 
       await relay.stop();
     }
   }, 120_000);
+});
+
+describe('N-02: the page policy the relay serves follows ATR_RELAY_ORIGINS exactly', () => {
+  const headerOf = (r: SecRelay): Promise<string> =>
+    new Promise((resolve, reject) => {
+      https.get({ host: 'localhost', port: r.port, path: '/', ca: r.ca }, (res) => {
+        res.resume();
+        resolve(String(res.headers['content-security-policy']));
+      }).on('error', reject);
+    });
+  const connectSources = (csp: string): string[] => (/(?:^|;)\s*connect-src\s+([^;]*)/.exec(csp)?.[1] ?? '').trim().split(/\s+/);
+
+  it('with none configured connect-src is this origin and its own wss origin; configured relay origins are added verbatim, nothing else', async () => {
+    const plain = await startSecRelay();
+    const api = 'wss://abc123.execute-api.eu-west-1.amazonaws.com';
+    const configured = await startSecRelay({ env: { ATR_RELAY_ORIGINS: `${api},wss://localhost:*` } });
+    try {
+      const a = connectSources(await headerOf(plain));
+      expect(a[0]).toBe("'self'");
+      expect(a.filter((x) => x !== "'self'")).toEqual([`wss://localhost:${plain.port}`]);
+      const b = connectSources(await headerOf(configured));
+      expect(b).toEqual(expect.arrayContaining(["'self'", api, 'wss://localhost:*', `wss://localhost:${configured.port}`]));
+      expect(b.filter((x) => /^[a-z][a-z0-9+.-]*:$/i.test(x) || x === '*'), 'no scheme-only source or bare wildcard').toEqual([]);
+      expect(b).toHaveLength(4);
+      expect(await headerOf(configured)).toMatch(/worker-src 'self'(;|$)/);
+    } finally {
+      await plain.stop();
+      await configured.stop();
+    }
+  }, 60_000);
 });
