@@ -1,7 +1,11 @@
 import {
-  createRelayHandler,
+  createRelayRuntime,
+  type DeadlineMessage,
+  type DeadlineScheduler,
   type ManagementApi,
   type RelayHandlerOptions,
+  type RelayRuntime,
+  type SqsBatchResponse,
   type WsEvent,
   type WsResult,
 } from '../../src/aws/handlers.js';
@@ -69,6 +73,21 @@ export class FakeManagementApi {
   }
 }
 
+/** Collects delayed deadline checks instead of sending them to SQS. `at` is the virtual time of queuing. */
+export class FakeScheduler implements DeadlineScheduler {
+  readonly sent: { message: DeadlineMessage; delaySeconds: number; at: number }[] = [];
+  /** Every message ever queued, including those already delivered (for assertions about what was queued). */
+  readonly history: { message: DeadlineMessage; delaySeconds: number; at: number }[] = [];
+  failWith: Error | null = null;
+  constructor(private readonly clock: () => number = () => 0) {}
+  async schedule(message: DeadlineMessage, delaySeconds: number): Promise<void> {
+    if (this.failWith) throw this.failWith;
+    const entry = { message, delaySeconds, at: this.clock() };
+    this.sent.push(entry);
+    this.history.push(entry);
+  }
+}
+
 export class LambdaClient implements SenderState {
   roomId: string | null = null;
   role: 'tv' | 'phone';
@@ -99,7 +118,10 @@ export class LambdaRig {
   readonly metricLines: string[] = [];
   disabled = false;
   readonly handler: (e: WsEvent) => Promise<WsResult>;
+  readonly runtime: RelayRuntime;
+  readonly scheduler = new FakeScheduler(() => this.now);
   private counter = 0;
+  private sourceCounter = 0;
 
   constructor(o: LambdaRigOptions = {}) {
     if (o.store) {
@@ -109,18 +131,44 @@ export class LambdaRig {
       this.fake = new FakeDynamo();
       this.store = new DynamoDbRoomStore(this.fake, 'relay-test-table');
     }
-    this.handler = createRelayHandler({
+    this.runtime = createRelayRuntime({
       store: this.store,
-      allowedOrigins: o.allowedOrigins ?? [PHONE_ORIGIN],
-      hashPepper: 'pepper',
+      phoneOrigins: o.allowedOrigins ?? [PHONE_ORIGIN],
+      hashSecret: async () => 'lambda-test-secret-0123456789',
       isDisabled: o.isDisabled ?? (() => this.disabled),
       apiFactory: this.api.factory,
+      scheduler: this.scheduler,
       stage: STAGE,
       now: () => this.now,
       logSink: (l) => this.logs.push(l),
       metricSink: (l) => this.metricLines.push(l),
       ...(o.overrides ?? {}),
     });
+    this.handler = this.runtime.handleApi;
+  }
+
+  /** Delivers every queued deadline message whose delay has elapsed at `this.now`, as the SQS consumer would. */
+  async deliverDeadlines(): Promise<SqsBatchResponse[]> {
+    const out: SqsBatchResponse[] = [];
+    const due = this.scheduler.sent.splice(0, this.scheduler.sent.length);
+    for (const item of due) {
+      out.push(await this.runtime.handleDeadline({ Records: [{ messageId: `m-${out.length}`, body: JSON.stringify(item.message) }] }));
+    }
+    return out;
+  }
+
+  /**
+   * Delivers only the queued deadline messages whose SQS delay has elapsed at `this.now` (a real queue never delivers
+   * earlier), keeping the rest queued.
+   */
+  async deliverDue(): Promise<SqsBatchResponse[]> {
+    const out: SqsBatchResponse[] = [];
+    const due = this.scheduler.sent.filter((e) => e.at + e.delaySeconds * 1000 <= this.now);
+    for (const e of due) this.scheduler.sent.splice(this.scheduler.sent.indexOf(e), 1);
+    for (const item of due) {
+      out.push(await this.runtime.handleDeadline({ Records: [{ messageId: `d-${out.length}`, body: JSON.stringify(item.message) }] }));
+    }
+    return out;
   }
 
   event(routeKey: string, connId: string, extra: Partial<WsEvent> = {}, ctx: Record<string, unknown> = {}): WsEvent {
@@ -140,7 +188,10 @@ export class LambdaRig {
   /** $connect. On success the connection becomes reachable through the fake Management API. */
   async connect(connId: string, origin: string | null, extra: Partial<WsEvent> = {}): Promise<WsResult> {
     const headers = origin === null ? {} : { Origin: origin };
-    const r = await this.handler(this.event('$connect', connId, { headers, ...extra }));
+    this.sourceCounter += 1;
+    const r = await this.handler(
+      this.event('$connect', connId, { headers, ...extra }, { identity: { sourceIp: `10.1.${(this.sourceCounter >> 8) & 255}.${this.sourceCounter & 255}` } }),
+    );
     if (r.statusCode === 200) this.api.gone.delete(connId);
     return r;
   }

@@ -17,8 +17,12 @@ export interface LocalConfig {
   insecureLocalhostOnly: boolean;
   hstsMaxAgeSeconds: number;
   tickMs: number;
-  /** Secret mixed into pairing-code hashes; random per process when not configured. */
-  hashPepper: string | null;
+  /** TV web-preview origins (development only; refused in production). */
+  tvPreviewOrigins: string[];
+  /** `production` rejects `client.platform: test`, preview origins, localhost origins and insecure mode. */
+  environment: 'development' | 'staging' | 'production';
+  /** Global cap on live rooms. */
+  liveRoomCap: number;
   disabled: boolean;
 }
 
@@ -49,12 +53,48 @@ function lanIPv4(): string[] {
   return out;
 }
 
+function validateOrigins(name: string, origins: string[], production: boolean): void {
+  for (const o of origins) {
+    let parsed: URL;
+    try {
+      parsed = new URL(o);
+    } catch {
+      throw new ConfigError(`${name} contains an entry that is not a URL origin`);
+    }
+    if (parsed.origin !== o) {
+      throw new ConfigError(`${name} entries must be exact origins (scheme://host[:port], no path, no trailing slash)`);
+    }
+    const local = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+    if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && local)) {
+      throw new ConfigError(`${name} entries must be https (http is accepted only for localhost)`);
+    }
+    if (production && (parsed.protocol !== 'https:' || local)) {
+      throw new ConfigError(`${name} must not contain localhost or http origins when ATR_ENV=production`);
+    }
+  }
+}
+
+function parseList(v: string | undefined): string[] {
+  return (v ?? '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter((x) => x !== '');
+}
+
 export function loadLocalConfig(
   env: NodeJS.ProcessEnv,
   opts: { root?: string; lanAddresses?: string[] } = {},
 ): LocalConfig {
   const root = opts.root ?? packageRoot();
+  const envName = env.ATR_ENV && env.ATR_ENV !== '' ? env.ATR_ENV : 'development';
+  if (envName !== 'development' && envName !== 'staging' && envName !== 'production') {
+    throw new ConfigError('ATR_ENV must be development, staging or production');
+  }
+  const production = envName === 'production';
   const insecure = parseBool(env.ATR_INSECURE_LOCALHOST_ONLY);
+  if (production && insecure) {
+    throw new ConfigError('ATR_INSECURE_LOCALHOST_ONLY is not allowed when ATR_ENV=production');
+  }
   const port = parseIntStrict('ATR_PORT', env.ATR_PORT, 8443, 0, 65535);
 
   const host = env.ATR_HOST && env.ATR_HOST !== '' ? env.ATR_HOST : insecure ? '127.0.0.1' : '0.0.0.0';
@@ -81,24 +121,21 @@ export function loadLocalConfig(
   const scheme = insecure ? 'http' : 'https';
   let allowedOrigins: string[];
   if (env.ATR_ALLOWED_ORIGINS !== undefined && env.ATR_ALLOWED_ORIGINS.trim() !== '') {
-    allowedOrigins = env.ATR_ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter((s) => s !== '');
+    allowedOrigins = parseList(env.ATR_ALLOWED_ORIGINS);
+  } else if (production) {
+    throw new ConfigError('ATR_ALLOWED_ORIGINS must be set explicitly when ATR_ENV=production (no localhost or LAN defaults)');
   } else {
     const hosts = ['localhost', '127.0.0.1', ...(insecure ? [] : (opts.lanAddresses ?? lanIPv4()))];
     allowedOrigins = hosts.map((h) => `${scheme}://${h}:${port}`);
   }
-  for (const o of allowedOrigins) {
-    let parsed: URL;
-    try {
-      parsed = new URL(o);
-    } catch {
-      throw new ConfigError('ATR_ALLOWED_ORIGINS contains an entry that is not a URL origin');
-    }
-    if (parsed.origin !== o) {
-      throw new ConfigError('ATR_ALLOWED_ORIGINS entries must be exact origins (scheme://host[:port], no path, no trailing slash)');
-    }
-    if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname))) {
-      throw new ConfigError('ATR_ALLOWED_ORIGINS entries must be https (http is accepted only for localhost)');
-    }
+  validateOrigins('ATR_ALLOWED_ORIGINS', allowedOrigins, production);
+  const tvPreviewOrigins = parseList(env.ATR_TV_PREVIEW_ORIGINS);
+  if (production && tvPreviewOrigins.length > 0) {
+    throw new ConfigError('ATR_TV_PREVIEW_ORIGINS must be empty when ATR_ENV=production (the preview origin is never a production origin)');
+  }
+  validateOrigins('ATR_TV_PREVIEW_ORIGINS', tvPreviewOrigins, false);
+  for (const o of tvPreviewOrigins) {
+    if (allowedOrigins.includes(o)) throw new ConfigError('an origin cannot be both in ATR_ALLOWED_ORIGINS and ATR_TV_PREVIEW_ORIGINS');
   }
 
   return {
@@ -110,7 +147,9 @@ export function loadLocalConfig(
     insecureLocalhostOnly: insecure,
     hstsMaxAgeSeconds: parseIntStrict('ATR_HSTS_MAX_AGE', env.ATR_HSTS_MAX_AGE, 300, 0, 63_072_000),
     tickMs: parseIntStrict('ATR_TICK_MS', env.ATR_TICK_MS, 5000, 10, 60_000),
-    hashPepper: env.ATR_HASH_PEPPER && env.ATR_HASH_PEPPER !== '' ? env.ATR_HASH_PEPPER : null,
+    tvPreviewOrigins,
+    environment: envName,
+    liveRoomCap: parseIntStrict('ATR_LIVE_ROOM_CAP', env.ATR_LIVE_ROOM_CAP, 200, 1, 100_000),
     disabled: parseBool(env.RELAY_DISABLED),
   };
 }

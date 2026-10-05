@@ -7,10 +7,12 @@ describeStoreConformance('MemoryRoomStore', () => new MemoryRoomStore());
 describe('MemoryRoomStore specifics', () => {
   it('bounds the message-id window to the last 1024 ids (package MessageIdDedupe)', async () => {
     const s = new MemoryRoomStore();
-    for (let i = 0; i < 1024; i += 1) await s.recordMessageId('r1', `m${i}`, 0);
-    await s.recordMessageId('r1', 'm1024', 0); // evicts m0, the least recently seen
-    expect(await s.recordMessageId('r1', 'm1', 0)).toBe('duplicate');
-    expect(await s.recordMessageId('r1', 'm0', 0)).toBe('new');
+    for (let i = 0; i < 1024; i += 1) await s.recordMessageId('r1', 'phone', `m${i}`, 0);
+    await s.recordMessageId('r1', 'phone', 'm1024', 0); // evicts m0, the least recently recorded
+    expect(await s.recordMessageId('r1', 'phone', 'm1', 0)).toBe('duplicate');
+    expect(await s.recordMessageId('r1', 'phone', 'm0', 0)).toBe('new');
+    // the other role has its own window (PK-08)
+    expect(await s.recordMessageId('r1', 'tv', 'm1', 0)).toBe('new');
   });
 
   it('returns copies, so callers cannot mutate stored state', async () => {

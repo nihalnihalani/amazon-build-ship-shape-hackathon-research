@@ -30,6 +30,7 @@ import {
   ROLES,
   ROOM_IDLE_CLOSE_MS,
   ROOM_TTL_MS,
+  DedupeScopes,
   MessageIdDedupe,
   SequenceTracker,
   createIdFactory,
@@ -51,6 +52,7 @@ export {
   PAIRING_ALPHABET,
   PAIRING_CODE_LENGTH,
   ROLES,
+  DedupeScopes,
   MessageIdDedupe,
   SequenceTracker,
   createIdFactory,
@@ -97,8 +99,12 @@ export function isPreOnlyType(type: MessageType): boolean {
 // ---------------------------------------------------------------------------------------------
 
 export interface ParsedMessage {
-  /** The exact text received; forwarded to peers unchanged. */
-  raw: string;
+  /**
+   * Canonical re-serialisation of the validated clean copy (PK-04): this, never the received frame, is what the
+   * relay forwards. Duplicate keys, whitespace and escape variants in the received text cannot reach a peer.
+   */
+  canonical: string;
+  /** Size in bytes of the frame as received (the canonical form is never larger). */
   bytes: number;
   type: MessageType;
   envelope: WireMessage;
@@ -126,7 +132,7 @@ export function parseWireText(raw: string, nowMs: number): ParseResult {
   return {
     ok: true,
     message: {
-      raw,
+      canonical: JSON.stringify(r.message),
       bytes,
       type: r.message.type,
       envelope: r.message,

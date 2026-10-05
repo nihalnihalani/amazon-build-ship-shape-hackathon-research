@@ -25,7 +25,9 @@
       "default": "./dist/aws/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -36,6 +38,8 @@
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "3.1146.0",
     "@aws-sdk/client-dynamodb": "3.1146.0",
+    "@aws-sdk/client-sqs": "3.1146.0",
+    "@aws-sdk/client-ssm": "3.1146.0",
     "@aws-sdk/lib-dynamodb": "3.1146.0",
     "ws": "8.22.0"
   },

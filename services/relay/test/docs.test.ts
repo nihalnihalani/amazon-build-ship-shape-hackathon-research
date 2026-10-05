@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { CLOSE } from '../src/core/index.js';
+import { CLOSE, LIMITS } from '../src/core/index.js';
 
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (p: string): string => readFileSync(`${repo}${p}`, 'utf8');
@@ -77,7 +77,7 @@ describe('operations documents stay consistent with the code', () => {
     const runbook = read('docs/operations/RUNBOOK.md');
     const template = read('infra/template.yaml');
     const names = [...template.matchAll(/AlarmName: !Sub 'atr-relay-\$\{Stage\}-([a-z-]+)'/g)].map((m) => m[1] as string);
-    expect(names.length).toBe(6);
+    expect(names.length).toBe(12);
     for (const n of names) expect(runbook, n).toContain(`\`${n}\``);
     expect(runbook).toContain('21 November 2026 01:30 IST');
     expect(runbook).toContain('put-function-concurrency');
@@ -85,11 +85,53 @@ describe('operations documents stay consistent with the code', () => {
     expect(runbook).toMatch(/not a cap/i);
   });
 
+  it('AWS_ADAPTER.md and the template state the deadlines and queue settings the core uses', () => {
+    const doc = read('docs/operations/AWS_ADAPTER.md');
+    const template = read('infra/template.yaml');
+    expect(LIMITS.authDeadlineMs).toBe(5000);
+    expect(LIMITS.authDeadlineWhileJoinPendingMs).toBe(65_000);
+    for (const part of ['5 s', '65 s', '`DelaySeconds`', 'DeleteConnection', 'error {unauthenticated, auth_deadline}', 'proposed text for the lead', 'RUNBOOK.md section 7']) {
+      expect(doc, part).toContain(part);
+    }
+    expect(template).toMatch(/DelaySeconds: 5\b/);
+    expect(template).toMatch(/maxReceiveCount: 3/);
+    expect(doc).toContain('three receives');
+    const coreSrc = read('services/relay/src/core/relay-core.ts');
+    expect(coreSrc).toMatch(/POST_RESOLUTION_GRACE_MS = 5_000/);
+  });
+
+  it('SECURITY-NOTES.md documents the grace window with the constants the core uses, and the supersede guard', async () => {
+    const doc = read('docs/operations/SECURITY-NOTES.md');
+    const core = (await import('../src/core/index.js')) as unknown as { CREDENTIAL_GRACE_MS: number; DEFAULT_LIMITS: { supersedeGuardMs: number; connectsPerMinutePerSource: number; maxUnauthConnectionsPerSource: number; roomCreatePerSourcePerHour: number } };
+    expect(core.CREDENTIAL_GRACE_MS).toBe(60_000);
+    expect(core.DEFAULT_LIMITS.supersedeGuardMs).toBe(25_000);
+    expect(core.DEFAULT_LIMITS.connectsPerMinutePerSource).toBe(20);
+    expect(core.DEFAULT_LIMITS.maxUnauthConnectionsPerSource).toBe(5);
+    expect(core.DEFAULT_LIMITS.roomCreatePerSourcePerHour).toBe(30);
+    for (const part of [
+      'one-step grace',
+      '60 seconds',
+      'exactly once more',
+      'has **not been presented yet**',
+      'the **same** next credential',
+      'a retry after 60 seconds',
+      '25 seconds',
+      'role epoch',
+      '20 per minute per source',
+      '5 concurrent per source',
+      '30 per source per hour',
+      'unauthorized',
+      'minute_aggregate',
+    ]) {
+      expect(doc, part).toContain(part);
+    }
+  });
+
   it('infra/README.md names every template parameter and output', () => {
     const readme = read('infra/README.md');
     const template = read('infra/template.yaml');
     const params = [...template.matchAll(/\n {2}([A-Za-z]+):\n {4}Type: (?:String|Number)/g)].map((m) => m[1] as string);
-    expect(params.length).toBe(7);
+    expect(params.length).toBe(8);
     for (const p of params) expect(readme, p).toContain(p);
     const outputs = template.slice(template.indexOf('\nOutputs:\n'));
     for (const m of outputs.matchAll(/\n {2}([A-Za-z]+):\n {4}Description:/g)) expect(readme, m[1]).toContain(m[1] as string);

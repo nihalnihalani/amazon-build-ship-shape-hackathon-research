@@ -94,6 +94,18 @@
       "Resource": ["arn:aws:lambda:*:*:function:atr-relay-*", "arn:aws:lambda:*:*:function:atr-relay-*:*"]
     },
     {
+      "Sid": "HashSecretParameter",
+      "Effect": "Allow",
+      "Action": ["ssm:PutParameter"],
+      "Resource": "arn:aws:ssm:*:*:parameter/atr/relay/*"
+    },
+    {
+      "Sid": "DeadlineQueueInspectionAndPurge",
+      "Effect": "Allow",
+      "Action": ["sqs:GetQueueUrl", "sqs:GetQueueAttributes", "sqs:PurgeQueue", "sqs:ReceiveMessage", "sqs:DeleteMessage"],
+      "Resource": "arn:aws:sqs:*:*:atr-relay-*"
+    },
+    {
       "Sid": "ReadOnlyServiceLimitsForPreflight",
       "Effect": "Allow",
       "Action": ["lambda:GetAccountSettings"],

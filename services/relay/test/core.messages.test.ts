@@ -42,12 +42,33 @@ describe('forwarding', () => {
     expect(tv.of('ack')).toHaveLength(1);
   });
 
-  it('forwards the exact received text, including key order and whitespace', async () => {
+  it('forwards the canonical re-serialisation, never the received frame (PK-04, SEC-V03)', async () => {
     const { rig, tv, phone } = await paired();
     const parsed = JSON.parse(rig.buildMessage(phone, 'level')) as Record<string, unknown>;
     const reordered = JSON.stringify(Object.fromEntries(Object.entries(parsed).reverse()), null, 1);
     await rig.sendRaw(phone, reordered);
-    expect(tv.last('level').raw).toBe(reordered);
+    expect(tv.last('level').raw).not.toBe(reordered);
+    expect(tv.last('level').raw).toBe(JSON.stringify(parsed)); // canonical key order, no whitespace
+  });
+
+  it('collapses duplicate keys: a frame with the same key twice reaches the peer as the validated single value', async () => {
+    const { rig, tv, phone } = await paired();
+    const m = rig.buildMessage(phone, 'level');
+    // JSON.parse keeps the last duplicate: the validator validates exactly what the peer will see
+    const dup = m.replace('"active":true', '"active":false,"active":true');
+    expect(dup).not.toBe(m);
+    await rig.sendRaw(phone, dup);
+    const got = tv.last('level');
+    expect(got.raw).toBe(m);
+    expect((got.raw.match(/"active"/g) ?? []).length).toBe(1);
+  });
+
+  it('forwards escape variants in canonical form', async () => {
+    const { rig, tv, phone } = await paired();
+    const plain = rig.buildMessage(phone, 'cue', { payload: { text: 'café' } });
+    expect(plain).toContain('café');
+    await rig.sendRaw(phone, plain.replace('é', '\\u00e9')); // the same text spelled with a \u escape
+    expect(tv.last('cue').raw).toBe(plain); // the peer receives the one canonical spelling
   });
 
   it('never delivers a message to the sender or to another room', async () => {
@@ -148,7 +169,7 @@ describe('direction and role checks', () => {
         pong: { server_time: rig.now },
         error: { code: 'internal', ref_message_id: null, detail: '' },
         'peer.state': { role: 'tv', connected: true, generation: 1 },
-        'auth.ok': { role: 'tv', generation: 1, peer_connected: true, phone_paired: true },
+        'auth.ok': { role: 'tv', generation: 1, peer_connected: true, phone_paired: true, next_credential: 'N'.repeat(43) },
       };
       await rig.send(phone, type, { payload: payloads[type] as Record<string, unknown>, roomId: phone.roomId, gen: 0 });
       expect(phone.errors()).toEqual(['forbidden_direction']);

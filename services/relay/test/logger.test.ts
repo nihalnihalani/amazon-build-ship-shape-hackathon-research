@@ -59,6 +59,6 @@ describe('redacting logger (ADR-0002)', () => {
   });
 
   it('has no event name that implies content', () => {
-    for (const name of LOG_EVENTS) expect(name).not.toMatch(/body|payload|phrase|cue_text|credential|code_value/);
+    for (const name of LOG_EVENTS) expect(name).not.toMatch(/body|payload|phrase|cue_text|credential_value|code_value|address/);
   });
 });

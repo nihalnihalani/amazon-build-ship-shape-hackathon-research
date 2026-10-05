@@ -25,7 +25,9 @@ parameter_overrides = [
   "MonthlyBudgetUsd=25",
   "ReservedConcurrency=20",
   "AllowedOrigins=",
+  "TvPreviewOrigins=",                # must stay empty when Stage=prod (the template refuses a value)
+  "LiveRoomCap=200",
   "RelayDisabled=false",
 ]
-# HashPepper is a secret: pass it on the command line (--parameter-overrides HashPepper=...) or via the environment,
-# not in this file.
+# There is no secret parameter. Before the first deploy create the hashing secret as an SSM SecureString named
+# /atr/relay/<stage>/hash-secret (infra/README.md, prerequisite 6). The stack only knows its name.

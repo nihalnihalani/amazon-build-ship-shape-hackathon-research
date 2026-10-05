@@ -17,7 +17,25 @@
         "dynamodb:UntagResource",
         "dynamodb:ListTagsOfResource"
       ],
-      "Resource": "arn:aws:dynamodb:*:*:table/atr-relay-*"
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/atr-relay-*",
+        "arn:aws:dynamodb:*:*:table/atr-relay-*/index/*"
+      ]
+    },
+    {
+      "Sid": "SqsDeadlineQueues",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:CreateQueue",
+        "sqs:DeleteQueue",
+        "sqs:GetQueueAttributes",
+        "sqs:SetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:TagQueue",
+        "sqs:UntagQueue",
+        "sqs:ListQueueTags"
+      ],
+      "Resource": "arn:aws:sqs:*:*:atr-relay-*"
     },
     {
       "Sid": "LambdaRelayFunction",
@@ -47,6 +65,22 @@
         "arn:aws:lambda:*:*:function:atr-relay-*",
         "arn:aws:lambda:*:*:function:atr-relay-*:*"
       ]
+    },
+    {
+      "Sid": "SqsEventSourceOfTheDeadlineFunction",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateEventSourceMapping",
+        "lambda:UpdateEventSourceMapping",
+        "lambda:DeleteEventSourceMapping",
+        "lambda:GetEventSourceMapping"
+      ],
+      "Resource": "arn:aws:lambda:*:*:event-source-mapping:*",
+      "Condition": {
+        "ArnLike": {
+          "lambda:FunctionArn": "arn:aws:lambda:*:*:function:atr-relay-*"
+        }
+      }
     },
     {
       "Sid": "IamRolesNamedForTheStack",

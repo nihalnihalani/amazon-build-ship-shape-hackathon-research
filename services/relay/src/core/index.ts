@@ -1,3 +1,4 @@
+export * from './aggregate.js';
 export * from './credentials.js';
 export * from './logger.js';
 export * from './memory-store.js';

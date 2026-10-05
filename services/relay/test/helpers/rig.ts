@@ -2,11 +2,13 @@ import { expect } from 'vitest';
 import { DynamoDbRoomStore } from '../../src/aws/dynamo-store.js';
 import {
   MemoryRoomStore,
+  MinuteAggregator,
   RelayCore,
   createRedactingLogger,
   sanitizeLogEvent,
   parseWireText,
   type Action,
+  type LogEvent,
   type MessageType,
   type RelayConfig,
   type RandomBytes,
@@ -80,7 +82,11 @@ export class Rig {
   readonly fake: FakeDynamo | null;
   readonly store: RoomStore;
   readonly logs: string[] = [];
-  readonly metrics: { name: string; value: number }[] = [];
+  readonly metrics: { name: string; value: number; type?: MessageType }[] = [];
+  /** Deadline checks the core asked the adapter to schedule. */
+  readonly scheduled: { connId: string; delayMs: number; at: number }[] = [];
+  /** Per-minute aggregation of ordinary traffic, as every adapter does it. */
+  readonly aggregator = new MinuteAggregator();
   /** Log events exactly as the core emitted them, before any sanitizing. */
   readonly rawLogEvents: unknown[] = [];
   readonly clients = new Map<string, Client>();
@@ -106,8 +112,9 @@ export class Rig {
     this.core = new RelayCore({
       store: this.store,
       config: {
-        allowedOrigins: [PHONE_ORIGIN, TV_PREVIEW_ORIGIN],
-        hashPepper: 'test-pepper',
+        phoneOrigins: [PHONE_ORIGIN],
+        tvPreviewOrigins: [TV_PREVIEW_ORIGIN],
+        hashSecret: 'test-secret-0123456789',
         isDisabled: () => this.disabled,
         ...overrides,
       },
@@ -124,8 +131,10 @@ export class Rig {
     return (await this.store.listConnections()).length;
   }
 
-  async connect(origin: string | null = null, source = '198.51.100.7'): Promise<Client> {
+  async connect(origin: string | null = null, source?: string): Promise<Client> {
     this.connCounter += 1;
+    // Every connection comes from its own source unless a test names one (per-source limits are tested explicitly).
+    source ??= `10.${(this.connCounter >> 8) & 255}.${this.connCounter & 255}.9`;
     const c = new Client(`conn-${this.connCounter}`, this);
     this.clients.set(c.id, c);
     const actions = await this.core.onConnect(c.id, { origin, sourceKey: source, now: this.now });
@@ -157,8 +166,11 @@ export class Rig {
       } else if (a.kind === 'log') {
         this.rawLogEvents.push(a.event);
         this.logger.log(a.event);
+      } else if (a.kind === 'schedule') {
+        this.scheduled.push({ connId: a.connId, delayMs: a.delayMs, at: this.now });
       } else {
-        this.metrics.push({ name: a.name, value: a.value });
+        this.metrics.push({ name: a.name, value: a.value, ...(a.type ? { type: a.type } : {}) });
+        for (const line of this.aggregator.record(a, this.now)) this.emitLine(line);
       }
     }
     // A real socket close fires onDisconnect afterwards: must be idempotent with the core's own cleanup.
@@ -176,7 +188,7 @@ export class Rig {
   }
 
   async sendRaw(c: Client, raw: RawFrame): Promise<void> {
-    const actions = await this.core.onMessage(c.id, raw, this.now);
+    const actions = await this.core.processInbound(raw, { connId: c.id, now: this.now });
     await this.exec(actions);
     for (const cl of this.clients.values()) this.observe(cl);
   }
@@ -185,7 +197,7 @@ export class Rig {
   private observe(c: Client): void {
     for (const m of c.inbox) {
       const p = m.payload;
-      for (const k of ['tv_credential', 'phone_credential', 'pairing_code']) {
+      for (const k of ['tv_credential', 'phone_credential', 'pairing_code', 'next_credential']) {
         if (typeof p[k] === 'string') this.secrets.add(p[k] as string);
       }
       if (typeof p.room_id === 'string') c.roomId = p.room_id;
@@ -235,8 +247,44 @@ export class Rig {
     return phone;
   }
 
+  /**
+   * Connects a new client and resumes `role` in `roomId` with `credential`. On success the client holds the rotated
+   * credential (`auth.ok.next_credential`) and the new generation. Origin defaults to the phone origin for the phone
+   * and to no Origin for the TV.
+   */
+  async resume(
+    roomId: string,
+    role: 'tv' | 'phone',
+    credential: string,
+    o: { origin?: string | null; source?: string } = {},
+  ): Promise<Client> {
+    const origin = o.origin !== undefined ? o.origin : role === 'phone' ? PHONE_ORIGIN : null;
+    const c = await this.connect(origin, o.source);
+    c.role = role;
+    await this.send(c, 'auth.resume', { payload: { room_id: roomId, role, credential } });
+    const ok = c.of('auth.ok').at(-1);
+    if (ok) {
+      c.roomId = roomId;
+      c.generation = ok.payload.generation as number;
+      c.credential = ok.payload.next_credential as string;
+      c.nextSeq = 0;
+      this.secrets.add(c.credential);
+    }
+    return c;
+  }
+
   async startSession(tv: Client, session = 's_session000001'): Promise<void> {
     await this.send(tv, 'session.begin', { session });
+  }
+
+  /** Writes the aggregate lines of the minutes completed so far (all of them with `force`). */
+  flushAggregates(force = false): void {
+    for (const line of this.aggregator.flush(this.now, force)) this.emitLine(line);
+  }
+
+  private emitLine(line: LogEvent): void {
+    this.rawLogEvents.push(line);
+    this.logger.log(line);
   }
 
   /** Scan every log line for secrets, bodies and field names; throws via expect on a leak. */
@@ -264,7 +312,7 @@ const FORBIDDEN_FIELD_NAMES = [
   'ip',
   'origin',
 ];
-const ALLOWED_LOG_KEYS = new Set(['event', 'code', 'type', 'bytes', 'role', 'room', 'latency_ms']);
+const ALLOWED_LOG_KEYS = new Set(['event', 'code', 'type', 'bytes', 'role', 'room', 'latency_ms', 'count']);
 
 export function assertNoLeaks(lines: readonly string[], secrets: readonly string[]): void {
   for (const line of lines) {

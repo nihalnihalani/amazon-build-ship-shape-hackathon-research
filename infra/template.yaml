@@ -1,27 +1,33 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >-
-  Across the Room relay: API Gateway WebSocket + one Lambda (nodejs24.x, arm64) + DynamoDB for room and connection
-  metadata, a private S3 bucket behind CloudFront (Origin Access Control) for the phone page, alarms, and a budget
-  alert. Prepared for an owner-authorized deploy; nothing in this repository has been deployed.
+  Across the Room relay: API Gateway WebSocket + the relay Lambda and the authentication-deadline Lambda (nodejs24.x,
+  arm64) + a DynamoDB table for room and connection metadata + an SQS delay queue for authentication deadlines, a
+  private S3 bucket behind CloudFront (Origin Access Control) for the phone page, alarms, and a budget alert.
+  Prepared for an owner-authorized deploy; nothing in this repository has been deployed.
 
 # Controls that limit spend and abuse in this template (a budget alert is NOT a spending cap):
 #   1. Lambda reserved concurrency (parameter ReservedConcurrency)
 #   2. WebSocket stage default-route throttling (Mappings: StageSettings)
 #   3. The relay kill switch (parameter RelayDisabled=true, see docs/operations/RUNBOOK.md)
-#   4. Application rate limits inside the relay core (ADR-0003 section 7)
+#   4. Application rate limits inside the relay core (ADR-0003 section 7): connect budget and concurrent
+#      unauthenticated cap per source, exponential delay on failures, room.create budget, live-room cap (LiveRoomCap)
+#   5. A maximum concurrency on the SQS consumer (DeadlineFunction event source)
+#
+# Privacy posture asserted by services/relay/test/infra.test.ts (SEC-I01): no execution-data tracing, no X-Ray, no API access logs, no
+# CloudFront or S3 access logs, log retention of 14 days at most, point-in-time recovery off, no secret in any
+# environment variable (the hashing secret is an SSM SecureString read at runtime, created by the owner before the
+# first deploy: see infra/README.md).
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label: { default: Deployment }
-        Parameters: [Stage, AllowedOrigins, RelayDisabled]
+        Parameters: [Stage, AllowedOrigins, TvPreviewOrigins, RelayDisabled]
       - Label: { default: Cost and abuse controls }
-        Parameters: [ReservedConcurrency, MonthlyBudgetUsd]
+        Parameters: [ReservedConcurrency, MonthlyBudgetUsd, LiveRoomCap]
       - Label: { default: Alerts }
         Parameters: [AlarmEmail]
-      - Label: { default: Secrets }
-        Parameters: [HashPepper]
 
 Parameters:
   Stage:
@@ -32,10 +38,19 @@ Parameters:
   AllowedOrigins:
     Type: String
     Default: ''
+    AllowedPattern: '^$|^https://[A-Za-z0-9.:\[\]-]+(,https://[A-Za-z0-9.:\[\]-]+)*$'
+    Description: >-
+      Extra PHONE origins allowed to open a WebSocket and pair as a phone, comma separated, exact https://host[:port],
+      no spaces, no wildcards (for example a custom domain in front of the phone page). The CloudFront origin of this
+      stack is always allowed. http and localhost origins are refused here; use the local relay for development.
+  TvPreviewOrigins:
+    Type: String
+    Default: ''
     AllowedPattern: '^$|^https?://[A-Za-z0-9.:\[\]-]+(,https?://[A-Za-z0-9.:\[\]-]+)*$'
     Description: >-
-      Extra browser origins allowed to open a WebSocket, comma separated, exact scheme://host[:port], no spaces,
-      no wildcards (for example a TV web-preview origin). The CloudFront origin of this stack is always allowed.
+      TV web-preview origins (a browser preview of the TV app), comma separated, exact scheme://host[:port]. They may
+      create rooms as a TV but can never act as a phone. A development convenience: the stack REFUSES a non-empty
+      value when Stage is prod (see Rules), and the relay refuses to start in production with one.
   AlarmEmail:
     Type: String
     AllowedPattern: '^[^@\s,]+@[^@\s,]+\.[^@\s,]+$'
@@ -65,15 +80,21 @@ Parameters:
     Description: >-
       Kill switch. 'true' makes $connect answer 503 and every message get an error and a disconnect. Takes effect
       on new Lambda environments after a stack update (see docs/operations/RUNBOOK.md for faster levers).
-  HashPepper:
-    Type: String
-    NoEcho: true
-    Default: ''
-    AllowedPattern: '^$|^[A-Za-z0-9+/=_-]{16,128}$'
+  LiveRoomCap:
+    Type: Number
+    Default: 200
+    MinValue: 1
+    MaxValue: 100000
     Description: >-
-      Optional secret mixed into pairing-code hashes (16 to 128 characters of A-Z a-z 0-9 + / = _ -). Strongly
-      recommended. NoEcho hides it from the console and CLI output, but it is still stored in the Lambda
-      environment configuration; it is defence in depth, not a vault secret.
+      Global cap on live rooms. room.create beyond it is refused (and the room-cap alarm fires). A room counts as
+      live until it closes or has been idle for 30 minutes. Raise it deliberately when real usage needs it.
+
+Rules:
+  PreviewOriginsNeverInProduction:
+    RuleCondition: !Equals [!Ref Stage, prod]
+    Assertions:
+      - Assert: !Equals [!Ref TvPreviewOrigins, '']
+        AssertDescription: A TV web-preview origin is a development convenience and must never be allowed on a prod stage.
 
 Mappings:
   # Per-route throttle (requests per second) applied by API Gateway before Lambda is invoked. One measuring session
@@ -107,13 +128,31 @@ Resources:
       AttributeDefinitions:
         - { AttributeName: pk, AttributeType: S }
         - { AttributeName: sk, AttributeType: S }
+        - { AttributeName: gsi1pk, AttributeType: S }
+        - { AttributeName: gsi1sk, AttributeType: N }
       KeySchema:
         - { AttributeName: pk, KeyType: HASH }
         - { AttributeName: sk, KeyType: RANGE }
+      # Sparse index of live rooms for the global room cap: only room items that are live carry gsi1pk/gsi1sk
+      # (gsi1sk = the time until which the room counts as live). KEYS_ONLY: the index never copies room contents.
+      GlobalSecondaryIndexes:
+        - IndexName: live-rooms
+          KeySchema:
+            - { AttributeName: gsi1pk, KeyType: HASH }
+            - { AttributeName: gsi1sk, KeyType: RANGE }
+          Projection:
+            ProjectionType: KEYS_ONLY
       # TTL is physical cleanup only (deletion can lag by days); the relay checks logical expiry on every message.
       TimeToLiveSpecification:
         AttributeName: expires_at
         Enabled: true
+      # Encryption at rest: DynamoDB encrypts every table with an AWS owned key by default (nothing to enable, and
+      # nothing here turns it off). The template does not opt into a KMS key: the table holds routing metadata only.
+      #
+      # Point-in-time recovery is deliberately OFF (SEC-I01). The table holds ephemeral routing metadata that expires
+      # within 12 hours, and PITR would retain deleted rooms, hashed pairing codes and hashed credentials for 35 days
+      # after the user asked for them to be gone (ADR-0002 retention). There is nothing worth restoring: a restored
+      # table would only resurrect expired sessions. Recreating the table loses nothing that matters.
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: false
       DeletionProtectionEnabled: !If [IsProd, true, false]
@@ -124,12 +163,22 @@ Resources:
   # ---------------------------------------------------------------------------------------------------------------
   # Function: one Lambda serves $connect, $disconnect and $default.
   # ---------------------------------------------------------------------------------------------------------------
+  # Log retention is bounded everywhere (A2-04): 14 days at most. Lines are content-free (ADR-0002); ordinary traffic
+  # is aggregated per minute, not logged per message.
   RelayLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
       LogGroupName: !Sub '/aws/lambda/atr-relay-${Stage}'
+      RetentionInDays: 14
+
+  DeadlineLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/atr-relay-${Stage}-deadline'
       RetentionInDays: 14
 
   RelayFunctionRole:
@@ -153,10 +202,26 @@ Resources:
                 Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub '${RelayLogGroup.Arn}:*'
+              # TransactWriteItems (phone claim, credential rotation) is authorized through these item actions.
+              # No Scan, no BatchWrite, no table-wide Query.
               - Sid: TableAccessOnThisTable
                 Effect: Allow
                 Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem]
                 Resource: !GetAtt RelayTable.Arn
+              # Counting live rooms for the global cap: Query on the sparse KEYS_ONLY index, nothing else.
+              - Sid: QueryTheLiveRoomsIndexOnly
+                Effect: Allow
+                Action: dynamodb:Query
+                Resource: !Sub '${RelayTable.Arn}/index/live-rooms'
+              # The master secret of the keyed hashes: one SecureString parameter, read only.
+              - Sid: ReadTheHashSecretOnly
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/atr/relay/${Stage}/hash-secret'
+              - Sid: QueueDeadlineChecks
+                Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt DeadlineQueue.Arn
               # ManageConnections covers the three @connections calls. The relay uses POST (deliver a message) and
               # DELETE (close a connection it has decided to drop). It never needs GET.
               - Sid: ManageConnectionsOfThisApiAndStage
@@ -183,6 +248,9 @@ Resources:
       Timeout: 10
       ReservedConcurrentExecutions: !If [UseReservedConcurrency, !Ref ReservedConcurrency, !Ref 'AWS::NoValue']
       Role: !GetAtt RelayFunctionRole.Arn
+      # X-Ray is off. PassThrough only records a request that an upstream service already traced; API Gateway
+      # WebSocket APIs do not send trace headers, so nothing is ever traced. (Never `Active`: SEC-I01.)
+      Tracing: PassThrough
       # A published version and a stable alias give a fast rollback lever independent of CloudFormation.
       AutoPublishAlias: live
       LoggingConfig:
@@ -195,9 +263,170 @@ Resources:
             - HasExtraOrigins
             - !Sub 'https://${PhoneDistribution.DomainName},${AllowedOrigins}'
             - !Sub 'https://${PhoneDistribution.DomainName}'
+          TV_PREVIEW_ORIGINS: !Ref TvPreviewOrigins
           RELAY_DISABLED: !Ref RelayDisabled
           STAGE_NAME: !Ref Stage
-          HASH_PEPPER: !Ref HashPepper
+          # `production` makes the relay refuse client.platform "test", preview origins and localhost origins.
+          ATR_ENV: !If [IsProd, production, staging]
+          # The NAME of the SSM SecureString parameter that holds the hashing secret. Never the value: no secret
+          # is stored in the function configuration (A3-04). The owner creates the parameter before the first deploy.
+          HASH_SECRET_PARAM: !Sub '/atr/relay/${Stage}/hash-secret'
+          LIVE_ROOM_CAP: !Ref LiveRoomCap
+          DEADLINE_QUEUE_URL: !Ref DeadlineQueue
+      Tags:
+        Project: across-the-room
+        Stage: !Ref Stage
+
+  # ---------------------------------------------------------------------------------------------------------------
+  # Authentication deadlines (A3-09): API Gateway gives a Lambda no per-connection timer. After $connect (5 s), after
+  # a join request (65 s) and after a join ended (5 s) the relay queues a delayed message; this function consumes it
+  # and drops a connection that still has not authenticated (an `error` message, then DeleteConnection).
+  # The check is idempotent and the deadline is also enforced on the connection's next message, so a lost or late
+  # queue message only delays a close, it never lets an unauthenticated connection do anything.
+  # ---------------------------------------------------------------------------------------------------------------
+  DeadlineDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    # Messages are short-lived routing hints (a connection id and a delay); nothing in them is worth keeping.
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      QueueName: !Sub 'atr-relay-${Stage}-deadline-dlq'
+      # Messages hold a connection id, the API domain and the stage: no secrets, no content. Short retention anyway.
+      MessageRetentionPeriod: 86400
+      SqsManagedSseEnabled: true
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  DeadlineQueue:
+    Type: AWS::SQS::Queue
+    # Messages are short-lived routing hints (a connection id and a delay); nothing in them is worth keeping.
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      QueueName: !Sub 'atr-relay-${Stage}-deadline'
+      # The relay sets DelaySeconds per message (5, or 65 while a join is pending); this default is the shortest one.
+      DelaySeconds: 5
+      # A deadline check older than an hour is meaningless: bound stale work.
+      MessageRetentionPeriod: 3600
+      # Six times the consumer timeout, as recommended for Lambda event sources.
+      VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadlineDeadLetterQueue.Arn
+        maxReceiveCount: 3
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  DeadlineQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues: [!Ref DeadlineQueue, !Ref DeadlineDeadLetterQueue]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 'sqs:*'
+            Resource:
+              - !GetAtt DeadlineQueue.Arn
+              - !GetAtt DeadlineDeadLetterQueue.Arn
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+
+  DeadlineFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                'aws:SourceAccount': !Ref AWS::AccountId
+      Policies:
+        - PolicyName: deadline-least-privilege
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: WriteOwnLogsOnly
+                Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub '${DeadlineLogGroup.Arn}:*'
+              - Sid: ConsumeTheDeadlineQueue
+                Effect: Allow
+                Action: [sqs:ReceiveMessage, sqs:DeleteMessage, sqs:GetQueueAttributes]
+                Resource: !GetAtt DeadlineQueue.Arn
+              # An expired join queues one more 5 s check, so the consumer also sends to the same queue.
+              - Sid: QueueFollowUpChecks
+                Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt DeadlineQueue.Arn
+              - Sid: TableAccessOnThisTable
+                Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem]
+                Resource: !GetAtt RelayTable.Arn
+              - Sid: ReadTheHashSecretOnly
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/atr/relay/${Stage}/hash-secret'
+              - Sid: ManageConnectionsOfThisApiAndStage
+                Effect: Allow
+                Action: execute-api:ManageConnections
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${RelayApi}/${Stage}/POST/@connections/*'
+                  - !Sub 'arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${RelayApi}/${Stage}/DELETE/@connections/*'
+      Tags:
+        - { Key: Project, Value: across-the-room }
+        - { Key: Stage, Value: !Ref Stage }
+
+  DeadlineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'atr-relay-${Stage}-deadline'
+      Description: Across the Room relay authentication-deadline checker (SQS consumer)
+      # The same bundle as the relay function; only the handler differs.
+      CodeUri: ../services/relay/dist-lambda/
+      Handler: deadline.handler
+      Runtime: nodejs24.x
+      Architectures: [arm64]
+      MemorySize: 512
+      Timeout: 10
+      Role: !GetAtt DeadlineFunctionRole.Arn
+      Tracing: PassThrough
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: !Ref DeadlineLogGroup
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RelayTable
+          ALLOWED_ORIGINS: !If
+            - HasExtraOrigins
+            - !Sub 'https://${PhoneDistribution.DomainName},${AllowedOrigins}'
+            - !Sub 'https://${PhoneDistribution.DomainName}'
+          TV_PREVIEW_ORIGINS: !Ref TvPreviewOrigins
+          RELAY_DISABLED: !Ref RelayDisabled
+          STAGE_NAME: !Ref Stage
+          ATR_ENV: !If [IsProd, production, staging]
+          HASH_SECRET_PARAM: !Sub '/atr/relay/${Stage}/hash-secret'
+          LIVE_ROOM_CAP: !Ref LiveRoomCap
+          DEADLINE_QUEUE_URL: !Ref DeadlineQueue
+      Events:
+        DeadlineQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DeadlineQueue.Arn
+            BatchSize: 10
+            # A failed record is retried alone (and lands in the dead-letter queue after 3 receives).
+            FunctionResponseTypes: [ReportBatchItemFailures]
+            # Spend control: the consumer can never scale past this many concurrent invocations.
+            ScalingConfig:
+              MaximumConcurrency: 5
       Tags:
         Project: across-the-room
         Stage: !Ref Stage
@@ -269,9 +498,15 @@ Resources:
       StageName: !Ref Stage
       DeploymentId: !Ref RelayDeployment
       # Per-route throttling bounds the message rate (and with it Lambda, DynamoDB and API Gateway cost).
-      # Execution and access logging are not enabled: they require an account-level API Gateway CloudWatch role,
-      # which is an account setting this template does not create. Standard API metrics are available regardless.
+      # Execution logging and execution data tracing are explicitly OFF: data tracing would write full message
+      # bodies (credentials, phrases, cue text) to CloudWatch Logs (A2-05, SEC-I01). There are NO access logs either:
+      # an access-log format could record the source address and user agent. Should access logs ever be wanted, the
+      # format must stay within the whitelist enforced by services/relay/test/infra.test.ts (request id, route, event type, status,
+      # latencies) and never include the source address, user agent or any header or body field.
+      # Standard API metrics are available regardless.
       DefaultRouteSettings:
+        DataTraceEnabled: false
+        LoggingLevel: 'OFF'
         DetailedMetricsEnabled: true
         ThrottlingRateLimit: !FindInMap [StageSettings, !Ref Stage, ThrottleRate]
         ThrottlingBurstLimit: !FindInMap [StageSettings, !Ref Stage, ThrottleBurst]
@@ -600,6 +835,124 @@ Resources:
       AlarmActions: [!Ref AlarmTopic]
       OKActions: [!Ref AlarmTopic]
 
+  AuthFailureBurstAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-auth-failures'
+      AlarmDescription: >-
+        30 or more failed credential resumes in 5 minutes (credential guessing or a client in a loop). Custom metric
+        auth_failed emitted by the relay (no content). See docs/operations/RUNBOOK.md.
+      Namespace: AcrossTheRoom/Relay
+      MetricName: auth_failed
+      Dimensions:
+        - { Name: Stage, Value: !Ref Stage }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 30
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  CredentialReuseAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-credential-reuse'
+      AlarmDescription: >-
+        3 or more rotated credentials were presented again within 15 minutes. Each one revoked a role and told the TV
+        (a possible stolen credential, or a client that lost its stored credential). Metric credential_reuse, no
+        content. See docs/operations/RUNBOOK.md.
+      Namespace: AcrossTheRoom/Relay
+      MetricName: credential_reuse
+      Dimensions:
+        - { Name: Stage, Value: !Ref Stage }
+      Statistic: Sum
+      Period: 900
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  RoomCapAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-room-cap'
+      AlarmDescription: >-
+        room.create was refused because the live-room cap (parameter LiveRoomCap) was reached. Either real growth or
+        an attempt to fill the relay. See docs/operations/RUNBOOK.md.
+      Namespace: AcrossTheRoom/Relay
+      MetricName: room_cap_reached
+      Dimensions:
+        - { Name: Stage, Value: !Ref Stage }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  DeadlineErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-deadline-errors'
+      AlarmDescription: The authentication-deadline Lambda reported 5 or more errors in 5 minutes. See docs/operations/RUNBOOK.md.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - { Name: FunctionName, Value: !Ref DeadlineFunction }
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  DeadlineQueueAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-deadline-queue-age'
+      AlarmDescription: >-
+        The oldest authentication-deadline message has waited more than 2 minutes (the consumer is behind or stopped).
+        Unauthenticated connections then stay open until their next message. See docs/operations/RUNBOOK.md.
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - { Name: QueueName, Value: !GetAtt DeadlineQueue.QueueName }
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 120
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
+  DeadlineDeadLetterAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'atr-relay-${Stage}-deadline-dlq'
+      AlarmDescription: A deadline message failed 3 times and sits in the dead-letter queue. See docs/operations/RUNBOOK.md.
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - { Name: QueueName, Value: !GetAtt DeadlineDeadLetterQueue.QueueName }
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]
+
   # ---------------------------------------------------------------------------------------------------------------
   # Budget alert (account wide). It notifies; it does not stop anything and billing data lags by hours.
   # Budgets "actions" for EC2/RDS cannot stop this serverless workload and are intentionally not configured.
@@ -663,6 +1016,20 @@ Outputs:
   FunctionName:
     Description: Relay Lambda function name
     Value: !Ref RelayFunction
+  DeadlineFunctionName:
+    Description: Authentication-deadline Lambda function name (SQS consumer)
+    Value: !Ref DeadlineFunction
+  DeadlineQueueUrl:
+    Description: SQS delay queue for authentication-deadline checks
+    Value: !Ref DeadlineQueue
+  DeadlineDeadLetterQueueUrl:
+    Description: Dead-letter queue of the deadline queue (the deadline-dlq alarm watches it)
+    Value: !Ref DeadlineDeadLetterQueue
+  HashSecretParameterName:
+    Description: >-
+      Name of the SSM SecureString parameter the relay reads at runtime. It must exist BEFORE the stack is used (the
+      owner creates it; see infra/README.md). The stack never contains its value.
+    Value: !Sub '/atr/relay/${Stage}/hash-secret'
   AlarmTopicArn:
     Description: SNS topic for alarms (the email subscription must be confirmed)
     Value: !Ref AlarmTopic

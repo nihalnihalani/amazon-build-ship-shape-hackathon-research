@@ -47,14 +47,18 @@ Set through the environment (relative paths resolve against `services/relay`):
 |---|---|---|
 | `ATR_PORT` | `8443` | TCP port (0 picks a free one) |
 | `ATR_HOST` | `0.0.0.0`, or `127.0.0.1` in insecure mode | Bind address (insecure mode accepts only loopback) |
-| `ATR_ALLOWED_ORIGINS` | `https://localhost:PORT`, `https://127.0.0.1:PORT` and `https://<each detected LAN IPv4>:PORT` (`http` variants in insecure mode) | Comma-separated **exact** browser origins allowed to open a WebSocket. No wildcards, paths or trailing slashes; `https` only (`http` only for localhost). A missing Origin is accepted for TV-role operations only. |
+| `ATR_ENV` | `development` | `development`, `staging` or `production`. `production` rejects `client.platform: test` (a self-declared value is never a trust signal), refuses `ATR_TV_PREVIEW_ORIGINS`, insecure mode and any localhost or `http` origin, and requires `ATR_ALLOWED_ORIGINS` to be set explicitly. |
+| `ATR_ALLOWED_ORIGINS` | `https://localhost:PORT`, `https://127.0.0.1:PORT` and `https://<each detected LAN IPv4>:PORT` (`http` variants in insecure mode) | Comma-separated **exact** phone-page origins allowed to open a WebSocket. No wildcards, paths or trailing slashes; `https` only (`http` only for localhost). Phone-role operations need one of these. |
+| `ATR_TV_PREVIEW_ORIGINS` | none | Comma-separated exact origins of a TV web-preview page (development only). A preview origin can create rooms and resume as the TV but can never act as a phone, and a phone origin can never act as a TV. Never part of a production allowlist. A connection without any Origin (a native client) may also use the TV operations. |
+| `ATR_LIVE_ROOM_CAP` | `200` | Global cap on live rooms (open, unexpired, and connected or idle for less than 30 minutes). `room.create` over the cap is refused with `rate_limited`. |
 | `ATR_STATIC_DIR` | `../../apps/phone/dist` | Phone page directory served at `/` (symlinks leaving it are refused) |
 | `ATR_TLS_CERT`, `ATR_TLS_KEY` | `../../certs/server.crt`, `../../certs/server.key` | Certificate and key (PEM) |
 | `ATR_INSECURE_LOCALHOST_ONLY` | unset | `1` serves plain HTTP and WS on 127.0.0.1 only; phones cannot use it |
 | `ATR_HSTS_MAX_AGE` | `300` | Seconds in the `Strict-Transport-Security` header (kept short so `localhost` is not pinned to HTTPS for a year) |
 | `ATR_TICK_MS` | `5000` | Sweep interval for the authentication deadline and the 25 s heartbeat window |
-| `ATR_HASH_PEPPER` | random per process | Secret mixed into pairing-code hashes |
 | `RELAY_DISABLED` | unset | `true` starts with the kill switch on (new sockets get 503; messages get an error and a 4503 close). `SIGUSR2` toggles it at runtime. |
+
+Limits and logs (same core as AWS): a source may open 20 connections a minute and hold 5 unauthenticated ones at once (over that the handshake answers HTTP 429); pairing and resume failures are answered with an exponentially growing delay, never a lock-out; the hashing secret is random per process (restarting the relay invalidates every pairing code, like it empties the store). `permessage-deflate` is never negotiated. The log carries no line per forwarded message: ordinary traffic appears as one `minute_aggregate` line per kind and message type per minute, and only errors and security events are logged individually (all content-free; no addresses).
 
 Endpoints: `/` and assets (GET, HEAD), `/ws` (WebSocket), `/healthz`. Every response carries `Content-Security-Policy` (`default-src 'self'; connect-src 'self' wss:; script-src 'self'; worker-src 'self' blob:` plus `base-uri 'none'`, `form-action 'none'`, `frame-ancestors 'none'`, `object-src 'none'`), `Permissions-Policy: microphone=(self), camera=(), geolocation=()`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` and, over TLS, HSTS. With a CSP of `default-src 'self'`, the phone page must not use inline `<script>` or inline `style` attributes or `<style>` blocks.
 
