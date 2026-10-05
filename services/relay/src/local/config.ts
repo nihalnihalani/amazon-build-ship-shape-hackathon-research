@@ -23,6 +23,12 @@ export interface LocalConfig {
   environment: 'development' | 'staging' | 'production';
   /** Global cap on live rooms. */
   liveRoomCap: number;
+  /**
+   * Extra relay origins the phone page may open WebSockets to, added to the CSP `connect-src` (T16 N-02). Exact
+   * `wss://host[:port]` (or `ws://localhost...` outside production); loopback hosts may use a `:*` port, which a
+   * test rig with a fault proxy on a random port needs. The server's own origin never has to be listed.
+   */
+  relayOrigins: string[];
   disabled: boolean;
 }
 
@@ -72,6 +78,27 @@ function validateOrigins(name: string, origins: string[], production: boolean): 
       throw new ConfigError(`${name} must not contain localhost or http origins when ATR_ENV=production`);
     }
   }
+}
+
+/** Validates ATR_RELAY_ORIGINS entries: exact ws/wss origins, no path; loopback-only `:*` port wildcard; production wss only. */
+function validateRelayOrigins(origins: string[], production: boolean): void {
+  for (const o of origins) {
+    const m = /^(wss?):\/\/([A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::(\*|[0-9]{1,5}))?$/.exec(o);
+    if (!m) throw new ConfigError('ATR_RELAY_ORIGINS entries must be exact ws:// or wss:// origins (scheme://host[:port], no path)');
+    const [, scheme, host, port] = m as unknown as [string, string, string, string | undefined];
+    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(host);
+    if (port === '*' && !loopback) throw new ConfigError('ATR_RELAY_ORIGINS may use a * port only on localhost, 127.0.0.1 or [::1]');
+    if (port !== undefined && port !== '*' && Number(port) > 65535) throw new ConfigError('ATR_RELAY_ORIGINS has an invalid port');
+    if (scheme === 'ws' && !loopback) throw new ConfigError('ATR_RELAY_ORIGINS entries must be wss (ws only for localhost)');
+    if (production && (scheme !== 'wss' || loopback)) {
+      throw new ConfigError('ATR_RELAY_ORIGINS must contain only non-localhost wss origins when ATR_ENV=production');
+    }
+  }
+}
+
+/** The WebSocket origin of a page origin: https -> wss, http -> ws. */
+export function wsOriginOf(pageOrigin: string): string {
+  return pageOrigin.replace(/^http/, 'ws');
 }
 
 function parseList(v: string | undefined): string[] {
@@ -138,6 +165,9 @@ export function loadLocalConfig(
     if (allowedOrigins.includes(o)) throw new ConfigError('an origin cannot be both in ATR_ALLOWED_ORIGINS and ATR_TV_PREVIEW_ORIGINS');
   }
 
+  const relayOrigins = parseList(env.ATR_RELAY_ORIGINS);
+  validateRelayOrigins(relayOrigins, production);
+
   return {
     port,
     host,
@@ -150,6 +180,7 @@ export function loadLocalConfig(
     tvPreviewOrigins,
     environment: envName,
     liveRoomCap: parseIntStrict('ATR_LIVE_ROOM_CAP', env.ATR_LIVE_ROOM_CAP, 200, 1, 100_000),
+    relayOrigins,
     disabled: parseBool(env.RELAY_DISABLED),
   };
 }

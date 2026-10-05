@@ -29,6 +29,7 @@ function main(): void {
       process.stdout.write(`relay: listening on ${scheme}://${host}:${port} (phone page at /, WebSocket at /ws, health at /healthz)\n`);
       process.stdout.write(`relay: static files from ${config.staticDir}\n`);
       process.stdout.write(`relay: allowed browser origins: ${config.allowedOrigins.join(', ')}\n`);
+      if (config.relayOrigins.length > 0) process.stdout.write(`relay: page CSP also allows WebSockets to: ${config.relayOrigins.join(', ')}\n`);
       if (config.disabled) process.stdout.write('relay: kill switch is ON (RELAY_DISABLED): connections are refused with 4503\n');
       process.stdout.write('relay: send SIGUSR2 to toggle the kill switch; SIGINT/SIGTERM to stop\n');
     })

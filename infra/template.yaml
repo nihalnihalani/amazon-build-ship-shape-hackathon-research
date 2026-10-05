@@ -615,6 +615,10 @@ Resources:
     Properties:
       ResponseHeadersPolicyConfig:
         Name: !Sub 'atr-phone-${Stage}-${AWS::StackName}'
+        # connect-src names exactly two sources: the page itself and the API Gateway WebSocket host of THIS stack
+        # (T16 N-02, N-03). The page is served from CloudFront and the socket lives on execute-api, so the phone build
+        # is given the relay URL at build time (VITE_ATR_RELAY_URL = output RelayWssUrl; infra/README.md). There is no
+        # scheme wildcard, and no blob worker source (the audio worklet is a same-origin file).
         Comment: Same policy as the local relay server, plus the relay wss origin in connect-src
         SecurityHeadersConfig:
           StrictTransportSecurity:
@@ -628,7 +632,7 @@ Resources:
               default-src 'self';
               connect-src 'self' wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix};
               script-src 'self';
-              worker-src 'self' blob:;
+              worker-src 'self';
               base-uri 'none';
               form-action 'none';
               frame-ancestors 'none';
@@ -998,11 +1002,16 @@ Resources:
             - { SubscriptionType: EMAIL, Address: !Ref AlarmEmail }
 
 Outputs:
-  WebSocketUrl:
-    Description: Relay WebSocket URL for the phone and TV clients (wss, includes the stage)
+  RelayWssUrl:
+    Description: >-
+      Relay WebSocket URL (wss, includes the stage). Build the phone page with VITE_ATR_RELAY_URL set to this value,
+      and give it to the TV as relayUrl. The CloudFront CSP allows exactly this host in connect-src.
     Value: !Sub 'wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${Stage}'
-  PhonePageUrl:
-    Description: HTTPS URL of the phone page (a trustworthy origin for getUserMedia)
+  PhonePageOrigin:
+    Description: >-
+      HTTPS origin of the phone page on CloudFront (a trustworthy origin for getUserMedia). Give it to the TV as
+      phonePageOrigin so the QR code and link point at the page host, not at the relay host. It is also the one origin
+      the relay allows to act as a phone.
     Value: !Sub 'https://${PhoneDistribution.DomainName}'
   PhoneBucketName:
     Description: Private S3 bucket that holds the phone page build (upload with the deploy steps in infra/README.md)

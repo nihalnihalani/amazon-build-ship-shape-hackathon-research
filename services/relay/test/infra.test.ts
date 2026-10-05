@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { LIVE_ROOMS_INDEX } from '../src/aws/dynamo-store.js';
-import { ACCESS_LOG_WHITELIST, accessLogFormatViolations, iacViolations, resourceBlocks, roleStatements } from './helpers/iac-assertions.js';
+import { securityHeaders } from '../src/local/static.js';
+import { ACCESS_LOG_WHITELIST, accessLogFormatViolations, cspViolations, iacViolations, resourceBlocks, roleStatements, templateCsp } from './helpers/iac-assertions.js';
 
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
 const templatePath = join(repo, 'infra/template.yaml');
@@ -101,20 +102,39 @@ describe('infra/template.yaml static guarantees (text checks; cfn-lint below doe
       "default-src 'self'",
       "connect-src 'self' wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}",
       "script-src 'self'",
-      "worker-src 'self' blob:",
+      "worker-src 'self';",
       "frame-ancestors 'none'",
     ]) {
       expect(h, part).toContain(part);
     }
+    expect(h).not.toContain('blob:');
     expect(h).toMatch(/StrictTransportSecurity:/);
     expect(h).toMatch(/ContentTypeOptions:\s+Override: true/);
     expect(h).toMatch(/ReferrerPolicy: no-referrer/);
     expect(h).toMatch(/Header: Permissions-Policy\s+Value: microphone=\(self\)/);
     // the same directives appear in the local server
     const local = readFileSync(join(repo, 'services/relay/src/local/static.ts'), 'utf8');
-    for (const part of ["default-src 'self'", "script-src 'self'", "worker-src 'self' blob:", "frame-ancestors 'none'", 'microphone=(self)', 'no-referrer', 'nosniff']) {
+    for (const part of ["default-src 'self'", "script-src 'self'", `"worker-src 'self'"`, "frame-ancestors 'none'", 'microphone=(self)', 'no-referrer', 'nosniff']) {
       expect(local, part).toContain(part);
     }
+    expect(local).not.toContain('blob:');
+  });
+
+  it('the local server and the template send the same CSP except for the relay hosts in connect-src (T16 N-02)', () => {
+    const tpl = templateCsp(template) as Record<string, string[]>;
+    const header = securityHeaders({ tls: true, hstsMaxAgeSeconds: 300, connectOrigins: ['wss://phone.example.test'] })['Content-Security-Policy'] as string;
+    const local: Record<string, string[]> = {};
+    for (const part of header.split(';')) {
+      const [name, ...sources] = part.trim().split(/\s+/);
+      if (name) local[name] = sources;
+    }
+    expect(Object.keys(local).sort()).toEqual(Object.keys(tpl).sort());
+    for (const name of Object.keys(tpl)) {
+      if (name === 'connect-src') continue;
+      expect(local[name], name).toEqual(tpl[name]);
+    }
+    expect(local['connect-src']).toEqual(["'self'", 'wss://phone.example.test']);
+    expect(tpl['connect-src']).toEqual(["'self'", 'wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}']);
   });
 
   it('throttles the stage, wires every alarm to the SNS topic and creates a budget with notifications', () => {
@@ -223,6 +243,17 @@ describe('IaC assertions: privacy, logging, secrets, IAM (A2-05, SEC-I01)', () =
     ['unencrypted queue', swap('      SqsManagedSseEnabled: true\n', ''), 'queue-unencrypted:DeadlineDeadLetterQueue'],
     ['queue retention of 14 days', swap('MessageRetentionPeriod: 86400', 'MessageRetentionPeriod: 1209600'), 'queue-retention-unbounded:DeadlineDeadLetterQueue'],
     ['no TLS-only queue policy', swap("'aws:SecureTransport': 'false'", "'aws:SourceAccount': 'x'"), 'queue-tls-only-missing'],
+    // the page CSP and the outputs the clients are configured from (T16 N-02, N-03)
+    ['a bare wss: scheme in connect-src', swap("connect-src 'self' wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix};", "connect-src 'self' wss:;"), 'csp-connect-wildcard'],
+    ['a wildcard host in connect-src', swap("connect-src 'self' wss://${RelayApi}", "connect-src 'self' wss://*.execute-api.${AWS::Region}.${AWS::URLSuffix} wss://${RelayApi}"), 'csp-connect-wildcard'],
+    ['the API host missing from connect-src', swap("connect-src 'self' wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix};", "connect-src 'self';"), 'csp-connect-api-host-missing'],
+    ['an extra origin in connect-src', swap("connect-src 'self' wss://${RelayApi}", "connect-src 'self' wss://evil.example.test wss://${RelayApi}"), 'csp-connect-extra-sources'],
+    ['blob: in worker-src', swap("worker-src 'self';", "worker-src 'self' blob:;"), 'csp-worker-blob'],
+    ['unsafe-inline in script-src', swap("script-src 'self';", "script-src 'self' 'unsafe-inline';"), 'csp-unsafe:script-src'],
+    ['framing allowed', swap("frame-ancestors 'none';", "frame-ancestors 'self';"), 'csp-frame-ancestors'],
+    ['the RelayWssUrl output dropped', swap('  RelayWssUrl:', '  RelayWssUrlRenamed:'), 'output-relay-wss-url'],
+    ['the RelayWssUrl output without the stage', swap("Value: !Sub 'wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${Stage}'", "Value: !Sub 'wss://${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}'"), 'output-relay-wss-url'],
+    ['the PhonePageOrigin output with a path', swap("the relay allows to act as a phone.\n    Value: !Sub 'https://${PhoneDistribution.DomainName}'", "the relay allows to act as a phone.\n    Value: !Sub 'https://${PhoneDistribution.DomainName}/ws'"), 'output-phone-page-origin'],
   ];
 
   it.each(mutations)('detects: %s', (_name, mutate, expected) => {

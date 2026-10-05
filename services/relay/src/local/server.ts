@@ -18,7 +18,7 @@ import {
   type MetricName,
   type RoomStore,
 } from '../core/index.js';
-import type { LocalConfig } from './config.js';
+import { wsOriginOf, type LocalConfig } from './config.js';
 import { securityHeaders, serveStatic } from './static.js';
 
 export interface LocalServerOptions {
@@ -72,7 +72,13 @@ export function createLocalServer(opts: LocalServerOptions): LocalServer {
     },
   });
 
-  const headers = securityHeaders({ tls: config.tls !== null, hstsMaxAgeSeconds: config.hstsMaxAgeSeconds });
+  // connect-src: the page's own origin plus the WebSocket origins of every allowed page origin (a browser that does not
+  // match 'self' against ws/wss still works) and the configured extra relay origins. Never a scheme wildcard (N-02).
+  const headers = securityHeaders({
+    tls: config.tls !== null,
+    hstsMaxAgeSeconds: config.hstsMaxAgeSeconds,
+    connectOrigins: [...config.allowedOrigins.map(wsOriginOf), ...config.relayOrigins],
+  });
   const sockets = new Map<string, WebSocket>();
   const chains = new Map<string, Promise<void>>();
 
