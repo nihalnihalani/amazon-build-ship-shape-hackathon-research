@@ -1,0 +1,870 @@
+{
+ "project": "Root workspace (shared packages, relay, phone page build, tests)",
+ "generated_from_commit": "63af0ae",
+ "count": 43,
+ "not_installed": [],
+ "packages": [
+  {
+   "name": "@atr/phone",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "apps/phone",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@atr/phone-mic-meter",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "packages/phone-mic-meter",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@atr/protocol",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "packages/protocol",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@atr/relay",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "services/relay",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@atr/session-core",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "packages/session-core",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@atr/ten-foot-meter",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "packages/ten-foot-meter",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@atr/tests",
+   "version": "0.1.0",
+   "license": "MIT",
+   "firstParty": true,
+   "path": "tests",
+   "via": "(entry)",
+   "copyright": [],
+   "repository": "",
+   "homepage": "",
+   "classification": "first-party",
+   "licenseFiles": []
+  },
+  {
+   "name": "@aws-sdk/client-apigatewaymanagementapi",
+   "version": "3.1146.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/client-apigatewaymanagementapi",
+   "via": "@atr/relay",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-apigatewaymanagementapi",
+   "classification": "permissive",
+   "integrity": "sha512-v0qFqH5ZV4CgURxasbbF8LfnyAft8p8ozHPnhDJMj/3ftujvVx1/EGMiQ27VHXNdST4u+v9ysK4DcD6xP26Vnw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/client-apigatewaymanagementapi/-/client-apigatewaymanagementapi-3.1146.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/client-dynamodb",
+   "version": "3.1146.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/client-dynamodb",
+   "via": "@atr/relay",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-dynamodb",
+   "classification": "permissive",
+   "integrity": "sha512-3Mc8YkSu2KlgNNSuspaW+Fo0pTwX+fLYlC5ovH3yX3OoDg2RPtp3Py8KuQJr0FDlQj1tHw0K3+AtaH4NXlI3aQ==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/client-dynamodb/-/client-dynamodb-3.1146.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/client-sqs",
+   "version": "3.1146.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/client-sqs",
+   "via": "@atr/relay",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sqs",
+   "classification": "permissive",
+   "integrity": "sha512-JQT0qy87HLkrCJNYaBkzpQuopVFpvafwyrHTRaL55gXCrYRh8y3oJ080squ4X6gmyD2wO7uw4E65ps13KuisJw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/client-sqs/-/client-sqs-3.1146.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/client-ssm",
+   "version": "3.1146.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/client-ssm",
+   "via": "@atr/relay",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-ssm",
+   "classification": "permissive",
+   "integrity": "sha512-Qx29jzZEVPpxUxzRNs1wwHg2qtOmHcwa3p1Bbufixg7SnyLg3zdLbhbK6oeeRnFDPBdlcjacURI/5JY+aSmu/Q==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/client-ssm/-/client-ssm-3.1146.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/core",
+   "version": "3.978.1",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/core",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/core",
+   "classification": "permissive",
+   "integrity": "sha512-LbY9aGsEiznDWmUc30Nwv3aIX/+dbwTx8KfS0yOC3NPYMO+O91e6jkT1azf34FwjOndq8/Q+RcVVZz5xnerwdg==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/core/-/core-3.978.1.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "edea91454b811f127fbdea3d86f378f6719bd372ed440abf82b232f6fca06c3d"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/credential-provider-env",
+   "version": "3.972.72",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-env",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-env",
+   "classification": "permissive",
+   "integrity": "sha512-xTKO/FWJPozTIXbozVnVGoNBhaGba8TBcx+KyUjRVeOlXE+dUc7GTR1cLvu0uTdIdmemzaFbqqCshXeZA1fZew==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-env/-/credential-provider-env-3.972.72.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/credential-provider-http",
+   "version": "3.972.74",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-http",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-http",
+   "classification": "permissive",
+   "integrity": "sha512-u91E/hT8f4d1xy0Jl7VG4nVKJ3lxbrZkoBTeSVoJdWBiSEUMwMS/9+e0H/aJVQV//Lt5wuzP+E69v4aRSsNTmw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.74.tgz",
+   "licenseFiles": []
+  },
+  {
+   "name": "@aws-sdk/credential-provider-ini",
+   "version": "3.973.17",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-ini",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-ini",
+   "classification": "permissive",
+   "integrity": "sha512-ged4KXdBkvIC81bLvNHHuQKdKak/VXhQTR1NWYTTqW0474nlmsxy9O/vlgTIohDDWH3xpBdtVMZRyjb+DnocDA==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-ini/-/credential-provider-ini-3.973.17.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/credential-provider-login",
+   "version": "3.972.79",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-login",
+   "via": "@aws-sdk/credential-provider-ini",
+   "copyright": [],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-login",
+   "classification": "permissive",
+   "integrity": "sha512-L+Z85anONJd8MaiuraO4wRxATCdEejBZ3K3eymzWI5JPXa9sOS9CkIm72PBKqXKX+Z9p9NGMX5AIMXm0LEflgw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.79.tgz",
+   "licenseFiles": []
+  },
+  {
+   "name": "@aws-sdk/credential-provider-node",
+   "version": "3.972.84",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-node",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-node",
+   "classification": "permissive",
+   "integrity": "sha512-oHt854odINVwzwsh+c5x69j0ajm4DbqqqVJ+O1ECsCIZeMDAbzFpXItaqP7UZstJj/ATdTk/KFSH0LaNAgV+kA==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-node/-/credential-provider-node-3.972.84.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/credential-provider-process",
+   "version": "3.972.72",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-process",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-process",
+   "classification": "permissive",
+   "integrity": "sha512-rLIp2xbMjX/k9/od7APpqq1ZgXXnV0pOL1Th3ZsL8Wu0TRtBsDTVS8iPqcfRFcHakFxPvR04OSTv2ka2qOb/2A==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-process/-/credential-provider-process-3.972.72.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/credential-provider-sso",
+   "version": "3.973.16",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-sso",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-sso",
+   "classification": "permissive",
+   "integrity": "sha512-IGihaJfFZYacJJr/odqILCoK7W/mvrZ7cuK7ECn3sAu4vLC6u0V8bS7mCGbdugJ8Aum2tnvqmx0F2MRFp2rn9g==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-sso/-/credential-provider-sso-3.973.16.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/credential-provider-web-identity",
+   "version": "3.972.78",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/credential-provider-web-identity",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-web-identity",
+   "classification": "permissive",
+   "integrity": "sha512-/y9WvNtlcPBGLR0qc1a+9J/xtYZfVczvLUOuXaVWylzttH7ewsxwHtjmiJSolNrVSDorIxHGHMU61CbonRkmwA==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/credential-provider-web-identity/-/credential-provider-web-identity-3.972.78.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/dynamodb-codec",
+   "version": "3.973.46",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/dynamodb-codec",
+   "via": "@aws-sdk/client-dynamodb",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/dynamodb-codec",
+   "classification": "permissive",
+   "integrity": "sha512-ApnSubn+5C6HQGP7025q9w/YiNzKwimIMksP76xVij779BCCqcmJ9poB6hQ4syY9NUxqmEQLBqY0PktX53L8iQ==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/dynamodb-codec/-/dynamodb-codec-3.973.46.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/endpoint-cache",
+   "version": "3.972.11",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/endpoint-cache",
+   "via": "@aws-sdk/middleware-endpoint-discovery",
+   "copyright": [
+    "Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/endpoint-cache",
+   "classification": "permissive",
+   "integrity": "sha512-8q1ICxcDjHId3bBryuu/j+1L9y5/3uQnwzLDt5j2ElcjZSoWmFtymdJy7OjLrluSMe0Z4mq5bcH4fxBXvlEHfw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/endpoint-cache/-/endpoint-cache-3.972.11.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "b50925b3e63e2192e04323a29e905154bda999c8dcc4c78e96733a00a10fed9a"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/lib-dynamodb",
+   "version": "3.1146.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/lib-dynamodb",
+   "via": "@atr/relay",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/lib/lib-dynamodb",
+   "classification": "permissive",
+   "integrity": "sha512-QsmNtrc6V8qfJ6SPWRoVdN1idQCievzaKKBMFgbjw9YAvu/8C9tGM9tTY/B3dA9HiI+eX9nx99Jlbe6NuLnwRw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/lib-dynamodb/-/lib-dynamodb-3.1146.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/middleware-endpoint-discovery",
+   "version": "3.972.31",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/middleware-endpoint-discovery",
+   "via": "@aws-sdk/client-dynamodb",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-endpoint-discovery",
+   "classification": "permissive",
+   "integrity": "sha512-JqOIXupzP6cpAmCCmuEaacbXo/bVCcg1NkglCJC6q4wDAvJO09qIs7POf50JNzmhOhWPtfXvzgWxb5nMQl8QiA==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/middleware-endpoint-discovery/-/middleware-endpoint-discovery-3.972.31.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/middleware-sdk-sqs",
+   "version": "3.972.43",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/middleware-sdk-sqs",
+   "via": "@aws-sdk/client-sqs",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-sdk-sqs",
+   "classification": "permissive",
+   "integrity": "sha512-0V1bKYPfAnhA6fW9r04uZfXB7DkwT149wKL14BKCC7zUryxIBecgDyvxKIUsZApmvSXpEzPL66uzO/Yc55s74g==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/middleware-sdk-sqs/-/middleware-sdk-sqs-3.972.43.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/nested-clients",
+   "version": "3.997.46",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/nested-clients",
+   "via": "@aws-sdk/credential-provider-ini",
+   "copyright": [],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/nested-clients",
+   "classification": "permissive",
+   "integrity": "sha512-oRxtBcka/JGHGs9l9p9IVajGoTP8vTPmoAzdHGy4Qcy9P5vPnDf6nhIeM/COQNY9k/OahImTRaLkHftoXvfcmQ==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.997.46.tgz",
+   "licenseFiles": []
+  },
+  {
+   "name": "@aws-sdk/signature-v4-multi-region",
+   "version": "3.996.47",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/signature-v4-multi-region",
+   "via": "@aws-sdk/nested-clients",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/signature-v4-multi-region",
+   "classification": "permissive",
+   "integrity": "sha512-Zk08macMvQTHzQJCLJVkOlviVoqwYMrpXv4lmLN7b7sAbiMoOK7Go0NYdR5UeF+MW8LIbRmwrNy9u/5VvX1U5g==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.996.47.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/token-providers",
+   "version": "3.1138.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/token-providers",
+   "via": "@aws-sdk/credential-provider-sso",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/token-providers",
+   "classification": "permissive",
+   "integrity": "sha512-GpyAr0DD63YOEmYFM6Df+gJuIgC92MMTiBK4FTKfxii5MJ9ge20epR7LyroulscYlG89J+ZB2ivFDPjvfQhzdw==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/token-providers/-/token-providers-3.1138.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/types",
+   "version": "3.974.6",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/types",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/types",
+   "classification": "permissive",
+   "integrity": "sha512-v/clNZzZnDxGyvpHMOGpJKVXFAExJzUNAAjaWGdcx8QAcXLGwTaOkw33p5SHAi0YAioK32xB3hWwOekRVfmfKg==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/types/-/types-3.974.6.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/util-dynamodb",
+   "version": "3.996.9",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/util-dynamodb",
+   "via": "@aws-sdk/lib-dynamodb",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/util-dynamodb",
+   "classification": "permissive",
+   "integrity": "sha512-16x2tRvl7OYpZ0W/DdFJieFriD13+RvuRBDbe5sj/tCEfK86HSGd7I2s5j0ivz8p6KWGkS+5wKRO9OliJkjUOQ==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/util-dynamodb/-/util-dynamodb-3.996.9.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws-sdk/xml-builder",
+   "version": "3.972.41",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws-sdk/xml-builder",
+   "via": "@aws-sdk/core",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/aws/aws-sdk-js-v3",
+   "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/xml-builder",
+   "classification": "permissive",
+   "integrity": "sha512-ctjVSyCMegrWfXlx6VqzSBFI6UqmQ5ZlnfMhdLIiWmhoH8UAQxSCP5N3OpG7X3k4LnS7ou74C4mt20+bfTW2aQ==",
+   "resolved": "https://registry.npmjs.org/@aws-sdk/xml-builder/-/xml-builder-3.972.41.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@aws/lambda-invoke-store",
+   "version": "0.3.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@aws/lambda-invoke-store",
+   "via": "@aws-sdk/core",
+   "copyright": [],
+   "repository": "https://github.com/awslabs/aws-lambda-invoke-store",
+   "homepage": "https://github.com/awslabs/aws-lambda-invoke-store",
+   "classification": "permissive",
+   "integrity": "sha512-sl4Bm6yiMNYrZKkqqDFWN0UfnWhlS8ivKxrYl+6t0gCLrqr8y3B2IqZZbFRkfaVVp7C/baApyh71P+LeE1A2sQ==",
+   "resolved": "https://registry.npmjs.org/@aws/lambda-invoke-store/-/lambda-invoke-store-0.3.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "7fb46adff9025f553b882b84ce593c37008d1e83019e4fdd6b21f8c800d0c485"
+    }
+   ]
+  },
+  {
+   "name": "@smithy/core",
+   "version": "3.35.1",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@smithy/core",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/smithy-lang/smithy-typescript",
+   "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/core",
+   "classification": "permissive",
+   "integrity": "sha512-i4YPS4B6ts7bjn7UwLnGjiZdprOvHvgGobFZsYK3GIY3E5hIqtj0rReU69BcTpGp+fvtraSNXeG1l+jtJvF55w==",
+   "resolved": "https://registry.npmjs.org/@smithy/core/-/core-3.35.1.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "@smithy/credential-provider-imds",
+   "version": "4.5.2",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@smithy/credential-provider-imds",
+   "via": "@aws-sdk/credential-provider-node",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/smithy-lang/smithy-typescript",
+   "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/credential-provider-imds",
+   "classification": "permissive",
+   "integrity": "sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==",
+   "resolved": "https://registry.npmjs.org/@smithy/credential-provider-imds/-/credential-provider-imds-4.5.2.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@smithy/fetch-http-handler",
+   "version": "5.8.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@smithy/fetch-http-handler",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/smithy-lang/smithy-typescript",
+   "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/fetch-http-handler",
+   "classification": "permissive",
+   "integrity": "sha512-ycSJu3tFAQ4v04CBB0agqFMVsSQ1iG3yw+SpgxRqKfaURpQD4CZ8Wn0zPMmSnOuTpTh65Vz+EA0rMrw089wvkA==",
+   "resolved": "https://registry.npmjs.org/@smithy/fetch-http-handler/-/fetch-http-handler-5.8.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@smithy/node-http-handler",
+   "version": "4.12.1",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@smithy/node-http-handler",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/smithy-lang/smithy-typescript",
+   "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/node-http-handler",
+   "classification": "permissive",
+   "integrity": "sha512-ThMkboGeONWXAelq9FvGsuJC4rOi+qyC4/zhUF58xYpxUg5sQKx2VXZYJmtNjr4dSuBJ1HeJXETQILCz3wOHvw==",
+   "resolved": "https://registry.npmjs.org/@smithy/node-http-handler/-/node-http-handler-4.12.1.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@smithy/signature-v4",
+   "version": "5.7.4",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@smithy/signature-v4",
+   "via": "@aws-sdk/core",
+   "copyright": [
+    "Copyright 2018-2020 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/smithy-lang/smithy-typescript",
+   "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/signature-v4",
+   "classification": "permissive",
+   "integrity": "sha512-tHy0K0VtqNd5Y7Y41h0a0Lhh0L1GzC08dTWg0F7vRJWFtTENg7IZikf3wQkanYIRdb7ngoIPMTmqgUi401fEeQ==",
+   "resolved": "https://registry.npmjs.org/@smithy/signature-v4/-/signature-v4-5.7.4.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "d82ceb8cbd004a2d4834085c557d55459f528e30268d95159ee1e4030a693a6e"
+    }
+   ]
+  },
+  {
+   "name": "@smithy/types",
+   "version": "4.19.0",
+   "license": "Apache-2.0",
+   "firstParty": false,
+   "path": "node_modules/@smithy/types",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved."
+   ],
+   "repository": "https://github.com/smithy-lang/smithy-typescript",
+   "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/types",
+   "classification": "permissive",
+   "integrity": "sha512-r7jh49VJxGerfAcTQA6gXcKc+98zOp/tqRwzYjgOE+iSQsP6cEU1hq2QzbuipmP68QtYdY9wKEhiCQZIzHgZ4Q==",
+   "resolved": "https://registry.npmjs.org/@smithy/types/-/types-4.19.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "2ef1e48ea743d9c82313e6887858f7c1feaddd636f5a3f43926aab0143e67ebd"
+    }
+   ]
+  },
+  {
+   "name": "bowser",
+   "version": "2.14.1",
+   "license": "MIT",
+   "firstParty": false,
+   "path": "node_modules/bowser",
+   "via": "@aws-sdk/core",
+   "copyright": [
+    "Copyright 2015, Dustin Diaz (the \"Original Author\")"
+   ],
+   "repository": "https://github.com/bowser-js/bowser",
+   "homepage": "https://github.com/bowser-js/bowser",
+   "classification": "permissive",
+   "integrity": "sha512-tzPjzCxygAKWFOJP011oxFHs57HzIhOEracIgAePE4pqB3LikALKnSzUyU4MGs9/iCEUuHlAJTjTc5M+u7YEGg==",
+   "resolved": "https://registry.npmjs.org/bowser/-/bowser-2.14.1.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "0139f2c14d4ec161cf28e9db77bcd96e0a3afaf0dd234a865a1d5fe305e9aae6"
+    }
+   ]
+  },
+  {
+   "name": "mnemonist",
+   "version": "0.38.3",
+   "license": "MIT",
+   "firstParty": false,
+   "path": "node_modules/mnemonist",
+   "via": "@aws-sdk/endpoint-cache",
+   "copyright": [
+    "Copyright (c) 2016 Guillaume Plique (Yomguithereal)"
+   ],
+   "repository": "https://github.com/yomguithereal/mnemonist",
+   "homepage": "https://github.com/yomguithereal/mnemonist#readme",
+   "classification": "permissive",
+   "integrity": "sha512-2K9QYubXx/NAjv4VLq1d1Ly8pWNC5L3BrixtdkyTegXWJIqY+zLNDhhX/A+ZwWt70tB1S8H4BE8FLYEFyNoOBw==",
+   "resolved": "https://registry.npmjs.org/mnemonist/-/mnemonist-0.38.3.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE.txt",
+     "sha256": "9451f1e568192fa03bbc6e165fd94cd8a11836ca415b0f84522764f7c41e0b4c"
+    }
+   ]
+  },
+  {
+   "name": "obliterator",
+   "version": "1.6.1",
+   "license": "MIT",
+   "firstParty": false,
+   "path": "node_modules/obliterator",
+   "via": "mnemonist",
+   "copyright": [
+    "Copyright (c) 2017 Guillaume Plique (Yomguithereal)"
+   ],
+   "repository": "https://github.com/yomguithereal/obliterator",
+   "homepage": "https://github.com/yomguithereal/obliterator#readme",
+   "classification": "permissive",
+   "integrity": "sha512-9WXswnqINnnhOG/5SLimUlzuU1hFJUc8zkwyD59Sd+dPOMf05PmnYG/d6Q7HZ+KmgkZJa1PxRso6QdM3sTNHig==",
+   "resolved": "https://registry.npmjs.org/obliterator/-/obliterator-1.6.1.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE.txt",
+     "sha256": "f12ed42eabab4638e6e4373f7706b574a0884e7320a2b700dfe3c5762a2c2c1f"
+    }
+   ]
+  },
+  {
+   "name": "tslib",
+   "version": "2.8.1",
+   "license": "0BSD",
+   "firstParty": false,
+   "path": "node_modules/tslib",
+   "via": "@aws-sdk/client-apigatewaymanagementapi",
+   "copyright": [
+    "Copyright (c) Microsoft Corporation."
+   ],
+   "repository": "https://github.com/Microsoft/tslib",
+   "homepage": "https://www.typescriptlang.org/",
+   "classification": "permissive",
+   "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
+   "resolved": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE.txt",
+     "sha256": "0e8d2550baea17eb3072c4f919b36fbf9852bb49dba948549872e713863c0834"
+    }
+   ]
+  },
+  {
+   "name": "ws",
+   "version": "8.22.0",
+   "license": "MIT",
+   "firstParty": false,
+   "path": "services/relay/node_modules/ws",
+   "via": "@atr/relay",
+   "copyright": [
+    "Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>",
+    "Copyright (c) 2013 Arnout Kazemier and contributors",
+    "Copyright (c) 2016 Luigi Pinca and contributors"
+   ],
+   "repository": "https://github.com/websockets/ws",
+   "homepage": "https://github.com/websockets/ws",
+   "classification": "permissive",
+   "integrity": "sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==",
+   "resolved": "https://registry.npmjs.org/ws/-/ws-8.22.0.tgz",
+   "licenseFiles": [
+    {
+     "file": "LICENSE",
+     "sha256": "7adebaeee45b60d995843745060fe5486b76eb6c9e8fc7bca6fbc67b8680d96d"
+    }
+   ]
+  }
+ ]
+}
