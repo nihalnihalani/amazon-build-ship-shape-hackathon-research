@@ -13,6 +13,7 @@ export const PRICES = {
   lambdaPerGbSecond: env('PRICE_LAMBDA_PER_GB_SECOND', 0.0000166667), // x86 example; arm64 is lower, used as an upper bound
   dynamoPerMillionWru: env('PRICE_DYNAMO_PER_MILLION_WRU', 0.625),
   dynamoPerMillionRru: env('PRICE_DYNAMO_PER_MILLION_RRU', 0.125),
+  sqsPerMillionRequests: env('PRICE_SQS_PER_MILLION_REQUESTS', 0.4), // standard queue, after the first million per month
 };
 
 export const ASSUMPTIONS = {
@@ -23,6 +24,10 @@ export const ASSUMPTIONS = {
   pairingInbound: 6, // room.create, join.request, join.confirm, resumes
   pairingOutbound: 8, // room.created, join.pending, join.requested, join.accepted, peer.state x4
   connectInvocations: 4, // 2 x $connect + 2 x $disconnect
+  deadlineMessages: 3, // authentication-deadline messages per session: TV $connect (5 s), phone $connect (5 s), join.request (65 s)
+  sqsRequestsPerDeadlineMessage: 3, // SendMessage + ReceiveMessage + DeleteMessage (empty polls are listed separately in COST.md)
+  deadlineRru: 1, // the consumer reads one connection item per check (a no-op for an authenticated connection)
+  pairingExtraRru: 4, // measured: pairing reads 16 RRU in total, the generic accounting covers 12 (test: cost-ops.test.ts)
   lambdaSeconds: env('A_LAMBDA_SECONDS', 0.06), // average billed duration per invocation (UNMEASURED)
   lambdaMemoryGb: 0.5, // 512 MB
   rruPerInbound: 2, // strongly consistent getConnection + getRoom
@@ -40,11 +45,13 @@ export function perSession(windowSeconds) {
   const outbound = level + a.controlMessages + pings + a.pairingOutbound; // forwards, pongs, relay-originated
   const messages = inbound + outbound;
   const connectionMinutes = 2 * a.sessionMinutes;
-  const invocations = inbound + a.connectInvocations;
+  const deadlineInvocations = a.deadlineMessages; // one consumer invocation per message (batches of one: each message has its own delay)
+  const invocations = inbound + a.connectInvocations + deadlineInvocations;
   const gbSeconds = invocations * a.lambdaSeconds * a.lambdaMemoryGb;
+  const sqsRequests = a.deadlineMessages * a.sqsRequestsPerDeadlineMessage;
   const relayReplies = pings + a.pairingOutbound;
   const wru = inbound * (a.wruPerInbound + a.wruTouchPerInbound) + relayReplies * a.wruPerRelayReply + a.connectInvocations * a.wruPerConnectOrDisconnect;
-  const rru = inbound * a.rruPerInbound;
+  const rru = inbound * a.rruPerInbound + a.pairingExtraRru + deadlineInvocations * a.deadlineRru;
   const p = PRICES;
   const cost = {
     apiGatewayMessages: (messages / 1e6) * p.apigwPerMillionMessages,
@@ -53,9 +60,10 @@ export function perSession(windowSeconds) {
     lambdaCompute: gbSeconds * p.lambdaPerGbSecond,
     dynamoWrites: (wru / 1e6) * p.dynamoPerMillionWru,
     dynamoReads: (rru / 1e6) * p.dynamoPerMillionRru,
+    sqsRequests: (sqsRequests / 1e6) * p.sqsPerMillionRequests,
   };
   const total = Object.values(cost).reduce((x, y) => x + y, 0);
-  return { windowSeconds, level, pings, inbound, outbound, messages, connectionMinutes, invocations, gbSeconds, wru, rru, cost, total };
+  return { windowSeconds, level, pings, inbound, outbound, messages, connectionMinutes, invocations, sqsRequests, gbSeconds, wru, rru, cost, total };
 }
 
 /** Cost of one forwarded inbound message at steady state (level frame): the unit used for the throttle bound. */
@@ -89,11 +97,12 @@ export function report() {
   lines.push('metric | full session (W=116 s) | typical (W=60 s)');
   const row = (label, f) => lines.push(`${label} | ${f(full)} | ${f(typical)}`);
   row('level frames', (s) => n0(s.level));
-  row('inbound messages (Lambda invocations minus 4)', (s) => n0(s.inbound));
+  row('inbound messages', (s) => n0(s.inbound));
   row('outbound @connections posts', (s) => n0(s.outbound));
   row('API Gateway metered messages', (s) => n0(s.messages));
   row('connection minutes', (s) => n0(s.connectionMinutes));
-  row('Lambda invocations', (s) => n0(s.invocations));
+  row('Lambda invocations (relay + deadline consumer)', (s) => n0(s.invocations));
+  row('SQS requests (deadline queue, excl. idle polling)', (s) => n0(s.sqsRequests));
   row('Lambda GB-seconds', (s) => s.gbSeconds.toFixed(1));
   row('DynamoDB WRU', (s) => n0(s.wru));
   row('DynamoDB RRU', (s) => n0(s.rru));
@@ -103,6 +112,7 @@ export function report() {
   row('Lambda compute cost', (s) => usd(s.cost.lambdaCompute));
   row('DynamoDB writes cost', (s) => usd(s.cost.dynamoWrites));
   row('DynamoDB reads cost', (s) => usd(s.cost.dynamoReads));
+  row('SQS requests cost', (s) => `${(s.cost.sqsRequests * 1e6).toFixed(1)} micro-USD`);
   row('TOTAL per session (excl. logs, CloudFront, S3, alarms)', (s) => usd(s.total));
   lines.push('');
   lines.push(`Per forwarded inbound message: ${(perForwardedMessage() * 1e6).toFixed(2)} micro-USD`);

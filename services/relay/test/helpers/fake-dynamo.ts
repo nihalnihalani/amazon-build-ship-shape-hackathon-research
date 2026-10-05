@@ -320,7 +320,8 @@ interface CommonInput {
  */
 export class FakeDynamo {
   readonly items = new Map<string, Item>();
-  readonly calls: { op: string; key?: Item }[] = [];
+  /** Every call in order. `items` is the number of items of a transaction (a transactional write costs 2 units per item). */
+  readonly calls: { op: string; key?: Item; items?: number }[] = [];
   scanPageSize = 2;
   /** The only global secondary index of the real table (sparse, keys gsi1pk and gsi1sk). */
   static readonly INDEXES: Record<string, { pk: string; sk: string }> = { 'live-rooms': { pk: 'gsi1pk', sk: 'gsi1sk' } };
@@ -354,7 +355,11 @@ export class FakeDynamo {
     const op = this.opOf(command);
     if (op === 'unsupported') throw new FakeDynamoError('ValidationException', 'unsupported command');
     if (op !== 'transact' && !input.TableName) throw new FakeDynamoError('ValidationException', 'TableName is required');
-    this.calls.push({ op, ...(input.Key ? { key: input.Key } : input.Item ? { key: { pk: input.Item.pk, sk: input.Item.sk } } : {}) });
+    this.calls.push({
+      op,
+      ...(input.Key ? { key: input.Key } : input.Item ? { key: { pk: input.Item.pk, sk: input.Item.sk } } : {}),
+      ...(op === 'transact' ? { items: ((input as unknown as TransactInput).TransactItems ?? []).length } : {}),
+    });
     for (const f of this.faults) {
       if (f.times > 0 && f.match(op, input)) {
         f.times -= 1;

@@ -14,6 +14,7 @@ Reproduce every figure: `node docs/operations/cost-model.mjs` (pure arithmetic; 
 | Lambda duration | $0.0000166667 per GB-second | same | x86 example in US East (N. Virginia). The arm64 rate is lower but was not legible in the fetched text, so the x86 value is used as a conservative upper bound. | To verify at deploy time |
 | DynamoDB on-demand writes | $0.625 per million WRU | https://aws.amazon.com/dynamodb/pricing/on-demand/ | Pricing example "$0.6250 per million writes"; one WRU per 1 KB written (transactional writes cost 2). Region of that example not stated in the captured excerpt. | To verify at deploy time |
 | DynamoDB on-demand reads | $0.125 per million RRU | same | Pricing example "$0.125 per million reads"; a strongly consistent read of up to 4 KB is 1 RRU (eventually consistent is 0.5). | To verify at deploy time |
+| SQS standard queue requests (the authentication-deadline queue) | $0.40 per million requests after the first 1 million per month | https://aws.amazon.com/sqs/pricing/ | US East (Ohio) table: standard queues free for the first million requests a month, then $0.40 per million; every API action counts as a request, a request can carry 1 to 10 messages, each 64 KB of payload is one request. The page lists KMS charges only for queues encrypted with a KMS key; the template uses SQS-managed encryption (`SqsManagedSseEnabled`), which names no key, and the page does not state a separate price for it. Page `og:updated_time` 2026-09-25. | To verify at deploy time (Mumbai rate not shown; confirm SSE-SQS is free) |
 | CloudWatch Logs ingestion and storage, alarms, custom metrics | **not available** | https://aws.amazon.com/cloudwatch/pricing/ | The per-GB log ingestion rate and per-alarm / per-metric rates were not present in the fetched text (region tables are rendered by script). | **Unknown: look up before deploy** |
 | CloudFront, S3, Budgets | **not fetched** | https://aws.amazon.com/cloudfront/pricing/, https://aws.amazon.com/s3/pricing/, https://aws.amazon.com/aws-cost-management/pricing/ | The phone page is a few hundred KB; request and transfer volumes are tiny. | Unknown: look up before deploy |
 
@@ -29,10 +30,11 @@ Free tiers (new accounts only, expiry rules in the pages) are ignored here, whic
 | A4 | Session length with both clients connected | 15 minutes | Assumption |
 | A5 | Heartbeat | an application-level JSON `ping` every 10 s from each client, answered by `pong` | ADR-0006. These are ordinary text messages, **metered**, unlike WebSocket control frames |
 | A6 | Pairing | 6 inbound messages, 8 relay-originated outbound messages, 2 `$connect` and 2 `$disconnect` invocations | Section 3 flow |
+| A6b | Authentication deadlines (A3-09) | 3 delayed SQS messages per session (TV `$connect` 5 s, phone `$connect` 5 s, `join.request` 65 s), each costing 3 SQS requests (send, receive, delete) and one consumer Lambda invocation that reads one connection item | `RelayCore` scheduling; the consumer batches of one because every message has its own delay. A failed pairing adds one more 5 s message per ended join. |
 | A7 | Lambda billed duration | 60 ms average at 512 MB (0.03 GB-s per invocation) | **Unmeasured assumption**; about seven DynamoDB round trips per message plus runtime overhead; cold starts ignored |
-| A8 | DynamoDB cost per inbound authenticated message | 2 RRU (strongly consistent `getConnection` + `getRoom`) and 4 WRU (two window counters, message-id marker, sequence acceptance), plus 0.05 WRU for the throttled connection touch and 1 WRU per relay-originated reply | `DynamoDbRoomStore`; every item is far below 1 KB, so each call is 1 unit. Failed conditional writes also consume write units. |
+| A8 | DynamoDB cost per inbound authenticated message | 2 RRU (strongly consistent `getConnection` + `getRoom`) and 4 WRU (two window counters, message-id marker, sequence acceptance), plus 0.05 WRU for the throttled connection touch and 1 WRU per relay-originated reply | `DynamoDbRoomStore`; every item is far below 1 KB, so each call is 1 unit. Failed conditional writes also consume write units. **The operation counts are pinned by `services/relay/test/cost-ops.test.ts`** against the strict DynamoDB model (call counts, not billing): a forwarded level frame is 2 reads and 4 writes, `$connect` 3 writes, `$disconnect` 3 writes and 1 read, a whole pairing 39 writes (the transaction items count double) and 16 reads against 44.3 and 12 in this model (hence the `pairingExtraRru` of 4). A change that adds a store call per message fails that test until this document is updated. |
 | A9 | Metering of forwarded messages | one metered message in (client to relay) and one out (the `@connections` POST to the peer) | API Gateway meters both |
-| A10 | Level frames are not logged by the relay; other forwarded messages produce one content-free log line | design | `RelayCore.forward` |
+| A10 | The relay writes **no log line per forwarded message** (A2-04): ordinary traffic is counted and written as one `minute_aggregate` line per kind and message type per minute; only errors and security events are logged one by one | design | `MinuteAggregator`; tests `redaction.test.ts`, `aws-adapter.test.ts`. What remains is the Lambda platform's own START, END and REPORT lines (about 0.4 KB per invocation) and the EMF metric lines for security counters. |
 
 ## 3. Arithmetic per session
 
@@ -44,20 +46,22 @@ Output of `node docs/operations/cost-model.mjs` (reference prices):
 Per-session model (reference prices; nothing measured)
 metric | full session (W=116 s) | typical (W=60 s)
 level frames | 2,320 | 1,200
-inbound messages (Lambda invocations minus 4) | 2,656 | 1,536
+inbound messages | 2,656 | 1,536
 outbound @connections posts | 2,658 | 1,538
 API Gateway metered messages | 5,314 | 3,074
 connection minutes | 30 | 30
-Lambda invocations | 2,660 | 1,540
-Lambda GB-seconds | 79.8 | 46.2
+Lambda invocations (relay + deadline consumer) | 2,663 | 1,543
+SQS requests (deadline queue, excl. idle polling) | 9 | 9
+Lambda GB-seconds | 79.9 | 46.3
 DynamoDB WRU | 10,957 | 6,421
-DynamoDB RRU | 5,312 | 3,072
+DynamoDB RRU | 5,319 | 3,079
 API Gateway messages cost | $0.00531 | $0.00307
 API Gateway connection minutes cost | $0.00001 | $0.00001
 Lambda requests cost | $0.00053 | $0.00031
 Lambda compute cost | $0.00133 | $0.00077
 DynamoDB writes cost | $0.00685 | $0.00401
 DynamoDB reads cost | $0.00066 | $0.00038
+SQS requests cost | 3.6 micro-USD | 3.6 micro-USD
 TOTAL per session (excl. logs, CloudFront, S3, alarms) | $0.01470 | $0.00856
 
 Per forwarded inbound message: 5.48 micro-USD
@@ -70,16 +74,17 @@ prod | 150 | $2.96 | $71.04 | $2131.11
 Sessions per month at the full-session cost
 100 sessions | $1.47
 500 sessions | $7.35
-5,000 sessions | $73.48
+5,000 sessions | $73.51
 ```
 
-Reading the table: with the reference prices a full session costs about one and a half US cents and a typical one about 0.9 cents. DynamoDB writes (the four conditional or counter writes behind every message) are the largest item, then API Gateway messages. Excluded and unknown: CloudWatch Logs (each Lambda invocation emits START, END and REPORT lines of roughly 0.4 KB, so a full session writes on the order of 1 MB of log data, price per GB unknown), CloudWatch alarms and custom metrics (six alarms and the EMF counters), CloudFront and S3 for the phone page, and the Budgets service itself.
+Reading the table: with the reference prices a full session costs about one and a half US cents and a typical one about 0.9 cents. DynamoDB writes (the four conditional or counter writes behind every message) are the largest item, then API Gateway messages. Excluded and unknown: CloudWatch Logs (each Lambda invocation emits START, END and REPORT lines of roughly 0.4 KB, so a full session writes on the order of 1 MB of log data, price per GB unknown; the relay's own per-message lines were removed by the per-minute aggregation), CloudWatch alarms and custom metrics (twelve alarms and the EMF counters), CloudFront and S3 for the phone page, and the Budgets service itself. The SQS line is a few micro-USD per session: the deadline queue is not a cost driver, and inside the 1 million free requests a month it is free (the model ignores free tiers).
 
 ## 4. What bounds spend (and what does not)
 
 1. **Stage throttle** (`Mappings: StageSettings` in `infra/template.yaml`): API Gateway rejects messages above 60 per second (staging) or 150 per second (prod) per route before Lambda runs. This is the real ceiling. Sustained for a whole month with every message accepted it would be about $852 (staging) or $2,131 (prod) at reference prices, roughly $28 or $71 per day. That is an arithmetic bound, not an expectation: it needs an attacker holding valid credentials or opening connections continuously. Lower `ThrottleRate` if that bound is too high for the owner.
 2. **Kill switch** and **reserved concurrency**: stop or cap processing; see RUNBOOK.md. Reserved concurrency (default 20) limits parallel executions, about 330 invocations per second at 60 ms, which is above the throttle, so the throttle is the binding cost limit.
-3. **Application limits** inside the core (per connection, per source, unauthenticated caps) reduce what an attacker can do per connection but do not stop new connections; the throttle does.
+3. **Application limits** inside the core (per connection, per source, unauthenticated caps) reduce what an attacker can do per connection but do not stop new connections; the throttle does. The limits added by the rework batch bound the cheap attacks: 20 `$connect` a minute and 5 concurrent unauthenticated connections per source (a refused `$connect` still costs one Lambda invocation and one counter write, and an accepted one 3 write units, 1 read unit, 3 SQS requests and one consumer invocation), exponential delay after 3 failed joins or resumes, 30 `room.create` an hour per source, and a global cap on live rooms (`LiveRoomCap`, default 200; the `room-cap` alarm fires when it is reached). Sources are hashed per day, so an attacker with many addresses is limited by the throttle, not by these.
+3b. **The SQS consumer** cannot scale past 5 concurrent invocations (`MaximumConcurrency` on the event source) and a message that fails three times goes to the dead-letter queue (alarm `deadline-dlq`) instead of retrying forever; messages older than an hour are dropped.
 4. **Budget alert** (`MonthlyBudgetUsd`, email at 50, 80 and 100 percent actual and 100 percent forecast) **is not a spending cap**. Billing data lags by hours, nothing is stopped automatically, and Budgets actions for EC2 or RDS cannot stop this Lambda, API Gateway and DynamoDB workload. Anyone reading an alert must follow RUNBOOK.md "Unexpected cost".
 5. API Gateway WebSocket limits: 128 KB message, 32 KB frame, 2 hour connection, 10 minute idle timeout (https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html). Clients re-dial at 110 minutes (ADR-0006).
 
@@ -94,6 +99,8 @@ Reading the table: with the reference prices a full session costs about one and 
 
 With no traffic the stack costs nothing for Lambda, API Gateway and DynamoDB on-demand (pay per use). What remains is the alarms and any custom metric the relay has emitted, log storage (14 day retention, small), S3 storage for the phone page (hundreds of KB, versioned), the CloudFront distribution (pay per request and transfer), and the Budgets entry. Their rates were not fetched (section 1); look them up before deployment and add them here.
 
+**Idle SQS polling is not zero.** The deadline function's event source mapping polls the queue whether or not there is traffic, and each poll is a billed `ReceiveMessage` request. AWS controls the number of pollers; assuming 5 long-polling connections of 20 seconds each (an assumption: the poller count was not found in the fetched pages) that is about 5 x 3 x 60 x 24 x 30 = 648,000 requests a month, which is inside the 1 million free requests a month (and would be about $0.26 a month beyond it at the reference price). Idle polling is therefore expected to cost nothing on a single stack, but it is the only part of the stack that is not pay-per-use, it shares the free tier with every other SQS user of the account, and it is a number to check in the first month's bill. To remove it, disable the event source mapping while the relay is not in use (`aws lambda update-event-source-mapping --uuid <id> --no-enabled`; then deadlines are enforced on each connection's next message only).
+
 ## 7. Verification plan (pending, needs the owner's account)
 
-After an authorized staging deployment, run one scripted full session and reconcile the model with CloudWatch: API Gateway `MessageCount` and `ConnectCount`, Lambda `Invocations` and `Duration`, DynamoDB `ConsumedWriteCapacityUnits` and `ConsumedReadCapacityUnits`, log bytes ingested. Replace assumptions A3, A7 and A8 with measured values, update this document and note the deviation. Until then every number here is a model.
+After an authorized staging deployment, run one scripted full session and reconcile the model with CloudWatch: API Gateway `MessageCount` and `ConnectCount`, Lambda `Invocations` and `Duration` (both functions), DynamoDB `ConsumedWriteCapacityUnits` and `ConsumedReadCapacityUnits`, SQS `NumberOfMessagesSent` and `NumberOfEmptyReceives` of the deadline queue (this one measures the idle polling), log bytes ingested. Replace assumptions A3, A7 and A8 with measured values, update this document and note the deviation. Until then every number here is a model.
