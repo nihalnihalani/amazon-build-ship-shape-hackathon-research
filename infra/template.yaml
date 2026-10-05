@@ -14,7 +14,7 @@ Description: >-
 #      unauthenticated cap per source, exponential delay on failures, room.create budget, live-room cap (LiveRoomCap)
 #   5. A maximum concurrency on the SQS consumer (DeadlineFunction event source)
 #
-# Privacy posture asserted by infra/test (SEC-I01): no execution-data tracing, no X-Ray, no API access logs, no
+# Privacy posture asserted by services/relay/test/infra.test.ts (SEC-I01): no execution-data tracing, no X-Ray, no API access logs, no
 # CloudFront or S3 access logs, log retention of 14 days at most, point-in-time recovery off, no secret in any
 # environment variable (the hashing secret is an SSM SecureString read at runtime, created by the owner before the
 # first deploy: see infra/README.md).
@@ -501,7 +501,7 @@ Resources:
       # Execution logging and execution data tracing are explicitly OFF: data tracing would write full message
       # bodies (credentials, phrases, cue text) to CloudWatch Logs (A2-05, SEC-I01). There are NO access logs either:
       # an access-log format could record the source address and user agent. Should access logs ever be wanted, the
-      # format must stay within the whitelist enforced by infra/test (request id, route, event type, status,
+      # format must stay within the whitelist enforced by services/relay/test/infra.test.ts (request id, route, event type, status,
       # latencies) and never include the source address, user agent or any header or body field.
       # Standard API metrics are available regardless.
       DefaultRouteSettings:
