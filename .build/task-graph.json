@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T09:57:41+05:30",
+ "updated_at": "2026-10-05T10:03:35+05:30",
  "states": [
   "pending",
   "ready",
@@ -644,7 +644,8 @@
    "reviewer": "lead",
    "evidence_refs": [
     "EV-0044",
-    "EV-0049"
+    "EV-0049",
+    "EV-0051"
    ],
    "commit": null,
    "blocker": "Local-scope gate passed and residuals closed (EV-0044, EV-0049); deployed-log/IAM/CloudFront checks need AWS staging (B-003)"
