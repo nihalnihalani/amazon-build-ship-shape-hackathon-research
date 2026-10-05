@@ -46,7 +46,7 @@ export function QuietCheckScreen(props: ScreenProps): React.ReactElement {
     <ScreenFrame {...props}>
       <SideBySide>
         {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-        <MeterBlock view={view} />
+        <MeterBlock view={view} radius={layout.arcRadiusMedium} growth={1} />
       </SideBySide>
     </ScreenFrame>
   );
@@ -59,7 +59,7 @@ export function CalibrationScreen(props: ScreenProps): React.ReactElement {
     <ScreenFrame {...props}>
       <SideBySide>
         {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-        <MeterBlock view={view} />
+        <MeterBlock view={view} radius={layout.arcRadiusMedium} growth={1} />
       </SideBySide>
     </ScreenFrame>
   );
@@ -72,7 +72,7 @@ export function VowelScreen(props: ScreenProps): React.ReactElement {
     <ScreenFrame {...props}>
       <SideBySide>
         {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} /> : null}
-        <MeterBlock view={view} />
+        <MeterBlock view={view} radius={layout.arcRadiusMedium} growth={1} />
       </SideBySide>
       {view.result !== null ? <ResultBadge result={view.result} /> : null}
     </ScreenFrame>
@@ -88,19 +88,23 @@ export function PhraseScreen(props: ScreenProps): React.ReactElement {
   const ui = useUiScale();
   return (
     <ScreenFrame {...props} describedBy={['atr-phrase-text']}>
-      {view.phrase !== null ? (
-        <View style={{ alignItems: 'center', marginBottom: ui.space(24) }}>
-          <PhraseCounter phrase={view.phrase} />
-          <PhraseText phrase={view.phrase.text} />
+      <View style={{ alignItems: 'center', marginBottom: ui.space(16) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {view.phrase !== null ? <PhraseCounter phrase={view.phrase} /> : null}
+          {view.timer !== null ? (
+            <View style={{ marginLeft: ui.space(48) }}>
+              <TimerDisplay timer={view.timer} capturing={view.capturing} compact />
+            </View>
+          ) : null}
+          {view.cue !== null ? (
+            <View style={{ marginLeft: ui.space(48) }}>
+              <CueChip cue={view.cue} capturing={view.capturing} />
+            </View>
+          ) : null}
         </View>
-      ) : null}
-      <SideBySide>
-        <MeterBlock view={view} radius={layout.arcRadiusCompact} />
-        <View style={{ alignItems: 'center' }}>
-          {view.timer !== null ? <TimerDisplay timer={view.timer} capturing={view.capturing} compact /> : null}
-          {view.cue !== null ? <CueChip cue={view.cue} /> : null}
-        </View>
-      </SideBySide>
+        {view.phrase !== null ? <PhraseText phrase={view.phrase.text} /> : null}
+      </View>
+      <MeterBlock view={view} radius={layout.arcRadiusCompact} layout="side" growth={1} />
       {view.result !== null ? <ResultBadge result={view.result} /> : null}
     </ScreenFrame>
   );
@@ -120,7 +124,7 @@ export function ResponseScreen(props: ScreenProps): React.ReactElement {
           </AppText>
         </View>
       ) : null}
-      {view.cue !== null ? <CueChip cue={view.cue} /> : null}
+      {view.cue !== null ? <CueChip cue={view.cue} capturing={view.capturing} /> : null}
     </ScreenFrame>
   );
 }

@@ -3,6 +3,7 @@
 //                             Pressed controls and remote keys are recorded in window.__atr.dispatched.
 //   ?mode=store               the real session store (fixture mode, in-memory data) when @atr/session-core
 //                             exports createSessionStore; otherwise a message says it is unavailable.
+// ?screenReader=1 starts with the simulated screen reader on (window.__atr.setScreenReader toggles it).
 // The 1920 x 1080 TV canvas is scaled to fit the window. ?scale=1.5 simulates a larger UI-scale setting.
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -10,12 +11,21 @@ import type { SessionStore, TvInput, TvView } from '@atr/session-core';
 import { AppWithStore } from '../../src/App';
 import { resolveConfig } from '../../src/config';
 import { createRuntime } from '../../src/runtime/createRuntime';
-import { allScreens } from '../../src/__fixtures__/views';
+import { allScreens, everyScreen, extraScreens } from '../../src/__fixtures__/views';
+import { layoutReport } from './layoutReport';
+import type { LayoutRow } from './layoutReport';
+import { setPreviewScreenReader } from './shims/kepler-a11y';
 
 interface PreviewApi {
   dispatched: TvInput[];
   screens: string[];
   setScreen(name: string): void;
+  /** Show an arbitrary view (layout stress tests). */
+  setView(view: TvView): void;
+  /** Layout self-check of every fixture (listed and extra) at the current ?scale= (see layoutReport.ts). */
+  layoutReport(): Promise<LayoutRow[]>;
+  /** Simulates the platform screen reader turning on or off (the app reports it to the store as an a11y input). */
+  setScreenReader(enabled: boolean): void;
   view(): TvView;
 }
 
@@ -107,11 +117,11 @@ function FixturePreview(): React.ReactElement {
   const dispatched = React.useRef<TvInput[]>([]);
   const names = allScreens.map(([name]) => name);
   const requested = params.get('screen');
-  const initialName = requested !== null && names.includes(requested) ? requested : 'home';
+  const initialName = requested !== null && everyScreen.some(([n]) => n === requested) ? requested : 'home';
   const [name, setName] = React.useState(initialName);
   const [last, setLast] = React.useState('');
   const store = React.useMemo(() => {
-    const entry = allScreens.find(([n]) => n === initialName) ?? allScreens[0];
+    const entry = everyScreen.find(([n]) => n === initialName) ?? allScreens[0];
     const instance = createFixtureStore((entry as (typeof allScreens)[number])[1], dispatched.current);
     const originalDispatch = instance.dispatch;
     instance.dispatch = (input) => {
@@ -123,7 +133,7 @@ function FixturePreview(): React.ReactElement {
 
   const select = React.useCallback(
     (next: string) => {
-      const entry = allScreens.find(([n]) => n === next);
+      const entry = everyScreen.find(([n]) => n === next);
       if (entry === undefined) return;
       setName(next);
       store.setView(entry[1]);
@@ -132,7 +142,15 @@ function FixturePreview(): React.ReactElement {
   );
 
   React.useEffect(() => {
-    window.__atr = { dispatched: dispatched.current, screens: names, setScreen: select, view: () => store.getView() };
+    window.__atr = {
+      dispatched: dispatched.current,
+      screens: names,
+      setScreen: select,
+      setView: (view) => store.setView(view),
+      layoutReport: () => layoutReport([...names, ...extraScreens.map(([n]) => n)], select),
+      setScreenReader: setPreviewScreenReader,
+      view: () => store.getView(),
+    };
   }, [names, select, store]);
 
   return (

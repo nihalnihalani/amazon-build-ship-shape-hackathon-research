@@ -10,6 +10,7 @@ import { FOOTER_FALLBACK, text } from './copy';
 import { useAppLifecycle } from './input/useAppLifecycle';
 import { useBackHandler } from './input/useBackHandler';
 import { useRemoteInput } from './input/useRemoteInput';
+import { useScreenReaderState } from './input/useScreenReaderState';
 import { useTicker } from './input/useTicker';
 import { createRuntime } from './runtime/createRuntime';
 import type { Runtime } from './runtime/createRuntime';
@@ -88,6 +89,7 @@ export function AppView({ store }: { store: SessionStore }): React.ReactElement 
   useBackHandler(dispatch);
   useTicker(dispatch);
   useAppLifecycle(dispatch);
+  useScreenReaderState(dispatch);
   return <ScreenRouter view={view} onAction={onAction} />;
 }
 

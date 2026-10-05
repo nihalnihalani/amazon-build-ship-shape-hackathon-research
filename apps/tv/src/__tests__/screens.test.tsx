@@ -1,17 +1,29 @@
 import { fireEvent } from '@testing-library/react-native';
 import type { ActionId, TvView } from '@atr/session-core';
-import { allScreens, confirmDialogDestructive, FOOTER, makeView } from '../__fixtures__/views';
+import { confirmDialogDestructive, everyScreen, FOOTER, makeView } from '../__fixtures__/views';
+import { text } from '../copy';
 import { actionControls, allStrings, preferredPressables, pressableFor, renderView } from './testUtils';
+
+/** join_confirm uses a UI-owned heading (A3-06); every other screen shows view.title. */
+function expectedTitle(view: TvView): string {
+  return view.screen === 'join_confirm' ? text.joinHeading : view.title;
+}
 
 function controlsOf(view: TvView) {
   return view.dialog !== null ? [view.dialog.cancel, view.dialog.confirm] : view.actions;
 }
 
-describe.each(allScreens)('screen fixture: %s', (_name, view) => {
+describe.each(everyScreen)('screen fixture: %s', (_name, view) => {
   it('renders the title and the footer on the screen', () => {
     const screen = renderView(view);
     expect(screen.getByTestId('screen-' + view.screen)).toBeTruthy();
-    expect(screen.getByTestId('screen-title').props.children).toBe(view.title);
+    if (view.dialog !== null) {
+      // A11Y-02: a dialog shows its own title once; the frame's title is not rendered.
+      expect(screen.queryByTestId('screen-title')).toBeNull();
+      expect(screen.getByTestId('dialog-title').props.children).toBe(view.dialog.title);
+    } else {
+      expect(screen.getByTestId('screen-title').props.children).toBe(expectedTitle(view));
+    }
     expect(screen.getByTestId('footer').props.children).toBe(FOOTER);
   });
 
@@ -45,13 +57,14 @@ describe.each(allScreens)('screen fixture: %s', (_name, view) => {
     for (const control of controlsOf(view)) {
       fireEvent.press(screen.getByTestId('action-' + control.id));
     }
-    expect(pressed).toEqual(controlsOf(view).map((control) => control.id));
+    // Disabled controls are not pressable (A11Y-01); every enabled one reports its id.
+    expect(pressed).toEqual(controlsOf(view).filter((control) => control.disabled !== true).map((control) => control.id));
   });
 
   it('never leaves the screen without visible text for the title', () => {
     const screen = renderView(view);
     const strings = allStrings(screen.toJSON());
-    expect(strings.some((s) => s.includes(view.title) || (view.dialog !== null && s.includes(view.dialog.title)))).toBe(true);
+    expect(strings.some((s) => s.includes(expectedTitle(view)) || (view.dialog !== null && s.includes(view.dialog.title)))).toBe(true);
   });
 });
 

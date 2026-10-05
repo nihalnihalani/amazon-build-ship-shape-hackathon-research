@@ -2,7 +2,6 @@ import * as React from 'react';
 import { View } from 'react-native';
 import { toneShape } from '@atr/ten-foot-meter';
 import type { ResultView } from '@atr/session-core';
-import { text } from '../copy';
 import { colors } from '../theme';
 import { AppText } from './AppText';
 import { ToneGlyph } from './ToneGlyph';
@@ -22,7 +21,9 @@ const toneColor = {
 export function ResultBadge({ result }: { result: ResultView }): React.ReactElement {
   const ui = useUiScale();
   const color = toneColor[result.tone];
-  const summary = [result.label, result.detail, result.borderline ? text.borderline : null]
+  // The store writes every sentence of the result (label, detail incl. the borderline note, listener answer and
+  // the speaker's rating with their own prefixes); the UI renders them verbatim and adds no wording of its own.
+  const summary = [result.label, result.detail, result.speakerRating, result.listener]
     .filter((part): part is string => part !== null && part.length > 0)
     .join('. ');
   return (
@@ -38,19 +39,14 @@ export function ResultBadge({ result }: { result: ResultView }): React.ReactElem
           {result.detail}
         </AppText>
       ) : null}
-      {result.borderline ? (
-        <AppText testID="result-borderline" kind="body" center style={{ marginTop: ui.space(8) }}>
-          {text.borderline}
-        </AppText>
-      ) : null}
       {result.speakerRating !== null ? (
         <AppText testID="result-rating" kind="body" center style={{ marginTop: ui.space(8) }}>
-          {text.ratingPrefix + ': ' + result.speakerRating}
+          {result.speakerRating}
         </AppText>
       ) : null}
       {result.listener !== null ? (
         <AppText testID="result-listener" kind="body" center>
-          {text.listenerPrefix + ': ' + result.listener}
+          {result.listener}
         </AppText>
       ) : null}
     </View>

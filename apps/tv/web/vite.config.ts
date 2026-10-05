@@ -21,6 +21,8 @@ export default defineConfig({
       { find: /^react\/(.*)$/, replacement: resolve(here, 'node_modules/react/$1') },
       { find: /^react-dom$/, replacement: resolve(here, 'node_modules/react-dom') },
       { find: /^react-dom\/(.*)$/, replacement: resolve(here, 'node_modules/react-dom/$1') },
+      // react-native-svg deep-imports a Flow-only React Native internal; the optimiser (npm run dev) cannot parse it.
+      { find: /^react-native\/Libraries\/Utilities\/codegenNativeComponent$/, replacement: shim('codegenNativeComponent.ts') },
       { find: /^react-native$/, replacement: shim('react-native.tsx') },
       { find: /^@amazon-devices\/react-native-kepler$/, replacement: shim('kepler.tsx') },
       { find: /^@amazon-devices\/kepler-a11y-settings-interface-turbo$/, replacement: shim('kepler-a11y.tsx') },
@@ -38,5 +40,5 @@ export default defineConfig({
     global: 'globalThis',
   },
   server: { fs: { allow: [resolve(here, '../../..')] } },
-  build: { outDir: 'dist', sourcemap: true },
+  build: { outDir: 'dist', sourcemap: true, chunkSizeWarningLimit: 900 },
 });

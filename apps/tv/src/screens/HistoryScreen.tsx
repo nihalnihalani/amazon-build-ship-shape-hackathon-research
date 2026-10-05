@@ -36,7 +36,9 @@ export function dayAccessibleLabel(day: HistoryDayView): string {
 export function HistoryScreen(props: ScreenProps): React.ReactElement {
   const ui = useUiScale();
   const days = props.view.history ?? [];
-  const maxHeight = ui.size(layout.historyBarMax);
+  // The bars do not grow with the UI scale (the labels around them do): 220 px, or 180 px at scales of 1.4 and above.
+  const maxHeightBase = ui.factor >= layout.largeScaleFactor ? layout.historyBarMaxLarge : layout.historyBarMax;
+  const maxHeight = ui.size(maxHeightBase, maxHeightBase);
   const bars = barHeights(days.map(dayFraction), maxHeight, ui.size(8));
   return (
     <ScreenFrame {...props}>

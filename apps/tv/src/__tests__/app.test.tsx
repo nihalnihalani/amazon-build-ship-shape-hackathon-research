@@ -3,7 +3,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import type { TvView } from '@atr/session-core';
 import { setUiScaleLoadingMock } from '../../jest/mocks/kepler-a11y';
 import { emitTVEvent } from '../../jest/mocks/react-native-kepler';
-import { home, makeView, phraseActiveHidden, phraseReady } from '../__fixtures__/views';
+import { home, makeView, phraseLead, phraseReady } from '../__fixtures__/views';
 import { AppWithStore, FatalScreen } from '../App';
 import { useSessionView } from '../runtime/useSessionView';
 import { createFakeStore } from './fakeStore';
@@ -80,7 +80,7 @@ describe('AppWithStore', () => {
     await flush();
     emitTVEvent({ eventType: 'select', eventKeyAction: 0 });
     expect(store.dispatched.some((input) => input.kind === 'remote')).toBe(false);
-    act(() => store.setView(phraseActiveHidden));
+    act(() => store.setView(phraseLead));
     emitTVEvent({ eventType: 'select', eventKeyAction: 0 });
     expect(store.dispatched).toContainEqual({ kind: 'remote', key: 'ok' });
   });
@@ -132,7 +132,7 @@ describe('live region while capturing', () => {
     await flush();
     expect(screen.getByTestId('live-region-text').props.children).toBe('Home. Start session is selected.');
     expect(screen.getByTestId('live-region').props['aria-live']).toBe('polite');
-    act(() => store.setView({ ...phraseActiveHidden, announcement: 'Say the phrase now' }));
+    act(() => store.setView({ ...phraseLead, announcement: 'Say the phrase now' }));
     expect(screen.queryByTestId('live-region-text')).toBeNull();
     expect(screen.getByTestId('live-region').props['aria-live']).toBe('off');
   });

@@ -45,7 +45,7 @@ export function QrCode({ payload }: { payload: string }): React.ReactElement {
     );
   }
   const modules = matrix.length + 2 * QUIET_ZONE_MODULES;
-  const cell = Math.max(2, Math.floor(ui.size(layout.qrSize) / modules));
+  const cell = Math.max(2, Math.floor(ui.size(layout.qrSize, Math.round(layout.qrSize * 1.25)) / modules));
   const side = cell * modules;
   const runs = matrixRuns(matrix);
   return (

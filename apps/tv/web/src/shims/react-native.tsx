@@ -59,3 +59,14 @@ export function pressHardwareBack(): boolean {
 export function useWindowDimensions(): { width: number; height: number; scale: number; fontScale: number } {
   return { width: 1920, height: 1080, scale: 1, fontScale: 1 };
 }
+
+/**
+ * react-native-svg imports TurboModuleRegistry (a native-only export) in its Fabric helper modules. The web
+ * preview never calls it; this stub keeps the unbundled dev server (npm run dev) from failing on the missing export.
+ */
+export const TurboModuleRegistry = {
+  get: (): null => null,
+  getEnforcing: (name: string): never => {
+    throw new Error('Native module ' + name + ' is not available in the web preview');
+  },
+};

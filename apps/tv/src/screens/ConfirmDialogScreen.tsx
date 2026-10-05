@@ -19,16 +19,28 @@ export function ConfirmDialogContent({ dialog, onAction }: { dialog: DialogView;
   const side = dialogPreferredSide(dialog);
   return (
     <TVFocusGuideView autoFocus trapFocusUp trapFocusDown trapFocusLeft trapFocusRight testID="dialog-focus-guide">
-      <View testID="dialog" accessible={false} role="alertdialog" style={{ alignItems: 'center', maxWidth: ui.size(1400) }}>
-        <AppText testID="dialog-title" kind="title" role="heading" center>
+      {/*
+        A11Y-02: the dialog is named by its own title (aria-label and aria-labelledby), the title is rendered once (the
+        screen frame's title is hidden), and both controls are described by the body text. `accessible` stays false
+        so the buttons inside remain separate focus targets.
+      */}
+      <View
+        testID="dialog"
+        accessible={false}
+        role="alertdialog"
+        aria-label={dialog.title}
+        aria-labelledby="atr-dialog-title"
+        style={{ alignItems: 'center', maxWidth: ui.size(1400) }}
+      >
+        <AppText testID="dialog-title" nativeID="atr-dialog-title" kind="title" role="heading" center>
           {dialog.title}
         </AppText>
-        <AppText testID="dialog-body" kind="label" center style={{ marginTop: ui.space(24), marginBottom: ui.space(40) }}>
+        <AppText testID="dialog-body" nativeID="atr-dialog-body" kind="label" center style={{ marginTop: ui.space(24), marginBottom: ui.space(40) }}>
           {dialog.body}
         </AppText>
         <View style={{ flexDirection: 'row' }}>
-          <Focusable action={dialog.cancel} preferred={side === 'cancel'} onPress={onAction} />
-          <Focusable action={dialog.confirm} preferred={side === 'confirm'} onPress={onAction} />
+          <Focusable action={dialog.cancel} preferred={side === 'cancel'} onPress={onAction} describedBy={['atr-dialog-body']} />
+          <Focusable action={dialog.confirm} preferred={side === 'confirm'} onPress={onAction} describedBy={['atr-dialog-body']} />
         </View>
       </View>
     </TVFocusGuideView>
@@ -38,7 +50,7 @@ export function ConfirmDialogContent({ dialog, onAction }: { dialog: DialogView;
 export function ConfirmDialogScreen(props: ScreenProps): React.ReactElement {
   const { view, onAction } = props;
   return (
-    <ScreenFrame {...props} hideActions hideStatus>
+    <ScreenFrame {...props} hideActions hideStatus hideTitle hideBody>
       {view.dialog !== null ? <ConfirmDialogContent dialog={view.dialog} onAction={onAction} /> : null}
     </ScreenFrame>
   );

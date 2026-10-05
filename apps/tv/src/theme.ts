@@ -38,14 +38,22 @@ export const PHRASE_FONT_SIZES: readonly number[] = [96, 88, 80, 72];
 
 export const layout = {
   pagePadding: 80,
-  pageVerticalPadding: 48,
+  pageVerticalPadding: 32,
+  /** Vertical page padding from the large-scale factor on (the scaled value grows, so the base shrinks). */
+  pageVerticalPaddingLarge: 24,
   focusRing: 6,
   focusScale: 1.05,
-  /** Full-size dial (sustained sound, calibration). */
+  /** Full-size dial (the component default; no screen uses it once body text, banner and controls share the screen). */
   arcRadius: 300,
+  /** Dial for the sustained sound, calibration and quiet check screens, which carry body text, a banner and controls. */
+  arcRadiusMedium: 240,
   /** Compact dial used on the phrase card so phrase, dial and timer fit one 1080 px screen. */
-  arcRadiusCompact: 180,
+  arcRadiusCompact: 160,
   arcStroke: 36,
   qrSize: 320,
   historyBarMax: 220,
+  /** Bar height used at UI scales of 1.4 and above, where the labels around the bars take more room. */
+  historyBarMaxLarge: 180,
+  /** From this text multiplier on, layouts switch to their denser arrangement. */
+  largeScaleFactor: 1.4,
 } as const;

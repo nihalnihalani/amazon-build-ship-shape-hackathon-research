@@ -2,7 +2,7 @@ import { AppState, BackHandler } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 import type { TvInput, TvView } from '@atr/session-core';
 import { emitTVEvent, mountedTVEventHandlerCount } from '../../jest/mocks/react-native-kepler';
-import { home, phraseActiveHidden, confirmDialogDestructive, makeView } from '../__fixtures__/views';
+import { confirmDialogDestructive, home, makeView, phraseLead as phraseActiveHidden } from '../__fixtures__/views';
 import { hasFocusableActions, isKeyDown, mapRemoteEvent, shouldForwardRemoteKey } from '../input/remoteKeys';
 import { useAppLifecycle } from '../input/useAppLifecycle';
 import { useBackHandler } from '../input/useBackHandler';
