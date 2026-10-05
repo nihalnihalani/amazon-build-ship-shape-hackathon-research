@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T07:59:01+05:30",
+ "updated_at": "2026-10-05T08:13:43+05:30",
  "states": [
   "pending",
   "ready",
@@ -177,7 +177,8 @@
    ],
    "reviewer": null,
    "evidence_refs": [
-    "EV-0030"
+    "EV-0030",
+    "EV-0046"
    ],
    "commit": null,
    "blocker": "B-002 phone; protocol rev 2 rejected by security (T16 \u00a77) - rev 3 in progress"
