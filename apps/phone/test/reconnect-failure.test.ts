@@ -46,7 +46,6 @@ describe('A6-02: stop reconnecting on a refused or ended pairing and return to J
   it.each([
     ['revoked', 'revoked', /withdrew/],
     ['expired', 'expired', /expired/],
-    ['unauthorized', 'expired', /expired/],
     ['superseded', 'superseded', /another page/],
   ] as const)('auth.resume refused with %s: back to Join, explanation shown, no more attempts', async (code, reason, explanation) => {
     const h = await readyHarness();

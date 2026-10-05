@@ -292,8 +292,6 @@ describe('reconnect (ADR-0006)', () => {
   it.each([
     ['revoked', 'revoked'],
     ['expired', 'expired'],
-    ['not_found', 'expired'],
-    ['unauthorized', 'expired'],
     ['superseded', 'superseded'],
   ] as const)('auth.resume refused with %s ends pairing (%s) and stops reconnecting', async (code, reason) => {
     const h = await ready();

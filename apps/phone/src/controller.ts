@@ -11,7 +11,17 @@
  *  - no tap after attempt.reveal is sent; credentials live only in this object's memory.
  */
 
-import { CODE_LENGTH, DEFAULT_CUE_WORD, FAILURE_WINDOW_MS, LIMITS, RECONNECT_BACKOFF_MS } from './config.js';
+import {
+  CODE_LENGTH,
+  DEFAULT_CUE_WORD,
+  FAILURE_WINDOW_MS,
+  LIMITS,
+  MIC_IDLE_OFF_MS,
+  RECONNECT_BACKOFF_MS,
+  RESUME_REFUSAL_WINDOW_MS,
+  SESSION_CAPTURE_BUDGET_MS,
+  WINDOW_COOLDOWN_MS,
+} from './config.js';
 import { joinErrorText, joinRejectedText } from './labels.js';
 import { checkCode, normalizeCodeInput } from './pairing.js';
 import { type PhraseValidation, validateCue, validateDeviceLabel, validatePhrases } from './phrases.js';
@@ -45,7 +55,14 @@ export type Screen = 'join' | 'setup';
 export type JoinPhase = 'idle' | 'connecting' | 'pending' | 'confirming';
 /** Transport state names from PROTOCOL.md section 6. */
 export type LinkState = 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'reconnecting' | 'failed';
-export type UnpairedReason = 'tv_unpaired' | 'room_closed' | 'expired' | 'revoked' | 'superseded';
+export type UnpairedReason =
+  | 'tv_unpaired'
+  | 'room_closed'
+  | 'expired'
+  | 'revoked'
+  | 'superseded'
+  /** The relay kept refusing auth.resume for 30 s (N-01); it does not say why, so neither do we. */
+  | 'resume_refused';
 
 export interface SessionInfo {
   sessionId: string;
@@ -99,8 +116,13 @@ export interface AppState {
    */
   phrases: { status: 'none' | 'sending' | 'saved' | 'rejected' | 'not_sent' | 'locked'; count: number; saved: string[] };
   notice: string | null;
-  /** Set when a precheck found no signal at all (the microphone looks muted or blocked). */
-  micNotice: 'silent_input' | null;
+  /**
+   * silent_input: a precheck found no signal at all (the microphone looks muted or blocked).
+   * idle_off: the phone turned the microphone off after 10 minutes without any TV command (N-12).
+   */
+  micNotice: 'silent_input' | 'idle_off' | null;
+  /** Bumps whenever phrase state is cleared, so the view empties its editor too (N-07). */
+  phrasesResetToken: number;
   /** Derived controls. */
   canStartMic: boolean;
   canStopMic: boolean;
@@ -141,6 +163,9 @@ interface RunContext {
   ids: { session_id: string; window_id: string; attempt_id: string };
   handle: PrecheckRun | WindowRun;
   framesSent: number;
+  /** Capture time reserved from the session budget when the run was accepted. */
+  commandedMs: number;
+  startedAt: number;
 }
 
 type Command = Extract<
@@ -176,6 +201,16 @@ const PRE_CONFIRM_TYPES: ReadonlySet<OutboundType> = new Set<OutboundType>(['pin
 
 /** DEF-004: a TV that (re)connects is told the mic state at most once per second. */
 const TV_REPORT_MIN_INTERVAL_MS = 1000;
+
+/**
+ * N-01: refusals of auth.resume that may just mean "the old connection still looks alive" (the
+ * relay's generic answer is `unauthorized`). They are retried for 30 s before the pairing is
+ * considered lost. `revoked` and `expired` are definitive and end the pairing at once.
+ */
+const RESUME_REFUSED_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>(['unauthorized', 'not_found', 'unauthenticated']);
+
+const BUDGET_NOTICE =
+  'This session has used its 5 minutes of listening on this phone. End the session on the TV and start a new one to measure again.';
 
 const FATAL_RESUME_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'revoked',
@@ -225,6 +260,13 @@ export class PhoneController {
   /** DEF-004: when the last peer.state-triggered mic.state went out, and a pending trailing one. */
   private lastTvReportAt = Number.NEGATIVE_INFINITY;
   private tvReportTimer: ReturnType<typeof setTimeout> | null = null;
+  /** N-01: when the first refusal of the current reconnect cycle arrived (null: none yet). */
+  private refusedSince: number | null = null;
+  /** N-12: capture budget and cooldown for the running session. */
+  private budgetUsedMs = 0;
+  private lastWindowEndedAt = Number.NEGATIVE_INFINITY;
+  private budgetNoticeShown = false;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingResponse: string | null = null;
   private pendingPhrases: { id: string; phrases: string[] } | null = null;
   /** Phrases the TV has acknowledged as saved. */
@@ -270,6 +312,7 @@ export class PhoneController {
       phrases: { status: 'none', count: 0, saved: [] },
       notice: null,
       micNotice: null,
+      phrasesResetToken: 0,
       canStartMic: false,
       canStopMic: false,
       canAnswer: false,
@@ -415,9 +458,12 @@ export class PhoneController {
     this.factory.clearAuth();
     this.credential = null;
     this.userConfirmed = false;
+    this.refusedSince = null;
     this.dropHeld();
     this.clearTvReportTimer();
     this.clearFailureWindow();
+    this.clearPhraseState(); // N-07: household text goes with the credential
+    this.resetBudget();
     this.patch({
       screen: 'join',
       pairingConfirmed: false,
@@ -620,12 +666,32 @@ export class PhoneController {
       }
     });
     this.clearFailureWindow();
+    this.refusedSince = null; // authenticated: the refusal cycle (if any) is over
     this.lastMicKey = null;
     if (this.userConfirmed) {
       this.publishMic();
       this.flushPending();
       this.syncWakeLock();
     }
+  }
+
+  /**
+   * N-01: after the phone's network dies without a TCP close, the relay still holds the old socket
+   * for up to 25 s and refuses a second connection for the same phone with a generic `unauthorized`.
+   * That refusal means "not yet", not "never": keep retrying (normal backoff) for 30 s from the
+   * first refusal. A refused resume does not consume the credential, so each retry presents the same
+   * one. If the refusals continue past 30 s the pairing is treated as lost, with an honest message
+   * ("Could not reconnect": the relay's answer does not say whether it expired or was removed).
+   */
+  private onResumeRefused(): void {
+    const now = this.clock();
+    if (this.refusedSince === null) this.refusedSince = now;
+    if (now - this.refusedSince >= RESUME_REFUSAL_WINDOW_MS) {
+      this.unpair('resume_refused');
+      return;
+    }
+    this.transport.close(); // the refused socket is useless; drop it
+    this.onLinkLost(); // and let the normal backoff (with jitter) schedule the next attempt
   }
 
   private onRelayError(code: ErrorCode, ref: string | null): void {
@@ -648,6 +714,10 @@ export class PhoneController {
     }
     if (this.state.link === 'authenticating') {
       // The resume attempt itself was refused.
+      if (RESUME_REFUSED_CODES.has(code)) {
+        this.onResumeRefused();
+        return;
+      }
       if (FATAL_RESUME_CODES.has(code)) {
         this.unpair(code === 'revoked' ? 'revoked' : 'expired');
         return;
@@ -767,6 +837,7 @@ export class PhoneController {
   }
 
   private onCommand(msg: Command): void {
+    this.touchTvActivity(); // N-12: any TV command keeps the idle clock from running out
     switch (msg.type) {
       case 'session.begin':
         return this.onSessionBegin(msg);
@@ -811,6 +882,7 @@ export class PhoneController {
       this.cueBase = 0;
       this.cueNet = 0;
       this.pendingCues.clear();
+      this.resetBudget(); // N-12: the budget belongs to one session
     }
     this.patch({
       session: {
@@ -846,7 +918,7 @@ export class PhoneController {
   private onPrecheckStart(msg: Extract<Command, { type: 'precheck.start' }>): void {
     const ids = this.idsOf(msg);
     if (!ids) return this.ackFor(msg, 'ignored_stale', 'unknown_session');
-    const gate = this.runGate(msg, ids.window_id);
+    const gate = this.runGate(msg, ids.window_id, 'precheck', msg.payload.duration_ms);
     if (gate) return this.ackFor(msg, gate.outcome, gate.detail);
     this.lockListener();
     let handle: PrecheckRun;
@@ -855,7 +927,8 @@ export class PhoneController {
     } catch {
       return this.ackFor(msg, 'rejected', 'mic_not_open');
     }
-    const ctx: RunContext = { kind: 'precheck', ids, handle, framesSent: 0 };
+    const ctx: RunContext = { kind: 'precheck', ids, handle, framesSent: 0, commandedMs: msg.payload.duration_ms, startedAt: this.clock() };
+    this.budgetUsedMs += ctx.commandedMs;
     this.activeRun = ctx;
     this.patch({ run: { kind: 'precheck', windowId: ids.window_id } });
     this.ackFor(msg, 'applied');
@@ -865,10 +938,17 @@ export class PhoneController {
   private onWindowStart(msg: Extract<Command, { type: 'window.start' }>): void {
     const ids = this.idsOf(msg);
     if (!ids) return this.ackFor(msg, 'ignored_stale', 'unknown_session');
-    const gate = this.runGate(msg, ids.window_id);
+    const gate = this.runGate(msg, ids.window_id, 'window', msg.payload.max_duration_ms);
     if (gate) return this.ackFor(msg, gate.outcome, gate.detail);
     this.lockListener();
-    const ctx: RunContext = { kind: 'window', ids, handle: null as unknown as WindowRun, framesSent: 0 };
+    const ctx: RunContext = {
+      kind: 'window',
+      ids,
+      handle: null as unknown as WindowRun,
+      framesSent: 0,
+      commandedMs: msg.payload.max_duration_ms,
+      startedAt: this.clock(),
+    };
     let handle: WindowRun;
     try {
       handle = this.deps.audio.window(
@@ -899,6 +979,7 @@ export class PhoneController {
       return this.ackFor(msg, 'rejected', 'mic_not_open');
     }
     ctx.handle = handle;
+    this.budgetUsedMs += ctx.commandedMs;
     this.activeRun = ctx;
     this.patch({ run: { kind: 'window', windowId: ids.window_id } });
     this.ackFor(msg, 'applied');
@@ -906,7 +987,12 @@ export class PhoneController {
   }
 
   /** Shared preconditions for starting a precheck or window. */
-  private runGate(msg: Command, windowId: string): { outcome: AckOutcome; detail: string } | null {
+  private runGate(
+    msg: Command,
+    windowId: string,
+    kind: 'precheck' | 'window',
+    commandedMs: number,
+  ): { outcome: AckOutcome; detail: string } | null {
     if (!this.matchesSession(msg)) return { outcome: 'ignored_stale', detail: 'unknown_session' };
     if (this.activeRun !== null) {
       return this.activeRun.ids.window_id === windowId
@@ -916,7 +1002,34 @@ export class PhoneController {
     if (this.closedWindows.includes(windowId)) return { outcome: 'ignored_stale', detail: 'window_closed' };
     if (this.state.visibility !== 'visible') return { outcome: 'rejected', detail: 'page_hidden' };
     if (this.state.mic.state !== 'open_idle') return { outcome: 'rejected', detail: 'mic_not_open' };
+    // N-12: a paired TV cannot use the phone as an open-ended ambient-sound monitor.
+    if (this.budgetUsedMs + commandedMs > SESSION_CAPTURE_BUDGET_MS) {
+      if (!this.budgetNoticeShown) {
+        this.budgetNoticeShown = true;
+        this.patch({ notice: BUDGET_NOTICE });
+      }
+      return { outcome: 'rejected', detail: 'budget' };
+    }
+    if (kind === 'window' && this.clock() - this.lastWindowEndedAt < WINDOW_COOLDOWN_MS) {
+      return { outcome: 'rejected', detail: 'cooldown' };
+    }
     return null;
+  }
+
+  private resetBudget(): void {
+    this.budgetUsedMs = 0;
+    this.lastWindowEndedAt = Number.NEGATIVE_INFINITY;
+    this.budgetNoticeShown = false;
+    if (this.state.notice === BUDGET_NOTICE) this.patch({ notice: null });
+  }
+
+  /** Returns the unused part of a run's reserved capture time to the budget and notes when a window ended. */
+  private settleRun(ctx: RunContext, payload: unknown): void {
+    const reported = (payload as { duration_ms?: unknown } | null)?.duration_ms;
+    const elapsed = Math.max(0, this.clock() - ctx.startedAt);
+    const actual = Math.min(ctx.commandedMs, typeof reported === 'number' && Number.isFinite(reported) ? reported : elapsed);
+    this.budgetUsedMs = Math.max(0, this.budgetUsedMs - (ctx.commandedMs - actual));
+    if (ctx.kind === 'window') this.lastWindowEndedAt = this.clock();
   }
 
   private idsOf(msg: Command): RunContext['ids'] | null {
@@ -930,6 +1043,7 @@ export class PhoneController {
     this.activeRun = null;
     this.rememberClosed(ctx.ids.window_id);
     this.patch({ run: null });
+    this.settleRun(ctx, payload);
     this.noteSilentInput(ctx.kind, payload);
     this.sendResult(ctx, payload);
   }
@@ -985,6 +1099,7 @@ export class PhoneController {
     this.rememberClosed(ctx.ids.window_id);
     const payload = ctx.handle.abort(reason);
     this.patch({ run: null });
+    this.settleRun(ctx, payload);
     if (reason === 'interrupted' && payload !== null) this.sendResult(ctx, payload);
   }
 
@@ -1068,7 +1183,10 @@ export class PhoneController {
     if (!this.matchesSession(msg)) return this.ackFor(msg, 'ignored_stale', 'unknown_session');
     this.patch({ session: null });
     this.resetCues();
+    // N-07: a discarded session means the TV deleted its data; the phone does not keep the phrases either.
+    if (msg.payload.reason === 'discarded') this.clearPhraseState();
     await this.shutdownCapture('discard');
+    this.resetBudget();
     this.publishMic(); // confirms "Mic off" even if the port was already off
     this.ackFor(msg, 'applied');
   }
@@ -1105,8 +1223,18 @@ export class PhoneController {
   }
 
   private onAudio(snapshot: AudioSnapshot): void {
-    const closed = snapshot.state === 'off' || snapshot.state === 'permission_pending';
-    this.patch({ mic: snapshot, ...(closed && this.state.micNotice !== null ? { micNotice: null } : {}) });
+    const st = snapshot.state;
+    const open = st === 'open_idle' || st === 'measuring';
+    const clearNotice =
+      (this.state.micNotice === 'silent_input' && (st === 'off' || st === 'permission_pending')) ||
+      (this.state.micNotice === 'idle_off' && (open || st === 'permission_pending'));
+    this.patch({ mic: snapshot, ...(clearNotice ? { micNotice: null } : {}) });
+    // N-12: an open microphone is switched off after 10 minutes without any TV command.
+    if (open) {
+      if (this.idleTimer === null) this.armIdleTimer();
+    } else {
+      this.clearIdleTimer();
+    }
     this.syncWakeLock();
     this.publishMic();
   }
@@ -1127,6 +1255,37 @@ export class PhoneController {
     }
     this.syncWakeLock();
     this.publishMic();
+  }
+
+  private armIdleTimer(): void {
+    this.clearIdleTimer();
+    this.idleTimer = setTimeout(() => {
+      this.idleTimer = null;
+      const open = this.state.mic.state === 'open_idle' || this.state.mic.state === 'measuring';
+      if (!open) return;
+      // Shut down completely (tracks, graph, context, wake lock), then say why.
+      void this.shutdownCapture('interrupted').then(() => this.patch({ micNotice: 'idle_off' }));
+    }, MIC_IDLE_OFF_MS);
+  }
+
+  private clearIdleTimer(): void {
+    if (this.idleTimer !== null) clearTimeout(this.idleTimer);
+    this.idleTimer = null;
+  }
+
+  private touchTvActivity(): void {
+    const open = this.state.mic.state === 'open_idle' || this.state.mic.state === 'measuring';
+    if (open) this.armIdleTimer();
+  }
+
+  /** N-07: forgets everything typed or saved as household phrases (state here, editor in the view). */
+  private clearPhraseState(): void {
+    this.pendingPhrases = null;
+    this.confirmedPhrases = [];
+    this.patch({
+      phrases: { status: 'none', count: 0, saved: [] },
+      phrasesResetToken: this.state.phrasesResetToken + 1,
+    });
   }
 
   /** Keep-screen-on is wanted while the page is visible and a session or the mic is active. */
@@ -1307,11 +1466,15 @@ export class PhoneController {
     this.pendingResponse = null;
     this.resetCues();
     this.userConfirmed = false;
+    this.refusedSince = null;
     this.dropHeld();
     this.clearTvReportTimer();
     this.lastTvReportAt = Number.NEGATIVE_INFINITY;
     this.clearFailureWindow();
     this.clearListenerTimer();
+    this.clearIdleTimer();
+    this.clearPhraseState(); // N-07: household text goes with the credential
+    this.resetBudget();
     this.patch({ session: null, micNotice: null });
     void this.shutdownCapture('discard');
     // A6-02: back to Join with a plain explanation; nothing is retried with the old credential.
@@ -1334,6 +1497,7 @@ export class PhoneController {
     this.clearTvReportTimer();
     this.clearFailureWindow();
     this.clearListenerTimer();
+    this.clearIdleTimer();
     void this.shutdownCapture('discard');
     for (const u of this.unsubs) u();
     this.unsubs.length = 0;

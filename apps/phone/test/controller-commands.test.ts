@@ -155,7 +155,8 @@ describe('window.start / level frames / window.result', () => {
     await flush();
     emit?.({ frameIndex: 1, tAudioMs: 50, dbfs: -30, active: true, clipped: false }); // a straggler after close
     expect(h.sockets.current.messages('level')).toHaveLength(1);
-    // cancelled window
+    // cancelled window (a second later: the phone enforces a 1 s cooldown between windows, N-12)
+    vi.advanceTimersByTime(1000);
     send(h, windowStart('phrase', WINDOW2, ATTEMPT2));
     h.audio.frame(0);
     const emit2 = h.audio.lastOnFrame;

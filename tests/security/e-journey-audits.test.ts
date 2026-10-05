@@ -526,7 +526,7 @@ describe('journey audits (network, storage, logs, hidden-meter leaks, literal re
     expect(await phone.page.isVisible('#view-setup')).toBe(false);
   });
 
-  it.fails('OPEN FINDING N-07: after the TV deleted its data and closed the room, the phone page no longer holds the household phrases (state, editor, saved list)', async () => {
+  it('N-07 (fixed): after the TV deleted its data and closed the room, the phone page no longer holds the household phrases (state, editor, saved list)', async () => {
     const held = await phone.page.evaluate(() => ({
       inputs: Array.from(document.querySelectorAll<HTMLInputElement>('#phrase-list input')).map((i) => i.value).filter((v) => v !== ''),
       saved: document.querySelectorAll('#phrase-saved li').length,

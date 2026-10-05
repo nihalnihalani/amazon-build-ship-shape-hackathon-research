@@ -115,7 +115,7 @@ describe('SEC-I01 infrastructure as code (infra/template.yaml), no AWS call', ()
     expect(code).toMatch(/Header: Permissions-Policy\s*\n\s*Value: microphone=\(self\)/);
   });
 
-  it.fails('OPEN FINDING N-03 (pending_external): the page host and the relay host are the same host, or the clients are told the relay URL', () => {
+  it('N-03 (phone side fixed; AWS topology still pending_external): the page host and the relay host are the same host, or the clients are told the relay URL', () => {
     // The phone page dials wss://<page host>/ws (apps/phone/src/config.ts) and the TV builds the QR from the relay host
     // (packages/session-core/src/urls.ts). On AWS the page is served by CloudFront and the socket lives on execute-api.
     // For both to work the distribution needs an origin and a /ws behaviour for the WebSocket API, or the phone build

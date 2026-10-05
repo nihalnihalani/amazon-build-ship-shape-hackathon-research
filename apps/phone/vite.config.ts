@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { FRAME_PROCESSOR_SOURCE } from '@atr/phone-mic-meter';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+import { connectSrc, relayUrlFromEnv } from './src/relay-url.js';
 
 /**
  * Two builds from one source tree:
@@ -14,17 +15,27 @@ import { defineConfig } from 'vite';
  * real same-origin file (frame-processor.js). The page therefore needs no `blob:` script source
  * and the CSP stays `script-src 'self'`. A content hash in the URL query busts caches when the
  * package changes.
+ *
+ * Relay URL (N-03): `VITE_ATR_RELAY_URL` (environment or a .env file) is validated here (a `wss://`
+ * URL, no credentials/query/fragment; an invalid value fails the build) and baked into the page.
+ * Unset means same origin (`wss://<page host>/ws`). The page's CSP `connect-src` is `'self'` plus
+ * that URL's origin only.
  */
 const WORKLET_FILE = 'frame-processor.js';
 const WORKLET_HASH = createHash('sha256').update(FRAME_PROCESSOR_SOURCE).digest('hex').slice(0, 10);
 
 export default defineConfig(({ mode }) => {
   const testAudio = mode === 'test-audio' || process.env['VITE_ATR_TEST_AUDIO'] === '1';
+  const env = loadEnv(mode, import.meta.dirname, 'VITE_ATR_');
+  const relay = relayUrlFromEnv(env['VITE_ATR_RELAY_URL']);
   return {
     base: './',
     define: {
       __ATR_TEST_AUDIO__: JSON.stringify(testAudio),
       __ATR_WORKLET_URL__: JSON.stringify(`./${WORKLET_FILE}?v=${WORKLET_HASH}`),
+      // The validated relay URL, or '' for same origin. Defining the key replaces whatever the
+      // environment held, so only the validated, normalised value can reach the bundle.
+      'import.meta.env.VITE_ATR_RELAY_URL': JSON.stringify(relay?.url ?? ''),
     },
     build: {
       outDir: testAudio ? 'dist-test' : 'dist',
@@ -38,9 +49,8 @@ export default defineConfig(({ mode }) => {
       {
         name: 'atr-csp',
         transformIndexHtml(html: string) {
-          // The test build may dial a local ws:// relay; production only wss://.
-          const connect = testAudio ? "'self' ws: wss:" : "'self' wss:";
-          return html.replace('%ATR_CONNECT_SRC%', connect);
+          // Production: this origin plus the configured relay origin. The test build also allows loopback sockets.
+          return html.replace('%ATR_CONNECT_SRC%', connectSrc(relay?.origin ?? null, testAudio));
         },
       },
       {

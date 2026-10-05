@@ -1,6 +1,6 @@
 import './styles.css';
 import { browserAudioDeps, detectMicMode } from './audio/browser.js';
-import { defaultDeviceLabel, resolveRelayUrl } from './config.js';
+import { BUILD_RELAY_URL, defaultDeviceLabel, resolveRelayUrl } from './config.js';
 import { createAudioPort } from './ports/audio.js';
 import { PhoneController, type VisibilitySource } from './controller.js';
 import { consumeHashCode } from './pairing.js';
@@ -42,7 +42,7 @@ async function boot(): Promise<void> {
     audio,
     wakeLock: new WakeLockController(wakeApi),
     createSocket: (url) => new WebSocket(url) as unknown as SocketLike,
-    relayUrl: resolveRelayUrl(location, __ATR_TEST_AUDIO__),
+    relayUrl: resolveRelayUrl(location, __ATR_TEST_AUDIO__, BUILD_RELAY_URL),
     secureContext: window.isSecureContext === true,
     visibility,
     defaultDeviceLabel: defaultDeviceLabel(navigator.userAgent),
