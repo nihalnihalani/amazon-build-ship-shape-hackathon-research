@@ -15,7 +15,7 @@ Why it is not a plain pass: two findings of major severity are open (N-01, N-03)
 Conditions attached to the verdict (the gate does **not** cover these until they are met):
 
 1. **AWS is not cleared.** Every AWS-only check is `pending_external` (section 8) and finding N-03 (the phone page and the relay are on different hosts in the template, and the production phone build cannot be told the relay URL) must be resolved before any staging deployment.
-2. **The T04 qualification protocol is rejected as frozen** (section 7). No trial may start under revision 2.
+2. **The T04 qualification protocol revision 2 is rejected as frozen** (section 7). *Update, same day: revision 3 is approved, see section 11.* No trial may start under revision 2.
 3. **Should fix before the demo is recorded:** N-01 (a legitimate reconnect over a half-open socket is refused and the phone reports a lost pairing), N-02 (CSP wildcard), and the wording fixes N-05 and N-14.
 4. `tests/security` is not yet wired into `tests/package.json` (not mine to edit): see section 10.
 
@@ -268,6 +268,8 @@ Update of the T02 register (R1 to R13) plus the new items. "Owner" is the person
 
 ## 7. T04 qualification protocol (`docs/evaluation/T04-protocol.md`, revision 2): decision
 
+*Superseded for revision 3 by section 11: the changes below were made and revision 3 is approved. This section is kept as the record of the revision 2 rejection.*
+
 **REJECTED as frozen. Required changes are below; a revision 3 with them is expected to be approvable.** No trial has run (B-002), so rejecting costs only a re-freeze. I did not fill the Approval block: `docs/evaluation/` is outside my write paths, and a rejection is not an approval to record there. The lead should paste the values in the next table.
 
 What I checked and found sound: the freeze hash at `da018d7` reproduces EV-0030 exactly (`3ba1fdff...d820`; protocol hashed without its Approval block, plus `qualification.ts`); the statistics are as printed (chi-square(14) 5th percentile 6.5706, factor 1.4597, SD estimate at most 1.03 dB; verified in `j`); C2 fails 3:1, 2:1 and 1.5:1 compression on the frozen levels; C1, C3, C4, C5 and C6 fail on the honest defects I tried (14 repeats, one clipped frame, AGC `true`, `null` or missing, a falling series, scatter above the bound); the protocol keeps the experiment offline, records numeric traces only and no audio, and states its limits. The qualification mode of the phone page that the protocol relies on does not exist yet: it needs its own review (no network, test build only, absent from the production bundle) before the first trial.
@@ -317,6 +319,81 @@ I will re-review revision 3 against the same test file; the review is quick if t
 
 ## 10. Actions for the lead
 
-1. Wire `tests/security` into `tests/package.json`, for example `"test:security": "vitest run --config security/vitest.config.ts"`. The tests expect to run from `tests/`; `tests/security/tsconfig.json` exists; the suite takes about 4 to 5 minutes (a 65 s pending-join test and a 40 s half-open test are in it).
+1. *(Done by the lead: `npm run test:security -w @atr/tests`; see section 11.4 for the build and typecheck behaviour.)* Wire `tests/security` into `tests/package.json`, for example `"test:security": "vitest run --config security/vitest.config.ts"`. The tests expect to run from `tests/`; `tests/security/tsconfig.json` exists; the suite takes about 4 to 5 minutes (a 65 s pending-join test and a 40 s half-open test are in it).
 2. Record this gate in `.build/evidence.jsonl` (I may not edit it). Suggested line: task T16, requirement_ids R-S1 to R-S6, R-X1, R-X2, R-ST1, R-M6, R-Q1, check "security and privacy gate against `build/across-the-room` at `da018d7`", observed "pass with residuals; 113 tests in 11 files, exit 0; probes 236 rows, 0 FAIL; protocol 921 tests; N-01, N-03, N-08, N-09 open; T04 protocol rejected", evidence_class automated, reviewer security, limitations "no AWS, no real phone, no VVD; desktop Chrome 154; section 9".
 3. Decide N-01, N-03, N-08, N-09 (fix or accept in writing); send revision 3 of the T04 protocol and `qualification.ts` back for re-review.
+
+## 11. Follow-up, 2026-10-05, after the lead's decisions
+
+Head: `0353f105d767c885fc9bbb24f061f4b7ab2aa5ee` (`build/across-the-room`; `wt/security` fast-forwarded from `ba3ae0b`). Evidence class unchanged: automated and documentation_only; nothing real_phone, real_VVD or AWS.
+
+### 11.1 T04 protocol revision 3: APPROVED
+
+Reviewed: `docs/evaluation/T04-protocol.md`, `packages/phone-mic-meter/src/qualification.ts`, `packages/phone-mic-meter/src/percentile.ts`, `fixtures/dsp/tools/freeze_hash.py`, frozen at `c935e48dc7f7ae6697871171bdbaff6231ad3c86`. The three hashed files are byte-identical at `0353f10` (`git diff c935e48 0353f10` over them is empty).
+
+Verified (not taken from the author's notes):
+
+| Check | Result |
+|---|---|
+| Freeze hash | `python3 fixtures/dsp/tools/freeze_hash.py` gives protocol `695f1cdd...b715`, qualification `73b5e651...44b0`, percentile `9845289d...78b0`, combined `b9b931007711a5e491c38dd295c2bedaca437887dcab1a5ea320327abdb99c66`, equal to EV-0046; the protocol is hashed up to the Approval block; recomputing from `git show c935e48:...` gives the same file hashes |
+| T16 required change 1 (N-08) | C3 requires exactly -30, -18, -6 dBFS per stimulus: closely spaced labels, shifted levels, a fourth level and a missing level all fail C3 while C2 alone would pass (test) |
+| 2 (N-09) | C7 needs N1 and N2 exactly once, `windows` a finite integer of at least 10, `scoredReached` a finite integer in 0..windows; more than ten malformed shapes tried (empty list, no N1 or N2, duplicate, unknown id, non-integer, string, negative, more reached than windows, bad `blockedOrContaminated`, 1 or 9 windows, NaN, over the limit): each fails C7 |
+| 3 (N-10) | the analysis takes the full planned list; closed reasons `blocked`, `disturbed`, `interrupted`, `capture_fault`; C3 fails on a missing, extra, uncounted, doubly counted or three-attempt slot and on a reason outside the set; the output reports slots, entries, exclusions by reason and the unrecognised count; clipping in an excluded attempt still fails C5 |
+| 4 (N-11) | a params object that differs is ignored for the computation, flagged (`paramsAccepted` false, criterion `PARAMS` fails) and the frozen parameters are echoed; passing the frozen object is accepted |
+| 5 (N-13) | `percentile.ts` is in the hash; the verdict function stays outside it and its commit goes in the session record (stated in the protocol, the tool and the limitations) |
+| 6 (finite inputs) | NaN, Infinity and null in `rel95Db`, a malformed clipped count and a NaN nominal level each fail the criterion they feed; nothing is skipped |
+| 7 (N8) | added as a reported case; the 80-trial negative-case order table regenerates exactly from the stated algorithm (`mulberry32`, base seed 20261011, k = 0, 80 distinct codes, longest same-condition run 2); the accepted seeds of the level blocks (k = 2, 0, 2) and the VAD block (k = 0) reproduce |
+| 8 (re-freeze) | recorded as EV-0046 |
+| Noise figures quoted in the protocol (0.015 % to 4.8 %) | agree with `docs/MEASUREMENT.md`; the dsp owner's model (floor estimated from a 5 s quiet check) gives higher rates than my N-05 model (up to 4.8 % against 2.3 % per silent window at sigma 3.5, rho 0.9); I accept theirs as the better estimate |
+| Tests | `j-t04-qualification.test.ts` 18 tests pass; `@atr/phone-mic-meter` 497 tests pass (root `npm test`) |
+
+**The dsp owner's edits to `j-t04-qualification.test.ts`.** N-08 and N-09 were flipped to plain `it` with their bodies unchanged: faithful, but they only asserted `status === 'failed'`, which would also pass if the analysis failed for an unrelated reason. I strengthened them to name the criterion that refuses: C3 for N-08 (with C1 and C2 still passing), C7 for N-09 (with C1 to C6 passing). N-11 is faithful: the override is ignored, flagged and echoed, as I recommended; I added the accepted-when-identical case. N-10 is faithful for the variant I wrote (20 unslotted attempts per level, the 5 worst dropped; C3 now fails and the 30 exclusions are counted with their reason), but its title, "cherry-picking by exclusion fails C3", over-states what is prevented: see R24.
+
+New observations (none blocks approval):
+
+- **R24 [minor residual, the largest remaining integrity gap of T04] The exclusion reason is self-declared.** A slot may carry one excluded first attempt and a counted re-run, and the analysis cannot check a `disturbed` note against the live log. Through the real analysis (`j`, 300 seeded replications): with a per-trial scatter of 1.0 dB, C4 passes honestly in 8 % of runs; re-running the 4 worst attempts per level as `disturbed` (24 of 90 attempts, fresh draws from the same distribution) passes in 75 %. A separate simulation shows a cap would not close this: re-running only 2 attempts per stimulus (greedy, worst cell first) lifts the pass rate from 5 % to about 50 %, 4 to about 85 %. I therefore do not ask for a cap. What reduces it, and what I will require when I review the qualification-mode harness (T04A): derive `blocked`, `capture_fault` and `interrupted` from the unmodified numeric traces by script, not by hand; write the live log with machine timestamps that must precede the result; print every excluded attempt with its value and a first-attempts-only sensitivity run next to the primary result (informational, no re-freeze needed).
+- **N-15 [info]** `id in params.negativeCaseLimits` is true for inherited properties, so an extra record with the id `constructor` or `toString` is not refused as unknown (the protocol says no id may be unknown). It cannot change a gated result (`j` pins this). `Object.hasOwn` would close it; changing it changes the hash, so fix it only if a revision 4 happens for another reason.
+- **N1 and N2 are vacuous where the gate does its job.** A window the gate blocks is not scored, so all ten windows blocked passes the 0-of-10 limit. That is the A9-03 decision. It means N8 is the only silent-speaker case that exercises the scoring path.
+- Entries carry no trace identifier, so duplicated entries pass as arithmetic; the protocol relies on the unmodified numeric traces and their hashes (recorded in `j`).
+
+### 11.2 N8: keep it a reported value
+
+Keep it reported for revision 3; do not gate it. Reasons: (1) its rate is set by the room, not the phone. The dsp owner's table gives P(silent window scored `reached`) of 0.04 %, 0.77 % and 4.8 % at noise spreads 2.5, 3.0 and 3.5 dB, so a 0-of-10 limit would fail about 0.4 %, 7 % and 39 % of such rooms, while qualification is stated per phone description. (2) A limit of 0 is a guess made before any data, and the freeze rule forbids tuning it afterwards. (3) The information is not lost: N8 is recorded for every phone and shown with the result, and `docs/LIMITATIONS.md` no longer claims zero. Consequence to accept explicitly: a phone can be `passed` with N8 reached in some of its 10 windows (`j` pins this; it must change with any revision that gates N8). If you want N8 to matter, the least invasive design is for N8 above 0 to set `limited: noise-sensitive` without failing C7 (a revision 4, not required).
+
+### 11.3 Approval block values for revision 3 (to be pasted by the lead)
+
+| Field | Value |
+|---|---|
+| Reviewer | security (`claude-sonnet-5-5`), independent of the author (audio-dsp) |
+| Date | 2026-10-05 |
+| Approving commit | `c935e48dc7f7ae6697871171bdbaff6231ad3c86` (the three frozen files are identical at the integration head `0353f105d767c885fc9bbb24f061f4b7ab2aa5ee`) |
+| Freeze hash | `b9b931007711a5e491c38dd295c2bedaca437887dcab1a5ea320327abdb99c66` (equal to EV-0046) |
+| Changes requested before freeze | none. Recorded residuals R24 and R25 (section 11.5) and the N-15 note. Before the first trial the qualification-mode harness needs its own review (T04A) |
+
+The approval covers the protocol, the analysis and the freeze procedure only. It does not cover the harness that will produce the trial list, which does not exist yet.
+
+### 11.4 `tests/security` typecheck at the integration head
+
+Cause: not my files. `packages/*/dist` is git-ignored, and a worktree that has not rebuilt after a merge holds an older session-core whose `dist/contract.d.ts` has no `choices` on `joinRequest`. I reproduced the reported errors exactly by deleting that one line from `dist/contract.d.ts`: `e-journey-audits.test.ts(170)`, `i-tv-store.test.ts(75, 84, 85, 103)` and also `tests/src/journey.ts(48)`. The last is a shared file outside my paths, so editing my two files could not have fixed a stale build. With a fresh build (`npm run build`) the suite already typechecked at the head (exit 0).
+
+Fix, inside `tests/security` only:
+
+1. `tests/security/tsconfig.json` maps `@atr/protocol`, `@atr/session-core` and `@atr/phone-mic-meter` to their `src/index.ts`, so `tsc` no longer depends on built output. Verified: exit 0 with a deliberately stale `dist` and with a fresh one.
+2. `tests/security/global-setup.ts` (wired in `vitest.config.ts`) builds protocol, phone-mic-meter, session-core and relay once before the suite, so the run-time code is never stale either (set `ATR_SEC_SKIP_BUILD=1` to skip). The other typechecks in `tests/` (`tsconfig.json`, `review`, `a11y`) still read `dist`: build before typechecking, as CI order already implies.
+
+### 11.5 Results at `0353f10`
+
+| # | Command | Exit | Result |
+|---|---|---|---|
+| 1 | `git merge --ff-only build/across-the-room`, `npm ci`, `npm run build` | 0 | head `0353f10` |
+| 2 | `npx tsc -p security/tsconfig.json --noEmit` (in `tests/`) | 0 | also 0 with a deliberately stale `dist` |
+| 3 | `npm run typecheck` (root) | 0 | all workspaces |
+| 4 | `npx vitest run --config security/vitest.config.ts --reporter=verbose` (in `tests/`) | 0 | **11 files, 123 tests passed**, 260 s including the global build; 5 are `it.fails` records of open findings (N-01, N-02, N-03, N-06, N-07) |
+| 5 | `npm run test:security -w @atr/tests -- security/j-t04-qualification.test.ts security/f-static.test.ts` | 0 | 44 tests; the wired script works with the global setup |
+| 6 | `npm test` (root) | 0 | 3,592 passed, 2 skipped: protocol 921, phone-mic-meter 497, ten-foot-meter 49, session-core 392, relay 1,111 (+2 skipped), phone 459, tests/review 163 |
+| 7 | `python3 fixtures/dsp/tools/freeze_hash.py` | 0 | `b9b93100...9c66` |
+| 8 | orders check (`mulberry32` regeneration of the printed tables, script in my scratch) | 0 | negative-case block equal; accepted seeds equal |
+
+Status of the T16 findings at `0353f10`: closed and verified: N-04, N-05 (wording in `docs/LIMITATIONS.md` and `docs/MEASUREMENT.md`), N-08, N-09, N-10, N-11, N-13, N-14. Routed and not yet in the head (their tests still record the defect and pass as `it.fails` or as a recorded behaviour): N-01, N-02, N-03 (the TV half, `phonePageOrigin`, is merged; the phone build still dials its own host), N-06, N-07, N-12. When each fix lands its `it.fails` will fail loudly: flip it to `it`.
+
+Residual register additions: **R24** self-declared exclusion reasons (section 11.1; owner dsp and the T04A harness); **R25** N8 is a reported value, so a phone can be `passed` with a nonzero N8 (section 11.2; owner lead). R16 is closed: the five T04 analysis holes are fixed; R24 and R25 replace it.

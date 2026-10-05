@@ -2,10 +2,30 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "lib": ["ES2022", "DOM"],
-    "types": ["node"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "node"
+    ],
     "verbatimModuleSyntax": false,
-    "declaration": false
+    "declaration": false,
+    "paths": {
+      "@atr/protocol": [
+        "../../packages/protocol/src/index.ts"
+      ],
+      "@atr/session-core": [
+        "../../packages/session-core/src/index.ts"
+      ],
+      "@atr/phone-mic-meter": [
+        "../../packages/phone-mic-meter/src/index.ts"
+      ]
+    }
   },
-  "include": ["./*.ts", "../src/**/*.ts", "../../apps/tv/src/globals.d.ts"]
+  "include": [
+    "./*.ts",
+    "../src/**/*.ts",
+    "../../apps/tv/src/globals.d.ts"
+  ]
 }
