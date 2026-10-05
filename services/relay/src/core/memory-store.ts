@@ -32,6 +32,9 @@ const PURGE_GRACE_MS = 60 * 60 * 1000;
  * is atomic with respect to the others (the JavaScript event loop never interleaves inside a method).
  * Records are cloned at the boundary, as a real database would.
  */
+/** Pre-authentication ids remembered per connection: the 5 message budget bounds it, this is a hard stop. */
+const PRE_AUTH_ID_CAP = 64;
+
 export class MemoryRoomStore implements RoomStore {
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly codes = new Map<string, CodeRecord>();
@@ -39,6 +42,8 @@ export class MemoryRoomStore implements RoomStore {
   private readonly connections = new Map<string, ConnectionRecord>();
   /** Recent message ids: one bounded window per (room, role), from the protocol package. */
   private readonly messageIds = new DedupeScopes(LIMITS.dedupeWindow);
+  /** Pre-authentication message ids per connection (DEF-006); dropped with the connection, at most PRE_AUTH_ID_CAP each. */
+  private readonly connectionIds = new Map<string, Set<string>>();
   /** Credentials consumed by rotation (hash -> owner and logical expiry): reuse detection. */
   private readonly consumed = new Map<string, { roomId: string; role: PeerRole; expMs: number }>();
   /** Per (room, role) replay tracker, recreated whenever the slot's generation changes. */
@@ -316,6 +321,7 @@ export class MemoryRoomStore implements RoomStore {
     const c = this.connections.get(connId);
     if (!c) return null;
     this.connections.delete(connId);
+    this.connectionIds.delete(connId);
     return clone(c);
   }
 
@@ -371,6 +377,20 @@ export class MemoryRoomStore implements RoomStore {
 
   async forgetMessageId(roomId: string, role: PeerRole, messageId: string): Promise<void> {
     this.messageIds.scope(roomId, role).forget(messageId);
+  }
+  async recordConnectionMessageId(connId: string, messageId: string, _now: number): Promise<'new' | 'duplicate'> {
+    let ids = this.connectionIds.get(connId);
+    if (!ids) {
+      ids = new Set();
+      this.connectionIds.set(connId, ids);
+    }
+    if (ids.has(messageId)) return 'duplicate';
+    ids.add(messageId);
+    if (ids.size > PRE_AUTH_ID_CAP) {
+      const oldest = ids.values().next().value as string;
+      ids.delete(oldest);
+    }
+    return 'new';
   }
 
   async consumeCue(roomId: string, sessionId: string, max: number, _now: number): Promise<'ok' | 'limit'> {

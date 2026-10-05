@@ -329,3 +329,55 @@ describe('logging: aggregates instead of per-message lines (A2-04, SEC-P02)', ()
     expect(lines.filter((l) => l.event === 'minute_aggregate' && l.code === 'peer_offline').reduce((n, l) => n + (l.count ?? 0), 0)).toBe(1);
   });
 });
+
+describe('a real duplicated frame over a socket (DEF-006)', () => {
+  it('sends the same join.request bytes twice: one join.pending, one join.requested, no busy, and the pairing completes', async () => {
+    const i = await start();
+    const tv = await open(i, null, 'tv');
+    tv.send('room.create');
+    const created = await tv.next('room.created');
+    tv.roomId = created.payload.room_id as string;
+    tv.generation = created.payload.generation as number;
+    tv.nextSeq = 0;
+    const phone = await open(i, PHONE_ORIGIN, 'phone');
+    // build the frame once and put identical bytes on the wire twice, as a duplicating proxy does
+    const raw = phone.send('join.request', { payload: { pairing_code: created.payload.pairing_code as string, device_label: 'Pixel' } });
+    phone.sendRaw(raw);
+    await phone.next('join.pending');
+    const requested = await tv.next('join.requested');
+    // give the copy time to be processed (it produces nothing), then check that nothing else arrived
+    await new Promise((r) => setTimeout(r, 80));
+    expect(phone.of('join.pending')).toHaveLength(1);
+    expect(phone.of('join.rejected')).toEqual([]);
+    expect(phone.of('error')).toEqual([]);
+    expect(tv.of('join.requested')).toHaveLength(1);
+
+    tv.send('join.confirm', { payload: { join_id: requested.payload.join_id as string, decision: 'accept' } });
+    const accepted = await phone.next('join.accepted');
+    expect(accepted.payload.phone_credential).toBeTypeOf('string');
+    await new Promise((r) => setTimeout(r, 40));
+    expect(tv.of('join.expired')).toEqual([]);
+
+    // the drop is counted, not logged per message: one aggregate line after the minute, no rejection line
+    expect(i.logs.map((l) => JSON.parse(l).event)).not.toContain('message_rejected');
+    await i.stop();
+    const lines = i.logs.map((l) => JSON.parse(l) as { event: string; code?: string; type?: string; count?: number });
+    expect(lines).toContainEqual({ event: 'minute_aggregate', code: 'duplicate_dropped', type: 'join.request', count: 1 });
+  });
+
+  it('a join.request retried with a new message_id gets the same join.pending again', async () => {
+    const i = await start();
+    const tv = await open(i, null, 'tv');
+    tv.send('room.create');
+    const created = await tv.next('room.created');
+    const phone = await open(i, PHONE_ORIGIN, 'phone');
+    const payload = { pairing_code: created.payload.pairing_code as string, device_label: 'Pixel' };
+    phone.send('join.request', { payload });
+    await phone.next('join.pending');
+    phone.send('join.request', { payload });
+    await phone.waitFor(() => phone.of('join.pending').length === 2, 3000, 'second join.pending');
+    expect(phone.of('join.pending')[1]?.payload).toEqual(phone.of('join.pending')[0]?.payload);
+    expect(phone.of('join.rejected')).toEqual([]);
+    expect(tv.of('join.requested')).toHaveLength(1);
+  });
+});

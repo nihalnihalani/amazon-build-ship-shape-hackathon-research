@@ -86,9 +86,9 @@ describe('operation budget per relay step (the inputs of docs/operations/COST.md
     const { out } = await measure();
     expect(out).toEqual({
       'tv $connect': { wru: 3, rru: 0 },
-      'room.create': { wru: 7, rru: 2 },
+      'room.create': { wru: 8, rru: 2 }, // includes the per-connection id marker of a pre-authentication message (DEF-006)
       'phone $connect': { wru: 3, rru: 0 },
-      'join.request': { wru: 5, rru: 5 },
+      'join.request': { wru: 6, rru: 5 }, // likewise
       'join.confirm': { wru: 15, rru: 7 },
       'level frame (steady state)': { wru: 4, rru: 2 },
       'level frame (steady state, again)': { wru: 4, rru: 2 },
@@ -110,7 +110,7 @@ describe('operation budget per relay step (the inputs of docs/operations/COST.md
     const pairing = ['tv $connect', 'room.create', 'phone $connect', 'join.request', 'join.confirm', 'phone $disconnect', 'tv $disconnect']
       .map((k) => out[k] as Units)
       .reduce(add, { wru: 0, rru: 0 });
-    expect(pairing).toEqual({ wru: 39, rru: 16 });
+    expect(pairing).toEqual({ wru: 41, rru: 16 });
     const modelWru = a.pairingInbound * (a.wruPerInbound + a.wruTouchPerInbound) + a.pairingOutbound * a.wruPerRelayReply + a.connectInvocations * a.wruPerConnectOrDisconnect;
     const modelRru = a.pairingInbound * a.rruPerInbound + a.pairingExtraRru;
     expect(modelWru).toBeGreaterThanOrEqual(pairing.wru);

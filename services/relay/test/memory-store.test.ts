@@ -15,6 +15,19 @@ describe('MemoryRoomStore specifics', () => {
     expect(await s.recordMessageId('r1', 'tv', 'm1', 0)).toBe('new');
   });
 
+  it('keeps pre-authentication ids only as long as the connection (DEF-006), at most 64 per connection', async () => {
+    const s = new MemoryRoomStore();
+    await s.putConnection(makeConn('c1'), 0);
+    expect(await s.recordConnectionMessageId('c1', 'm1', 0)).toBe('new');
+    expect(await s.recordConnectionMessageId('c1', 'm1', 0)).toBe('duplicate');
+    await s.deleteConnection('c1');
+    expect(await s.recordConnectionMessageId('c1', 'm1', 0)).toBe('new'); // nothing outlives the connection
+    for (let i = 0; i < 64; i += 1) await s.recordConnectionMessageId('c2', `x${i}`, 0);
+    await s.recordConnectionMessageId('c2', 'x64', 0); // evicts the oldest
+    expect(await s.recordConnectionMessageId('c2', 'x1', 0)).toBe('duplicate');
+    expect(await s.recordConnectionMessageId('c2', 'x0', 0)).toBe('new');
+  });
+
   it('returns copies, so callers cannot mutate stored state', async () => {
     const s = new MemoryRoomStore();
     await s.createRoom(makeRoom('r1', 'h1'), makeCode('h1', 'r1'), 0);

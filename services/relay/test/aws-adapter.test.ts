@@ -801,3 +801,63 @@ describe('the SQS-backed deadline in the end-to-end flow', () => {
     expect(rig.api.errors('third')).toHaveLength(1);
   });
 });
+
+describe('duplicated pre-authentication frames through the Lambda adapter (DEF-006)', () => {
+  const joinFrame = (rig: LambdaRig, code: string) =>
+    rig.build({ role: 'phone', roomId: null, generation: 0, nextSeq: 0 }, 'join.request', { payload: { pairing_code: code, device_label: 'Pixel' } });
+
+  it('a join.request delivered twice, in sequence or at the same time, creates one join and no busy', async () => {
+    for (const concurrent of [false, true]) {
+      const rig = make();
+      const tv = await rig.tvCreate();
+      const code = rig.api.of(tv.id, 'room.created')[0]?.payload.pairing_code as string;
+      await rig.connect('ph', PHONE_ORIGIN);
+      const raw = joinFrame(rig, code);
+      if (concurrent) await Promise.all([rig.message('ph', raw), rig.message('ph', raw), rig.message('ph', raw)]);
+      else {
+        await rig.message('ph', raw);
+        await rig.message('ph', raw);
+      }
+      expect(rig.api.of('ph', 'join.pending'), `concurrent=${concurrent}`).toHaveLength(1);
+      expect(rig.api.of('ph', 'join.rejected')).toEqual([]);
+      expect(rig.api.errors('ph')).toEqual([]);
+      expect(rig.api.of(tv.id, 'join.requested')).toHaveLength(1);
+      const joinId = rig.api.of(tv.id, 'join.requested')[0]?.payload.join_id as string;
+      await rig.send(tv, 'join.confirm', { payload: { join_id: joinId, decision: 'accept' } });
+      expect(rig.api.of('ph', 'join.accepted')).toHaveLength(1);
+    }
+  });
+
+  it('a new request from the same connection gets the same join.pending, and a different connection gets busy', async () => {
+    const rig = make();
+    const tv = await rig.tvCreate();
+    const code = rig.api.of(tv.id, 'room.created')[0]?.payload.pairing_code as string;
+    await rig.connect('ph', PHONE_ORIGIN);
+    await rig.connect('other', PHONE_ORIGIN);
+    await rig.message('ph', joinFrame(rig, code));
+    await rig.message('ph', joinFrame(rig, code)); // a fresh message_id
+    const pendings = rig.api.of('ph', 'join.pending').map((m) => m.payload);
+    expect(pendings).toHaveLength(2);
+    expect(pendings[1]).toEqual(pendings[0]);
+    await rig.message('other', joinFrame(rig, code));
+    expect(rig.api.messages('other').map((m) => m.type)).toEqual(['join.rejected']);
+    expect(rig.api.of(tv.id, 'join.requested')).toHaveLength(1);
+    // the deadline queue holds the one 65 s check of the real join, not a second one
+    expect(rig.scheduler.history.filter((h) => h.message.c === 'ph').map((h) => h.delaySeconds)).toEqual([5, 65]);
+  });
+
+  it('counts the dropped copy in the metrics and logs only the per-minute aggregate', async () => {
+    const rig = make();
+    await rig.connect('p', PHONE_ORIGIN);
+    const ping = rig.build({ role: 'phone', roomId: null, generation: 0, nextSeq: 0 }, 'ping');
+    const before = rig.logs.length;
+    await rig.message('p', ping);
+    await rig.message('p', ping);
+    expect(rig.api.of('p', 'pong')).toHaveLength(1);
+    expect(rig.logs.slice(before).map((l) => JSON.parse(l).event)).not.toContain('message_rejected');
+    rig.now += 61_000;
+    await rig.message('p', rig.build({ role: 'phone', roomId: null, generation: 0, nextSeq: 5 }, 'ping'));
+    const lines = rig.logs.map((l) => JSON.parse(l) as { event: string; code?: string; type?: string; count?: number });
+    expect(lines).toContainEqual({ event: 'minute_aggregate', code: 'duplicate_dropped', type: 'ping', count: 1 });
+  });
+});

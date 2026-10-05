@@ -450,6 +450,9 @@ export class RelayCore {
       await this.reject(c, conn, 'forbidden_direction', 'sender_role_not_allowed', info);
       return;
     }
+    // Pre-authentication messages have no room, so a duplicated frame is detected per connection (DEF-006): the
+    // copy is dropped silently and counted. The id is kept even if the message is then refused (see the store).
+    if (await this.isConnectionDuplicate(c, conn, msg)) return;
     switch (msg.type) {
       case 'room.create':
         return this.handleRoomCreate(c, conn, msg, info);
@@ -581,7 +584,25 @@ export class RelayCore {
       return;
     }
     if (conn.joinId) {
-      // The phone is busy with its own pending request: it learns only that.
+      // This connection already holds a pending join. The same request again (same code, a retransmission or a
+      // client retry) is idempotent: the same join.pending is sent again, nothing else changes (the TV is not told
+      // again, the join keeps its expiry and deadline). Anything else (another code) learns only that it is busy.
+      const held = conn.joinRoomId ? await this.store.getJoin(conn.joinRoomId) : null;
+      if (
+        held &&
+        held.joinId === conn.joinId &&
+        held.state === 'pending' &&
+        held.phoneConnId === conn.connId &&
+        c.now < held.expiresAt &&
+        held.codeHash === this.keys.code(msg.payload.pairing_code as string)
+      ) {
+        await this.relaySend(c, conn.connId, null, 'join.pending', {
+          join_id: held.joinId,
+          confirm_digits: held.confirmDigits,
+          expires_at: held.expiresAt,
+        });
+        return;
+      }
       await this.relaySend(c, conn.connId, null, 'join.rejected', { reason: 'busy' });
       return;
     }
@@ -958,7 +979,12 @@ export class RelayCore {
     }
     if (env.sender_role !== role) return this.reject(c, conn, 'unauthorized', 'sender_role', info);
     if (!isAllowedSender(msg.type, role)) return this.reject(c, conn, 'forbidden_direction', 'direction', info);
-    if (isPreOnlyType(msg.type)) return this.reject(c, conn, 'unauthorized', 'already_authenticated', info);
+    if (isPreOnlyType(msg.type)) {
+      // A copy of the pre-auth message that authenticated this connection (a duplicating transport) is not an
+      // attack: drop it silently like any duplicate. A genuinely new pre-auth-only message is still refused.
+      if (await this.isConnectionDuplicate(c, conn, msg)) return;
+      return this.reject(c, conn, 'unauthorized', 'already_authenticated', info);
+    }
     if (env.room_id !== null && env.room_id !== roomId) return this.reject(c, conn, 'unauthorized', 'room_id', info);
 
     // Rate limit. PROTOCOL.md section 4 lists this at step 9; counting happens here so that a flooding peer costs
@@ -1390,6 +1416,13 @@ export class RelayCore {
   /** Replies with an error and does not count it as a client strike (used for non-abusive outcomes). */
   private async reply(c: Ctx, conn: ConnectionRecord, code: ErrorCode, detail: string, info: MsgInfo): Promise<void> {
     await this.replyError(c, conn, code, detail, info, false);
+  }
+
+  /** True (and counted) when this connection already sent this message_id: the caller drops the copy silently. */
+  private async isConnectionDuplicate(c: Ctx, conn: ConnectionRecord, msg: ParsedMessage): Promise<boolean> {
+    if ((await this.store.recordConnectionMessageId(conn.connId, msg.envelope.message_id, c.now)) === 'new') return false;
+    this.metric(c, 'duplicate_dropped', 1, msg.type);
+    return true;
   }
 
   /** Rejects a message: error reply plus a strike; too many strikes close the connection. */
