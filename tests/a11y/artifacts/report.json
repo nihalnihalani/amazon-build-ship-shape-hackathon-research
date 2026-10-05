@@ -9,8 +9,8 @@
   "environment": {
     "chrome": "154.0.8037.97",
     "preview_url": "http://127.0.0.1:5179",
-    "commit": "d239809c5bf78634b55df4c623c924b05afceaa7",
-    "timestamp_utc": "2026-10-05T00:28:08.181Z",
+    "commit": "bb546b98a0689bc28aab3cf684e4b70e0bee457a",
+    "timestamp_utc": "2026-10-05T01:11:31.356Z",
     "node": "v25.2.1",
     "viewport": "1920x1124"
   },
@@ -47,7 +47,7 @@
       ],
       "screenshot": {
         "file": "onboarding.png",
-        "sha256": "fae63cdc83393e1c1f834b54ffd5d91fc2be54780b0a8c3ff1143d309100a6a1",
+        "sha256": "25718b2888ae6ba7def02774178e7eb4317d7ccbdbb20250e3665cfa07baba3e",
         "committed": false
       },
       "ariaOrder": [
@@ -86,7 +86,7 @@
       ],
       "screenshot": {
         "file": "home.png",
-        "sha256": "f3b447a47aeea4ec84f6f2fa40e8242bd6febd33d4a20dc73a331723d2cf0eaf",
+        "sha256": "d7b9887e095c9b5457a0819090a3257b67d7a21d736f9c90665f0779896f732e",
         "committed": true
       },
       "ariaOrder": [
@@ -128,7 +128,7 @@
       ],
       "screenshot": {
         "file": "pairing.png",
-        "sha256": "757ab5abfb51171f4e25c7c40946517b7b474e2ac8bbc7a808450a19d88915a9",
+        "sha256": "8ae83c6b2915eab2fc8f93b1aa5020d931dab48f388b2b82a3194eef1134ee22",
         "committed": false
       },
       "ariaOrder": [
@@ -158,7 +158,7 @@
       "axe": [],
       "screenshot": {
         "file": "join_confirm.png",
-        "sha256": "ca63f6fb693d21fe9b3bfebe87091a47718285836824f69fdda0cf96462b9871",
+        "sha256": "127c11d2b190701443174875354059aae7894d21b23e7688cf325a3d4cc4a3a1",
         "committed": false
       },
       "ariaOrder": [
@@ -210,7 +210,7 @@
       ],
       "screenshot": {
         "file": "permission_pending.png",
-        "sha256": "7153d41652e3447a884e1616983ddc0035dc53c29de0fcbcf647070a9f97273a",
+        "sha256": "e434d944417dc9eb506bcc327b61f0ff352a73450e66a33ea2915e0dde965bca",
         "committed": false
       },
       "ariaOrder": [
@@ -239,7 +239,7 @@
       "axe": [],
       "screenshot": {
         "file": "quiet_check.png",
-        "sha256": "8dfb43542af5bcf58ca839751eb85958a95c772594efba21658b5661cbe22845",
+        "sha256": "4366ddbadd4768e3a54a64f90b5db0a28787ec62dc7c4e013b1140ef2138e407",
         "committed": false
       },
       "ariaOrder": []
@@ -266,7 +266,7 @@
       "axe": [],
       "screenshot": {
         "file": "calibration.png",
-        "sha256": "f8fb9e9f0bbb994f3a86f6f6c09c4b266c1e66886f83558c79ffc22825e912ce",
+        "sha256": "564e777f212835e1f3a7c8a9b28432cca0b8dbf06e404996563b317130ecf158",
         "committed": false
       },
       "ariaOrder": [
@@ -305,7 +305,7 @@
       ],
       "screenshot": {
         "file": "vowel_ready.png",
-        "sha256": "b95e015837bbd1a8945a501924ae7ea19159b31f9e6794fcbab6771a0b2f46d8",
+        "sha256": "2c486825622d6c82a2ed33bf634afeebf2881ccfbb9885d657ebdbfd6e072b7e",
         "committed": false
       },
       "ariaOrder": [
@@ -336,7 +336,7 @@
       "axe": [],
       "screenshot": {
         "file": "vowel_active.png",
-        "sha256": "689d4d6de48099c096ab4b1976d0d05d58fe4b0de9c0353234be75992ba25c0c",
+        "sha256": "02583a6a66e4b237c5883c5a19a02ad8637bb190f8d0c80b3a175d9688ee5f2d",
         "committed": false
       },
       "ariaOrder": [
@@ -376,7 +376,7 @@
       ],
       "screenshot": {
         "file": "vowel_result.png",
-        "sha256": "40eefcbc463ac10d29131eb1382bded5fd6cec7f4fa370584050b416ee729235",
+        "sha256": "0913f69281d8e34e1d8dfa6c369ffe1d9b9212f8d0aaeeafd4043c6aa28f1f7c",
         "committed": false
       },
       "ariaOrder": [
@@ -416,7 +416,7 @@
       ],
       "screenshot": {
         "file": "phrase_ready.png",
-        "sha256": "922566886e9129dc0ff9e896fa66bbf4357fcbf6e57284dc21e07ec1aaff1211",
+        "sha256": "5352ff78e80aafe22d8bfbe5cd5056d31383920ef3f6fed7927bc3c24e7217c7",
         "committed": false
       },
       "ariaOrder": [
@@ -448,7 +448,7 @@
       "axe": [],
       "screenshot": {
         "file": "phrase_active_visible.png",
-        "sha256": "ed9d2e67d0fbd01a4927fc581aa93f0ddeba7eed94d9fb63c067871893f482a9",
+        "sha256": "622375633a0c1bacad415c67f42b76404f00e5e4689105f82eebc8b4f8d45a05",
         "committed": false
       },
       "ariaOrder": [
@@ -478,7 +478,7 @@
       "axe": [],
       "screenshot": {
         "file": "phrase_active_hidden.png",
-        "sha256": "6e749c60cdd09ee07155a084c953a05cdb655046cdafd05a85164f4108ca97ce",
+        "sha256": "c52aef66e45e1912ca24123b082c9a8ed04db5b91041114188fd81b5b7023a10",
         "committed": true
       },
       "ariaOrder": [
@@ -518,7 +518,7 @@
       ],
       "screenshot": {
         "file": "response_rating.png",
-        "sha256": "bc64d87104936ff1dbcc5190e156e3a7763baed5825eda41243876ec8ef7b9ca",
+        "sha256": "2d83072e47d156663507f620b32591a45a9785d19d9e7765eb168f0fb11cda78",
         "committed": true
       },
       "ariaOrder": [
@@ -559,7 +559,7 @@
       ],
       "screenshot": {
         "file": "response_listener_waiting.png",
-        "sha256": "943bc69d67f6f038d6606e1eaec0e5a4cadd66b7fa6fa10462af6e67a432bb09",
+        "sha256": "04402956d1e2129a7db2aad9290fb1ed25bb28d77972469753d7c1a673837900",
         "committed": false
       },
       "ariaOrder": [
@@ -589,7 +589,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_reached.png",
-        "sha256": "ee432b045e9b940f08e6986997acece860e6bd6c5250a17c1117dedab5a5489d",
+        "sha256": "ac0f8cf55ba860ed4fe15904eae1cec49ec1d34fc937401b3a42a610eb93e632",
         "committed": false
       },
       "ariaOrder": [
@@ -620,7 +620,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_below.png",
-        "sha256": "86b5bc089e14254cae0899451ca4fcced22fbd8659a17009bc34c87261521596",
+        "sha256": "d3f38db40c17d73555c636b23f65d19da91a5cb181c8a2c5eaefba96c80ef362",
         "committed": true
       },
       "ariaOrder": [
@@ -650,7 +650,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_not_scored.png",
-        "sha256": "3ef5475ed9f80d8979993c5420d80ea4228ce59521f9e3ae54a794c990411156",
+        "sha256": "26c1de2b739206911506a140a994edd092aebb1ba82454cb875faec61b3db649",
         "committed": false
       },
       "ariaOrder": [
@@ -680,7 +680,7 @@
       "axe": [],
       "screenshot": {
         "file": "summary.png",
-        "sha256": "8702381944a1794b3d2879c8ebe585940ef01dcd911fec966a902b2b4feeb123",
+        "sha256": "8705b96ee268cf360c45d4b248aad69644af3c42ada4497dad431faeac3f1c83",
         "committed": false
       },
       "ariaOrder": [
@@ -710,7 +710,7 @@
       "axe": [],
       "screenshot": {
         "file": "summary_incomplete.png",
-        "sha256": "0197056c0f99bc69f515f6662e0bd4aa92c474871c5f88da057e6a58b53aff5c",
+        "sha256": "3926307ab503cc8f9dc931c5637a91747e070e7a833a4e5031bb523f968c5cb9",
         "committed": false
       },
       "ariaOrder": [
@@ -739,7 +739,7 @@
       "axe": [],
       "screenshot": {
         "file": "history.png",
-        "sha256": "0baf61cafc23a0a3473b9ee2fa86c8f52275f4670e273e08fd5fcf083fb45f98",
+        "sha256": "491f66c05d55d9bdc82ee5c0dc64b3dcfd91bd4eacb25def889c64ecd3c4a5f7",
         "committed": true
       },
       "ariaOrder": [
@@ -778,7 +778,7 @@
       ],
       "screenshot": {
         "file": "paused_or_invalid.png",
-        "sha256": "a9d04c3ec0872d8ad91a4e328985293a2a7cdbd725ee2cd21d3349c233ccff1c",
+        "sha256": "e8e850c7d721f02cafc266c1d1f99b6a894fb08198b9caf2aa12092ba0241e09",
         "committed": false
       },
       "ariaOrder": [
@@ -819,7 +819,7 @@
       ],
       "screenshot": {
         "file": "resume_or_discard.png",
-        "sha256": "15eccdb9d54d9f1f651effbc8dcc8e604a9b704a0f808d493b89dfc99610de85",
+        "sha256": "e042d3f1cb0393323af870d79b8a03faa065a8b1cf0cf9459563289c9a07b430",
         "committed": false
       },
       "ariaOrder": [
@@ -859,7 +859,7 @@
       ],
       "screenshot": {
         "file": "settings.png",
-        "sha256": "ec7a7e61bba6b52fc02b12f7dcd126cdef519a2205aa673c17107ff971450b23",
+        "sha256": "3c166abd1ee59a9a772ab60fc8dfd04c62ac8a829758d367d8b1169f20396804",
         "committed": false
       },
       "ariaOrder": [
@@ -894,7 +894,7 @@
       "axe": [],
       "screenshot": {
         "file": "confirm_dialog_destructive.png",
-        "sha256": "6a8f3309aafb1cf16426bcdc16766045048532716f97880eeb54bfad28de0517",
+        "sha256": "ad7eed7d44f2293ec474dd84646b42e8eee0c8425ee24d3c745b19ebe6b2f476",
         "committed": true
       },
       "ariaOrder": [
@@ -924,7 +924,7 @@
       "axe": [],
       "screenshot": {
         "file": "confirm_dialog_wrong_preference.png",
-        "sha256": "fb3451ec030b5b555ea284df706077e928fa54ece6d21ed8ea75ba5192473edd",
+        "sha256": "445a2e7c054d6bf962f39e5f0bbe139f9f88541e7d7a2de41c61dcd80021814f",
         "committed": false
       },
       "ariaOrder": [
@@ -954,7 +954,7 @@
       "axe": [],
       "screenshot": {
         "file": "confirm_dialog_plain.png",
-        "sha256": "a49944999a75f2822130cc5b5f2e22d5e2d83c18f4b99e9689975c1fe25180c1",
+        "sha256": "bfcb6f87d6c184a05f764843ce899af66a22c56d207447608f1a73e1e6c99329",
         "committed": false
       },
       "ariaOrder": [
@@ -994,7 +994,7 @@
       ],
       "screenshot": {
         "file": "about.png",
-        "sha256": "6604995c7a24c5b187bce52a84f040cc55b8b5ad0698716273228cef0cbbd833",
+        "sha256": "45063e48c7f5553f493b1b4b9391de47ea381689e8ff44a534e8b5a7b2bfaf15",
         "committed": false
       },
       "ariaOrder": [
@@ -1023,7 +1023,7 @@
       "axe": [],
       "screenshot": {
         "file": "diagnostics.png",
-        "sha256": "ff983574dd574d0ff3aebf9fa4592c26d161f0faf4d67df13381cccc1e582ccb",
+        "sha256": "cbcae4f81f2df764fd22a9e3a7d3f0d6697623d057cb8a9eee26ff076d5d0b84",
         "committed": false
       },
       "ariaOrder": [
@@ -1863,8 +1863,8 @@
     {
       "scale": 1.5,
       "screen": "phrase_active_visible",
-      "scrolls": false,
-      "overflowPx": 0,
+      "scrolls": true,
+      "overflowPx": 6,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -1948,7 +1948,7 @@
       "scale": 1.5,
       "screen": "summary",
       "scrolls": true,
-      "overflowPx": 219,
+      "overflowPx": 231,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -1960,7 +1960,7 @@
       "scale": 1.5,
       "screen": "summary_incomplete",
       "scrolls": true,
-      "overflowPx": 219,
+      "overflowPx": 231,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2079,8 +2079,8 @@
     {
       "scale": 2,
       "screen": "onboarding",
-      "scrolls": false,
-      "overflowPx": 1,
+      "scrolls": true,
+      "overflowPx": 17,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2092,7 +2092,7 @@
       "scale": 2,
       "screen": "home",
       "scrolls": true,
-      "overflowPx": 378,
+      "overflowPx": 394,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2104,7 +2104,7 @@
       "scale": 2,
       "screen": "pairing",
       "scrolls": true,
-      "overflowPx": 302,
+      "overflowPx": 318,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2116,22 +2116,19 @@
       "scale": 2,
       "screen": "join_confirm",
       "scrolls": true,
-      "overflowPx": 343,
+      "overflowPx": 359,
       "footerInside": true,
       "horizontalOutside": 0,
-      "horizontalClipped": 1,
+      "horizontalClipped": 0,
       "controls": 4,
       "reached": 4,
-      "notFullyVisibleOnFocus": [
-        "action-pick_choice_3 (H|canvas=true visible=0.85 footer=false left=1258 right=1846 top=366 bottom=744)",
-        "action-pick_choice_1 (H|canvas=true visible=0.74 footer=false left=10 right=598 top=366 bottom=744)"
-      ]
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "permission_pending",
       "scrolls": true,
-      "overflowPx": 47,
+      "overflowPx": 63,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2155,10 +2152,10 @@
       "scale": 2,
       "screen": "calibration",
       "scrolls": true,
-      "overflowPx": 150,
+      "overflowPx": 613,
       "footerInside": true,
-      "horizontalOutside": 10,
-      "horizontalClipped": 1,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
       "controls": 1,
       "reached": 1,
       "notFullyVisibleOnFocus": []
@@ -2166,8 +2163,8 @@
     {
       "scale": 2,
       "screen": "vowel_ready",
-      "scrolls": false,
-      "overflowPx": 0,
+      "scrolls": true,
+      "overflowPx": 26,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2179,7 +2176,7 @@
       "scale": 2,
       "screen": "vowel_active",
       "scrolls": true,
-      "overflowPx": 138,
+      "overflowPx": 186,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2191,7 +2188,7 @@
       "scale": 2,
       "screen": "vowel_result",
       "scrolls": true,
-      "overflowPx": 170,
+      "overflowPx": 218,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2203,7 +2200,7 @@
       "scale": 2,
       "screen": "phrase_ready",
       "scrolls": true,
-      "overflowPx": 313,
+      "overflowPx": 329,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2215,7 +2212,7 @@
       "scale": 2,
       "screen": "phrase_active_visible",
       "scrolls": true,
-      "overflowPx": 199,
+      "overflowPx": 215,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2239,7 +2236,7 @@
       "scale": 2,
       "screen": "response_rating",
       "scrolls": true,
-      "overflowPx": 279,
+      "overflowPx": 295,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2251,7 +2248,7 @@
       "scale": 2,
       "screen": "response_listener_waiting",
       "scrolls": true,
-      "overflowPx": 336,
+      "overflowPx": 352,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2263,7 +2260,7 @@
       "scale": 2,
       "screen": "reveal_reached",
       "scrolls": true,
-      "overflowPx": 491,
+      "overflowPx": 507,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2275,7 +2272,7 @@
       "scale": 2,
       "screen": "reveal_below",
       "scrolls": true,
-      "overflowPx": 414,
+      "overflowPx": 430,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2287,7 +2284,7 @@
       "scale": 2,
       "screen": "reveal_not_scored",
       "scrolls": true,
-      "overflowPx": 337,
+      "overflowPx": 353,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2299,7 +2296,7 @@
       "scale": 2,
       "screen": "summary",
       "scrolls": true,
-      "overflowPx": 977,
+      "overflowPx": 993,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2311,7 +2308,7 @@
       "scale": 2,
       "screen": "summary_incomplete",
       "scrolls": true,
-      "overflowPx": 1054,
+      "overflowPx": 1070,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2323,7 +2320,7 @@
       "scale": 2,
       "screen": "history",
       "scrolls": true,
-      "overflowPx": 346,
+      "overflowPx": 362,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2335,7 +2332,7 @@
       "scale": 2,
       "screen": "paused_or_invalid",
       "scrolls": true,
-      "overflowPx": 362,
+      "overflowPx": 378,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2359,7 +2356,7 @@
       "scale": 2,
       "screen": "settings",
       "scrolls": true,
-      "overflowPx": 578,
+      "overflowPx": 594,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2407,7 +2404,7 @@
       "scale": 2,
       "screen": "about",
       "scrolls": true,
-      "overflowPx": 331,
+      "overflowPx": 347,
       "footerInside": true,
       "horizontalOutside": 0,
       "horizontalClipped": 0,
@@ -2467,180 +2464,53 @@
     "scale_1_failures": [],
     "scale_1_horizontal_clipping": [],
     "scale_1_screens_that_scroll": [],
-    "scale_1_max_focus_settle_ms": 4,
+    "scale_1_max_focus_settle_ms": 3,
     "scale_1.25_failures": [],
     "scale_1.25_horizontal_clipping": [],
     "scale_1.25_screens_that_scroll": [],
-    "scale_1.25_max_focus_settle_ms": 3,
+    "scale_1.25_max_focus_settle_ms": 4,
     "scale_1.5_failures": [],
     "scale_1.5_horizontal_clipping": [],
     "scale_1.5_screens_that_scroll": [
-      "summary(219px)",
-      "summary_incomplete(219px)"
+      "phrase_active_visible(6px)",
+      "summary(231px)",
+      "summary_incomplete(231px)"
     ],
-    "scale_1.5_max_focus_settle_ms": 2,
+    "scale_1.5_max_focus_settle_ms": 3,
     "scale_2_failures": [],
-    "scale_2_horizontal_clipping": [
-      "join_confirm: content wider than its viewport, clipped {\"testId\":\"screen-scroll\",\"tag\":\"div\",\"scrollWidth\":1736,\"clientWidth\":1600}",
-      "join_confirm: control cut off at the side when focused: action-pick_choice_3 (canvas=true visible=0.85 footer=false left=1258 right=1846 top=366 bottom=744)",
-      "join_confirm: control cut off at the side when focused: action-pick_choice_1 (canvas=true visible=0.74 footer=false left=10 right=598 top=366 bottom=744)",
-      "calibration: 10 element(s) beyond the left/right edge, first {\"testId\":null,\"tag\":\"div\",\"left\":-105,\"right\":855}",
-      "calibration: content wider than its viewport, clipped {\"testId\":\"screen-scroll\",\"tag\":\"div\",\"scrollWidth\":1865,\"clientWidth\":1600}"
-    ],
+    "scale_2_horizontal_clipping": [],
     "scale_2_screens_that_scroll": [
-      "home(378px)",
-      "pairing(302px)",
-      "join_confirm(343px)",
-      "permission_pending(47px)",
-      "calibration(150px)",
-      "vowel_active(138px)",
-      "vowel_result(170px)",
-      "phrase_ready(313px)",
-      "phrase_active_visible(199px)",
-      "response_rating(279px)",
-      "response_listener_waiting(336px)",
-      "reveal_reached(491px)",
-      "reveal_below(414px)",
-      "reveal_not_scored(337px)",
-      "summary(977px)",
-      "summary_incomplete(1054px)",
-      "history(346px)",
-      "paused_or_invalid(362px)",
-      "settings(578px)",
-      "about(331px)"
+      "onboarding(17px)",
+      "home(394px)",
+      "pairing(318px)",
+      "join_confirm(359px)",
+      "permission_pending(63px)",
+      "calibration(613px)",
+      "vowel_ready(26px)",
+      "vowel_active(186px)",
+      "vowel_result(218px)",
+      "phrase_ready(329px)",
+      "phrase_active_visible(215px)",
+      "response_rating(295px)",
+      "response_listener_waiting(352px)",
+      "reveal_reached(507px)",
+      "reveal_below(430px)",
+      "reveal_not_scored(353px)",
+      "summary(993px)",
+      "summary_incomplete(1070px)",
+      "history(362px)",
+      "paused_or_invalid(378px)",
+      "settings(594px)",
+      "about(347px)"
     ],
-    "scale_2_max_focus_settle_ms": 833,
-    "ring_clipped_by_scroller": [
-      "1:onboarding:action-continue (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:home:action-start_session (left=72 right=408 top=634 bottom=722 visible=0.976)",
-      "1:home:action-open_history (left=72 right=408 top=734 bottom=822 visible=0.976)",
-      "1:home:action-open_settings (left=72 right=408 top=834 bottom=922 visible=0.976)",
-      "1:home:action-pair_phone (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:pairing:action-refresh_code (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:permission_pending:action-cancel (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:calibration:action-cancel (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:vowel_ready:action-begin_vowel (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:vowel_active:action-stop_early (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:vowel_result:action-continue (left=69 right=525 top=934 bottom=1022 visible=0.976)",
-      "1:phrase_ready:action-begin_phrase (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:phrase_active_visible:action-stop_early (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:phrase_active_hidden:action-stop_early (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:response_rating:action-rate_felt_loud (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:response_listener_waiting:action-keep_waiting (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:reveal_reached:action-next_phrase (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:reveal_below:action-next_phrase (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:reveal_not_scored:action-try_again (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:summary:action-done (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:summary_incomplete:action-done (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:history:action-done (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:resume_or_discard:action-resume_session (left=71 right=458 top=934 bottom=1022 visible=0.976)",
-      "1:settings:action-toggle_family_mode (left=72 right=408 top=834 bottom=922 visible=0.976)",
-      "1:settings:action-open_about (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:about:action-back (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1:diagnostics:action-back (left=72 right=408 top=934 bottom=1022 visible=0.976)",
-      "1.25:onboarding:action-continue (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:home:action-start_session (left=90 right=510 top=507 bottom=619 visible=0.976)",
-      "1.25:home:action-open_history (left=90 right=510 top=633 bottom=745 visible=0.976)",
-      "1.25:home:action-open_settings (left=90 right=510 top=759 bottom=871 visible=0.976)",
-      "1.25:home:action-pair_phone (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:pairing:action-refresh_code (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:permission_pending:action-cancel (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:calibration:action-cancel (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:vowel_ready:action-begin_vowel (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:vowel_active:action-stop_early (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:vowel_result:action-continue (left=86 right=655 top=885 bottom=997 visible=0.976)",
-      "1.25:phrase_ready:action-begin_phrase (left=90 right=510 top=759 bottom=871 visible=0.976)",
-      "1.25:phrase_ready:action-open_settings (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:phrase_active_visible:action-stop_early (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:phrase_active_hidden:action-stop_early (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:response_rating:action-rate_felt_loud (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:response_listener_waiting:action-keep_waiting (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:reveal_reached:action-next_phrase (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:reveal_below:action-next_phrase (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:reveal_not_scored:action-try_again (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:summary:action-done (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:summary_incomplete:action-done (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:history:action-done (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:resume_or_discard:action-resume_session (left=88 right=572 top=885 bottom=997 visible=0.976)",
-      "1.25:settings:action-toggle_family_mode (left=90 right=510 top=633 bottom=745 visible=0.976)",
-      "1.25:settings:action-back (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:about:action-back (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.25:diagnostics:action-back (left=90 right=510 top=885 bottom=997 visible=0.976)",
-      "1.5:onboarding:action-continue (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:home:action-start_session (left=108 right=612 top=403 bottom=535 visible=0.976)",
-      "1.5:home:action-open_history (left=108 right=612 top=553 bottom=685 visible=0.976)",
-      "1.5:home:action-open_settings (left=108 right=612 top=703 bottom=835 visible=0.976)",
-      "1.5:home:action-pair_phone (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:pairing:action-refresh_code (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:permission_pending:action-cancel (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:calibration:action-cancel (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:vowel_ready:action-begin_vowel (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:vowel_active:action-stop_early (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:vowel_result:action-continue (left=104 right=782 top=853 bottom=985 visible=0.976)",
-      "1.5:phrase_ready:action-begin_phrase (left=108 right=612 top=703 bottom=835 visible=0.976)",
-      "1.5:phrase_ready:action-open_settings (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:phrase_active_visible:action-stop_early (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:phrase_active_hidden:action-stop_early (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:response_rating:action-rate_felt_loud (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:response_listener_waiting:action-keep_waiting (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:reveal_reached:action-next_phrase (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:reveal_below:action-next_phrase (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:reveal_not_scored:action-try_again (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:summary:action-done (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:summary_incomplete:action-done (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:history:action-done (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:resume_or_discard:action-resume_session (left=106 right=683 top=853 bottom=985 visible=0.976)",
-      "1.5:settings:action-toggle_family_mode (left=108 right=612 top=403 bottom=535 visible=0.976)",
-      "1.5:settings:action-delete_local_data (left=101 right=913 top=553 bottom=685 visible=0.976)",
-      "1.5:settings:action-back (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:settings:action-open_about (left=108 right=612 top=703 bottom=835 visible=0.976)",
-      "1.5:about:action-back (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "1.5:diagnostics:action-back (left=108 right=612 top=853 bottom=985 visible=0.976)",
-      "2:onboarding:action-continue (left=144 right=816 top=764 bottom=940 visible=0.976)",
-      "2:home:action-start_session (left=144 right=816 top=163 bottom=339 visible=0.976)",
-      "2:home:action-open_history (left=144 right=816 top=363 bottom=539 visible=0.976)",
-      "2:home:action-open_settings (left=144 right=816 top=563 bottom=739 visible=0.976)",
-      "2:home:action-pair_phone (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:pairing:action-refresh_code (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:join_confirm:action-pick_choice_3 (left=1258 right=1846 top=366 bottom=744 visible=0.854)",
-      "2:join_confirm:action-pick_choice_1 (left=10 right=598 top=366 bottom=744 visible=0.745)",
-      "2:permission_pending:action-cancel (left=144 right=816 top=795 bottom=971 visible=0.953)",
-      "2:calibration:action-cancel (left=144 right=816 top=795 bottom=971 visible=0.953)",
-      "2:vowel_ready:action-begin_vowel (left=144 right=816 top=563 bottom=739 visible=0.976)",
-      "2:vowel_ready:action-open_settings (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:vowel_active:action-stop_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:vowel_result:action-continue (left=139 right=1035 top=563 bottom=739 visible=0.976)",
-      "2:vowel_result:action-rest (left=140 right=999 top=763 bottom=939 visible=0.976)",
-      "2:phrase_ready:action-begin_phrase (left=144 right=816 top=563 bottom=739 visible=0.976)",
-      "2:phrase_ready:action-finish_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:phrase_active_visible:action-stop_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:phrase_active_hidden:action-stop_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:response_rating:action-rate_felt_loud (left=144 right=816 top=563 bottom=739 visible=0.976)",
-      "2:response_rating:action-rate_skip (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:response_listener_waiting:action-keep_waiting (left=144 right=816 top=563 bottom=739 visible=0.976)",
-      "2:response_listener_waiting:action-continue_without_listener (left=127 right=1531 top=763 bottom=939 visible=0.976)",
-      "2:reveal_reached:action-next_phrase (left=144 right=816 top=563 bottom=739 visible=0.976)",
-      "2:reveal_reached:action-finish_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:reveal_below:action-next_phrase (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:reveal_not_scored:action-try_again (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:summary:action-done (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:summary_incomplete:action-done (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:history:action-done (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:paused_or_invalid:action-finish_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:resume_or_discard:action-resume_session (left=142 right=906 top=763 bottom=939 visible=0.976)",
-      "2:settings:action-toggle_family_mode (left=144 right=816 top=156 bottom=332 visible=0.976)",
-      "2:settings:action-delete_local_data (left=134 right=1208 top=163 bottom=339 visible=0.976)",
-      "2:settings:action-open_diagnostics (left=136 right=1161 top=563 bottom=739 visible=0.976)",
-      "2:settings:action-back (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:about:action-back (left=144 right=816 top=763 bottom=939 visible=0.976)",
-      "2:diagnostics:action-back (left=144 right=816 top=763 bottom=939 visible=0.976)"
-    ],
+    "scale_2_max_focus_settle_ms": 3,
+    "ring_clipped_by_scroller": [],
     "journey": {
       "join_confirm_preferred": "action-reject_join",
       "chips_visual_only_while_capturing": 4,
       "p3_capture_shot": {
         "file": "store_p3_blind_capture.png",
-        "sha256": "4d87d3f3f162dd298636e237ebf411d7708b093077707d87a0664a40b0c79cc4",
+        "sha256": "91fb3d702d0ed27df60a05bd9639de94ce3e3cd51338ad836a1ae613b592346b",
         "committed": true
       },
       "live_log_entries": 26,
@@ -2659,8 +2529,8 @@
       }
     ],
     "screen_reader_lead_ms": {
-      "on": 3070,
-      "off": 1603
+      "on": 3203,
+      "off": 1605
     },
     "silent_input_quiet_check_text": "Quiet check did not pass\nPhone microphone: Microphone open, not measuring\nRelay: Connected\nFixture replay\nThe phone microphone looks muted or blocked.\nTry again\nCancel\nQuiet check did not pass. The phone microphone looks muted or blocked.\nNot a medical device. Does not diagnose or treat any condition.",
     "link_loss_focus": {
