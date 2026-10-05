@@ -7,7 +7,10 @@ import { advanceLive, type Harness, readyHarness } from './helpers/harness.js';
  * N-12: a paired TV must not be able to use the phone as an open-ended ambient-sound monitor.
  *  - at most 5 minutes of cumulative capture per session (prechecks plus windows);
  *  - at least 1 s between the end of one window and the start of the next;
- *  - the microphone turns itself off after 10 minutes without any TV command.
+ *  - the microphone turns itself off after 10 minutes without a TV command that starts a measurement.
+ *
+ * R26: the TV must not be able to reset either limit. Only the person's Start microphone tap starts a new
+ * capture budget, and only an accepted precheck.start / window.start restarts the idle clock.
  */
 
 beforeEach(() => vi.useFakeTimers());
@@ -55,6 +58,17 @@ async function runPrecheck(h: Harness, purpose: 'quiet_check' | 'pre_window'): P
   expect(r.ack().outcome).toBe('applied');
   h.audio.startedMeasuring();
   h.audio.finishPrecheck(validPrecheck(purpose));
+  await flush();
+  vi.advanceTimersByTime(250); // real prechecks last 2-5 s; the phone paces what it sends (30 per second)
+}
+
+/** The person turns the microphone off and taps Start microphone again (the only way to a new budget). */
+async function restartMic(h: Harness): Promise<void> {
+  h.controller.stopMic();
+  await flush();
+  expect(h.controller.getState().canStartMic).toBe(true);
+  h.controller.startMic();
+  h.audio.makeOpen();
   await flush();
 }
 
@@ -137,13 +151,13 @@ describe('N-12: at most 5 minutes of cumulative capture per session', () => {
     expect(startWindow(h, vowel(30_000)).ack().outcome).toBe('applied'); // 12 x 30 s commanded would have been 360 s
   });
 
-  it('a refusal marks nothing closed: the same ids work again once there is room (a new session)', async () => {
+  it('a refusal marks nothing closed: the same ids work again once the person has started the microphone again', async () => {
     const h = await readyHarness();
     for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
     const refused = startWindow(h, vowel(1000), { w: WINDOW, a: ATTEMPT });
     expect(refused.ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
-    h.sockets.current.receive(sessionBegin(SESSION2));
-    const retry = startWindow(h, vowel(1000), { w: WINDOW, a: ATTEMPT }, SESSION2);
+    await restartMic(h);
+    const retry = startWindow(h, vowel(1000), { w: WINDOW, a: ATTEMPT });
     expect(retry.ack().outcome).toBe('applied');
   });
 
@@ -159,25 +173,78 @@ describe('N-12: at most 5 minutes of cumulative capture per session', () => {
     view.destroy();
   });
 
-  it('the budget belongs to one session: a repeated session.begin keeps it, a new session, a session end and an unpair reset it', async () => {
+  it('a repeated session.begin for the same session keeps the budget', async () => {
     const h = await readyHarness();
     for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
     h.sockets.current.receive(sessionBegin()); // the same session again (idempotent)
     expect(startWindow(h, vowel(1000)).ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
-    h.sockets.current.receive(sessionBegin(SESSION2)); // a different session
-    expect(startWindow(h, vowel(1000), ids(), SESSION2).ack().outcome).toBe('applied');
-    expect(h.controller.getState().notice).toBeNull(); // the old notice went with the old session
   });
 
-  it('session.end resets it: a new session on the same pairing gets a fresh 5 minutes', async () => {
+  it('R26: a new session id announced by the TV does NOT buy a new budget, however many it announces; the message stays', async () => {
+    const h = await readyHarness();
+    for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
+    expect(startWindow(h, vowel(1000)).ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+    for (const sid of [SESSION2, 's_session0003', 's_session0004', 's_session0005']) {
+      h.sockets.current.receive(sessionBegin(sid));
+      expect(startWindow(h, vowel(1000), ids(), sid).ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+      expect(startPrecheck(h, 'pre_window', ids(), sid).ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+    }
+    expect(h.controller.getState().notice).toMatch(/used its 5 minutes of listening/); // still explained
+  });
+
+  it('R26: ending the session does not reset it either; the TV can end and begin sessions as it likes', async () => {
     const h = await readyHarness();
     for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
     h.sockets.current.receive(tvMsg('session.end', { reason: 'completed' }, { s: SESSION }));
     await flush();
+    expect(h.audio.getSnapshot().state).toBe('off'); // ending a session closes the microphone
     h.sockets.current.receive(sessionBegin('s_session0003'));
+    h.audio.makeOpen(); // something opens the microphone without the person tapping Start
+    await flush();
+    expect(startWindow(h, vowel(30_000), ids(), 's_session0003').ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+  });
+
+  it('only the person tapping Start microphone starts a new budget, cooldown and message: after End session on the TV and a tap, a fresh 5 minutes', async () => {
+    const h = await readyHarness();
+    for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
+    startWindow(h, vowel(1000)); // refused; the person is told
+    expect(h.controller.getState().notice).toMatch(/used its 5 minutes of listening/);
+    h.sockets.current.receive(tvMsg('session.end', { reason: 'completed' }, { s: SESSION }));
+    await flush();
+    h.sockets.current.receive(sessionBegin('s_session0003'));
+    h.controller.startMic(); // the tap
     h.audio.makeOpen();
     await flush();
+    expect(h.controller.getState().notice).toBeNull();
     expect(startWindow(h, vowel(30_000), ids(), 's_session0003').ack().outcome).toBe('applied');
+  });
+
+  it('a tap also clears the cooldown: a window can start straight after a mic restart', async () => {
+    const h = await readyHarness();
+    const first = startWindow(h, vowel(2000));
+    h.audio.frame(0);
+    h.audio.finishWindow(validWindow('vowel', 2000));
+    await flush(); // the window ended just now; no waiting
+    await restartMic(h);
+    expect(startWindow(h, vowel(2000)).ack().outcome).toBe('applied');
+    void first;
+  });
+
+  it('a tap that does nothing (the microphone is already open) does not reset anything', async () => {
+    const h = await readyHarness();
+    for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
+    h.controller.startMic(); // Start is not offered while the microphone is open
+    expect(startWindow(h, vowel(1000)).ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+  });
+
+  it('an unpair removes the message from the screen (the pairing is gone) and a new pairing needs the person\'s Start tap anyway', async () => {
+    const h = await readyHarness();
+    for (let i = 0; i < 10; i++) await runWindow(h, 30_000);
+    startWindow(h, vowel(1000));
+    expect(h.controller.getState().notice).toMatch(/5 minutes of listening/);
+    h.sockets.current.receive(relayMsg('unpaired', { reason: 'tv_unpaired' }));
+    await flush();
+    expect(h.controller.getState().notice ?? '').not.toMatch(/5 minutes of listening/);
   });
 });
 
@@ -290,7 +357,7 @@ describe('N-12: at least 1 s between windows', () => {
   });
 });
 
-describe('N-12: the microphone turns itself off after 10 minutes without a TV command', () => {
+describe('N-12: the microphone turns itself off after 10 minutes without a measurement being started', () => {
   const TEN_MIN = 10 * 60_000;
 
   it('exactly at 10 minutes, with a visible message, a "Mic off" report and everything released', async () => {
@@ -313,16 +380,65 @@ describe('N-12: the microphone turns itself off after 10 minutes without a TV co
     view.destroy();
   });
 
-  it('any TV command restarts the 10 minutes, including stale and refused ones', async () => {
+  it('R26: session.state and stale commands do not restart it: the microphone still goes off 10 minutes after it opened', async () => {
     const h = await readyHarness();
     advanceLive(h, TEN_MIN - 1000, pong);
     h.sockets.current.receive(tvMsg('session.state', { stage: 'quiet_check', phrase_position: 0, cues_used: 0, listener_open_attempt: null }, { s: SESSION }));
+    h.sockets.current.receive(tvMsg('window.cancel', { reason: 'user_cancel' }, { s: SESSION2, w: WINDOW, a: ATTEMPT })); // stale
+    h.sockets.current.receive(tvMsg('session.state', { stage: 'quiet_check', phrase_position: 0, cues_used: 0, listener_open_attempt: null }, { s: SESSION2 })); // stale
+    expect(h.audio.getSnapshot().state).toBe('open_idle');
+    advanceLive(h, 1000, pong);
+    await flush();
+    expect(h.audio.getSnapshot().state).toBe('off');
+    expect(h.controller.getState().micNotice).toBe('idle_off');
+  });
+
+  it('R26: one harmless command every 9 minutes cannot keep the microphone open', async () => {
+    const h = await readyHarness();
+    advanceLive(h, 9 * 60_000, pong);
+    h.sockets.current.receive(tvMsg('session.state', { stage: 'quiet_check', phrase_position: 0, cues_used: 0, listener_open_attempt: null }, { s: SESSION }));
+    advanceLive(h, 60_000, pong); // minute 10 since the microphone opened
+    await flush();
+    expect(h.audio.getSnapshot().state).toBe('off');
+  });
+
+  it('R26: a refused measurement command (budget, cooldown, busy, stale) does not restart it either', async () => {
+    const h = await readyHarness();
+    for (let i = 0; i < 10; i++) await runWindow(h, 30_000); // budget used up; the last window started 1 s + a moment ago
+    advanceLive(h, TEN_MIN - 2000, pong); // 2 s short of 10 minutes since that last window started
+    expect(h.audio.getSnapshot().state).toBe('open_idle');
+    expect(startWindow(h, vowel(1000)).ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+    expect(startPrecheck(h, 'pre_window').ack()).toMatchObject({ outcome: 'rejected', detail: 'budget' });
+    expect(startWindow(h, vowel(1000), ids(), SESSION2).ack()).toMatchObject({ outcome: 'ignored_stale' });
+    advanceLive(h, 2000, pong);
+    await flush();
+    expect(h.audio.getSnapshot().state).toBe('off');
+  });
+
+  it('a window.start the phone accepts restarts it (the measurement is real use of the microphone)', async () => {
+    const h = await readyHarness();
+    advanceLive(h, TEN_MIN - 1000, pong);
+    expect(startWindow(h, vowel(2000)).ack().outcome).toBe('applied');
+    h.audio.frame(0);
+    h.audio.finishWindow(validWindow('vowel', 2000));
+    await flush();
     advanceLive(h, TEN_MIN - 1000, pong);
     expect(h.audio.getSnapshot().state).toBe('open_idle');
-    h.sockets.current.receive(tvMsg('window.cancel', { reason: 'user_cancel' }, { s: SESSION2, w: WINDOW, a: ATTEMPT })); // stale: counts
+    advanceLive(h, 1000, pong);
+    await flush();
+    expect(h.audio.getSnapshot().state).toBe('off');
+  });
+
+  it('a precheck.start the phone accepts restarts it too', async () => {
+    const h = await readyHarness();
+    advanceLive(h, TEN_MIN - 1000, pong);
+    expect(startPrecheck(h, 'quiet_check').ack().outcome).toBe('applied');
+    h.audio.startedMeasuring();
+    h.audio.finishPrecheck(validPrecheck('quiet_check'));
+    await flush();
     advanceLive(h, TEN_MIN - 1000, pong);
     expect(h.audio.getSnapshot().state).toBe('open_idle');
-    advanceLive(h, 1000, pong); // 10 minutes after the last command
+    advanceLive(h, 1000, pong);
     await flush();
     expect(h.audio.getSnapshot().state).toBe('off');
   });
@@ -336,17 +452,6 @@ describe('N-12: the microphone turns itself off after 10 minutes without a TV co
     advanceLive(h, 10_000, pong);
     await flush();
     expect(h.audio.getSnapshot().state).toBe('off');
-  });
-
-  it('a run in progress is a TV command: the clock restarts when it ends', async () => {
-    const h = await readyHarness();
-    advanceLive(h, TEN_MIN - 5000, pong);
-    startWindow(h, vowel(5000));
-    h.audio.frame(0);
-    h.audio.finishWindow(validWindow('vowel', 5000));
-    await flush();
-    advanceLive(h, TEN_MIN - 1000, pong);
-    expect(h.audio.getSnapshot().state).toBe('open_idle');
   });
 
   it('closing the microphone by hand cancels the timer: nothing fires later, no message', async () => {

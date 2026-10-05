@@ -5,9 +5,9 @@
  * The relay and the raw TV run on the real clock; only the phone page's timers jump.
  *
  *   - the microphone stays open for 9 minutes without a TV command and is switched off after 10, with the plain message
- *   - any TV command restarts the 10 minutes
- *   - R26: a TV that sends any command at least every 10 minutes keeps the microphone open indefinitely, so this limit
- *     bounds an abandoned or silent TV, not a hostile one
+ *   - a command that starts a measurement (precheck.start, window.start) restarts the 10 minutes
+ *   - R26 (closed): session.state and other housekeeping commands do not, so a TV that sends one harmless command
+ *     every 9 minutes can no longer keep the microphone open
  *
  * Evidence class: automated (desktop Chrome, synthetic audio build, local relay, raw TV socket).
  */
@@ -77,6 +77,21 @@ async function tvCommand(): Promise<Msg> {
   return tv.client.inbox.slice(from).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === id) as Msg;
 }
 
+let measurementCounter = 0;
+/** A measurement the phone accepts: window.start, then window.cancel straight away so nothing keeps running. */
+async function startMeasurement(): Promise<Msg> {
+  measurementCounter += 1;
+  const tag = String(measurementCounter).padStart(4, '0');
+  const ids = { session_id: SESSION, window_id: `w_secidle${tag}`, attempt_id: `a_secidle${tag}` };
+  const from = tv.client.inbox.length;
+  const id = tv.send('window.start', { kind: 'vowel', phrase_position: null, max_duration_ms: 20_000, vad_floor_dbfs: -60 }, ids);
+  await tv.client.waitUntil(() => tv.client.inbox.slice(from).some((m) => m.type === 'ack' && m.payload['acked_message_id'] === id), 8000, 'ack for the window.start');
+  const ack = tv.client.inbox.slice(from).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === id) as Msg;
+  tv.send('window.cancel', { reason: 'user_cancel' }, ids);
+  await sleep(300);
+  return ack;
+}
+
 describe('N-12 idle microphone limit (page clock)', () => {
   it('the microphone is still open after 9 minutes without a TV command, and is switched off by 10 with the message; the link and the pairing stay', async () => {
     await forward(9);
@@ -90,26 +105,26 @@ describe('N-12 idle microphone limit (page clock)', () => {
     expect(await phone.page.isVisible('#start-mic')).toBe(true); // and the person can start it again
   });
 
-  it('any TV command restarts the 10 minutes: a command at minute 9 keeps it open at minute 18 and it goes off by minute 20', async () => {
+  it('a measurement command the phone accepts restarts the 10 minutes: a window.start at minute 9 keeps it open at minute 18 and it goes off by minute 20', async () => {
     await phone.page.click('#start-mic');
     await phone.page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open'));
     expect((await phone.page.innerText('body')).replace(/\s+/g, ' ')).not.toContain(IDLE_TEXT); // starting it again clears the message
     await forward(9);
-    expect((await tvCommand()).payload['outcome']).toBeDefined();
+    expect((await startMeasurement()).payload['outcome']).toBe('applied');
     await forward(9);
     expect(await badge()).toMatch(/Mic open/);
     await forward(1.5);
     expect(await badge()).toBe('Mic off');
   });
 
-  it('R26 (residual): a TV that sends one command every 9 minutes keeps the microphone open for as long as it likes (27 minutes here, no end in sight)', async () => {
+  it('R26 (closed): a TV that sends one session.state every 9 minutes does not keep the microphone open: it is off by minute 10', async () => {
     await phone.page.click('#start-mic');
     await phone.page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open'));
-    for (let round = 0; round < 3; round += 1) {
-      await forward(9);
-      await tvCommand();
-      expect(await badge(), `round ${round + 1}`).toMatch(/Mic open/);
-    }
-    expect((await phone.page.innerText('body')).replace(/\s+/g, ' ')).not.toContain(IDLE_TEXT);
+    await forward(9);
+    expect((await tvCommand()).payload['outcome']).toBeDefined(); // acknowledged, but it is housekeeping
+    expect(await badge()).toMatch(/Mic open/);
+    await forward(1.5); // 10.5 minutes since the microphone opened
+    expect(await badge()).toBe('Mic off');
+    expect((await phone.page.innerText('body')).replace(/\s+/g, ' ')).toContain(IDLE_TEXT);
   });
 });

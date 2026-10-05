@@ -51,9 +51,9 @@ export const RESUME_REFUSAL_WINDOW_MS = 30_000;
  * N-12: phone-side measurement limits, so a paired TV (or a stolen TV credential) cannot use the
  * phone as an open-ended ambient-sound monitor.
  */
-export const SESSION_CAPTURE_BUDGET_MS = 5 * 60_000; // cumulative capture per session (prechecks + windows)
+export const SESSION_CAPTURE_BUDGET_MS = 5 * 60_000; // cumulative capture per Start microphone tap (prechecks + windows); the TV cannot reset it (R26)
 export const WINDOW_COOLDOWN_MS = 1000; // between the end of one window and the start of the next
-export const MIC_IDLE_OFF_MS = 10 * 60_000; // microphone turns itself off without any TV command
+export const MIC_IDLE_OFF_MS = 10 * 60_000; // microphone turns itself off without an accepted measurement start (R26)
 /** A6-02: after this long without a successful connection, report `failed` and stop retrying. */
 export const FAILURE_WINDOW_MS = 120_000;
 /** PROTOCOL.md section 7: ping every 10 s; peer unknown after 25 s without traffic. */

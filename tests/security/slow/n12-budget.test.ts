@@ -5,8 +5,8 @@
  * The phone refuses a window that would take a session past 5 minutes of cumulative capture (detail `budget`). The
  * unit tests of the phone package prove this with a fake clock; this drives the real page with real audio frames.
  *
- * It also records the limit of that control (R26): the budget belongs to the session id the TV announces, so a TV that
- * announces a new session id starts a new budget. The budget bounds a runaway session, not a hostile paired TV.
+ * R26 (closed): the budget is not tied to the session id the TV announces. A TV that announces a new session id gets
+ * the same refusal; only the person tapping Start microphone again starts a new budget.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import path from 'node:path';
@@ -34,7 +34,7 @@ function keepAlive(tv: Peer): () => void {
 }
 
 describe('N-12 budget in real time (slow, opt-in)', () => {
-  it('ten vowel windows of 30 s use the 5 minutes; the next command is refused with `budget` and the person is told once; a TV-announced new session id starts a new budget (R26)', async () => {
+  it('ten vowel windows of 30 s use the 5 minutes; the next command is refused with `budget` and the person is told once; a TV-announced new session id does NOT start a new budget (R26); the person turning the microphone off and on again does', async () => {
     const { page } = phone;
     const { tv, code } = await createRoom(relay);
     const stopPing = keepAlive(tv);
@@ -84,7 +84,7 @@ describe('N-12 budget in real time (slow, opt-in)', () => {
     const preAck = tv.client.inbox.find((m) => m.type === 'ack' && m.payload['acked_message_id'] === preId) as Msg;
     expect(`${String(preAck.payload['outcome'])}:${String(preAck.payload['detail'])}`).toBe('rejected:budget');
 
-    // R26: the TV announces a different session id and the phone starts a new budget.
+    // R26 (closed): the TV announces a different session id and the phone does NOT start a new budget.
     const sessionB = 's_secbudgetb001';
     tv.send('session.begin', { family_mode: false, phrase_count: 3, cues_max: 3 }, { session_id: sessionB });
     await sleep(500);
@@ -93,7 +93,18 @@ describe('N-12 budget in real time (slow, opt-in)', () => {
     await tv.client.waitUntil(() => tv.client.inbox.slice(from).some((m) => m.type === 'ack' && m.payload['acked_message_id'] === again), 8000, 'ack in the new session');
     const ack2 = tv.client.inbox.slice(from).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === again) as Msg;
     console.log('R26: first window of a TV-announced new session after the budget was used up:', JSON.stringify(ack2.payload));
-    expect(ack2.payload['outcome']).toBe('applied');
+    expect(`${String(ack2.payload['outcome'])}:${String(ack2.payload['detail'])}`).toBe('rejected:budget');
+
+    // Only the person's own tap starts a new budget: turn the microphone off, start it again.
+    await page.click('#stop-mic');
+    await page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent === 'Mic off');
+    await page.click('#start-mic');
+    await page.waitForFunction(() => document.querySelector('#mic-badge')?.textContent?.includes('Mic open, not measuring'));
+    const from3 = tv.client.inbox.length;
+    const third = tv.send('window.start', { kind: 'vowel', phrase_position: null, max_duration_ms: 1000, vad_floor_dbfs: -60 }, { session_id: sessionB, window_id: 'w_secbudgb0002', attempt_id: 'a_secbudgb0002' });
+    await tv.client.waitUntil(() => tv.client.inbox.slice(from3).some((m) => m.type === 'ack' && m.payload['acked_message_id'] === third), 8000, 'ack after the person restarted the microphone');
+    const ack3 = tv.client.inbox.slice(from3).find((m) => m.type === 'ack' && m.payload['acked_message_id'] === third) as Msg;
+    expect(ack3.payload['outcome']).toBe('applied');
     stopPing();
     tv.client.close();
   }, 480_000);

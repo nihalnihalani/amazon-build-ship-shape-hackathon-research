@@ -166,11 +166,16 @@ export class FakeSocket implements SocketLike {
   onclose: ((event: { code?: number }) => void) | null = null;
   onerror: (() => void) | null = null;
   sent: string[] = [];
+  /** Fake wall-clock time (Date.now) at which each frame in `sent` was handed to the socket. */
+  sentAt: number[] = [];
+  /** Settable: bytes the socket is holding back (a stalled link makes this grow). */
+  bufferedAmount = 0;
   closeCalls: Array<number | undefined> = [];
   constructor(readonly url: string) {}
   send(data: string): void {
     if (this.readyState !== 1) throw new Error('socket not open');
     this.sent.push(data);
+    this.sentAt.push(Date.now());
   }
   close(code?: number): void {
     this.readyState = 3;

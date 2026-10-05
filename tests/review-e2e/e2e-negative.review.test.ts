@@ -14,8 +14,9 @@
  *
  * Run (from tests/):  npx vitest run --config review-e2e/vitest.config.ts
  * Needs `npm run build` at the repository root first (the imports below resolve built packages), and Google Chrome
- * (ATR_CHROME overrides the macOS default path). Switches: QA_STRICT=1 makes the QA-E2E-01 defect repro fail;
- * ATR_QA_LOG=<file> appends the whole relay log when a check fails.
+ * (ATR_CHROME overrides the macOS default path). Switch: ATR_QA_LOG=<file> appends the whole relay log when a check
+ * fails. (QA_STRICT=1 used to make the QA-E2E-01 repro fail while the defect was open; it is fixed and now a plain
+ * assertion, so the switch has no effect.)
  */
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -27,9 +28,6 @@ import { buildArtifacts, sleep, startPhone, startRelay, type PhoneEnv, type Rela
 import { startFaultProxy, type FaultProxy } from '../src/fault-proxy.js';
 import { LOUD, ROOM, SOFT, beginCapture, has, pairAndStartMic, phoneMeasuring, quietAndCalibrate, visibleAttempt } from '../src/journey.js';
 import { startTv, type TvHarness } from '../src/tv-driver.js';
-
-// Defect repro convention from the earlier review suites: expected-fail unless QA_STRICT=1 (see QA-E2E-01 below).
-const STRICT = process.env.QA_STRICT === '1';
 
 interface Frame {
   type: string;
@@ -369,11 +367,12 @@ describe('QA REVIEW T15: negative checks over the real stack', () => {
     expect(r.result!.tone).toBe('reached');
   }), 240_000);
 
-  // DEFECT REPRO (QA-E2E-01). After a stall that does not drop the connection, the phone's backlog arrives at the relay
-  // in one burst and exceeds the per-connection budget (phone burst 60 per second). The relay rejects frames with
-  // rate_limited regardless of type, including the state-bearing mic.state frame that says the phone stopped measuring.
-  // Nothing resends it, so the TV keeps showing "measuring" while the phone says "Mic open, not measuring".
-  // Expected-fail unless QA_STRICT=1; skipped (inconclusive) when the burst did not happen to reject a mic.state.
+  // QA-E2E-01 (FIXED in apps/phone: paced outbox, coalesced mic.state, levels never queued, re-send of the latest
+  // mic.state after rate_limited). After a stall that does not drop the connection, whatever was already handed to the
+  // network arrives at the relay in one burst and exceeds the per-connection budget (phone burst 60 per second). The
+  // relay rejects frames with rate_limited regardless of type, including the state-bearing mic.state frame that says
+  // the phone stopped measuring. The phone now answers rate_limited by backing off and sending its current mic.state
+  // again, so the TV converges. Skipped (inconclusive) when the burst did not happen to reject a mic.state.
   it('[QA-E2E-01] after a stalled link flushes its backlog the TV mic state converges to what the phone reports', async (ctx) => {
     let preconditionMet = true;
     await traced(async () => {
@@ -386,8 +385,7 @@ describe('QA REVIEW T15: negative checks over the real stack', () => {
       }
       // Spec (observed state only): the TV mirrors the mic state the phone reports. The phone says it stopped measuring.
       const converged = await tv!.waitFor((v) => v.mic === 'open_not_measuring', 'TV mic state follows the phone', 20_000).then(() => true, () => false);
-      if (STRICT) expect(converged, 'TV mic state must converge to the phone (QA_STRICT=1)').toBe(true);
-      else expect(converged, 'QA-E2E-01 appears FIXED: switch this repro to a plain assertion').toBe(false);
+      expect(converged, 'TV mic state must converge to the phone').toBe(true);
     });
     if (!preconditionMet) ctx.skip();
   }, 240_000);

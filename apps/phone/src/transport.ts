@@ -3,6 +3,8 @@ import { HEARTBEAT_MS, LINK_DEAD_MS, RECONNECT_BACKOFF_MS, RECONNECT_JITTER } fr
 /** The subset of WebSocket the transport uses (handlers are assigned as properties). */
 export interface SocketLike {
   readonly readyState: number;
+  /** Bytes queued by send() but not yet handed to the network; absent when the socket does not say. */
+  readonly bufferedAmount?: number;
   onopen: (() => void) | null;
   onmessage: ((event: { data: unknown }) => void) | null;
   onclose: ((event: { code?: number }) => void) | null;
@@ -56,6 +58,12 @@ export class Transport {
     private readonly handlers: TransportHandlers,
     private readonly now: () => number = () => Date.now(),
   ) {}
+
+  /** How much the socket is still holding back; a growing number means the link is stalled. */
+  get bufferedAmount(): number {
+    const n = this.sock?.bufferedAmount;
+    return typeof n === 'number' && Number.isFinite(n) ? n : 0;
+  }
 
   get isOpen(): boolean {
     return this.sock !== null && this.opened && this.sock.readyState === SOCKET_OPEN;

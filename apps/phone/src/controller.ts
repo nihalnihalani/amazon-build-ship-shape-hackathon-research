@@ -23,6 +23,7 @@ import {
   WINDOW_COOLDOWN_MS,
 } from './config.js';
 import { joinErrorText, joinRejectedText } from './labels.js';
+import { Outbox, type OutboxItem, type Priority } from './outbox.js';
 import { checkCode, normalizeCodeInput } from './pairing.js';
 import { type PhraseValidation, validateCue, validateDeviceLabel, validatePhrases } from './phrases.js';
 import type { AbortReason, AudioPort, AudioSnapshot, PrecheckRun, WindowRun } from './ports/audio.js';
@@ -210,7 +211,7 @@ const TV_REPORT_MIN_INTERVAL_MS = 1000;
 const RESUME_REFUSED_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>(['unauthorized', 'not_found', 'unauthenticated']);
 
 const BUDGET_NOTICE =
-  'This session has used its 5 minutes of listening on this phone. End the session on the TV and start a new one to measure again.';
+  'This phone has used its 5 minutes of listening. Turn the microphone off and start it again to listen for another 5 minutes.';
 
 const FATAL_RESUME_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'revoked',
@@ -227,6 +228,10 @@ export class PhoneController {
   private readonly listeners = new Set<Listener>();
   private readonly factory: PhoneMessageFactory;
   private readonly transport: Transport;
+  /** QA-E2E-01: paces and prioritises everything sent after authentication. */
+  private readonly outbox: Outbox;
+  /** Acks and results recently handed to the wire, so one the relay refused as rate_limited can be sent once more. */
+  private readonly recentCritical = new Map<string, { type: OutboundType; payload: unknown; ids: Ids; retried: boolean }>();
   private readonly unsubs: Array<() => void> = [];
 
   private credential: Credential | null = null;
@@ -284,6 +289,11 @@ export class PhoneController {
       },
       deps.now,
     );
+    this.outbox = new Outbox({
+      now: () => this.clock(),
+      transmit: (text) => this.transport.send(text),
+      bufferedAmount: () => this.transport.bufferedAmount,
+    });
     this.state = {
       screen: 'join',
       secureContext: deps.secureContext,
@@ -460,10 +470,11 @@ export class PhoneController {
     this.userConfirmed = false;
     this.refusedSince = null;
     this.dropHeld();
+    this.resetOutbox(false);
     this.clearTvReportTimer();
     this.clearFailureWindow();
     this.clearPhraseState(); // N-07: household text goes with the credential
-    this.resetBudget();
+    this.clearBudgetNotice();
     this.patch({
       screen: 'join',
       pairingConfirmed: false,
@@ -520,9 +531,10 @@ export class PhoneController {
     this.factory.clearAuth();
     this.lastMicKey = null;
     this.abortRun('interrupted');
-    if (this.pendingPhrases !== null) {
+    this.resetOutbox(true); // results still waiting for tokens are kept for the next connection
+    if (this.pendingPhrases !== null || this.state.phrases.status === 'sending') {
       // No ack can arrive on the dead connection: say so instead of showing "sending" forever.
-      const count = this.pendingPhrases.phrases.length;
+      const count = this.pendingPhrases?.phrases.length ?? this.state.phrases.count;
       this.pendingPhrases = null;
       this.patch({ phrases: { status: 'not_sent', count, saved: this.confirmedPhrases } });
     }
@@ -667,6 +679,7 @@ export class PhoneController {
     });
     this.clearFailureWindow();
     this.refusedSince = null; // authenticated: the refusal cycle (if any) is over
+    this.resetOutbox(true); // the relay's counters are per connection: so is our bucket
     this.lastMicKey = null;
     if (this.userConfirmed) {
       this.publishMic();
@@ -737,6 +750,10 @@ export class PhoneController {
       this.unpair('superseded');
       return;
     }
+    if (code === 'rate_limited') {
+      this.onRateLimited(ref);
+      return;
+    }
     if (code === 'cue_limit') {
       this.markCueLimit();
       if (ref) this.pendingCues.delete(ref);
@@ -793,7 +810,10 @@ export class PhoneController {
       const l = this.state.listener;
       if (outcome === 'rejected') {
         // The TV could not take it right now: allow one more deliberate tap while the controls are open.
-        const feedback = 'The TV could not take that answer. Tap Heard or Not heard again.';
+        const feedback =
+          detail === 'rate_limited'
+            ? 'The connection was busy for a moment, so that answer was not sent. Tap Heard or Not heard again.'
+            : 'The TV could not take that answer. Tap Heard or Not heard again.';
         this.patch({ listener: { ...l, answered: null, feedback }, notice: feedback });
       } else {
         const feedback = 'Too late: the TV had already moved on, so that answer was not counted.';
@@ -812,7 +832,9 @@ export class PhoneController {
     const feedback =
       detail === 'cue_limit'
         ? 'No cues are left for this session.'
-        : 'The TV could not take the cue right now (a phrase window may be open). Tap Cue to try again.';
+        : detail === 'rate_limited'
+          ? 'The connection was busy for a moment, so that cue was not sent. Tap Cue to try again.'
+          : 'The TV could not take the cue right now (a phrase window may be open). Tap Cue to try again.';
     this.patch({ cue: { ...this.state.cue, feedback }, notice: feedback });
     this.syncCues();
   }
@@ -837,7 +859,8 @@ export class PhoneController {
   }
 
   private onCommand(msg: Command): void {
-    this.touchTvActivity(); // N-12: any TV command keeps the idle clock from running out
+    // N-12 / R26: housekeeping commands (session.state, stale or refused commands) do NOT keep the idle
+    // clock from running out; only a command that starts a measurement does (see restartIdleClock).
     switch (msg.type) {
       case 'session.begin':
         return this.onSessionBegin(msg);
@@ -882,7 +905,8 @@ export class PhoneController {
       this.cueBase = 0;
       this.cueNet = 0;
       this.pendingCues.clear();
-      this.resetBudget(); // N-12: the budget belongs to one session
+      // N-12 / R26: NOT a budget reset. The TV chooses session ids, so a new id must not buy a new
+      // budget; only the person's Start microphone tap does (see startMic).
     }
     this.patch({
       session: {
@@ -929,6 +953,7 @@ export class PhoneController {
     }
     const ctx: RunContext = { kind: 'precheck', ids, handle, framesSent: 0, commandedMs: msg.payload.duration_ms, startedAt: this.clock() };
     this.budgetUsedMs += ctx.commandedMs;
+    this.restartIdleClock(); // a measurement really started
     this.activeRun = ctx;
     this.patch({ run: { kind: 'precheck', windowId: ids.window_id } });
     this.ackFor(msg, 'applied');
@@ -962,7 +987,9 @@ export class PhoneController {
           if (this.activeRun !== ctx || this.state.visibility !== 'visible') return;
           if (ctx.framesSent >= LIMITS.levelFramesMax) return;
           ctx.framesSent += 1;
-          this.sendAuthed(
+          // A level is sent now or dropped; it is never queued (QA-E2E-01).
+          this.submit(
+            'level',
             'level',
             {
               frame_index: frame.frameIndex,
@@ -980,6 +1007,7 @@ export class PhoneController {
     }
     ctx.handle = handle;
     this.budgetUsedMs += ctx.commandedMs;
+    this.restartIdleClock(); // a measurement really started
     this.activeRun = ctx;
     this.patch({ run: { kind: 'window', windowId: ids.window_id } });
     this.ackFor(msg, 'applied');
@@ -1016,10 +1044,16 @@ export class PhoneController {
     return null;
   }
 
+  /** Starts a new capture budget. Called from startMic() only (R26): the person decides, never the TV. */
   private resetBudget(): void {
     this.budgetUsedMs = 0;
     this.lastWindowEndedAt = Number.NEGATIVE_INFINITY;
     this.budgetNoticeShown = false;
+    this.clearBudgetNotice();
+  }
+
+  /** Removes the "used its 5 minutes" message from the screen without touching the budget itself. */
+  private clearBudgetNotice(): void {
     if (this.state.notice === BUDGET_NOTICE) this.patch({ notice: null });
   }
 
@@ -1186,7 +1220,9 @@ export class PhoneController {
     // N-07: a discarded session means the TV deleted its data; the phone does not keep the phrases either.
     if (msg.payload.reason === 'discarded') this.clearPhraseState();
     await this.shutdownCapture('discard');
-    this.resetBudget();
+    // Ending a session closes the microphone (and with it the idle clock). The budget is not reset
+    // here: it restarts only when the person taps Start microphone again.
+    this.clearBudgetNotice();
     this.publishMic(); // confirms "Mic off" even if the port was already off
     this.ackFor(msg, 'applied');
   }
@@ -1196,6 +1232,9 @@ export class PhoneController {
   /** The ONLY path to getUserMedia: called from the Start microphone button's click handler. */
   startMic(options: { relaxConstraints?: boolean } = {}): void {
     if (!this.state.canStartMic) return;
+    // N-12 / R26: the person's tap is the ONLY thing that starts a new 5-minute capture budget (and a
+    // fresh cooldown). No TV message, session id or reconnect does.
+    this.resetBudget();
     void this.deps.audio.open(options.relaxConstraints ? { relaxConstraints: true } : {});
   }
 
@@ -1273,7 +1312,13 @@ export class PhoneController {
     this.idleTimer = null;
   }
 
-  private touchTvActivity(): void {
+  /**
+   * N-12 / R26: restarts the 10-minute idle clock. Called only when a TV command actually started a
+   * measurement (precheck.start or window.start that the phone accepted). Not for session.state,
+   * pings, stale or refused commands, so a TV cannot keep the microphone open by sending one
+   * harmless command every few minutes. (session.end needs no restart: it closes the microphone.)
+   */
+  private restartIdleClock(): void {
     const open = this.state.mic.state === 'open_idle' || this.state.mic.state === 'measuring';
     if (open) this.armIdleTimer();
   }
@@ -1310,7 +1355,8 @@ export class PhoneController {
     const sessionId = this.state.session?.sessionId ?? null;
     const key = JSON.stringify([payload, sessionId]);
     if (key === this.lastMicKey) return;
-    if (this.sendAuthed('mic.state', payload, { session_id: sessionId })) this.lastMicKey = key;
+    // mic.state is coalesced: whatever is still waiting is replaced by this newer one (QA-E2E-01).
+    if (this.submit('state', 'mic.state', payload, { session_id: sessionId }) !== 'refused') this.lastMicKey = key;
   }
 
   /**
@@ -1367,13 +1413,16 @@ export class PhoneController {
   answer(response: 'heard' | 'not_heard'): void {
     const s = this.state;
     if (!s.canAnswer || !s.listener.sessionId || !s.listener.windowId || !s.listener.attemptId) return;
-    const id = this.sendAuthedWithId(
+    const sent = this.submit(
+      'critical',
       'listener.response',
       { response },
       { session_id: s.listener.sessionId, window_id: s.listener.windowId, attempt_id: s.listener.attemptId },
+      (id) => {
+        this.pendingResponse = id;
+      },
     );
-    if (id !== null) {
-      this.pendingResponse = id;
+    if (sent !== 'refused') {
       this.patch({ listener: { ...s.listener, answered: response, feedback: null }, notice: null });
     } else {
       this.patch({ notice: 'Could not send. Waiting for the connection to the TV.' });
@@ -1386,12 +1435,13 @@ export class PhoneController {
     if (!s.canCue || !s.listener.sessionId) return;
     const text = validateCue(s.cue.word);
     if (!text.ok) return;
-    const env = this.sendAuthedWithId('cue', { text: text.text }, { session_id: s.listener.sessionId });
-    if (env === null) {
+    const sent = this.submit('critical', 'cue', { text: text.text }, { session_id: s.listener.sessionId }, (id) => {
+      this.pendingCues.add(id);
+    });
+    if (sent === 'refused') {
       this.patch({ notice: 'Could not send. Waiting for the connection to the TV.' });
       return;
     }
-    this.pendingCues.add(env);
     this.cueNet += 1;
     this.patch({ cue: { ...this.state.cue, feedback: null }, notice: null });
     this.syncCues();
@@ -1440,13 +1490,14 @@ export class PhoneController {
       return { ...validation, sent: false };
     }
     if (!validation.ok) return { ...validation, sent: false };
-    const id = this.sendAuthedWithId('phrases.update', { phrases: validation.phrases });
-    if (id === null) {
+    const sent = this.submit('critical', 'phrases.update', { phrases: validation.phrases }, {}, (id) => {
+      this.pendingPhrases = { id, phrases: validation.phrases };
+    });
+    if (sent === 'refused') {
       this.pendingPhrases = null;
       this.patch({ phrases: { status: 'not_sent', count: validation.phrases.length, saved: this.confirmedPhrases } });
       return { ...validation, sent: false };
     }
-    this.pendingPhrases = { id, phrases: validation.phrases };
     this.patch({
       phrases: { status: 'sending', count: validation.phrases.length, saved: validation.phrases },
       notice: null,
@@ -1461,6 +1512,7 @@ export class PhoneController {
     this.factory.clearAuth();
     this.credential = null;
     this.pendingResults.length = 0;
+    this.resetOutbox(false);
     this.lastMicKey = null;
     this.pendingPhrases = null;
     this.pendingResponse = null;
@@ -1474,7 +1526,7 @@ export class PhoneController {
     this.clearListenerTimer();
     this.clearIdleTimer();
     this.clearPhraseState(); // N-07: household text goes with the credential
-    this.resetBudget();
+    this.clearBudgetNotice();
     this.patch({ session: null, micNotice: null });
     void this.shutdownCapture('discard');
     // A6-02: back to Join with a plain explanation; nothing is retried with the old credential.
@@ -1494,6 +1546,7 @@ export class PhoneController {
   /** Tear down everything (page unload, tests). */
   dispose(): void {
     this.transport.close();
+    this.resetOutbox(false);
     this.clearTvReportTimer();
     this.clearFailureWindow();
     this.clearListenerTimer();
@@ -1523,22 +1576,109 @@ export class PhoneController {
     }
   }
 
-  /** Sends an authenticated message; false when the link is not up. */
+  /** Sends an authenticated critical message (ack, result, ...); false when it could not be sent or queued. */
   private sendAuthed<T extends OutboundType>(type: T, payload: OutboundPayloads[T], ids: Ids = {}): boolean {
-    return this.sendAuthedWithId(type, payload, ids) !== null;
+    return this.submit(priorityOf(type), type, payload, ids) !== 'refused';
   }
 
-  /** Returns the message_id when sent, otherwise null. */
-  private sendAuthedWithId<T extends OutboundType>(type: T, payload: OutboundPayloads[T], ids: Ids = {}): string | null {
-    if (!this.linkUp()) return null;
+  /**
+   * The single path for everything sent after authentication. Returns `sent` (on the wire now),
+   * `queued` (waiting for the pacing bucket or a stalled socket), `dropped` (a level that was not
+   * worth sending) or `refused` (the link is down, the person has not confirmed, or the validators
+   * refused the message). `onSent` receives the message id the moment it goes out, which may be
+   * later than this call for a queued message.
+   */
+  private submit<T extends OutboundType>(
+    priority: Priority,
+    type: T,
+    payload: OutboundPayloads[T],
+    ids: Ids = {},
+    onSent?: (id: string) => void,
+  ): 'sent' | 'queued' | 'dropped' | 'refused' {
+    if (!this.linkUp()) return 'refused';
     // A3-01: until the user confirmed the pairing, the only thing sent is the join protocol and ping.
-    if (!this.userConfirmed && !PRE_CONFIRM_TYPES.has(type)) return null;
-    try {
-      const message = this.factory.build(type, payload, ids);
-      return this.transport.send(this.factory.serialize(message)) ? message.message_id : null;
-    } catch {
-      // The factory validates every message; an invalid one is never sent.
-      return null;
+    if (!this.userConfirmed && !PRE_CONFIRM_TYPES.has(type)) return 'refused';
+    const item: OutboxItem = {
+      priority,
+      // Numbered and serialised only when it leaves, so sequence numbers match wire order.
+      render: () => {
+        try {
+          const message = this.factory.build(type, payload, ids);
+          return { id: message.message_id, text: this.factory.serialize(message) };
+        } catch {
+          return null; // the factory validates every message; an invalid one is never sent
+        }
+      },
+      onSent: (id) => {
+        if (type === 'ack' || type === 'precheck.result' || type === 'window.result') this.rememberCritical(id, type, payload, ids);
+        onSent?.(id);
+      },
+      meta: priority === 'critical' && (type === 'precheck.result' || type === 'window.result') ? { type, payload, ids } : undefined,
+    };
+    const result = this.outbox.submit(item);
+    if (result === 'dropped') return priority === 'level' ? 'dropped' : 'refused';
+    return result;
+  }
+
+  private rememberCritical(id: string, type: OutboundType, payload: unknown, ids: Ids, retried = false): void {
+    this.recentCritical.set(id, { type, payload, ids, retried });
+    if (this.recentCritical.size > 64) {
+      const oldest = this.recentCritical.keys().next().value;
+      if (oldest !== undefined) this.recentCritical.delete(oldest);
     }
   }
+
+  /**
+   * The relay answered `rate_limited` (QA-E2E-01). Back off, then say again what the TV most needs:
+   * the latest mic.state (a refused one may have been the frame that said the microphone stopped
+   * measuring), and, once, any ack or result the relay refused. Each re-send is a freshly numbered
+   * message: the refused one used its sequence number, and later ones were already accepted.
+   */
+  private onRateLimited(ref: string | null): void {
+    this.outbox.noteRateLimited();
+    if (ref !== null) this.recoverRefused(ref);
+    this.lastMicKey = null; // force: the TV may never have seen the current state
+    this.publishMic();
+  }
+
+  private recoverRefused(ref: string): void {
+    const critical = this.recentCritical.get(ref);
+    if (critical !== undefined) {
+      this.recentCritical.delete(ref);
+      if (!critical.retried) {
+        this.submit('critical', critical.type as OutboundType, critical.payload as never, critical.ids, (id) =>
+          this.rememberCritical(id, critical.type, critical.payload, critical.ids, true),
+        );
+      }
+      return;
+    }
+    // A message the person is waiting on: undo its optimistic state so they can try again.
+    if (this.pendingCues.has(ref) || this.pendingResponse === ref) {
+      this.onAck(ref, 'rejected', 'rate_limited');
+    } else if (this.pendingPhrases !== null && this.pendingPhrases.id === ref) {
+      const count = this.pendingPhrases.phrases.length;
+      this.pendingPhrases = null;
+      this.patch({ phrases: { status: 'not_sent', count, saved: this.confirmedPhrases } });
+    }
+  }
+
+  /** Forgets everything waiting to go out; results are kept for the next connection. */
+  private resetOutbox(keepResults: boolean): void {
+    const waiting = this.outbox.reset();
+    this.recentCritical.clear();
+    if (!keepResults) return;
+    for (const item of waiting) {
+      const meta = item.meta as { type: 'precheck.result' | 'window.result'; payload: unknown; ids: Ids } | undefined;
+      if (meta === undefined) continue;
+      this.pendingResults.push({ type: meta.type, payload: meta.payload, ids: meta.ids });
+      if (this.pendingResults.length > 4) this.pendingResults.shift();
+    }
+  }
+}
+
+/** Levels may be dropped, mic.state is coalesced, everything else (acks, results, user actions) is never lost. */
+function priorityOf(type: OutboundType): Priority {
+  if (type === 'level') return 'level';
+  if (type === 'mic.state') return 'state';
+  return 'critical';
 }

@@ -459,7 +459,7 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     else if (s.phrases.status === 'sending') statusText = `Sent ${plural}. Waiting for the TV to confirm.`;
     else if (s.phrases.status === 'saved') statusText = `The TV saved ${plural}.`;
     else if (s.phrases.status === 'rejected') statusText = 'The TV could not save the phrases right now. It saves them after the current phrase window: press Save again then.';
-    else if (s.phrases.status === 'not_sent') statusText = 'Not sent: not connected to the TV right now. Try again when it reconnects.';
+    else if (s.phrases.status === 'not_sent') statusText = 'Not sent: the connection to the TV was not ready. Try again in a moment.';
     setText(phraseStatus, statusText);
     // Exactly what was sent, rendered as plain text (never as markup).
     const sig = s.phrases.saved.join('\u0000');

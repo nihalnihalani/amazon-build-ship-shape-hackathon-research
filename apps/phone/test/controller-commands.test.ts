@@ -23,7 +23,7 @@ import {
   windowStart,
   windowStop,
 } from './helpers/fakes.js';
-import { type Harness, pairedHarness } from './helpers/harness.js';
+import { advanceLive, type Harness, pairedHarness } from './helpers/harness.js';
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -168,7 +168,10 @@ describe('window.start / level frames / window.result', () => {
   it('never sends more than 700 level frames for one window', async () => {
     const h = await ready();
     send(h, windowStart('vowel'));
-    for (let i = 0; i < 710; i++) h.audio.frame(i);
+    for (let i = 0; i < 710; i++) {
+      h.audio.frame(i);
+      advanceLive(h, 50, () => relayMsg('pong', { server_time: 1 })); // frames arrive every 50 ms; the relay keeps answering
+    }
     expect(h.sockets.current.messages('level')).toHaveLength(700);
   });
 
