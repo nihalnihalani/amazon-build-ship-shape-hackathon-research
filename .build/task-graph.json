@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T09:07:03+05:30",
+ "updated_at": "2026-10-05T09:07:16+05:30",
  "states": [
   "pending",
   "ready",
@@ -489,14 +489,14 @@
    "requirement_ids": [
     "R-V2"
    ],
-   "owner": "relay-cloud",
+   "owner": "relay",
    "cwd": null,
    "dependencies": [
     "T12",
     "T10"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "Full journey over authorized AWS staging"
@@ -507,7 +507,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "B-003 AWS staging not authorized"
   },
   {
    "id": "T13",
@@ -714,7 +714,7 @@
     "R-V2",
     "R-Q2"
    ],
-   "owner": "qa-accessibility",
+   "owner": "qa",
    "cwd": null,
    "dependencies": [
     "T04A",
@@ -722,7 +722,7 @@
     "T18"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "Physical phone + VVD session; camera latency >=20 events; acoustic checks"
@@ -733,7 +733,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Needs physical Android phone (B-002) and VVD (B-001); T04 protocol rev 3 approved (EV-0047)"
   },
   {
    "id": "T20",
@@ -743,7 +743,7 @@
     "R-O2",
     "R-O3"
    ],
-   "owner": "relay-cloud",
+   "owner": "relay",
    "cwd": null,
    "dependencies": [
     "T10",
@@ -751,7 +751,7 @@
     "T18"
    ],
    "required": true,
-   "status": "pending",
+   "status": "blocked_external",
    "attempts": 0,
    "acceptance_criteria": [
     "Alarms with delivery proof, budget, disable/recovery drill, rollback"
@@ -762,7 +762,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Runbook, cost model, alarms, budget and kill switch prepared in IaC/docs; delivery/rollback/disable drills need authorized AWS staging (B-003)"
   },
   {
    "id": "T21",
@@ -788,7 +788,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": null
+   "blocker": "Depends on T19 and T20 (external)"
   },
   {
    "id": "T22",
@@ -839,7 +839,7 @@
    "reviewer": null,
    "evidence_refs": [],
    "commit": null,
-   "blocker": "Prepared only; publication requires owner authorization (B-005) and a VVD demo (B-001)"
+   "blocker": "Package prepared (docs/submission); needs VVD demo (B-001), video, owner publication decisions (B-005)"
   },
   {
    "id": "T24",
