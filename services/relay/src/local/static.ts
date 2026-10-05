@@ -23,16 +23,31 @@ const MIME: Record<string, string> = {
 };
 
 /**
- * Security headers sent on every response of the local server. The CSP matches the CloudFront response
- * headers policy in infra/template.yaml, except that connect-src there names the relay's wss origin.
+ * Where the page may open WebSockets (connect-src sources): the page's own origin (`'self'`) plus the relay
+ * origins this server is configured with, never a scheme wildcard (T16 N-02). `connectOrigins` holds exact
+ * `wss://host[:port]` (or `ws://` for localhost) origins, which load-config derives from the allowed page origins and
+ * the explicit ATR_RELAY_ORIGINS list.
  */
-export function securityHeaders(opts: { tls: boolean; hstsMaxAgeSeconds: number }): Record<string, string> {
+export function connectSrc(connectOrigins: readonly string[]): string {
+  return ["'self'", ...new Set(connectOrigins)].join(' ');
+}
+
+/**
+ * Security headers sent on every response of the local server. The CSP matches the CloudFront response
+ * headers policy in infra/template.yaml, except that connect-src there names the relay's API Gateway wss origin.
+ * There is no blob worker source: the audio worklet is a same-origin file.
+ */
+export function securityHeaders(opts: {
+  tls: boolean;
+  hstsMaxAgeSeconds: number;
+  connectOrigins?: readonly string[];
+}): Record<string, string> {
   const h: Record<string, string> = {
     'Content-Security-Policy': [
       "default-src 'self'",
-      "connect-src 'self' wss:",
+      `connect-src ${connectSrc(opts.connectOrigins ?? [])}`,
       "script-src 'self'",
-      "worker-src 'self' blob:",
+      "worker-src 'self'",
       "base-uri 'none'",
       "form-action 'none'",
       "frame-ancestors 'none'",

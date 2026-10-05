@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocket } from 'ws';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ConfigError, createLocalServer, loadLocalConfig, type LocalConfig, type LocalServer } from '../src/local/index.js';
+import { ConfigError, createLocalServer, loadLocalConfig, securityHeaders, wsOriginOf, type LocalConfig, type LocalServer } from '../src/local/index.js';
 import { assertNoLeaks } from './helpers/rig.js';
 import { SECRET_CUE, SECRET_PHRASE, VALID_PAYLOADS } from './helpers/fixtures.js';
 import { WsClient } from './helpers/ws-client.js';
@@ -26,9 +26,13 @@ let clock: { now: number };
 
 const headersWanted = (h: Record<string, unknown>): void => {
   const csp = String(h['content-security-policy']);
-  for (const part of ["default-src 'self'", "connect-src 'self' wss:", "script-src 'self'", "worker-src 'self' blob:"]) {
+  for (const part of ["default-src 'self'", "script-src 'self'", "worker-src 'self';"]) {
     expect(csp, part).toContain(part);
   }
+  // T16 N-02: connect-src is the page plus the WebSocket origin of the allowed page origin, never a scheme wildcard
+  const connect = (/connect-src([^;]*)/.exec(csp)?.[1] ?? '').trim().split(/\s+/);
+  expect(connect).toEqual(["'self'", 'wss://phone.example.test']);
+  expect(csp).not.toMatch(/\bwss?:(\s|;|$)|\*|blob:/);
   expect(csp).toContain("frame-ancestors 'none'");
   expect(h['permissions-policy']).toContain('microphone=(self)');
   expect(h['referrer-policy']).toBe('no-referrer');
@@ -81,6 +85,7 @@ describe.skipIf(!hasOpenssl)('local HTTPS/WSS server', () => {
       tvPreviewOrigins: [],
       environment: 'development',
       liveRoomCap: 200,
+      relayOrigins: [],
       disabled: false,
     };
     server = createLocalServer({ config, logSink: (l) => logs.push(l), now: () => clock.now });
@@ -295,6 +300,62 @@ describe.skipIf(!hasOpenssl)('local HTTPS/WSS server', () => {
   });
 });
 
+describe('CSP of the local server (T16 N-02)', () => {
+  const csp = (o: Parameters<typeof securityHeaders>[0]) => securityHeaders(o)['Content-Security-Policy'] as string;
+  const directive = (text: string, name: string) => (new RegExp(`${name}([^;]*)`).exec(text)?.[1] ?? '').trim().split(/\s+/).filter(Boolean);
+
+  it('names connect-src sources exactly: self, the derived WebSocket origins and the configured relay origins', () => {
+    expect(directive(csp({ tls: true, hstsMaxAgeSeconds: 0 }), 'connect-src')).toEqual(["'self'"]);
+    const withOrigins = csp({ tls: true, hstsMaxAgeSeconds: 0, connectOrigins: ['wss://a.example', 'wss://a.example', 'wss://localhost:*'] });
+    expect(directive(withOrigins, 'connect-src')).toEqual(["'self'", 'wss://a.example', 'wss://localhost:*']); // de-duplicated, in order
+    for (const text of [withOrigins, csp({ tls: false, hstsMaxAgeSeconds: 0 })]) {
+      expect(directive(text, 'connect-src')).not.toContain('wss:');
+      expect(directive(text, 'connect-src')).not.toContain('ws:');
+      expect(directive(text, 'connect-src')).not.toContain('*');
+      expect(directive(text, 'worker-src')).toEqual(["'self'"]);
+      expect(text).not.toContain('blob:');
+      expect(text).toContain("frame-ancestors 'none'");
+    }
+  });
+
+  it('derives WebSocket origins from page origins: https to wss, http to ws', () => {
+    expect(wsOriginOf('https://192.168.1.20:8443')).toBe('wss://192.168.1.20:8443');
+    expect(wsOriginOf('http://localhost:3000')).toBe('ws://localhost:3000');
+  });
+
+  it('is built by the server from the allowed origins and ATR_RELAY_ORIGINS, in the header of every response', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'atr-csp-'));
+    mkdirSync(join(root, 'static'));
+    writeFileSync(join(root, 'static', 'index.html'), 'ok');
+    const config = loadLocalConfig(
+      {
+        ATR_INSECURE_LOCALHOST_ONLY: '1', ATR_PORT: '0', ATR_STATIC_DIR: join(root, 'static'),
+        ATR_ALLOWED_ORIGINS: 'http://localhost:3000, http://127.0.0.1:3000', ATR_RELAY_ORIGINS: 'ws://localhost:*, wss://relay.example.test',
+      },
+      { root },
+    );
+    const s = createLocalServer({ config, logSink: () => undefined });
+    const started = await s.start();
+    try {
+      for (const path of ['/', '/missing', '/healthz']) {
+        const h = await new Promise<string>((resolve, reject) => {
+          httpRequest({ host: '127.0.0.1', port: started.port, path }, (x) => {
+            x.resume();
+            resolve(String(x.headers['content-security-policy']));
+          }).on('error', reject).end();
+        });
+        expect(directive(h, 'connect-src'), path).toEqual([
+          "'self'", 'ws://localhost:3000', 'ws://127.0.0.1:3000', 'ws://localhost:*', 'wss://relay.example.test',
+        ]);
+        expect(h, path).not.toContain('blob:');
+      }
+    } finally {
+      await s.stop();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('local configuration (ADR-0006)', () => {
   const root = mkdtempSync(join(tmpdir(), 'atr-cfg-'));
   afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -339,6 +400,32 @@ describe('local configuration (ADR-0006)', () => {
       'https://a.example',
       'http://localhost:3000',
     ]);
+  });
+
+  it('reads and validates ATR_RELAY_ORIGINS (connect-src relay origins, T16 N-02)', () => {
+    const base = { ATR_INSECURE_LOCALHOST_ONLY: '1' };
+    expect(loadLocalConfig({ ...base }, { root }).relayOrigins).toEqual([]);
+    expect(loadLocalConfig({ ...base, ATR_RELAY_ORIGINS: 'wss://relay.example.test, ws://localhost:9000, wss://localhost:*, ws://127.0.0.1:*' }, { root }).relayOrigins).toEqual([
+      'wss://relay.example.test', 'ws://localhost:9000', 'wss://localhost:*', 'ws://127.0.0.1:*',
+    ]);
+    for (const [bad, pattern] of [
+      ['wss:', /exact/], ['*', /exact/], ['https://relay.example.test', /exact/], ['wss://relay.example.test/ws', /exact/], ['wss://relay.example.test/', /exact/],
+      ['wss://*.example.test', /exact/], ['wss://relay.example.test:*', /\* port only on/], ['ws://relay.example.test', /wss/], ['wss://relay.example.test:99999', /port/],
+    ] as const) {
+      expect(() => loadLocalConfig({ ...base, ATR_RELAY_ORIGINS: bad }, { root }), bad).toThrow(ConfigError);
+      expect(() => loadLocalConfig({ ...base, ATR_RELAY_ORIGINS: bad }, { root }), bad).toThrow(pattern);
+    }
+  });
+
+  it('allows only non-localhost wss relay origins in production', () => {
+    mkdirSync(join(root, 'prodcerts'), { recursive: true });
+    writeFileSync(join(root, 'prodcerts', 'c.crt'), 'x');
+    writeFileSync(join(root, 'prodcerts', 'k.key'), 'x');
+    const prod = { ATR_ENV: 'production', ATR_TLS_CERT: join(root, 'prodcerts', 'c.crt'), ATR_TLS_KEY: join(root, 'prodcerts', 'k.key'), ATR_ALLOWED_ORIGINS: 'https://phone.example.test' };
+    expect(loadLocalConfig({ ...prod, ATR_RELAY_ORIGINS: 'wss://relay.example.test' }, { root }).relayOrigins).toEqual(['wss://relay.example.test']);
+    for (const bad of ['ws://localhost:9000', 'wss://localhost:9000', 'wss://localhost:*', 'wss://127.0.0.1:9000']) {
+      expect(() => loadLocalConfig({ ...prod, ATR_RELAY_ORIGINS: bad }, { root }), bad).toThrow(/production/);
+    }
   });
 
   it('validates numeric settings and reads the kill switch', () => {

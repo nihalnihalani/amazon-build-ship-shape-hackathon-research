@@ -66,6 +66,53 @@ export function roleStatements(block: string): { sid: string; actions: string[];
   });
 }
 
+/** The directives of the template's CloudFront Content-Security-Policy as { name: [sources] } (placeholders left as written). */
+export function templateCsp(template: string): Record<string, string[]> | null {
+  const m = /ContentSecurityPolicy: !Sub >-\n([\s\S]*?)\n\s{10}ContentTypeOptions:/.exec(template);
+  if (!m) return null;
+  const text = (m[1] as string).split('\n').map((l) => l.trim()).join(' ');
+  const out: Record<string, string[]> = {};
+  for (const part of text.split(';')) {
+    const [name, ...sources] = part.trim().split(/\s+/);
+    if (name) out[name] = sources;
+  }
+  return out;
+}
+
+/** The API Gateway WebSocket host expression of the stack, as written in the template. */
+export const API_HOST_EXPRESSION = '${RelayApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}';
+
+/** Violations of the page CSP (T16 N-02, N-03): connect-src is the page plus this stack's API host and nothing else. */
+export function cspViolations(template: string): string[] {
+  const v: string[] = [];
+  const csp = templateCsp(template);
+  if (!csp) return ['csp-missing'];
+  const connect = csp['connect-src'] ?? [];
+  if (connect.some((x) => x === 'wss:' || x === 'ws:' || x === '*' || x === 'https:' || x === 'http:' || x.startsWith('*.'))) v.push('csp-connect-wildcard');
+  if (connect.some((x) => /^wss?:\/\/.*\*/.test(x))) v.push('csp-connect-wildcard');
+  if (!connect.includes("'self'")) v.push('csp-connect-self-missing');
+  if (!connect.includes(`wss://${API_HOST_EXPRESSION}`)) v.push('csp-connect-api-host-missing');
+  if (connect.length !== 2) v.push('csp-connect-extra-sources');
+  const worker = csp['worker-src'] ?? [];
+  if (worker.includes('blob:')) v.push('csp-worker-blob');
+  if (worker.length !== 1 || worker[0] !== "'self'") v.push('csp-worker-not-self');
+  for (const [name, sources] of Object.entries(csp)) {
+    if (sources.some((x) => x === "'unsafe-inline'" || x === "'unsafe-eval'")) v.push(`csp-unsafe:${name}`);
+  }
+  if ((csp['script-src'] ?? []).join(' ') !== "'self'") v.push('csp-script-src');
+  if ((csp['frame-ancestors'] ?? []).join(' ') !== "'none'") v.push('csp-frame-ancestors');
+  // outputs: the page origin and the relay URL the clients are told (N-03)
+  const outputs = template.slice(template.indexOf('\nOutputs:\n'));
+  const wss = /\n {2}RelayWssUrl:[\s\S]*?Value: !Sub '([^']*)'/.exec(outputs)?.[1];
+  if (wss !== `wss://${API_HOST_EXPRESSION}/\${Stage}`) v.push('output-relay-wss-url');
+  const origin = /\n {2}PhonePageOrigin:[\s\S]*?Value: !Sub '([^']*)'/.exec(outputs)?.[1];
+  if (origin !== 'https://${PhoneDistribution.DomainName}') v.push('output-phone-page-origin');
+  // the relay allows exactly that origin to act as a phone
+  const allowed = resourceBlocks(template).RelayFunction ?? '';
+  if (!allowed.includes("!Sub 'https://${PhoneDistribution.DomainName}'")) v.push('relay-does-not-allow-page-origin');
+  return [...new Set(v)];
+}
+
 const SECRET_NAME = /SECRET|PEPPER|PASSWORD|TOKEN|PRIVATE|CREDENTIAL|API_?KEY|ACCESS_?KEY/i;
 
 /** Every violation of the privacy, logging, secret and IAM guarantees in `template`. Empty means clean. */
@@ -177,6 +224,8 @@ export function iacViolations(template: string): string[] {
   }
   const policies = ids.filter((x) => typeOf(R[x] as string) === 'AWS::SQS::QueuePolicy');
   if (!policies.some((id) => /aws:SecureTransport/.test(R[id] as string) && /Effect: Deny/.test(R[id] as string))) v.push('queue-tls-only-missing');
+
+  v.push(...cspViolations(template));
 
   return [...new Set(v)];
 }

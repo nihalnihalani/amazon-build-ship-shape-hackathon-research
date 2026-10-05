@@ -127,6 +127,34 @@ describe('operations documents stay consistent with the code', () => {
     }
   });
 
+  it('infra/README.md documents the build step for the phone and the two TV settings (T16 N-03)', () => {
+    const readme = read('infra/README.md');
+    for (const part of [
+      'VITE_ATR_RELAY_URL=<RelayWssUrl> npm run build -w @atr/phone',
+      'aws s3 sync apps/phone/dist s3://<PhoneBucketName>/',
+      'relayUrl = <RelayWssUrl>',
+      'phonePageOrigin = <PhonePageOrigin>',
+      'different hosts',
+      'no scheme wildcard',
+    ]) {
+      expect(readme, part).toContain(part);
+    }
+    const order = ['describe-stacks', 'VITE_ATR_RELAY_URL=', 'aws s3 sync', 'create-invalidation', 'phonePageOrigin = '].map((p) => readme.indexOf(p));
+    expect(order.every((i) => i > 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order); // the steps are in the order a person must do them
+    expect(readme).not.toMatch(/WebSocketUrl|PhonePageUrl/);
+  });
+
+  it('LOCAL_RELAY.md and the dev-cert README state the 90 day certificate lifetime, and no longer ten years', () => {
+    const local = read('docs/operations/LOCAL_RELAY.md');
+    const certs = read('scripts/dev-certs/README.md');
+    expect(local).toContain('valid **90 days**');
+    expect(local).toContain('`ATR_RELAY_ORIGINS`');
+    expect(local).not.toMatch(/valid 10 years|valid 365 days/);
+    expect(certs).toContain('valid 90 days');
+    expect(certs).toContain('fewer than 14 days left');
+  });
+
   it('infra/README.md names every template parameter and output', () => {
     const readme = read('infra/README.md');
     const template = read('infra/template.yaml');

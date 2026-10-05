@@ -65,30 +65,48 @@ sam deploy --config-file infra/samconfig.toml --parameter-overrides "Stage=stagi
 
 `sam deploy` packages `services/relay/dist-lambda/` (no `sam build` is needed; the bundle is already built and the AWS SDK is inside it; both functions use the same directory and differ only in the handler: `relay.handler` and `deadline.handler`). Deploy staging first and run the checks below before touching production. `Stage=prod` sets `ATR_ENV=production` in both functions: the relay then refuses `client.platform: test`, preview origins and localhost origins, and the template refuses a non-empty `TvPreviewOrigins`.
 
-Outputs: `WebSocketUrl`, `PhonePageUrl`, `PhoneBucketName`, `PhoneDistributionId`, `TableName`, `FunctionName`, `DeadlineFunctionName`, `DeadlineQueueUrl`, `DeadlineDeadLetterQueueUrl`, `HashSecretParameterName`, `AlarmTopicArn`.
+Outputs: `RelayWssUrl`, `PhonePageOrigin`, `PhoneBucketName`, `PhoneDistributionId`, `TableName`, `FunctionName`, `DeadlineFunctionName`, `DeadlineQueueUrl`, `DeadlineDeadLetterQueueUrl`, `HashSecretParameterName`, `AlarmTopicArn`.
 
-Publish the phone page (the bucket is private; CloudFront reads it with OAC):
+## Topology and the build step (T16 N-03)
+
+On AWS the phone page and the relay are on **different hosts**: the page is served by CloudFront (`PhonePageOrigin`, `https://dxxxxxxxx.cloudfront.net`) and the WebSocket lives on API Gateway (`RelayWssUrl`, `wss://<api-id>.execute-api.<region>.amazonaws.com/<stage>`). The local relay is one host for both, so clients that assume "the relay host is the page host" work locally and fail on AWS. Therefore:
+
+- The **phone** is built with the relay URL baked in (`VITE_ATR_RELAY_URL`), because the page cannot guess where the socket is.
+- The **TV** is configured with two values: `relayUrl` (the WebSocket URL it dials) and `phonePageOrigin` (the origin put in the QR code and the join link, `<phonePageOrigin>/#code=<CODE>`; session-core contract revision 3). Without `phonePageOrigin` the TV would point the QR at the relay host, which serves no page on AWS.
+- The CloudFront response headers policy allows the page to open WebSockets to exactly two sources, the page itself and the API host of this stack (`connect-src 'self' wss://<api-id>.execute-api.<region>.amazonaws.com`), with no scheme wildcard and no `blob:` worker source. The relay allows exactly `PhonePageOrigin` (plus any `AllowedOrigins`) to act as a phone.
+
+Steps after `sam deploy` (staging first):
 
 ```sh
+# 1. read the two values from the stack outputs
+aws cloudformation describe-stacks --stack-name atr-relay-<stage> --region <region> \
+  --query "Stacks[0].Outputs[?OutputKey=='RelayWssUrl' || OutputKey=='PhonePageOrigin' || OutputKey=='PhoneBucketName' || OutputKey=='PhoneDistributionId'].[OutputKey,OutputValue]" --output text
+
+# 2. build the phone page for this relay (the URL is baked into the bundle and into the page's own CSP)
+VITE_ATR_RELAY_URL=<RelayWssUrl> npm run build -w @atr/phone      # apps/phone/dist
+
+# 3. upload it (the bucket is private; CloudFront reads it with OAC) and refresh the cache
 aws s3 sync apps/phone/dist s3://<PhoneBucketName>/ --delete
 aws cloudfront create-invalidation --distribution-id <PhoneDistributionId> --paths "/*"
+
+# 4. configure the TV app: relayUrl = <RelayWssUrl>, phonePageOrigin = <PhonePageOrigin>
 ```
 
-The phone client reads the relay URL from its own configuration: set it to `WebSocketUrl` (the CSP only allows that wss origin and the page's own origin).
+A phone bundle built for one stack must not be uploaded to another: it dials the relay it was built for, and its CSP names that host only. Build once per stage. The phone build reading `VITE_ATR_RELAY_URL` is the phone owner's change (T16 N-03); until it lands the production phone page still dials `wss://<page host>/ws`, which does not exist on CloudFront, so the AWS deployment cannot pair end to end. `services/relay/test/infra.test.ts` asserts the CSP and the two outputs.
 
 ## Verify (each item is pending and needs the account)
 
 Record command, output and timestamp for each.
 
 1. **Alarm email**: confirm the SNS subscription, then follow RUNBOOK.md section 1.1. Alarms and the budget being created is not proof that notifications arrive.
-2. **Private origin**: `curl -i https://<PhoneBucketName>.s3.<region>.amazonaws.com/index.html` must return 403 (anonymous access denied); `curl -i <PhonePageUrl>/index.html` returns 200 with the headers below; `curl -I <PhonePageUrl>` over `http://` redirects to HTTPS.
-3. **Headers**: the response has `Strict-Transport-Security`, `Content-Security-Policy` containing `connect-src 'self' wss://<api-id>.execute-api.<region>.amazonaws.com`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy: microphone=(self), camera=(), geolocation=()`, `X-Frame-Options: DENY`.
-4. **WebSocket origin policy**: `npx wscat -H "Origin: https://evil.example" -c <WebSocketUrl>` is refused (HTTP 403); with `-H "Origin: <PhonePageUrl>"` it connects; with no Origin it connects but only TV-role operations work.
+2. **Private origin**: `curl -i https://<PhoneBucketName>.s3.<region>.amazonaws.com/index.html` must return 403 (anonymous access denied); `curl -i <PhonePageOrigin>/index.html` returns 200 with the headers below; `curl -I <PhonePageOrigin>` over `http://` redirects to HTTPS.
+3. **Headers**: the response has `Strict-Transport-Security`, `Content-Security-Policy` containing `connect-src 'self' wss://<api-id>.execute-api.<region>.amazonaws.com` (and no other connect source, no bare `wss:`), `worker-src 'self'` (no `blob:`), `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy: microphone=(self), camera=(), geolocation=()`, `X-Frame-Options: DENY`.
+4. **WebSocket origin policy**: `npx wscat -H "Origin: https://evil.example" -c <RelayWssUrl>` is refused (HTTP 403); with `-H "Origin: <PhonePageOrigin>"` it connects; with no Origin it connects but only TV-role operations work.
 5. **End to end**: pair a TV or Vega virtual device with a physical phone through the CloudFront page, run a measurement, check delivery latency and the redacted logs (`/aws/lambda/atr-relay-<stage>` must contain only `event`, `code`, `type`, `bytes`, `role`, `room`, `latency_ms`; search for `tv_credential`, `phone_credential`, `pairing_code` and a test phrase: there must be no match).
 6. **Callbacks**: a real server-to-client message arrives (the pairing flow shows it); an IAM-denied principal gets 403 calling `https://<api-id>.execute-api.<region>.amazonaws.com/<stage>/@connections/<id>`; closing a client abruptly then forwarding to it exercises `GoneException` cleanup (the peer receives `peer.state` with `connected: false` and the connection item disappears from the table).
 7. **Kill switch** and **rollback** drills: RUNBOOK.md sections 2 and 3, with timings.
 8. **Concurrency and throttle**: confirm `ReservedConcurrency` in the console and that the stage shows the default route throttle from `Mappings: StageSettings`.
-9. **Authentication deadlines (SEC-A02, the part only staging can prove)**: open a WebSocket with `npx wscat -H "Origin: <PhonePageUrl>" -c <WebSocketUrl>` and send nothing. About 5 seconds later the client receives an `error` message (`unauthenticated`, detail `auth_deadline`) and the socket closes (no chosen close code on AWS: the Management API cannot set one). Then send a valid `join.request` for a live code and do not answer on the TV: at about 60 seconds the phone receives `join.rejected` with reason `expired` and the TV receives `join.expired` and a fresh `pairing.code`; at about 65 seconds the phone socket closes. Record timestamps. In CloudWatch Metrics the queue `ApproximateAgeOfOldestMessage` stays near zero, the dead-letter queue is empty, and the consumer's `ConcurrentExecutions` never exceeds 5.
+9. **Authentication deadlines (SEC-A02, the part only staging can prove)**: open a WebSocket with `npx wscat -H "Origin: <PhonePageOrigin>" -c <RelayWssUrl>` and send nothing. About 5 seconds later the client receives an `error` message (`unauthenticated`, detail `auth_deadline`) and the socket closes (no chosen close code on AWS: the Management API cannot set one). Then send a valid `join.request` for a live code and do not answer on the TV: at about 60 seconds the phone receives `join.rejected` with reason `expired` and the TV receives `join.expired` and a fresh `pairing.code`; at about 65 seconds the phone socket closes. Record timestamps. In CloudWatch Metrics the queue `ApproximateAgeOfOldestMessage` stays near zero, the dead-letter queue is empty, and the consumer's `ConcurrentExecutions` never exceeds 5.
 10. **No execution data**: in the API Gateway console the stage shows execution logging OFF and data trace off, and no access log destination; X-Ray shows no traces for either function; the two log groups show a 14 day retention.
 11. **Secret handling**: both functions' environment configuration lists `HASH_SECRET_PARAM` (a parameter name) and no secret; a first invocation succeeds (it proves the roles can read and decrypt the parameter; an `AccessDenied` shows up as `internal_error` log lines and 500 responses at `$connect`).
 

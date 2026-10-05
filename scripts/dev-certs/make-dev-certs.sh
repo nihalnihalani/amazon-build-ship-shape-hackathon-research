@@ -10,6 +10,10 @@
 # Re-running keeps the existing CA (so the phone does not have to trust a new one) and re-issues only the server
 # certificate with the SANs you pass now. Use --force to create a new CA as well.
 #
+# Both certificates are short-lived (AMENDMENTS-REV2 A6-03, T16 N-06): the CA is valid 90 days and the server
+# certificate for as long as the CA remains valid, at most 90 days. A CA with fewer than 14 days left (or already
+# expired) is replaced automatically, and the script says so: the phone then has to trust the new ca.crt.
+#
 # The CA is name-constrained to loopback, RFC 1918 private IPv4 ranges, "localhost" and ".local" names, so a leaked
 # ca.key cannot be used to impersonate public sites. Use --no-name-constraints only if you need an address outside
 # those ranges (not recommended; also untested on phones).
@@ -24,7 +28,7 @@ FORCE=0
 NAME_CONSTRAINTS=1
 SANS=()
 
-usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -36,6 +40,10 @@ while [ $# -gt 0 ]; do
     *) SANS+=("$1"); shift ;;
   esac
 done
+
+CA_DAYS=90            # CA validity (A6-03: short-lived development CA)
+SERVER_DAYS_MAX=90    # server certificate validity, further capped by what is left of the CA
+CA_RENEW_BEFORE_DAYS=14
 
 OPENSSL="${OPENSSL:-openssl}"
 command -v "$OPENSSL" >/dev/null 2>&1 || { echo "error: openssl not found (set OPENSSL=/path/to/openssl)" >&2; exit 1; }
@@ -74,8 +82,15 @@ TMP="$(mktemp -d "${TMPDIR:-/tmp}/atr-certs.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 CA_KEY="$OUT/ca.key"; CA_CRT="$OUT/ca.crt"
-if [ "$FORCE" -eq 1 ] || [ ! -f "$CA_KEY" ] || [ ! -f "$CA_CRT" ]; then
+# An existing CA is only reused while it has at least CA_RENEW_BEFORE_DAYS left (checkend exits 0 when the
+# certificate will NOT expire within the given seconds).
+CA_EXPIRING=0
+if [ -f "$CA_KEY" ] && [ -f "$CA_CRT" ] && ! "$OPENSSL" x509 -in "$CA_CRT" -noout -checkend $((CA_RENEW_BEFORE_DAYS * 86400)) >/dev/null 2>&1; then
+  CA_EXPIRING=1
+fi
+if [ "$FORCE" -eq 1 ] || [ "$CA_EXPIRING" -eq 1 ] || [ ! -f "$CA_KEY" ] || [ ! -f "$CA_CRT" ]; then
   [ "$FORCE" -eq 1 ] && [ -f "$CA_CRT" ] && echo "note: --force replaces the CA; the phone must trust the new ca.crt."
+  [ "$CA_EXPIRING" -eq 1 ] && [ "$FORCE" -ne 1 ] && echo "note: the existing CA expires within $CA_RENEW_BEFORE_DAYS days (or has expired) and is replaced; the phone must trust the new ca.crt."
   {
     echo "[ext]"
     echo "basicConstraints = critical, CA:TRUE, pathlen:0"
@@ -94,7 +109,7 @@ if [ "$FORCE" -eq 1 ] || [ ! -f "$CA_KEY" ] || [ ! -f "$CA_CRT" ]; then
     fi
   } >"$TMP/ca.ext"
   "$OPENSSL" ecparam -name prime256v1 -genkey -noout -out "$CA_KEY"
-  "$OPENSSL" req -x509 -new -key "$CA_KEY" -sha256 -days 3650 \
+  "$OPENSSL" req -x509 -new -key "$CA_KEY" -sha256 -days "$CA_DAYS" \
     -subj "/CN=Across the Room local development CA" -extensions ext -config <(cat <<CONF
 [req]
 distinguished_name = dn
@@ -108,6 +123,12 @@ CONF
 else
   echo "reusing existing CA: $CA_CRT"
 fi
+
+# The server certificate never outlives the CA: the largest number of days (up to SERVER_DAYS_MAX) the CA is still valid for.
+SERVER_DAYS=1
+for d in $(seq "$SERVER_DAYS_MAX" -1 1); do
+  if "$OPENSSL" x509 -in "$CA_CRT" -noout -checkend $((d * 86400)) >/dev/null 2>&1; then SERVER_DAYS="$d"; break; fi
+done
 
 {
   echo "basicConstraints = critical, CA:FALSE"
@@ -123,12 +144,13 @@ fi
 "$OPENSSL" ecparam -name prime256v1 -genkey -noout -out "$OUT/server.key"
 "$OPENSSL" req -new -key "$OUT/server.key" -subj "/CN=localhost" -out "$TMP/server.csr"
 "$OPENSSL" x509 -req -in "$TMP/server.csr" -CA "$CA_CRT" -CAkey "$CA_KEY" -CAcreateserial -CAserial "$OUT/ca.srl" \
-  -sha256 -days 365 -extfile "$TMP/server.ext" -out "$OUT/server.crt" 2>/dev/null
+  -sha256 -days "$SERVER_DAYS" -extfile "$TMP/server.ext" -out "$OUT/server.crt" 2>/dev/null
 chmod 600 "$OUT/ca.key" "$OUT/server.key"
 chmod 644 "$OUT/ca.crt" "$OUT/server.crt"
 
 "$OPENSSL" verify -CAfile "$CA_CRT" "$OUT/server.crt" >/dev/null
-echo "created server certificate: $OUT/server.crt (valid 365 days) for:"
+echo "created server certificate: $OUT/server.crt (valid $SERVER_DAYS days, never beyond the CA) for:"
+"$OPENSSL" x509 -in "$CA_CRT" -noout -enddate | sed 's/^notAfter=/CA valid until: /'
 printf '  %s\n' "${SAN_LINES[@]}" | sed 's/^  [A-Z]*\.[0-9]* = /  /'
 echo
 echo "CA fingerprint (SHA-256), compare it on the phone when installing:"

@@ -69,7 +69,7 @@ aws lambda update-function-configuration --function-name atr-relay-<stage> --env
 shred -u /tmp/relay-env.json 2>/dev/null || rm -P /tmp/relay-env.json
 ```
 
-Verify it is on: `curl -i -H 'Origin: https://<cloudfront-domain>' ...` against the WebSocket URL with a WebSocket client (for example `npx wscat -H "Origin: https://<cloudfront-domain>" -c <WebSocketUrl>`) must fail with HTTP 503. Re-enable by reversing the lever used, then verify a connection succeeds and a pairing completes.
+Verify it is on: `curl -i -H 'Origin: https://<cloudfront-domain>' ...` against the WebSocket URL with a WebSocket client (for example `npx wscat -H "Origin: https://<cloudfront-domain>" -c <RelayWssUrl>`) must fail with HTTP 503. Re-enable by reversing the lever used, then verify a connection succeeds and a pairing completes.
 
 Local server: `RELAY_DISABLED=true` at start, or send `SIGUSR2` to toggle at runtime.
 

@@ -51,6 +51,7 @@ async function start(overrides: Partial<LocalConfig> = {}): Promise<Instance> {
     tvPreviewOrigins: [],
     environment: 'development',
     liveRoomCap: 200,
+    relayOrigins: [],
     disabled: false,
     ...overrides,
   };
@@ -217,7 +218,7 @@ describe('production and preview-origin configuration (A3-08, A3-12, SEC-A11, SE
       createLocalServer({
         config: {
           port: 0, host: '127.0.0.1', allowedOrigins: [PHONE_ORIGIN], staticDir: join(root, 'static'), tls: null, insecureLocalhostOnly: true,
-          hstsMaxAgeSeconds: 0, tickMs: 50, tvPreviewOrigins: [PREVIEW_ORIGIN], environment: 'production', liveRoomCap: 10, disabled: false,
+          hstsMaxAgeSeconds: 0, tickMs: 50, tvPreviewOrigins: [PREVIEW_ORIGIN], environment: 'production', liveRoomCap: 10, relayOrigins: [], disabled: false,
         },
         logSink: () => undefined,
       }),
