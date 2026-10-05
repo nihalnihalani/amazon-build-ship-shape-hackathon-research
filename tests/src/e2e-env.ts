@@ -65,6 +65,8 @@ export async function startRelay(opts: { staticDir?: string } = {}): Promise<Rel
       ATR_PORT: String(port),
       ATR_HOST: '127.0.0.1',
       ATR_ALLOWED_ORIGINS: origin,
+      // The phone may be routed through a fault proxy on a random loopback port (T15); the CSP must allow it.
+      ATR_RELAY_ORIGINS: 'wss://localhost:*,wss://127.0.0.1:*',
       ATR_STATIC_DIR: opts.staticDir ?? path.join(ROOT, 'apps/phone/dist-test'),
       ATR_TLS_CERT: path.join(certDir, 'server.crt'),
       ATR_TLS_KEY: path.join(certDir, 'server.key'),

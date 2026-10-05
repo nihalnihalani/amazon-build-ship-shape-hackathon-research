@@ -560,12 +560,12 @@ forms are stored separately by the operator).
 
 | Field | Value |
 |---|---|
-| Reviewer | pending (revision 3) |
-| Date | pending (revision 3) |
-| Approving commit | pending (revision 3) |
-| Freeze hash: SHA-256 of this protocol + criteria (`python3 fixtures/dsp/tools/freeze_hash.py`) | pending (revision 3) |
-| Recorded in `.build/evidence.jsonl` by the lead (commit SHA and hash, before the first trial) | pending (revision 3; EV-0030 is the revision 2 freeze and was rejected) |
-| Changes requested before freeze | pending (revision 3) |
+| Reviewer | security (`claude-sonnet-5-5`), independent of the author (audio-dsp) |
+| Date | 2026-10-05 |
+| Approving commit | `c935e48dc7f7ae6697871171bdbaff6231ad3c86` (revision 3 APPROVED; revision 2 rejected at `da018d7`) |
+| Freeze hash: SHA-256 of this protocol + criteria (`python3 fixtures/dsp/tools/freeze_hash.py`) | `b9b931007711a5e491c38dd295c2bedaca437887dcab1a5ea320327abdb99c66` |
+| Recorded in `.build/evidence.jsonl` by the lead (commit SHA and hash, before the first trial) | EV-0046 (revision 3 freeze); approval EV-0047 |
+| Changes requested before freeze | none (residual R24 recorded for the future qualification-mode harness: exclusion reasons are self-declared; harness review required before the first trial) |
 
 Revision 2 was rejected on 2026-10-05 (see the revision history above and `docs/security/T16_GATE.md`
 section 7); that decision stays on record and does not carry over to revision 3.

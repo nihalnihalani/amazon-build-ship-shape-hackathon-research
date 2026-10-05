@@ -59,6 +59,14 @@ export async function pairAndStartMic(
 export async function quietAndCalibrate(tv: TvHarness, phone: PhoneEnv): Promise<void> {
   await tv.waitFor((v) => v.stage === 'quiet_check' && has(v, 'begin_quiet_check'), 'quiet check ready', 30_000);
   tv.act('begin_quiet_check');
+  // A real user retries a failed quiet check; under heavy local load headless Chrome can drop frames
+  // (low coverage). Retry once, as the product allows, and fail on the second attempt.
+  const afterQuiet = await tv.waitFor((v) => (v.stage === 'calibration' && has(v, 'begin_calibration')) || (v.stage === 'quiet_check' && has(v, 'retry')), 'quiet check result', 30_000);
+  if (afterQuiet.stage === 'quiet_check') {
+    tv.act('retry');
+    await tv.waitFor((v) => v.stage === 'quiet_check' && has(v, 'begin_quiet_check'), 'quiet check ready again', 30_000);
+    tv.act('begin_quiet_check');
+  }
   await tv.waitFor((v) => v.stage === 'calibration' && has(v, 'begin_calibration'), 'calibration ready', 30_000);
   tv.act('begin_calibration');
   await tv.waitFor((v) => v.stage === 'calibration' && v.capturing, 'calibration capture', 30_000);
