@@ -1,0 +1,239 @@
+{
+ "generated_for": "apps/tv (platform kepler, --dev false)",
+ "source_map_files": 774,
+ "first_party_or_other_files": 89,
+ "third_party_packages": 27,
+ "packages": [
+  {
+   "name": "@amazon-devices/kepler-a11y-settings-interface-turbo",
+   "version": "1.0.0",
+   "license": "See license in LICENSE",
+   "importedAs": "@amazon-devices/kepler-a11y-settings-interface-turbo",
+   "files": 6
+  },
+  {
+   "name": "@amazon-devices/keplerscript-turbomodule-api",
+   "version": "1.2.5",
+   "license": "See license in LICENSE",
+   "importedAs": "@amazon-devices/keplerscript-turbomodule-api",
+   "files": 3
+  },
+  {
+   "name": "@amazon-devices/react-native-async-storage__async-storage",
+   "version": "2.1.9000000001+1.23.1",
+   "license": "See license in LICENSE",
+   "importedAs": "@react-native-async-storage/async-storage",
+   "files": 6
+  },
+  {
+   "name": "@amazon-devices/react-native-kepler",
+   "version": "4.0.1+rn0.83.0",
+   "license": "See license in LICENSE",
+   "importedAs": "@amazon-devices/react-native-kepler",
+   "files": 478
+  },
+  {
+   "name": "@amazon-devices/react-native-svg",
+   "version": "3.0.9000000001+15.11.1",
+   "license": "See license in LICENSE",
+   "importedAs": "@amazon-devices/react-native-svg",
+   "files": 114
+  },
+  {
+   "name": "@babel/runtime",
+   "version": "7.29.7",
+   "license": "MIT",
+   "importedAs": "@babel/runtime",
+   "files": 35
+  },
+  {
+   "name": "@react-native/assets-registry",
+   "version": "0.83.0",
+   "license": "MIT",
+   "importedAs": "@react-native/assets-registry",
+   "files": 2
+  },
+  {
+   "name": "@react-native/js-polyfills",
+   "version": "0.83.0",
+   "license": "MIT",
+   "importedAs": "@react-native/js-polyfills",
+   "files": 2
+  },
+  {
+   "name": "@react-native/normalize-colors",
+   "version": "0.83.0",
+   "license": "MIT",
+   "importedAs": "@react-native/normalize-colors",
+   "files": 1
+  },
+  {
+   "name": "@react-native/virtualized-lists",
+   "version": "0.83.0",
+   "license": "MIT",
+   "importedAs": "@react-native/virtualized-lists",
+   "files": 15
+  },
+  {
+   "name": "abort-controller",
+   "version": "3.0.0",
+   "license": "MIT",
+   "importedAs": "abort-controller",
+   "files": 1
+  },
+  {
+   "name": "base64-js",
+   "version": "1.5.1",
+   "license": "MIT",
+   "importedAs": "base64-js",
+   "files": 1
+  },
+  {
+   "name": "buffer",
+   "version": "5.7.1",
+   "license": "MIT",
+   "importedAs": "buffer",
+   "files": 1
+  },
+  {
+   "name": "event-target-shim",
+   "version": "5.0.1",
+   "license": "MIT",
+   "importedAs": "event-target-shim",
+   "files": 1
+  },
+  {
+   "name": "ieee754",
+   "version": "1.2.1",
+   "license": "BSD-3-Clause",
+   "importedAs": "ieee754",
+   "files": 1
+  },
+  {
+   "name": "invariant",
+   "version": "2.2.4",
+   "license": "MIT",
+   "importedAs": "invariant",
+   "files": 1
+  },
+  {
+   "name": "memoize-one",
+   "version": "5.2.1",
+   "license": "MIT",
+   "importedAs": "memoize-one",
+   "files": 1
+  },
+  {
+   "name": "metro-runtime",
+   "version": "0.83.8",
+   "license": "MIT",
+   "importedAs": "metro-runtime",
+   "files": 1
+  },
+  {
+   "name": "nullthrows",
+   "version": "1.1.1",
+   "license": "MIT",
+   "importedAs": "nullthrows",
+   "files": 1
+  },
+  {
+   "name": "promise",
+   "version": "8.3.0",
+   "license": "MIT",
+   "importedAs": "promise",
+   "files": 3
+  },
+  {
+   "name": "qrcode-generator",
+   "version": "2.0.4",
+   "license": "MIT",
+   "importedAs": "qrcode-generator",
+   "files": 1
+  },
+  {
+   "name": "react",
+   "version": "19.2.0",
+   "license": "MIT",
+   "importedAs": "react",
+   "files": 4
+  },
+  {
+   "name": "regenerator-runtime",
+   "version": "0.13.11",
+   "license": "MIT",
+   "importedAs": "regenerator-runtime",
+   "files": 1
+  },
+  {
+   "name": "scheduler",
+   "version": "0.27.0",
+   "license": "MIT",
+   "importedAs": "scheduler",
+   "files": 2
+  },
+  {
+   "name": "stacktrace-parser",
+   "version": "0.1.11",
+   "license": "MIT",
+   "importedAs": "stacktrace-parser",
+   "files": 1
+  },
+  {
+   "name": "warn-once",
+   "version": "0.1.1",
+   "license": "MIT",
+   "importedAs": "warn-once",
+   "files": 1
+  },
+  {
+   "name": "whatwg-fetch",
+   "version": "3.6.20",
+   "license": "MIT",
+   "importedAs": "whatwg-fetch",
+   "files": 1
+  }
+ ],
+ "audit_findings_for_bundled_packages": [
+  {
+   "name": "@amazon-devices/kepler-a11y-settings-interface-turbo",
+   "severity": "high",
+   "direct": true,
+   "advisoriesOnThisPackage": [],
+   "flaggedOnlyBecauseOf": [
+    "@amazon-devices/keplerscript-turbomodule-api",
+    "react-native-tscodegen-types"
+   ]
+  },
+  {
+   "name": "@amazon-devices/keplerscript-turbomodule-api",
+   "severity": "high",
+   "direct": false,
+   "advisoriesOnThisPackage": [],
+   "flaggedOnlyBecauseOf": [
+    "jscodeshift"
+   ]
+  },
+  {
+   "name": "@amazon-devices/react-native-async-storage__async-storage",
+   "severity": "high",
+   "direct": true,
+   "advisoriesOnThisPackage": [],
+   "flaggedOnlyBecauseOf": [
+    "@amazon-devices/keplerscript-turbomodule-api"
+   ]
+  },
+  {
+   "name": "@amazon-devices/react-native-kepler",
+   "severity": "high",
+   "direct": true,
+   "advisoriesOnThisPackage": [],
+   "flaggedOnlyBecauseOf": [
+    "@microsoft/api-extractor",
+    "@react-native/community-cli-plugin",
+    "babel-jest",
+    "jest-environment-node"
+   ]
+  }
+ ]
+}

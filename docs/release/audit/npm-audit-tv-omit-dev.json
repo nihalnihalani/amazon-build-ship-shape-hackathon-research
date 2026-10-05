@@ -1,0 +1,1901 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@amazon-devices/kepler-a11y-settings-interface-turbo": {
+      "name": "@amazon-devices/kepler-a11y-settings-interface-turbo",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@amazon-devices/keplerscript-turbomodule-api",
+        "react-native-tscodegen-types"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@amazon-devices/kepler-a11y-settings-interface-turbo"
+      ],
+      "fixAvailable": false
+    },
+    "@amazon-devices/keplerscript-turbomodule-api": {
+      "name": "@amazon-devices/keplerscript-turbomodule-api",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "jscodeshift"
+      ],
+      "effects": [
+        "@amazon-devices/react-native-async-storage__async-storage"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@amazon-devices/keplerscript-turbomodule-api"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-async-storage__async-storage",
+        "version": "2.0.1758683737",
+        "isSemVerMajor": true
+      }
+    },
+    "@amazon-devices/react-native-async-storage__async-storage": {
+      "name": "@amazon-devices/react-native-async-storage__async-storage",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@amazon-devices/keplerscript-turbomodule-api"
+      ],
+      "effects": [],
+      "range": ">=2.1.9000000000-rn-83",
+      "nodes": [
+        "node_modules/@react-native-async-storage/async-storage"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-async-storage__async-storage",
+        "version": "2.0.1758683737",
+        "isSemVerMajor": true
+      }
+    },
+    "@amazon-devices/react-native-kepler": {
+      "name": "@amazon-devices/react-native-kepler",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@microsoft/api-extractor",
+        "@react-native/community-cli-plugin",
+        "babel-jest",
+        "jest-environment-node"
+      ],
+      "effects": [],
+      "range": "*",
+      "nodes": [
+        "node_modules/@amazon-devices/react-native-kepler"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@jest/environment": {
+      "name": "@jest/environment",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jest/fake-timers"
+      ],
+      "effects": [],
+      "range": "<=30.2.0",
+      "nodes": [
+        "node_modules/@jest/environment"
+      ],
+      "fixAvailable": true
+    },
+    "@jest/fake-timers": {
+      "name": "@jest/fake-timers",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "jest-message-util",
+        "jest-message-util"
+      ],
+      "effects": [
+        "@jest/environment",
+        "jest-environment-node",
+        "jest-util"
+      ],
+      "range": "<=30.2.0",
+      "nodes": [
+        "node_modules/@jest/fake-timers",
+        "node_modules/react-native-tscodegen-types/node_modules/@jest/fake-timers"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@jest/transform": {
+      "name": "@jest/transform",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "jest-haste-map",
+        "micromatch"
+      ],
+      "effects": [
+        "babel-jest"
+      ],
+      "range": "<=30.2.0",
+      "nodes": [
+        "node_modules/@jest/transform"
+      ],
+      "fixAvailable": {
+        "name": "babel-jest",
+        "version": "30.5.2",
+        "isSemVerMajor": true
+      }
+    },
+    "@microsoft/api-extractor": {
+      "name": "@microsoft/api-extractor",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@microsoft/api-extractor-model",
+        "@microsoft/tsdoc-config",
+        "@rushstack/node-core-library",
+        "@rushstack/terminal",
+        "@rushstack/ts-command-line",
+        "minimatch"
+      ],
+      "effects": [
+        "@amazon-devices/react-native-kepler"
+      ],
+      "range": "7.13.2-pr1916.0 || 7.42.0 - 7.57.4",
+      "nodes": [
+        "node_modules/@microsoft/api-extractor"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@microsoft/api-extractor-model": {
+      "name": "@microsoft/api-extractor-model",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@microsoft/tsdoc-config",
+        "@rushstack/node-core-library"
+      ],
+      "effects": [
+        "@microsoft/api-extractor"
+      ],
+      "range": "7.28.18 - 7.33.2",
+      "nodes": [
+        "node_modules/@microsoft/api-extractor-model"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@microsoft/tsdoc-config": {
+      "name": "@microsoft/tsdoc-config",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "ajv"
+      ],
+      "effects": [
+        "@microsoft/api-extractor",
+        "@microsoft/api-extractor-model"
+      ],
+      "range": "0.17.0 - 0.18.0",
+      "nodes": [
+        "node_modules/@microsoft/tsdoc-config"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli": {
+      "name": "@react-native-community/cli",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@react-native-community/cli-clean",
+        "@react-native-community/cli-config",
+        "@react-native-community/cli-doctor",
+        "@react-native-community/cli-platform-android",
+        "@react-native-community/cli-platform-ios",
+        "inquirer",
+        "metro",
+        "metro-config",
+        "metro-core",
+        "node-notifier",
+        "react-native",
+        "shell-quote",
+        "ws"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": "<=6.0.1 || >=13.5.2",
+      "nodes": [
+        "node_modules/@react-native-community/cli",
+        "node_modules/react-native-tscodegen-types/node_modules/@react-native-community/cli"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli-clean": {
+      "name": "@react-native-community/cli-clean",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "fast-glob"
+      ],
+      "effects": [],
+      "range": ">=13.5.2",
+      "nodes": [
+        "node_modules/@react-native-community/cli-clean"
+      ],
+      "fixAvailable": true
+    },
+    "@react-native-community/cli-config": {
+      "name": "@react-native-community/cli-config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "fast-glob"
+      ],
+      "effects": [
+        "@react-native-community/cli",
+        "@react-native-community/cli-doctor"
+      ],
+      "range": ">=13.5.2",
+      "nodes": [
+        "node_modules/@react-native-community/cli-config"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli-config-android": {
+      "name": "@react-native-community/cli-config-android",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "fast-glob"
+      ],
+      "effects": [
+        "@react-native-community/cli-platform-android"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@react-native-community/cli-config-android"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli-config-apple": {
+      "name": "@react-native-community/cli-config-apple",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "fast-glob"
+      ],
+      "effects": [
+        "@react-native-community/cli-platform-apple"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@react-native-community/cli-config-apple"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli-doctor": {
+      "name": "@react-native-community/cli-doctor",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@react-native-community/cli-config",
+        "@react-native-community/cli-platform-android",
+        "@react-native-community/cli-platform-apple",
+        "@react-native-community/cli-platform-ios"
+      ],
+      "effects": [],
+      "range": ">=13.5.2",
+      "nodes": [
+        "node_modules/@react-native-community/cli-doctor"
+      ],
+      "fixAvailable": true
+    },
+    "@react-native-community/cli-platform-android": {
+      "name": "@react-native-community/cli-platform-android",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "@react-native-community/cli-config-android",
+        "logkitty"
+      ],
+      "effects": [
+        "@react-native-community/cli",
+        "@react-native-community/cli-doctor",
+        "react-native"
+      ],
+      "range": "<=4.9.0 || >=15.1.1",
+      "nodes": [
+        "node_modules/@react-native-community/cli-platform-android",
+        "node_modules/react-native-tscodegen-types/node_modules/@react-native-community/cli-platform-android"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli-platform-apple": {
+      "name": "@react-native-community/cli-platform-apple",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@react-native-community/cli-config-apple"
+      ],
+      "effects": [
+        "@react-native-community/cli-doctor",
+        "@react-native-community/cli-platform-ios"
+      ],
+      "range": ">=15.0.1-alpha.0",
+      "nodes": [
+        "node_modules/@react-native-community/cli-platform-apple"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native-community/cli-platform-ios": {
+      "name": "@react-native-community/cli-platform-ios",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@react-native-community/cli-platform-apple",
+        "xcode"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": "<=7.0.1 || >=15.0.1-alpha.0",
+      "nodes": [
+        "node_modules/@react-native-community/cli-platform-ios",
+        "node_modules/react-native-tscodegen-types/node_modules/@react-native-community/cli-platform-ios"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native/community-cli-plugin": {
+      "name": "@react-native/community-cli-plugin",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@react-native/metro-config",
+        "metro",
+        "metro-config"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@react-native/community-cli-plugin"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@react-native/metro-config": {
+      "name": "@react-native/metro-config",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "metro-config"
+      ],
+      "effects": [
+        "@react-native/community-cli-plugin"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@react-native/metro-config"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "@rushstack/node-core-library": {
+      "name": "@rushstack/node-core-library",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "ajv"
+      ],
+      "effects": [
+        "@microsoft/api-extractor",
+        "@microsoft/api-extractor-model",
+        "@rushstack/terminal"
+      ],
+      "range": "5.0.0 - 5.20.2",
+      "nodes": [
+        "node_modules/@rushstack/node-core-library"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@rushstack/terminal": {
+      "name": "@rushstack/terminal",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@rushstack/node-core-library"
+      ],
+      "effects": [
+        "@microsoft/api-extractor",
+        "@rushstack/ts-command-line"
+      ],
+      "range": "0.11.1 - 0.22.2",
+      "nodes": [
+        "node_modules/@rushstack/terminal"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@rushstack/ts-command-line": {
+      "name": "@rushstack/ts-command-line",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@rushstack/terminal"
+      ],
+      "effects": [],
+      "range": "4.21.1 - 5.3.2",
+      "nodes": [
+        "node_modules/@rushstack/ts-command-line"
+      ],
+      "fixAvailable": true
+    },
+    "ajv": {
+      "name": "ajv",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1113715,
+          "name": "ajv",
+          "dependency": "ajv",
+          "title": "ajv has ReDoS when using `$data` option",
+          "url": "https://github.com/advisories/GHSA-2g4f-4pwh-qvx6",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=7.0.0-alpha.0 <8.18.0"
+        }
+      ],
+      "effects": [
+        "@microsoft/tsdoc-config",
+        "@rushstack/node-core-library"
+      ],
+      "range": "7.0.0-alpha.0 - 8.17.1",
+      "nodes": [
+        "node_modules/@rushstack/node-core-library/node_modules/ajv",
+        "node_modules/ajv"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "anymatch": {
+      "name": "anymatch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [
+        "jest-haste-map",
+        "sane"
+      ],
+      "range": "1.2.0 - 2.0.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/anymatch",
+        "node_modules/sane/node_modules/anymatch"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "babel-jest": {
+      "name": "babel-jest",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@jest/transform"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": "24.2.0-alpha.0 - 30.2.0",
+      "nodes": [
+        "node_modules/babel-jest"
+      ],
+      "fixAvailable": {
+        "name": "babel-jest",
+        "version": "30.5.2",
+        "isSemVerMajor": true
+      }
+    },
+    "braces": {
+      "name": "braces",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1098094,
+          "name": "braces",
+          "dependency": "braces",
+          "title": "Uncontrolled resource consumption in braces",
+          "url": "https://github.com/advisories/GHSA-grv7-fg5c-xmjg",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-1050"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<3.0.3"
+        },
+        {
+          "source": 1240992,
+          "name": "braces",
+          "dependency": "braces",
+          "title": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns",
+          "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+          "severity": "high",
+          "cwe": [
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<=3.0.3"
+        }
+      ],
+      "effects": [
+        "micromatch"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/braces",
+        "node_modules/react-native-tscodegen-types/node_modules/braces",
+        "node_modules/sane/node_modules/braces"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "cross-spawn": {
+      "name": "cross-spawn",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1104663,
+          "name": "cross-spawn",
+          "dependency": "cross-spawn",
+          "title": "Regular Expression Denial of Service (ReDoS) in cross-spawn",
+          "url": "https://github.com/advisories/GHSA-3xgq-45jj-v275",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.0.6"
+        }
+      ],
+      "effects": [
+        "execa",
+        "fbjs-scripts"
+      ],
+      "range": "<6.0.6",
+      "nodes": [
+        "node_modules/fbjs-scripts/node_modules/cross-spawn",
+        "node_modules/os-locale/node_modules/cross-spawn"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "decode-uri-component": {
+      "name": "decode-uri-component",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1147955,
+          "name": "decode-uri-component",
+          "dependency": "decode-uri-component",
+          "title": "decode-uri-component: Denial of service via exponential decoding of malformed percent-encoded input",
+          "url": "https://github.com/advisories/GHSA-vcc3-ghjq-m6fr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-405",
+            "CWE-407",
+            "CWE-1176"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=0.4.2"
+        }
+      ],
+      "effects": [
+        "source-map-resolve"
+      ],
+      "range": "<=0.4.2",
+      "nodes": [
+        "node_modules/decode-uri-component"
+      ],
+      "fixAvailable": true
+    },
+    "execa": {
+      "name": "execa",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "cross-spawn"
+      ],
+      "effects": [
+        "os-locale"
+      ],
+      "range": "0.5.0 - 0.9.0",
+      "nodes": [
+        "node_modules/os-locale/node_modules/execa"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "external-editor": {
+      "name": "external-editor",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "tmp"
+      ],
+      "effects": [
+        "inquirer"
+      ],
+      "range": ">=1.1.1",
+      "nodes": [
+        "node_modules/external-editor"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "fast-glob": {
+      "name": "fast-glob",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [
+        "@react-native-community/cli-clean",
+        "@react-native-community/cli-config",
+        "@react-native-community/cli-config-android",
+        "@react-native-community/cli-config-apple"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/fast-glob"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "fbjs": {
+      "name": "fbjs",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "isomorphic-fetch"
+      ],
+      "effects": [
+        "metro",
+        "react-native"
+      ],
+      "range": "0.7.0 - 1.0.0",
+      "nodes": [
+        "node_modules/fbjs"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "fbjs-scripts": {
+      "name": "fbjs-scripts",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "cross-spawn"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": ">=0.6.0-alpha.1",
+      "nodes": [
+        "node_modules/fbjs-scripts"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "image-size": {
+      "name": "image-size",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1239766,
+          "name": "image-size",
+          "dependency": "image-size",
+          "title": "image-size: ICNS parser allows denial of service through an infinite loop",
+          "url": "https://github.com/advisories/GHSA-w3rx-r6r6-pgpr",
+          "severity": "high",
+          "cwe": [
+            "CWE-835"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=0.6.3 <=2.0.2"
+        }
+      ],
+      "effects": [],
+      "range": "0.6.3 - 2.0.2",
+      "nodes": [
+        "node_modules/image-size"
+      ],
+      "fixAvailable": true
+    },
+    "inquirer": {
+      "name": "inquirer",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        "external-editor"
+      ],
+      "effects": [
+        "@react-native-community/cli"
+      ],
+      "range": "3.0.0 - 8.2.6 || 9.0.0 - 9.3.7",
+      "nodes": [
+        "node_modules/inquirer"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "isomorphic-fetch": {
+      "name": "isomorphic-fetch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "node-fetch"
+      ],
+      "effects": [
+        "fbjs"
+      ],
+      "range": "2.0.0 - 2.2.1",
+      "nodes": [
+        "node_modules/isomorphic-fetch"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "jest-environment-node": {
+      "name": "jest-environment-node",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@jest/environment",
+        "@jest/fake-timers"
+      ],
+      "effects": [
+        "@amazon-devices/react-native-kepler",
+        "react-native"
+      ],
+      "range": "24.2.0-alpha.0 - 30.2.0",
+      "nodes": [
+        "node_modules/jest-environment-node"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "jest-haste-map": {
+      "name": "jest-haste-map",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "anymatch",
+        "jest-util",
+        "micromatch",
+        "micromatch",
+        "sane"
+      ],
+      "effects": [
+        "metro",
+        "metro-core"
+      ],
+      "range": "18.1.0 - 30.2.0",
+      "nodes": [
+        "node_modules/jest-haste-map",
+        "node_modules/react-native-tscodegen-types/node_modules/jest-haste-map"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "jest-message-util": {
+      "name": "jest-message-util",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch",
+        "micromatch"
+      ],
+      "effects": [
+        "@jest/fake-timers"
+      ],
+      "range": "18.5.0-alpha.7da3df39 - 30.2.0",
+      "nodes": [
+        "node_modules/jest-message-util",
+        "node_modules/react-native-tscodegen-types/node_modules/jest-message-util"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "jest-util": {
+      "name": "jest-util",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@jest/fake-timers"
+      ],
+      "effects": [
+        "jest-haste-map"
+      ],
+      "range": "24.2.0-alpha.0 - 24.9.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/jest-util"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "jscodeshift": {
+      "name": "jscodeshift",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [
+        "@amazon-devices/keplerscript-turbomodule-api"
+      ],
+      "range": "0.3.20 - 17.3.0",
+      "nodes": [
+        "node_modules/jscodeshift"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-async-storage__async-storage",
+        "version": "2.0.1758683737",
+        "isSemVerMajor": true
+      }
+    },
+    "lodash": {
+      "name": "lodash",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1115806,
+          "name": "lodash",
+          "dependency": "lodash",
+          "title": "lodash vulnerable to Code Injection via `_.template` imports key names",
+          "url": "https://github.com/advisories/GHSA-r5fr-rjxr-66jc",
+          "severity": "high",
+          "cwe": [
+            "CWE-94"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": ">=4.0.0 <=4.17.23"
+        },
+        {
+          "source": 1115810,
+          "name": "lodash",
+          "dependency": "lodash",
+          "title": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+          "url": "https://github.com/advisories/GHSA-f23m-r3pf-42rh",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 6.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+          },
+          "range": "<=4.17.23"
+        },
+        {
+          "source": 1120370,
+          "name": "lodash",
+          "dependency": "lodash",
+          "title": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
+          "url": "https://github.com/advisories/GHSA-xxjr-mmjv-4gpg",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 6.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+          },
+          "range": ">=4.0.0 <=4.17.22"
+        }
+      ],
+      "effects": [],
+      "range": "<=4.17.23",
+      "nodes": [
+        "node_modules/lodash"
+      ],
+      "fixAvailable": true
+    },
+    "logkitty": {
+      "name": "logkitty",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1093556,
+          "name": "logkitty",
+          "dependency": "logkitty",
+          "title": "Arbitrary shell command execution in logkitty",
+          "url": "https://github.com/advisories/GHSA-v8v8-6859-qxm4",
+          "severity": "critical",
+          "cwe": [
+            "CWE-94"
+          ],
+          "cvss": {
+            "score": 9.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<0.7.1"
+        },
+        "yargs"
+      ],
+      "effects": [
+        "@react-native-community/cli-platform-android"
+      ],
+      "range": "<=0.7.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/logkitty"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "mem": {
+      "name": "mem",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1085685,
+          "name": "mem",
+          "dependency": "mem",
+          "title": "Denial of Service in mem",
+          "url": "https://github.com/advisories/GHSA-4xcv-9jjx-gfj3",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400"
+          ],
+          "cvss": {
+            "score": 5.1,
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": "<4.0.0"
+        }
+      ],
+      "effects": [
+        "os-locale"
+      ],
+      "range": "<4.0.0",
+      "nodes": [
+        "node_modules/mem"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "metro": {
+      "name": "metro",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "fbjs",
+        "jest-haste-map",
+        "metro-cache",
+        "metro-config",
+        "metro-config",
+        "metro-core",
+        "metro-file-map",
+        "metro-inspector-proxy",
+        "metro-transform-worker",
+        "ws",
+        "yargs"
+      ],
+      "effects": [
+        "@react-native-community/cli",
+        "@react-native/community-cli-plugin",
+        "metro-config",
+        "metro-transform-worker"
+      ],
+      "range": "0.22.1 - 0.66.2 || >=0.71.0",
+      "nodes": [
+        "node_modules/metro",
+        "node_modules/react-native-tscodegen-types/node_modules/metro"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "metro-cache": {
+      "name": "metro-cache",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "metro-core"
+      ],
+      "effects": [],
+      "range": "0.32.0 - 0.59.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/metro-cache"
+      ],
+      "fixAvailable": true
+    },
+    "metro-config": {
+      "name": "metro-config",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro",
+        "metro",
+        "metro-cache",
+        "metro-core"
+      ],
+      "effects": [
+        "@react-native/community-cli-plugin",
+        "@react-native/metro-config",
+        "metro"
+      ],
+      "range": "<=0.66.2 || >=0.71.0",
+      "nodes": [
+        "node_modules/metro-config",
+        "node_modules/react-native-tscodegen-types/node_modules/metro-config"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "metro-core": {
+      "name": "metro-core",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "jest-haste-map"
+      ],
+      "effects": [
+        "@react-native-community/cli",
+        "metro",
+        "metro-cache",
+        "metro-config"
+      ],
+      "range": "0.32.0 - 0.59.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/metro-core"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "metro-file-map": {
+      "name": "metro-file-map",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [
+        "metro"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/metro-file-map"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "metro-inspector-proxy": {
+      "name": "metro-inspector-proxy",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "ws",
+        "yargs"
+      ],
+      "effects": [
+        "metro"
+      ],
+      "range": "0.53.0 - 0.66.2",
+      "nodes": [
+        "node_modules/metro-inspector-proxy"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "metro-transform-worker": {
+      "name": "metro-transform-worker",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "metro"
+      ],
+      "effects": [],
+      "range": ">=0.71.0",
+      "nodes": [
+        "node_modules/metro-transform-worker"
+      ],
+      "fixAvailable": true
+    },
+    "micromatch": {
+      "name": "micromatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1098681,
+          "name": "micromatch",
+          "dependency": "micromatch",
+          "title": "Regular Expression Denial of Service (ReDoS) in micromatch",
+          "url": "https://github.com/advisories/GHSA-952p-6rrq-rcjv",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<4.0.8"
+        },
+        "braces",
+        "braces"
+      ],
+      "effects": [
+        "@jest/transform",
+        "anymatch",
+        "fast-glob",
+        "jest-haste-map",
+        "jest-message-util",
+        "jscodeshift",
+        "metro-file-map",
+        "sane"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/micromatch",
+        "node_modules/react-native-tscodegen-types/node_modules/micromatch",
+        "node_modules/sane/node_modules/micromatch"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "minimatch": {
+      "name": "minimatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1113459,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern",
+          "url": "https://github.com/advisories/GHSA-3ppc-4f35-3m26",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<3.1.3"
+        },
+        {
+          "source": 1113538,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments",
+          "url": "https://github.com/advisories/GHSA-7r86-cg39-jmmj",
+          "severity": "high",
+          "cwe": [
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<3.1.3"
+        },
+        {
+          "source": 1113546,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions",
+          "url": "https://github.com/advisories/GHSA-23c5-xmqv-rm74",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<3.1.4"
+        }
+      ],
+      "effects": [
+        "@microsoft/api-extractor"
+      ],
+      "range": "<=3.1.3",
+      "nodes": [
+        "node_modules/minimatch"
+      ],
+      "fixAvailable": {
+        "name": "@amazon-devices/react-native-kepler",
+        "version": "2.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "node-fetch": {
+      "name": "node-fetch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1095073,
+          "name": "node-fetch",
+          "dependency": "node-fetch",
+          "title": "node-fetch forwards secure headers to untrusted sites",
+          "url": "https://github.com/advisories/GHSA-r683-j2x4-v87g",
+          "severity": "high",
+          "cwe": [
+            "CWE-173",
+            "CWE-200",
+            "CWE-601"
+          ],
+          "cvss": {
+            "score": 8.8,
+            "vectorString": "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<2.6.7"
+        }
+      ],
+      "effects": [
+        "isomorphic-fetch"
+      ],
+      "range": "<2.6.7",
+      "nodes": [
+        "node_modules/node-fetch"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "node-notifier": {
+      "name": "node-notifier",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1086436,
+          "name": "node-notifier",
+          "dependency": "node-notifier",
+          "title": "OS Command Injection in node-notifier",
+          "url": "https://github.com/advisories/GHSA-5fw9-fq32-wv5p",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 5.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
+          },
+          "range": "<8.0.1"
+        }
+      ],
+      "effects": [
+        "@react-native-community/cli"
+      ],
+      "range": "<8.0.1",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/node-notifier"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "os-locale": {
+      "name": "os-locale",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "execa",
+        "mem"
+      ],
+      "effects": [
+        "yargs"
+      ],
+      "range": "2.0.0 - 3.0.0",
+      "nodes": [
+        "node_modules/os-locale"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "react-devtools-core": {
+      "name": "react-devtools-core",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1099563,
+          "name": "react-devtools-core",
+          "dependency": "react-devtools-core",
+          "title": "React Developer Tools extension Improper Authorization vulnerability",
+          "url": "https://github.com/advisories/GHSA-rxrc-rgv4-jpvx",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-116",
+            "CWE-285"
+          ],
+          "cvss": {
+            "score": 6.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+          },
+          "range": "<4.28.4"
+        },
+        "ws"
+      ],
+      "effects": [
+        "react-native"
+      ],
+      "range": "<=4.28.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/react-devtools-core"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "react-native": {
+      "name": "react-native",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@react-native-community/cli",
+        "@react-native-community/cli-platform-android",
+        "@react-native-community/cli-platform-ios",
+        "@react-native/community-cli-plugin",
+        {
+          "source": 1089027,
+          "name": "react-native",
+          "dependency": "react-native",
+          "title": "Regular expression denial of service in react-native",
+          "url": "https://github.com/advisories/GHSA-7f53-fmmv-mfjv",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-697"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=0.59.0 <0.62.3"
+        },
+        "babel-jest",
+        "fbjs",
+        "fbjs-scripts",
+        "jest-environment-node",
+        "react-devtools-core"
+      ],
+      "effects": [
+        "@react-native-community/cli",
+        "react-native-tscodegen-types"
+      ],
+      "range": "<=0.0.0-ffdfbbec0 || >=0.22.0-rc",
+      "nodes": [
+        "node_modules/react-native",
+        "node_modules/react-native-tscodegen-types/node_modules/react-native"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "react-native-tscodegen-types": {
+      "name": "react-native-tscodegen-types",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "react-native"
+      ],
+      "effects": [
+        "@amazon-devices/kepler-a11y-settings-interface-turbo"
+      ],
+      "range": "<=0.67.0",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types"
+      ],
+      "fixAvailable": false
+    },
+    "sane": {
+      "name": "sane",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "anymatch",
+        "micromatch"
+      ],
+      "effects": [
+        "jest-haste-map"
+      ],
+      "range": "1.5.0 - 4.1.0",
+      "nodes": [
+        "node_modules/sane"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "shell-quote": {
+      "name": "shell-quote",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1120422,
+          "name": "shell-quote",
+          "dependency": "shell-quote",
+          "title": "shell-quote quote() does not escape newlines in object .op values",
+          "url": "https://github.com/advisories/GHSA-w7jw-789q-3m8p",
+          "severity": "critical",
+          "cwe": [
+            "CWE-77",
+            "CWE-78"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": ">=1.1.0 <=1.8.3"
+        },
+        {
+          "source": 1123944,
+          "name": "shell-quote",
+          "dependency": "shell-quote",
+          "title": "shell-quote: Quadratic-complexity Denial of Service in `parse()` (CWE-407)",
+          "url": "https://github.com/advisories/GHSA-395f-4hp3-45gv",
+          "severity": "high",
+          "cwe": [
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<=1.8.4"
+        }
+      ],
+      "effects": [],
+      "range": "<=1.8.4",
+      "nodes": [
+        "node_modules/react-native-tscodegen-types/node_modules/shell-quote"
+      ],
+      "fixAvailable": true
+    },
+    "source-map-resolve": {
+      "name": "source-map-resolve",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "decode-uri-component"
+      ],
+      "effects": [],
+      "range": ">=0.5.1",
+      "nodes": [
+        "node_modules/source-map-resolve"
+      ],
+      "fixAvailable": true
+    },
+    "tmp": {
+      "name": "tmp",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1109537,
+          "name": "tmp",
+          "dependency": "tmp",
+          "title": "tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter",
+          "url": "https://github.com/advisories/GHSA-52f5-9888-hmc6",
+          "severity": "low",
+          "cwe": [
+            "CWE-59"
+          ],
+          "cvss": {
+            "score": 2.5,
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": "<=0.2.3"
+        },
+        {
+          "source": 1120654,
+          "name": "tmp",
+          "dependency": "tmp",
+          "title": "tmp has Path Traversal via unsanitized prefix/postfix that enables directory escape",
+          "url": "https://github.com/advisories/GHSA-ph9p-34f9-6g65",
+          "severity": "high",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<0.2.6"
+        }
+      ],
+      "effects": [
+        "external-editor"
+      ],
+      "range": "<=0.2.5",
+      "nodes": [
+        "node_modules/tmp"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "uuid": {
+      "name": "uuid",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1119441,
+          "name": "uuid",
+          "dependency": "uuid",
+          "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+          "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-787",
+            "CWE-1285"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+          },
+          "range": "<11.1.1"
+        }
+      ],
+      "effects": [
+        "xcode"
+      ],
+      "range": "<11.1.1",
+      "nodes": [
+        "node_modules/uuid"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "ws": {
+      "name": "ws",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1118731,
+          "name": "ws",
+          "dependency": "ws",
+          "title": "ws affected by a DoS when handling a request with many HTTP headers",
+          "url": "https://github.com/advisories/GHSA-3h5v-q93c-6h6q",
+          "severity": "high",
+          "cwe": [
+            "CWE-476"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=2.1.0 <5.2.4"
+        },
+        {
+          "source": 1123262,
+          "name": "ws",
+          "dependency": "ws",
+          "title": "ws: Memory exhaustion DoS from tiny fragments and data chunks",
+          "url": "https://github.com/advisories/GHSA-96hv-2xvq-fx4p",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-770",
+            "CWE-1050"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=1.1.0 <5.2.5"
+        }
+      ],
+      "effects": [
+        "@react-native-community/cli",
+        "metro",
+        "metro-inspector-proxy",
+        "react-devtools-core"
+      ],
+      "range": "1.1.0 - 5.2.4",
+      "nodes": [
+        "node_modules/metro-inspector-proxy/node_modules/ws",
+        "node_modules/react-native-tscodegen-types/node_modules/react-devtools-core/node_modules/ws",
+        "node_modules/react-native-tscodegen-types/node_modules/ws"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "xcode": {
+      "name": "xcode",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "uuid"
+      ],
+      "effects": [
+        "@react-native-community/cli-platform-ios"
+      ],
+      "range": ">=0.9.2",
+      "nodes": [
+        "node_modules/xcode"
+      ],
+      "fixAvailable": {
+        "name": "@react-native-community/cli",
+        "version": "13.5.1",
+        "isSemVerMajor": true
+      }
+    },
+    "yargs": {
+      "name": "yargs",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "os-locale",
+        "yargs-parser"
+      ],
+      "effects": [
+        "logkitty",
+        "metro",
+        "metro-inspector-proxy"
+      ],
+      "range": "8.0.0-candidate.0 - 12.0.5",
+      "nodes": [
+        "node_modules/metro-inspector-proxy/node_modules/yargs",
+        "node_modules/react-native-tscodegen-types/node_modules/metro/node_modules/yargs",
+        "node_modules/react-native-tscodegen-types/node_modules/yargs"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    },
+    "yargs-parser": {
+      "name": "yargs-parser",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1088811,
+          "name": "yargs-parser",
+          "dependency": "yargs-parser",
+          "title": "yargs-parser Vulnerable to Prototype Pollution",
+          "url": "https://github.com/advisories/GHSA-p9pc-299p-vxgp",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-915",
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L"
+          },
+          "range": ">=6.0.0 <13.1.2"
+        }
+      ],
+      "effects": [
+        "yargs"
+      ],
+      "range": "6.0.0 - 13.1.1",
+      "nodes": [
+        "node_modules/metro-inspector-proxy/node_modules/yargs-parser",
+        "node_modules/react-native-tscodegen-types/node_modules/metro/node_modules/yargs-parser",
+        "node_modules/react-native-tscodegen-types/node_modules/yargs-parser"
+      ],
+      "fixAvailable": {
+        "name": "react-native",
+        "version": "0.87.1",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 2,
+      "moderate": 19,
+      "high": 44,
+      "critical": 5,
+      "total": 70
+    },
+    "dependencies": {
+      "prod": 1208,
+      "dev": 133,
+      "optional": 18,
+      "peer": 53,
+      "peerOptional": 0,
+      "total": 1384
+    }
+  }
+}

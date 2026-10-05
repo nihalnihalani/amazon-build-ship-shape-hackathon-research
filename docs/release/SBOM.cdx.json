@@ -1,0 +1,1699 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "npm",
+          "version": "11.6.2"
+        },
+        {
+          "type": "library",
+          "name": "cyclonedx-library",
+          "group": "@cyclonedx",
+          "version": "10.3.0",
+          "author": "Jan Kowalleck",
+          "description": "Core functionality of CycloneDX for JavaScript (Node.js or WebBrowser).",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "externalReferences": [
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-javascript-library/issues",
+              "type": "issue-tracker",
+              "comment": "as detected from PackageJson property \"bugs.url\""
+            },
+            {
+              "url": "git+https://github.com/CycloneDX/cyclonedx-javascript-library.git",
+              "type": "vcs",
+              "comment": "as detected from PackageJson property \"repository.url\""
+            },
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-javascript-library#readme",
+              "type": "website",
+              "comment": "as detected from PackageJson property \"homepage\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:constraint:engine:node",
+              "value": ">=20.18.0"
+            }
+          ]
+        },
+        {
+          "type": "application",
+          "name": "cyclonedx-npm",
+          "group": "@cyclonedx",
+          "version": "6.0.1",
+          "author": "Jan Kowalleck",
+          "description": "Create CycloneDX Software Bill of Materials (SBOM) from NPM projects.",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "externalReferences": [
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-node-npm/issues",
+              "type": "issue-tracker",
+              "comment": "as detected from PackageJson property \"bugs.url\""
+            },
+            {
+              "url": "git+https://github.com/CycloneDX/cyclonedx-node-npm.git",
+              "type": "vcs",
+              "comment": "as detected from PackageJson property \"repository.url\""
+            },
+            {
+              "url": "https://github.com/CycloneDX/cyclonedx-node-npm#readme",
+              "type": "website",
+              "comment": "as detected from PackageJson property \"homepage\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:constraint:engine:node",
+              "value": ">=20.18.0"
+            },
+            {
+              "name": "cdx:npm:package:constraint:engine:npm",
+              "value": ">=9"
+            }
+          ]
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "across-the-room",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/across-the-room@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": ""
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cdx:reproducible",
+        "value": "true"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "phone-mic-meter",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/phone-mic-meter@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/phone-mic-meter@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/phone-mic-meter"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "phone",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/phone@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/phone@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/phone"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "protocol",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/protocol@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/protocol@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/protocol"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "relay",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/relay@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/relay@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/relay"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "session-core",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/session-core@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/session-core@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/session-core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ten-foot-meter",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/ten-foot-meter@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/ten-foot-meter@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/ten-foot-meter"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tests",
+      "group": "@atr",
+      "version": "0.1.0",
+      "bom-ref": "across-the-room@0.1.0|@atr/tests@0.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40atr/tests@0.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@atr/tests"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "client-apigatewaymanagementapi",
+      "group": "@aws-sdk",
+      "version": "3.1146.0",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-apigatewaymanagementapi@3.1146.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/client-apigatewaymanagementapi@3.1146.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/client-apigatewaymanagementapi/-/client-apigatewaymanagementapi-3.1146.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/client-apigatewaymanagementapi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "client-dynamodb",
+      "group": "@aws-sdk",
+      "version": "3.1146.0",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-dynamodb@3.1146.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/client-dynamodb@3.1146.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/client-dynamodb/-/client-dynamodb-3.1146.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/client-dynamodb"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "client-sqs",
+      "group": "@aws-sdk",
+      "version": "3.1146.0",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-sqs@3.1146.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/client-sqs@3.1146.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/client-sqs/-/client-sqs-3.1146.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/client-sqs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "client-ssm",
+      "group": "@aws-sdk",
+      "version": "3.1146.0",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-ssm@3.1146.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/client-ssm@3.1146.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/client-ssm/-/client-ssm-3.1146.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/client-ssm"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "core",
+      "group": "@aws-sdk",
+      "version": "3.978.1",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/core@3.978.1",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/core/-/core-3.978.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-env",
+      "group": "@aws-sdk",
+      "version": "3.972.72",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-env@3.972.72",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-env@3.972.72",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-env/-/credential-provider-env-3.972.72.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-env"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-http",
+      "group": "@aws-sdk",
+      "version": "3.972.74",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-http@3.972.74",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-http@3.972.74",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.74.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-http"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-ini",
+      "group": "@aws-sdk",
+      "version": "3.973.17",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-ini@3.973.17",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-ini@3.973.17",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-ini/-/credential-provider-ini-3.973.17.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-ini"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-login",
+      "group": "@aws-sdk",
+      "version": "3.972.79",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-login@3.972.79",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-login@3.972.79",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.79.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-login"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-node",
+      "group": "@aws-sdk",
+      "version": "3.972.84",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-node@3.972.84",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-node/-/credential-provider-node-3.972.84.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-node"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-process",
+      "group": "@aws-sdk",
+      "version": "3.972.72",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-process@3.972.72",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-process@3.972.72",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-process/-/credential-provider-process-3.972.72.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-process"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-sso",
+      "group": "@aws-sdk",
+      "version": "3.973.16",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-sso@3.973.16",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-sso@3.973.16",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-sso/-/credential-provider-sso-3.973.16.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-sso"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-web-identity",
+      "group": "@aws-sdk",
+      "version": "3.972.78",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-web-identity@3.972.78",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/credential-provider-web-identity@3.972.78",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-web-identity/-/credential-provider-web-identity-3.972.78.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/credential-provider-web-identity"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "dynamodb-codec",
+      "group": "@aws-sdk",
+      "version": "3.973.46",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/dynamodb-codec@3.973.46",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/dynamodb-codec@3.973.46",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/dynamodb-codec/-/dynamodb-codec-3.973.46.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/dynamodb-codec"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "endpoint-cache",
+      "group": "@aws-sdk",
+      "version": "3.972.11",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/endpoint-cache@3.972.11",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/endpoint-cache@3.972.11",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/endpoint-cache/-/endpoint-cache-3.972.11.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/endpoint-cache"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lib-dynamodb",
+      "group": "@aws-sdk",
+      "version": "3.1146.0",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/lib-dynamodb@3.1146.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/lib-dynamodb@3.1146.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/lib-dynamodb/-/lib-dynamodb-3.1146.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/lib-dynamodb"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "middleware-endpoint-discovery",
+      "group": "@aws-sdk",
+      "version": "3.972.31",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/middleware-endpoint-discovery@3.972.31",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/middleware-endpoint-discovery@3.972.31",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/middleware-endpoint-discovery/-/middleware-endpoint-discovery-3.972.31.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/middleware-endpoint-discovery"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "middleware-sdk-sqs",
+      "group": "@aws-sdk",
+      "version": "3.972.43",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/middleware-sdk-sqs@3.972.43",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/middleware-sdk-sqs@3.972.43",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/middleware-sdk-sqs/-/middleware-sdk-sqs-3.972.43.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/middleware-sdk-sqs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "nested-clients",
+      "group": "@aws-sdk",
+      "version": "3.997.46",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/nested-clients@3.997.46",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.997.46.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/nested-clients"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "signature-v4-multi-region",
+      "group": "@aws-sdk",
+      "version": "3.996.47",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/signature-v4-multi-region@3.996.47",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/signature-v4-multi-region@3.996.47",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.996.47.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/signature-v4-multi-region"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "token-providers",
+      "group": "@aws-sdk",
+      "version": "3.1138.0",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/token-providers@3.1138.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/token-providers@3.1138.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/token-providers/-/token-providers-3.1138.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/token-providers"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "types",
+      "group": "@aws-sdk",
+      "version": "3.974.6",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/types@3.974.6",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/types/-/types-3.974.6.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/types"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "util-dynamodb",
+      "group": "@aws-sdk",
+      "version": "3.996.9",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/util-dynamodb@3.996.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/util-dynamodb@3.996.9",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/util-dynamodb/-/util-dynamodb-3.996.9.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/util-dynamodb"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xml-builder",
+      "group": "@aws-sdk",
+      "version": "3.972.41",
+      "bom-ref": "across-the-room@0.1.0|@aws-sdk/xml-builder@3.972.41",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws-sdk/xml-builder@3.972.41",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws-sdk/xml-builder/-/xml-builder-3.972.41.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws-sdk/xml-builder"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lambda-invoke-store",
+      "group": "@aws",
+      "version": "0.3.0",
+      "bom-ref": "across-the-room@0.1.0|@aws/lambda-invoke-store@0.3.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40aws/lambda-invoke-store@0.3.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@aws/lambda-invoke-store/-/lambda-invoke-store-0.3.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@aws/lambda-invoke-store"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "core",
+      "group": "@smithy",
+      "version": "3.35.1",
+      "bom-ref": "across-the-room@0.1.0|@smithy/core@3.35.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40smithy/core@3.35.1",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@smithy/core/-/core-3.35.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@smithy/core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "credential-provider-imds",
+      "group": "@smithy",
+      "version": "4.5.2",
+      "bom-ref": "across-the-room@0.1.0|@smithy/credential-provider-imds@4.5.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40smithy/credential-provider-imds@4.5.2",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@smithy/credential-provider-imds/-/credential-provider-imds-4.5.2.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@smithy/credential-provider-imds"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fetch-http-handler",
+      "group": "@smithy",
+      "version": "5.8.0",
+      "bom-ref": "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40smithy/fetch-http-handler@5.8.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@smithy/fetch-http-handler/-/fetch-http-handler-5.8.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@smithy/fetch-http-handler"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "node-http-handler",
+      "group": "@smithy",
+      "version": "4.12.1",
+      "bom-ref": "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40smithy/node-http-handler@4.12.1",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@smithy/node-http-handler/-/node-http-handler-4.12.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@smithy/node-http-handler"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "signature-v4",
+      "group": "@smithy",
+      "version": "5.7.4",
+      "bom-ref": "across-the-room@0.1.0|@smithy/signature-v4@5.7.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40smithy/signature-v4@5.7.4",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@smithy/signature-v4/-/signature-v4-5.7.4.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@smithy/signature-v4"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "types",
+      "group": "@smithy",
+      "version": "4.19.0",
+      "bom-ref": "across-the-room@0.1.0|@smithy/types@4.19.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/%40smithy/types@4.19.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/@smithy/types/-/types-4.19.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@smithy/types"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bowser",
+      "version": "2.14.1",
+      "bom-ref": "across-the-room@0.1.0|bowser@2.14.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/bowser@2.14.1",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/bowser/-/bowser-2.14.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/bowser"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mnemonist",
+      "version": "0.38.3",
+      "bom-ref": "across-the-room@0.1.0|mnemonist@0.38.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/mnemonist@0.38.3",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/mnemonist/-/mnemonist-0.38.3.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/mnemonist"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "obliterator",
+      "version": "1.6.1",
+      "bom-ref": "across-the-room@0.1.0|obliterator@1.6.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/obliterator@1.6.1",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/obliterator/-/obliterator-1.6.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/obliterator"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "bom-ref": "across-the-room@0.1.0|tslib@2.8.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/tslib@2.8.1",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tslib"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ws",
+      "version": "8.22.0",
+      "bom-ref": "across-the-room@0.1.0|ws@8.22.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT",
+            "acknowledgement": "declared"
+          }
+        }
+      ],
+      "purl": "pkg:npm/ws@8.22.0",
+      "externalReferences": [
+        {
+          "url": "https://registry.npmjs.org/ws/-/ws-8.22.0.tgz",
+          "type": "distribution",
+          "comment": "as detected from npm-ls property \"resolved\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "services/relay/node_modules/ws"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "across-the-room@0.1.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@atr/phone-mic-meter@0.1.0",
+        "across-the-room@0.1.0|@atr/phone@0.1.0",
+        "across-the-room@0.1.0|@atr/protocol@0.1.0",
+        "across-the-room@0.1.0|@atr/relay@0.1.0",
+        "across-the-room@0.1.0|@atr/session-core@0.1.0",
+        "across-the-room@0.1.0|@atr/ten-foot-meter@0.1.0",
+        "across-the-room@0.1.0|@atr/tests@0.1.0"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/phone-mic-meter@0.1.0"
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/phone@0.1.0"
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/protocol@0.1.0"
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/relay@0.1.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/client-apigatewaymanagementapi@3.1146.0",
+        "across-the-room@0.1.0|@aws-sdk/client-dynamodb@3.1146.0",
+        "across-the-room@0.1.0|@aws-sdk/client-sqs@3.1146.0",
+        "across-the-room@0.1.0|@aws-sdk/client-ssm@3.1146.0",
+        "across-the-room@0.1.0|@aws-sdk/lib-dynamodb@3.1146.0",
+        "across-the-room@0.1.0|ws@8.22.0"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/session-core@0.1.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@atr/protocol@0.1.0"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/ten-foot-meter@0.1.0"
+    },
+    {
+      "ref": "across-the-room@0.1.0|@atr/tests@0.1.0"
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/client-apigatewaymanagementapi@3.1146.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+        "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/client-dynamodb@3.1146.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+        "across-the-room@0.1.0|@aws-sdk/dynamodb-codec@3.973.46",
+        "across-the-room@0.1.0|@aws-sdk/middleware-endpoint-discovery@3.972.31",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+        "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/client-sqs@3.1146.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+        "across-the-room@0.1.0|@aws-sdk/middleware-sdk-sqs@3.972.43",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+        "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/client-ssm@3.1146.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+        "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@aws-sdk/xml-builder@3.972.41",
+        "across-the-room@0.1.0|@aws/lambda-invoke-store@0.3.0",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/signature-v4@5.7.4",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|bowser@2.14.1",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-env@3.972.72",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-http@3.972.74",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+        "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-ini@3.973.17",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-env@3.972.72",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-http@3.972.74",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-login@3.972.79",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-process@3.972.72",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-sso@3.973.16",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-web-identity@3.972.78",
+        "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/credential-provider-imds@4.5.2",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-login@3.972.79",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-env@3.972.72",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-http@3.972.74",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-ini@3.973.17",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-process@3.972.72",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-sso@3.973.16",
+        "across-the-room@0.1.0|@aws-sdk/credential-provider-web-identity@3.972.78",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/credential-provider-imds@4.5.2",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-process@3.972.72",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-sso@3.973.16",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+        "across-the-room@0.1.0|@aws-sdk/token-providers@3.1138.0",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-web-identity@3.972.78",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/dynamodb-codec@3.973.46",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/endpoint-cache@3.972.11",
+      "dependsOn": [
+        "across-the-room@0.1.0|mnemonist@0.38.3",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/lib-dynamodb@3.1146.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/client-dynamodb@3.1146.0",
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/util-dynamodb@3.996.9",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/middleware-endpoint-discovery@3.972.31",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/endpoint-cache@3.972.11",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/middleware-sdk-sqs@3.972.43",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/signature-v4-multi-region@3.996.47",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+        "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/signature-v4-multi-region@3.996.47",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/signature-v4@5.7.4",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/token-providers@3.1138.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+        "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+        "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/util-dynamodb@3.996.9",
+      "dependsOn": [
+        "across-the-room@0.1.0|@aws-sdk/client-dynamodb@3.1146.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws-sdk/xml-builder@3.972.41",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@aws/lambda-invoke-store@0.3.0"
+    },
+    {
+      "ref": "across-the-room@0.1.0|@smithy/core@3.35.1",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@smithy/credential-provider-imds@4.5.2",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@smithy/signature-v4@5.7.4",
+      "dependsOn": [
+        "across-the-room@0.1.0|@smithy/core@3.35.1",
+        "across-the-room@0.1.0|@smithy/types@4.19.0",
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|@smithy/types@4.19.0",
+      "dependsOn": [
+        "across-the-room@0.1.0|tslib@2.8.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|bowser@2.14.1"
+    },
+    {
+      "ref": "across-the-room@0.1.0|mnemonist@0.38.3",
+      "dependsOn": [
+        "across-the-room@0.1.0|obliterator@1.6.1"
+      ]
+    },
+    {
+      "ref": "across-the-room@0.1.0|obliterator@1.6.1"
+    },
+    {
+      "ref": "across-the-room@0.1.0|tslib@2.8.1"
+    },
+    {
+      "ref": "across-the-room@0.1.0|ws@8.22.0"
+    }
+  ]
+}
