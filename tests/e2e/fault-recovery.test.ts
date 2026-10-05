@@ -34,6 +34,22 @@ async function freshPair(opts: { familyMode?: boolean } = {}) {
   await quietAndCalibrate(tv, phone);
 }
 
+function trace(): string {
+  const fmt = (m: Record<string, unknown>) => `${String(m.type)}${m.type === 'error' || m.type === 'ack' || m.type === 'join.rejected' || m.type === 'peer.state' || m.type === 'window.result' ? ' ' + JSON.stringify(m.payload).slice(0, 140) : ''}`;
+  const tvIn = (tv?.transport.received ?? []).map((t) => JSON.parse(t) as Record<string, unknown>).filter((m) => m.type !== 'pong' && m.type !== 'level');
+  const phIn = (phone?.received ?? []).filter((m) => m.type !== 'pong');
+  const phOut = (phone?.sent ?? []).filter((m) => m.type !== 'ping' && m.type !== 'level');
+  const logs = relay.logs.join('').split('\n').filter((l) => /error|reject|revok|supersed|dup|stale|replay|busy|expired|unauthor/i.test(l)).slice(-12).join('\n');
+  return `\nTV received (last 10): ${tvIn.slice(-10).map(fmt).join(' | ')}\nPhone received (last 10): ${phIn.slice(-10).map(fmt).join(' | ')}\nPhone sent (last 10): ${phOut.slice(-10).map(fmt).join(' | ')}\nrelay log lines:\n${logs}`;
+}
+async function traced(fn: () => Promise<void>) {
+  try {
+    await fn();
+  } catch (e) {
+    throw new Error(`${(e as Error).message}${trace()}`);
+  }
+}
+
 const notScored = (v: TvView) => v.stage === 'paused_or_invalid' || (v.stage === 'reveal' && v.result?.tone === 'not_scored');
 
 describe('T15 failure recovery with injected faults', () => {
@@ -63,7 +79,7 @@ describe('T15 failure recovery with injected faults', () => {
     await relay?.stop();
   });
 
-  it('TV link loss mid-window: unscored, mic never shown off, reconnect with rotated credential, retry scores', async () => {
+  it('TV link loss mid-window: unscored, mic never shown off, reconnect with rotated credential, retry scores', async () => traced(async () => {
     await freshPair();
     await beginCapture(tv!, 'p1');
     await phone!.setLevel(LOUD);
@@ -79,9 +95,9 @@ describe('T15 failure recovery with injected faults', () => {
     await tv!.waitFor((v) => v.stage === 'phrase_ready', 'ready after retry');
     const r = await visibleAttempt(tv!, phone!, LOUD, 'p1 retry');
     expect(r.result!.tone).toBe('reached');
-  }, 180_000);
+  }), 180_000);
 
-  it('phone link loss mid-window: attempt unscored, phone resumes, retry scores below correctly', async () => {
+  it('phone link loss mid-window: attempt unscored, phone resumes, retry scores below correctly', async () => traced(async () => {
     await freshPair();
     await beginCapture(tv!, 'p1');
     await phone!.setLevel(LOUD);
@@ -94,23 +110,23 @@ describe('T15 failure recovery with injected faults', () => {
     await tv!.waitFor((v) => v.stage === 'phrase_ready', 'ready after retry');
     const r = await visibleAttempt(tv!, phone!, SOFT, 'p1 retry');
     expect(r.result!.tone).toBe('below');
-  }, 180_000);
+  }), 180_000);
 
-  it('300 ms latency each way on both legs: verdicts still correct', async () => {
+  it('300 ms latency each way on both legs: verdicts still correct', async () => traced(async () => {
     for (const p of [tvProxy, phoneProxy]) {
       p.config.latencyUpMs = 300;
       p.config.latencyDownMs = 300;
     }
     await freshPair();
     const a = await visibleAttempt(tv!, phone!, LOUD, 'p1');
-    expect(a.result!.tone).toBe('reached');
+    expect(a.result!.tone, JSON.stringify(a.result)).toBe('reached');
     tv!.act('next_phrase');
     await tv!.waitFor((v) => v.stage === 'phrase_ready' && v.phrase?.position === 2, 'p2 ready');
     const b = await visibleAttempt(tv!, phone!, SOFT, 'p2');
     expect(b.result!.tone).toBe('below');
-  }, 240_000);
+  }), 240_000);
 
-  it('every phone frame duplicated in transit: relay drops duplicates, verdicts unchanged', async () => {
+  it('every phone frame duplicated in transit: relay drops duplicates, verdicts unchanged', async () => traced(async () => {
     phoneProxy.config.duplicateUpEvery = 1;
     await freshPair();
     const before = phoneProxy.counts.duplicated;
@@ -120,9 +136,9 @@ describe('T15 failure recovery with injected faults', () => {
     // The TV received each phone message once: message ids are unique in what the TV saw.
     const ids = tv!.transport.received.map((t) => (JSON.parse(t) as { message_id: string; sender_role: string })).filter((m) => m.sender_role === 'phone').map((m) => m.message_id);
     expect(new Set(ids).size).toBe(ids.length);
-  }, 180_000);
+  }), 180_000);
 
-  it('phone page hidden mid-window: interrupted and unscored, capture shut down, explicit restart then retry scores', async () => {
+  it('phone page hidden mid-window: interrupted and unscored, capture shut down, explicit restart then retry scores', async () => traced(async () => {
     await freshPair();
     await beginCapture(tv!, 'p1');
     await phone!.setLevel(LOUD);
@@ -142,14 +158,14 @@ describe('T15 failure recovery with injected faults', () => {
     await phone!.page.waitForSelector('#start-mic', { state: 'visible', timeout: 15_000 });
     await phone!.page.click('#start-mic');
     await phone!.setLevel(ROOM);
-    await tv!.waitFor((v) => v.mic === 'open_not_measuring' && has(v, 'retry'), 'mic reopened', 20_000);
-    tv!.act('retry');
+    const reopened = await tv!.waitFor((v) => v.mic === 'open_not_measuring' && (has(v, 'retry') || has(v, 'try_again')), 'mic reopened', 20_000);
+    tv!.act(has(reopened, 'retry') ? 'retry' : 'try_again');
     await tv!.waitFor((v) => v.stage === 'phrase_ready', 'ready after retry');
     const r = await visibleAttempt(tv!, phone!, LOUD, 'p1 retry');
     expect(r.result!.tone).toBe('reached');
-  }, 180_000);
+  }), 180_000);
 
-  it('room gets noisier before a phrase: gate blocks (unscored), quieter room then scores', async () => {
+  it('room gets noisier before a phrase: gate blocks (unscored), quieter room then scores', async () => traced(async () => {
     await freshPair();
     await phone!.setLevel(ROOM + 8);
     tv!.act('begin_phrase');
@@ -160,22 +176,22 @@ describe('T15 failure recovery with injected faults', () => {
     await tv!.waitFor((v) => v.stage === 'phrase_ready', 'ready after retry');
     const r = await visibleAttempt(tv!, phone!, LOUD, 'p1 retry');
     expect(r.result!.tone).toBe('reached');
-  }, 180_000);
+  }), 180_000);
 
-  it('continuous sound for the whole window: not scored (continuous_sound)', async () => {
+  it('continuous sound for the whole window: not scored (continuous_sound)', async () => traced(async () => {
     await freshPair();
     await beginCapture(tv!, 'p1');
     await phone!.setLevel(LOUD);
     const r = await tv!.waitFor((v) => v.stage === 'reveal' || v.stage === 'paused_or_invalid', 'window closes at max duration', 30_000);
     await phone!.setLevel(ROOM);
     expect(r.result?.tone ?? 'not_scored').toBe('not_scored');
-  }, 120_000);
+  }), 120_000);
 
-  it('microphone goes digitally silent mid-session: pre-window check reports muted input, unscored', async () => {
+  it('microphone goes digitally silent mid-session: pre-window check reports muted input, unscored', async () => traced(async () => {
     await freshPair();
     await phone!.silence();
     tv!.act('begin_phrase');
     const blocked = await tv!.waitFor((v) => v.stage === 'paused_or_invalid', 'blocked on silent input', 20_000);
     expect(blocked.body.join(' ')).toMatch(/muted or blocked/i);
-  }, 120_000);
+  }), 120_000);
 });
