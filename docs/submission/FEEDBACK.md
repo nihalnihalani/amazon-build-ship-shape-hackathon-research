@@ -39,7 +39,7 @@
 
 - **Used for:** the build and test chain: Vitest for packages, relay and phone; Jest for the TV; Vite for the phone page and the TV web preview; `playwright-core` driving the system Google Chrome for end-to-end, phone and accessibility checks; axe-core 4.13.0 on the web preview (EV-0019, EV-0022, EV-0038, EV-0039).
 - **What worked:** driving system Chrome with `playwright-core` needed no browser download; `routeWebSocket` made a scripted phone and a fault-injecting proxy straightforward; running the accessibility gate against a web preview found five real defects (A11Y-01 to A11Y-05) that jest could not see.
-- **What needs work:** headless Chrome's `getUserMedia` behaviour was not stable between runs on the same build (F-07); Vite's dev server initially failed on React Native Flow sources (F-16); `npm ls` fails on a standalone project with `file:` links, so the SBOM needs `--ignore-npm-errors` (F-15).
+- **What needs work:** headless Chrome's `getUserMedia` behaviour was not stable between runs on the same build (F-07; the script was reworked to accept both outcomes); Vite's dev server initially failed on React Native Flow sources (F-16); `npm ls` fails on a standalone project with `file:` links, so the SBOM needs `--ignore-npm-errors` (F-15).
 - **Would you build again (OWNER to confirm):** draft answer: yes.
 
 ## 5. Claude Code (the development environment: Claude Opus 5.5 lead, Claude Sonnet 5.5 teammates)

@@ -14,7 +14,7 @@ Format per entry (the Devpost template as read): task, steps, expected versus ac
 | F-04 | Stale Node and Java prerequisites | Medium | worked around |
 | F-05 | WebSocket manifest privileges | High | unverified (B-001) |
 | F-06 | Typechecking without the SDK | Info | worked |
-| F-07 | Headless Chrome and `getUserMedia` | Medium | open on this host |
+| F-07 | Headless Chrome and `getUserMedia` | Medium | resolved in the test script; the host behaviour remains |
 | F-08 | API Gateway cannot choose close codes | Low | documented, not run on AWS |
 | F-09 | No per-connection timer on Lambda | Medium | worked around, not run on AWS |
 | F-10 | Undeclared `buffer` import in the SVG package | Low | verified in the docs pass |
@@ -100,7 +100,7 @@ Format per entry (the Devpost template as read): task, steps, expected versus ac
 - **Expected:** a stable result for the same Chrome build.
 - **Actual:** Chrome 154.0.8037.97 rejected the call immediately with `NotAllowedError` (probe output `REJECTED:NotAllowedError`); the script failed three checks both times and never reached its stubbed-audio part. A probable cause is the operating-system microphone permission state for Chrome on this Mac (unverified: no system setting was inspected or changed).
 - **Severity:** Medium for reproducibility; it does not affect the product.
-- **Workaround:** the error classes and the production capture path are covered with a stubbed `getUserMedia`; the smoke, flow and hostile-QR scripts do not depend on this. The result is recorded as not reproduced.
+- **Workaround:** the error classes and the production capture path are covered with a stubbed `getUserMedia`; the smoke, flow and hostile-QR scripts do not depend on this. **Resolution:** the phone owner reworked the script (merged `734c20b`) to accept both outcomes, check each against its own UI and print which one happened. At `ac556df` it passed twice here (31 checks, immediate `NotAllowedError` after about 72 ms) and once with `ATR_E2E_SIMULATE=pending` (30 checks, labelled SIMULATED), so the pending branch is evidenced on this host only as a simulation.
 - **Suggestion:** for test tooling, assert the denied and the pending outcomes as separate cases and detect which one the browser gives before asserting; the browser's behaviour for a headless unanswered prompt is not something a script can assume.
 - **Reference:** EV-0019; `apps/phone/e2e/production.mjs` header; `docs/TESTING.md` section 2; `docs/LIMITATIONS.md` section 7 item 1.
 
