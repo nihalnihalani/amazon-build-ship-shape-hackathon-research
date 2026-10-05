@@ -69,6 +69,8 @@ describe('fixture drift: fixtures match the real core for the screens reachable 
     expect(fixture.preferredAction).toBe(real.preferredAction);
     expect(fixture.labels).toEqual(real.labels);
     expect(fixture.footer).toBe(real.footer);
+    // Copy that must have a single source (About, privacy, storage) is compared line by line.
+    if (fixture.screen === 'about') expect(fixture.body).toEqual(real.body);
     if (real.dialog === null) expect(fixture.dialog).toBeNull();
     else {
       expect(fixture.dialog?.title).toBe(real.dialog.title);

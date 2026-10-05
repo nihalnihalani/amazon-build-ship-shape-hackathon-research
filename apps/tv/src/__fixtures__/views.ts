@@ -518,7 +518,15 @@ export const about = makeView({
   screen: 'about',
   stage: 'idle',
   title: 'About',
-  body: ['Practice support for exercises your clinician gave you.'],
+  // The real core's About lines (session-core copy.ts), verbatim.
+  body: [
+    'Version 0.1.0',
+    'Practice data is stored unencrypted on this TV. Session summaries keep positions and counts only, never phrase text, cue words or phone names, for 8 days. Your phrase bank stays on this TV until you delete it in Settings.',
+    "This TV tells the relay and your phone which practice step you are on and the room's background level. It does not send your results, ratings or history.",
+    "The relay keeps short-lived abuse-prevention counters (counts only) keyed by a keyed hash of the connection's network address. The key changes at least daily and the counters expire within an hour.",
+    'Phone microphone: Not yet qualified on this phone.',
+    'Licence notices for the software in this app are provided by the release documentation. This text is a placeholder.',
+  ],
   actions: [action('back', 'Back')],
   preferredAction: 'back',
 });
