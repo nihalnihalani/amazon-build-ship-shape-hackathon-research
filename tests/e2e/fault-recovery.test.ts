@@ -9,7 +9,7 @@
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { TvView } from '@atr/session-core';
 import { buildArtifacts, sleep, startPhone, startRelay, type PhoneEnv, type RelayEnv } from '../src/e2e-env.js';
 import { startFaultProxy, type FaultProxy } from '../src/fault-proxy.js';
@@ -56,31 +56,32 @@ async function traced(fn: () => Promise<void>) {
 const notScored = (v: TvView) => v.stage === 'paused_or_invalid' || (v.stage === 'reveal' && v.result?.tone === 'not_scored');
 
 describe('T15 failure recovery with injected faults', () => {
-  beforeAll(async () => {
-    buildArtifacts();
+  async function startStack() {
     relay = await startRelay();
     const cert = readFileSync(path.join(relay.certDir, 'server.crt'));
     const key = readFileSync(path.join(relay.certDir, 'server.key'));
     tvProxy = await startFaultProxy({ upstream: relay.wsUrl, cert, key, ca: relay.ca });
     phoneProxy = await startFaultProxy({ upstream: relay.wsUrl, cert, key, ca: relay.ca });
+  }
+
+  beforeAll(() => {
+    buildArtifacts();
   }, 240_000);
 
-  afterEach(() => {
-    for (const p of [tvProxy, phoneProxy]) {
-      p.config.latencyUpMs = 0;
-      p.config.latencyDownMs = 0;
-      p.config.duplicateUpEvery = 0;
-      p.config.blackout = false;
-    }
-  });
+  // Each scenario gets its own relay and proxies so one failure cannot cascade (QA-E2E-02).
+  beforeEach(async () => {
+    await startStack();
+  }, 60_000);
 
-  afterAll(async () => {
+  afterEach(async () => {
     tv?.dispose();
+    tv = null;
     await phone?.close();
+    phone = null;
     await tvProxy?.close();
     await phoneProxy?.close();
     await relay?.stop();
-  });
+  }, 60_000);
 
   it('TV link loss mid-window: unscored, mic never shown off, reconnect with rotated credential, retry scores', async () => traced(async () => {
     await freshPair();
