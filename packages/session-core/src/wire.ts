@@ -102,6 +102,11 @@ export class Outbox {
 
   /** Throws only if the message would be invalid (a programming error, surfaced by the store as a counter). */
   encode(message: Outbound): string {
+    return this.encodeWithId(message).text;
+  }
+
+  /** As encode, also returning the message_id the factory assigned (acks name it). */
+  encodeWithId(message: Outbound): { text: string; messageId: string } {
     const ids: MessageIds = {};
     if ('ids' in message && message.ids) {
       ids.session_id = message.ids.sessionId ?? null;
@@ -112,7 +117,7 @@ export class Outbox {
     if (message.type === 'auth.resume') ids.room_id = message.payload.room_id;
     const next = this.factory.next.bind(this.factory) as (type: MessageType, payload: unknown, ids: MessageIds) => WireMessage;
     const built = next(message.type, message.payload, ids);
-    return this.factory.serialize(built);
+    return { text: this.factory.serialize(built), messageId: built.message_id };
   }
 }
 

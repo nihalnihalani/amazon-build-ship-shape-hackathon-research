@@ -66,6 +66,15 @@ export interface Session {
   listenerOffered: boolean;
   listenerOpenSent: boolean;
   beginSent: boolean;
+  /**
+   * The phone has acked a session.begin of this session as applied (DEF-003). Until then the TV sends no precheck or
+   * window command: a phone that is still waiting for its owner (A3-01) ignores them.
+   */
+  beginAcked: boolean;
+  /** message_id of every session.begin sent for this session (an ack names one of them). */
+  beginMessageIds: string[];
+  /** When a session.begin was last sent: resends are limited to one per 2 s. */
+  lastBeginAt: number | null;
   /** Attempts for which attempt.reveal has already been sent (it locks the phone's listener controls). */
   revealSent: string[];
   /** Attempts the TV opened the listener for: only these can receive a listener response (others are unsolicited). */
@@ -183,6 +192,8 @@ export type InternalEvent =
   | { type: 'storage_failed' }
   | { type: 'record_not_saved' }
   | { type: 'send_failed' }
+  /** The store tells the machine the message_id it gave a tracked message. */
+  | { type: 'sent'; track: 'session.begin'; messageId: string }
   | { type: 'delete_done'; result: DeleteResult };
 
 export type Event = TvInput | { kind: 'internal'; event: InternalEvent };
@@ -197,7 +208,7 @@ export type PersistOp =
   | { op: 'clear_checkpoint' };
 
 export type Effect =
-  | { kind: 'send'; message: Outbound }
+  | { kind: 'send'; message: Outbound; track?: 'session.begin' }
   /** Tell the outbox the room and authenticated generation (restarts the sequence when either changes). */
   | { kind: 'bind'; roomId: string | null; generation: number }
   | { kind: 'connect' }

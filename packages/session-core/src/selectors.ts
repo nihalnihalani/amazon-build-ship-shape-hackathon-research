@@ -44,6 +44,15 @@ export function micView(s: Core): MicView {
   }
 }
 
+/** True once the phone has acked this session's session.begin as applied (DEF-003). */
+export const beginAcked = (s: Core): boolean => s.session !== null && s.session.beginAcked;
+
+/**
+ * A measurement may begin: the microphone is open and the phone is reachable AND the phone has acked the current
+ * session.begin, so it knows the session the commands belong to.
+ */
+export const measureReady = (s: Core): boolean => micOpen(s) && beginAcked(s);
+
 /** The microphone is open and the phone is reachable, so a window may begin. */
 export const micOpen = (s: Core): boolean =>
   linkUp(s) && s.peerConnected && (s.mic.state === 'open_idle' || s.mic.state === 'measuring');

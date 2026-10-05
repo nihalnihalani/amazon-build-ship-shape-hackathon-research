@@ -489,7 +489,21 @@ export class Rig {
     this.snap('raw');
   }
 
+  /** DEF-003: the phone acks each session.begin as applied before it reports anything; mic.state then names the session. */
+  private ackedBegins = new Set<string>();
+  private phoneSession: string | null = null;
+
+  ackBegins(): void {
+    for (const m of this.wire.of('session.begin')) {
+      if (this.ackedBegins.has(m.message_id)) continue;
+      this.ackedBegins.add(m.message_id);
+      this.phoneSend('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, { s: m.session_id });
+      this.phoneSession = m.session_id;
+    }
+  }
+
   mic(state: MicStateName, mode: PayloadMap['mic.state']['mode'] = 'physical_phone'): void {
+    this.ackBegins();
     this.phoneSend('mic.state', {
       state,
       settings: { auto_gain_control: false, echo_cancellation: false, noise_suppression: false, sample_rate: 48000, channel_count: 1 },
@@ -497,7 +511,7 @@ export class Rig {
       wake_lock: 'held',
       visibility: 'visible',
       mode,
-    });
+    }, { s: this.phoneSession });
   }
 
   private idsOf(cmd: Sent): { s: string | null; w: string | null; a: string | null } {

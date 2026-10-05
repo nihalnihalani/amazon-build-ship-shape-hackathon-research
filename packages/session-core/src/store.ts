@@ -116,7 +116,11 @@ export function createSessionStore(deps: SessionStoreDeps): SessionStore {
     switch (effect.kind) {
       case 'send':
         try {
-          deps.transport.send(outbox.encode(effect.message));
+          const encoded = outbox.encodeWithId(effect.message);
+          deps.transport.send(encoded.text);
+          if (effect.track !== undefined) {
+            dispatchEvent({ kind: 'internal', event: { type: 'sent', track: effect.track, messageId: encoded.messageId } });
+          }
         } catch {
           // An invalid outbound message is a bug, never a reason to stop the session; it is counted.
           dispatchEvent({ kind: 'internal', event: { type: 'send_failed' } });

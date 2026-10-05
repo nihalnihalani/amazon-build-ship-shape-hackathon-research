@@ -127,6 +127,7 @@ export const COPY = {
     body: [
       'On the phone, tap Start microphone and allow access. The phone stays by the TV; you will not need to touch it during practice.',
     ],
+    waitingPhone: 'Waiting for the phone.',
     cancel: 'Cancel',
   },
   quiet: {
@@ -335,6 +336,7 @@ export const COPY = {
     phrasesSaved: 'New phrases saved. They apply to the next session.',
     cancelledWindow: 'Window cancelled. It was not scored.',
     pairingLost: 'The pairing with the relay was lost. Pair again.',
+    waitingPhone: 'Waiting for the phone.',
     pairingCompromised: 'Pairing may be compromised. Pair again.',
     relayError: (code: string) => `The relay reported: ${code}.`,
     resetDone: "Today's band was cleared. Set it again to score phrases.",
