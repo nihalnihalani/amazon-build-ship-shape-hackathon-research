@@ -1,6 +1,6 @@
 # Phone companion: state machine and behaviour
 
-Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 4, ADR-0001, 0002, 0003, 0004, 0006 and `docs/adr/AMENDMENTS-REV2.md` (rows owned by H: A2-01, A3-01, A3-07, A4-04, A5-02, A6-02, A8-03, PK-06; where it conflicts with an ADR it wins). Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
+Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 4, ADR-0001, 0002, 0003, 0004, 0006 and `docs/adr/AMENDMENTS-REV2.md` (rows owned by H: A2-01, A3-01, A3-07, A4-04, A5-02, A6-02, A8-03, PK-06) and the T16 gate decisions (N-01, N-02, N-03, N-07, N-12; where it conflicts with an ADR it wins). Wire handling lives in `src/ports/wire.ts` (on `@atr/protocol`); the microphone in `src/ports/audio.ts` (on `@atr/phone-mic-meter`). Those two files are the only ones that import the packages.
 
 ## Layers
 
@@ -25,7 +25,9 @@ Scope: `apps/phone` (task T08). Normative sources: `docs/PROTOCOL.md` revision 4
 8. (A3-01) Until the person answers "Yes, that was me" to "Did you just pick NN on your TV?", the phone sends nothing but the join protocol and `ping`: no `mic.state`, `ack`, `phrases.update`, `cue`, `level` or result; TV commands are ignored without an ack; the microphone is never opened. The gate is one check in the single send function, so no UI path can bypass it.
 9. (A5-02) Nothing is persisted: no cookies, `localStorage`, `sessionStorage`, IndexedDB or Cache API entries (unit test traps every access; real-Chrome flow checks the stores are empty).
 10. (A8-03) The page never plays a sound and never vibrates; the audio graph reaches the output only through a zero-gain node.
-11. (PK-06) Levels, summaries, validity and rounding come from `@atr/phone-mic-meter` and are sent exactly as returned; the phone never recomputes or re-rounds them.
+11. (N-12) A paired TV cannot use the phone as an open-ended ambient-sound monitor: at most 5 minutes of cumulative capture per session, at least 1 s between windows, and the microphone turns itself off after 10 minutes without any TV command (see "Measurement limits").
+12. (N-07) Household phrases (editor, saved list, state) never outlive the pairing: they are cleared in the same path that clears the credential, and on a discarded session.
+13. (PK-06) Levels, summaries, validity and rounding come from `@atr/phone-mic-meter` and are sent exactly as returned; the phone never recomputes or re-rounds them.
 
 ## Screens and the join/pairing machine
 
@@ -73,7 +75,10 @@ States (PROTOCOL.md section 6): `disconnected`, `connecting`, `authenticating`, 
 * After 2 minutes of continuous failure (from the first lost link, or from a manual Retry) the phone reports `failed`, closes any half-open socket and stops retrying by itself; the page shows "Cannot reach the relay. Automatic retries stopped after 2 minutes. Tap Retry now." with a Retry now button. Retry reconnects at once, resets the attempt counter and starts a fresh 2-minute window. A successful `auth.ok` clears the window. The microphone is left as it is (the user can turn it off).
 * TV (re)connects (DEF-004): the relay announces it with `peer.state {role: 'tv', connected: true}`. A TV that just arrived knows nothing about the phone ("Phone state unknown"), and the phone normally sends `mic.state` only when something changes, so on **every** such message the phone re-sends its current `mic.state` (forced past the de-duplication, with `session_id` when known), then delivers any held `window.result`/`precheck.result`. A generation change with no `connected: false` in between counts too. At most one such report per second: a burst gives one immediate report and one trailing report when the second is up, carrying the state at that moment; a pending trailing report is cancelled by unpair, a lost link and dispose. `connected: false` sends nothing (it aborts an open window as before).
 * Link lost: any open window or precheck is aborted (levels stop at once) and an `interrupted` result is queued; it is delivered after `auth.ok` (or when the TV reappears, `peer.state`). A window is never resumed: the TV must send a fresh `window.start` with new ids.
-* Refusals while resuming: `revoked`, `expired`, `unauthorized`, `not_found`, `unauthenticated`, `superseded`, an `unpaired` message, or `auth.ok` with `phone_paired: false` end the pairing: capture shut down, no more retries, back on Join with the explanation. `rate_limited` keeps retrying. `origin_rejected` stops with `failed`.
+* Refusals while resuming:
+  * `revoked`, `expired`, `superseded`, an `unpaired` message, or `auth.ok` with `phone_paired: false` are definitive: the pairing ends at once (capture shut down, no more retries, back on Join with the explanation).
+  * (N-01) `unauthorized` (the relay's generic answer), `not_found` and `unauthenticated` are retried for **30 s** from the first refusal. After the phone's network dies without a TCP close (Wi-Fi to cellular), the relay still holds the old socket for up to 25 s and refuses the phone's own reconnect as an impostor; that means "not yet", so the refused socket is dropped and the normal backoff (with jitter) tries again. A refused resume never consumes the credential: every retry presents the same one. If refusals continue past 30 s the pairing is treated as lost and the page says **"Could not reconnect"** (the relay does not say whether it expired or was removed, so neither does the phone). The backoff makes at most 8 refused attempts in that window, under the relay's limit of 10 failed resumes per minute.
+  * `rate_limited` keeps retrying. `origin_rejected` stops with `failed`.
 * Messages naming another room are ignored.
 
 ## Microphone (audio port snapshot)
@@ -152,7 +157,9 @@ Heard / Not heard (88 px tall) and Cue (shows the cue word, default `Volume`, ed
 
 Connection lost before an ack: `phrases.update` shows "Not sent... try again when it reconnects" instead of "sending" forever.
 
-## Phrase editor (R-F1)
+## Phrase editor (R-F1) and what happens to it when the pairing ends (N-07)
+
+The phone keeps phrases in memory only, and forgets them with the pairing: when the credential is cleared (unpair for any reason, `room_closed`, a definitive or exhausted refusal on resume, "No, cancel", a connection lost before Yes) and on `session.end` with reason `discarded` (the TV deleted its data). The controller empties its phrase state and bumps a reset token; the view empties the editor to a single empty row and the "sent to the TV" list. A save still waiting for its ack is forgotten, so a late ack cannot bring the phrases back. `completed`, `user_exit` and `error` endings keep the phrases (the household bank outlives a session). The cue word is a setting, not phrase state, and is kept.
 
 1-10 rows, each 1-60 code points after NFC + trim, control characters and unpaired surrogates rejected, live per-row messages, Save disabled until valid, editing disabled while measuring ("Editing is paused while measuring."). What was sent is listed back as plain text (a test proves `<img src=x onerror=alert(1)>` renders as text).
 
@@ -161,6 +168,32 @@ Connection lost before an ack: `phrases.update` shows "Not sent... try again whe
 * `npm run build` -> `dist/` (production); `npm run build:test` -> `dist-test/` (compile-time flag `__ATR_TEST_AUDIO__`; the synthetic-audio module, the persistent banner text and `window.__atrTestAudio` exist only there; a test builds production and asserts none of those strings ship).
 * The AudioWorklet module is `FRAME_PROCESSOR_SOURCE` from `@atr/phone-mic-meter`, written by the build as `frame-processor.js` next to `index.html` (content hash in the URL query) and loaded **by module URL from the page's own origin**. No Blob URL is used, so the CSP is `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' wss:; img-src 'self'; base-uri 'none'; form-action 'none'` (the test build also allows `ws:`). No inline script or style, no third-party origin.
 * Author CSS must not defeat the `hidden` attribute: `[hidden] { display: none !important; }` (a real-browser e2e run found `.btn { display: inline-block }` was showing "hidden" buttons).
+
+## Measurement limits (N-12)
+
+Constants in `config.ts`; enforced in the controller's run gate, so they apply to every TV command whatever the TV does.
+
+| Limit | Rule | Refusal |
+|---|---|---|
+| Session budget | at most 5 minutes (300 000 ms) of cumulative capture per session, prechecks plus windows. Each accepted run reserves its commanded duration up front; when it ends the unused part goes back (early stop, cancel, interruption are charged what they used: the result's `duration_ms`, else wall-clock). A command that would bring the total over 300 s is refused (exactly 300 s is allowed). | `ack rejected`, detail `budget`; the person sees "This session has used its 5 minutes of listening on this phone..." once |
+| Cooldown | a `window.start` less than 1 s after the end of the previous window (finished, stopped or cancelled) | `ack rejected`, detail `cooldown`. The window id is not burnt: the same ids work a second later. Prechecks are not held up, and a real pre-window check lasts 2 s, so the normal precheck-then-window sequence is unaffected |
+| Idle microphone | the microphone is turned off completely after 10 minutes without any TV command while it is open (every TV command restarts the clock, including stale or refused ones; pings, pongs and peer notices do not) | a visible message in the microphone section and the status region: "The microphone was turned off after 10 minutes without a request from the TV. Tap Start microphone to use it again."; `mic.state` off is reported; the message clears when the microphone is started again |
+
+When both budget and cooldown apply the answer is `budget`. The budget is per session id: a repeated `session.begin` keeps it, a different session, `session.end` and an unpair reset it.
+
+## Relay URL and CSP (N-02, N-03)
+
+* **Same origin (default).** With nothing configured the production page dials `wss://<its own host>/ws` and its CSP is `connect-src 'self'`.
+* **Another host (the AWS layout: page on a CDN, socket on an API host).** Set `VITE_ATR_RELAY_URL` when building, in the environment or a `.env` file:
+
+  ```
+  VITE_ATR_RELAY_URL=wss://abc123.execute-api.eu-west-1.amazonaws.com/prod npm run build -w @atr/phone
+  ```
+
+  It must be a `wss://` URL with a host and no credentials, query or fragment; anything else fails the build with a message naming the variable (rules in `src/relay-url.ts`, tested). The validated, normalised URL is baked into the bundle (the key is defined by `vite.config.ts`, so nothing else from the environment can reach it) and the CSP becomes `connect-src 'self' wss://<that host>` and nothing more: no `wss:` scheme wildcard.
+* **Test build** (`npm run build:test`): `?relay=` may point at a local relay, so its CSP allows loopback sockets only (`ws://` and `wss://` on `127.0.0.1` and `localhost`, any port), plus the configured relay origin. Production ignores `?relay=` entirely.
+* **Workers.** The page's policy has no `worker-src`, so workers fall back to `script-src 'self'`: no `blob:`. The AudioWorklet is a same-origin file. The Blob loader inside `@atr/phone-mic-meter` is still present in the bundle but unreachable (the port always passes a module URL, and a test asserts `createObjectURL` is never called); a `blob:` script would be blocked by the CSP anyway.
+* **Not the phone's to change:** the local relay's response header (`services/relay/src/local/static.ts`) and the CloudFront policy in `infra/template.yaml` still say `connect-src 'self' wss:` / `worker-src 'self' blob:` and belong to the relay owner (the N-02 security record stays an `it.fails` until they change). The TV must be told the phone page's origin for QR and link (`phonePageOrigin`, contract revision 3).
 
 ## Privacy copy, silence and Do Not Disturb
 
@@ -173,6 +206,7 @@ Connection lost before an ack: `phrases.update` shows "Not sent... try again whe
 |---|---|---|
 | `npm run typecheck -w @atr/phone` | types | automated |
 | `npm test -w @atr/phone` | state machine, wire shapes (an independent PROTOCOL.md checker AND the package parser), audio port against the real capture adapter with fake browser objects, view rendering, lifecycle/reconnect, production-bundle exclusions (builds both flavours) | automated (happy-dom, fakes) |
+| `npm run e2e:resume -w @atr/phone` | N-01 in real Chrome with the page's real timers: refused three times then accepted (same credential each time, rotated one afterwards, never a "pairing gone" message), and refused for good (verdict "Could not reconnect" 30 to 45 s after the first refusal, fewer than 10 attempts, never retries again). Takes about 45 s | automated |
 | `npm run e2e:production -w @atr/phone` | the production bundle in real headless Chrome. The real `getUserMedia` outcome with no permission granted is host-dependent (older hosts leave it pending, this one denies at once with `NotAllowedError`), so both are accepted, each checked against its own UI (Waiting for permission + Cancel, or Permission denied + re-enable guidance + retry), and the one that happened is printed. `ATR_E2E_SIMULATE=pending` holds the real request unanswered to exercise the pending branch on a host that denies; the output labels it SIMULATED | automated |
 | `npm run e2e:all -w @atr/phone` | real headless Chrome: render/join smoke; full flow with synthetic audio through the real AudioContext/AudioWorklet (including the confirmation step, empty cookie/storage/IndexedDB/Cache API, no vibration or sound); production bundle with strict CSP; hostile-QR scenario against a scripted attacker relay | automated, synthetic or stubbed audio in desktop Chrome |
 

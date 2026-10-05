@@ -147,6 +147,11 @@ export function joinErrorText(code: string): string {
   }
 }
 
+/** Headline for the explanation shown on Join after a pairing ended. */
+export function unpairedHeading(reason: string): string {
+  return reason === 'resume_refused' ? 'Could not reconnect' : 'This phone is no longer paired';
+}
+
 export function unpairedText(reason: string): string {
   switch (reason) {
     case 'tv_unpaired':
@@ -159,6 +164,8 @@ export function unpairedText(reason: string): string {
       return 'The TV withdrew this phone\u2019s pairing.';
     case 'superseded':
       return 'This phone was connected from another page, so this one was disconnected.';
+    case 'resume_refused':
+      return 'The TV did not accept this phone again after 30 seconds. The TV may have removed this phone, or the pairing may have expired. Pair again from the TV.';
     default:
       return 'The pairing ended.';
   }

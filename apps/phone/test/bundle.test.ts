@@ -85,8 +85,10 @@ describe('production bundle (dist)', () => {
     expect(csp).toContain("default-src 'none'");
     expect(csp).toContain("script-src 'self'");
     expect(csp).not.toMatch(/blob:|unsafe-inline|unsafe-eval|data:/);
-    expect(csp).toContain("connect-src 'self' wss:");
-    expect(csp).not.toMatch(/connect-src[^;]*\bws:/);
+    // N-02: this origin only (plus the build-time relay origin when VITE_ATR_RELAY_URL is set), no scheme wildcard
+    expect(csp).toContain("connect-src 'self';");
+    expect(csp).not.toMatch(/connect-src[^;]*\bwss?:(?!\/\/)/);
+    expect(csp).not.toMatch(/worker-src[^;]*blob:/);
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/); // no inline scripts
     expect(html).not.toMatch(/\sstyle=|<style/); // no inline styles
     expect(readFileSync(join(DIST, 'frame-processor.js'), 'utf8')).toBe(FRAME_PROCESSOR_SOURCE);

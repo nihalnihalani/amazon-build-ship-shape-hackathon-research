@@ -11,7 +11,7 @@
 
 import { DEFAULT_CUE_WORD, LIMITS, PRIVACY_SENTENCE } from './config.js';
 import type { AppState, PhoneController } from './controller.js';
-import { micLabel, stageLabel, unpairedText } from './labels.js';
+import { micLabel, stageLabel, unpairedHeading as unpairedHeadingText, unpairedText } from './labels.js';
 import { validateCue, validatePhrases } from './phrases.js';
 import type { MicSettingsWire, WakeLockState } from './ports/wire.js';
 
@@ -45,6 +45,9 @@ function setText(el: HTMLElement, text: string): void {
 function tri(v: boolean | null): string {
   return v === null ? 'unknown' : v ? 'on' : 'off';
 }
+
+const IDLE_OFF_TEXT =
+  'The microphone was turned off after 10 minutes without a request from the TV. Tap Start microphone to use it again.';
 
 function wakeLockText(state: WakeLockState): string {
   switch (state) {
@@ -423,7 +426,19 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     });
   };
 
+  /** N-07: the controller cleared phrase state (credential gone, session discarded): empty the editor too. */
+  let lastPhrasesToken = lastState.phrasesResetToken;
+  const resetEditor = (): void => {
+    for (const r of rows) r.li.remove();
+    rows.length = 0;
+    addRow();
+  };
+
   const renderPhrases = (s: AppState): void => {
+    if (s.phrasesResetToken !== lastPhrasesToken) {
+      lastPhrasesToken = s.phrasesResetToken;
+      resetEditor();
+    }
     const validation = validatePhrases(rows.map((r) => r.input.value));
     rows.forEach((r, i) => {
       const issue = validation.issues.find((x) => x.index === i);
@@ -509,7 +524,7 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
       if (s.join.phase === 'pending' && s.join.confirmDigits) return `On your TV, pick ${s.join.confirmDigits}`;
       if (s.join.phase === 'confirming' && s.join.confirmDigits) return `Did you just pick ${s.join.confirmDigits} on your TV?`;
       if (s.join.phase === 'connecting') return 'Connecting to the relay.';
-      if (s.unpairedReason) return `This phone is no longer paired. ${unpairedText(s.unpairedReason)}`;
+      if (s.unpairedReason) return `${unpairedHeadingText(s.unpairedReason)}. ${unpairedText(s.unpairedReason)}`;
       return s.join.message ?? '';
     }
     if (s.link === 'reconnecting' || s.link === 'failed') {
@@ -519,6 +534,7 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     }
     if (s.notice) return s.notice;
     if (s.micNotice === 'silent_input') return 'The microphone looks muted or blocked.';
+    if (s.micNotice === 'idle_off') return IDLE_OFF_TEXT;
     if (s.canAnswer) return 'Listener controls are open. Choose Heard or Not heard.';
     return micLabel(s.mic.state, s.mic.detail).badge;
   };
@@ -574,6 +590,7 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     }
     unpairedNotice.hidden = !(s.unpairedReason !== null && s.join.phase === 'idle');
     setText(unpairedReason, s.unpairedReason ? unpairedText(s.unpairedReason) : '');
+    setText(unpairedHeading, s.unpairedReason ? unpairedHeadingText(s.unpairedReason) : 'This phone is no longer paired');
 
     // setup: link
     const tv = s.tvConnected === null ? 'TV connection unknown' : s.tvConnected ? 'TV connected' : 'TV not connected';
@@ -623,6 +640,9 @@ export function mountView(root: HTMLElement, controller: PhoneController): Mount
     }
     if (s.micNotice === 'silent_input') {
       setText(micNotice, 'The microphone looks muted or blocked. Check that nothing covers it and that it is not muted, then ask the TV to check again.');
+      micNotice.hidden = false;
+    } else if (s.micNotice === 'idle_off') {
+      setText(micNotice, IDLE_OFF_TEXT);
       micNotice.hidden = false;
     } else {
       micNotice.hidden = true;

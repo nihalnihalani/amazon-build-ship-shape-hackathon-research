@@ -277,6 +277,7 @@ try {
   check('a tap after reveal is not sent', phoneMsgs('cue').length === cuesBefore && phoneMsgs('listener.response').length === 1);
 
   // ---- DEF-004: the TV's link drops mid-window and the TV reconnects ----------------------------
+  await new Promise((r) => setTimeout(r, 1100)); // the phone enforces at least 1 s between windows (N-12)
   const w4 = ids.window();
   const a4 = ids.attempt();
   tvMsg('window.start', { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: -60 }, { session_id: SESSION, window_id: w4, attempt_id: a4 });
@@ -307,6 +308,26 @@ try {
   await new Promise((r) => setTimeout(r, 1300));
   check('DEF-004: exactly one trailing report followed, then quiet', phoneMsgs('mic.state').length === micAfterFirst + 1);
   check('DEF-004: the TV-reconnect reports stayed on the wire grid and passed the validator', invalid.length === 0, invalid.join(' | '));
+
+  // ---- N-12: at least 1 s between windows --------------------------------------------------------
+  const phraseWindow = { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: -60 };
+  await new Promise((r) => setTimeout(r, 1100)); // let the previous (interrupted) window's cooldown pass
+  const cdA = { session_id: SESSION, window_id: ids.window(), attempt_id: ids.attempt() };
+  const cdAStart = tvMsg('window.start', phraseWindow, cdA);
+  check('N-12: the first window of the chain is applied', (await waitAck(cdAStart, 'cooldown window A')).payload.outcome === 'applied');
+  await new Promise((r) => setTimeout(r, 250));
+  tvMsg('window.cancel', { reason: 'user_cancel' }, cdA);
+  await new Promise((r) => setTimeout(r, 250)); // a hostile TV chaining windows: cancel, then start again right away
+  const cdB = { session_id: SESSION, window_id: ids.window(), attempt_id: ids.attempt() };
+  const cdBStart = tvMsg('window.start', phraseWindow, cdB);
+  const cdBAck = await waitAck(cdBStart, 'cooldown window B');
+  check('N-12: a window started 0.25 s after the previous one ended is refused with detail "cooldown"', cdBAck.payload.outcome === 'rejected' && cdBAck.payload.detail === 'cooldown', JSON.stringify(cdBAck.payload));
+  check('N-12: the refused window sent no level frames and the microphone stayed idle', !phoneMsgs('level').some((m) => m.window_id === cdB.window_id) && (await page.textContent('#mic-badge')) === 'Mic open, not measuring');
+  await new Promise((r) => setTimeout(r, 1000));
+  const cdBRetry = tvMsg('window.start', phraseWindow, cdB); // the same ids again, a second later
+  check('N-12: a second later the same window is applied (the refusal did not burn its ids)', (await waitAck(cdBRetry, 'cooldown window B again')).payload.outcome === 'applied');
+  tvMsg('window.cancel', { reason: 'user_cancel' }, cdB);
+  await new Promise((r) => setTimeout(r, 400));
 
   // ---- phrases ---------------------------------------------------------------------
   await page.fill('#phrase-1', '<img src=x onerror=alert(1)>');
@@ -369,6 +390,23 @@ try {
   relayMsg('auth.ok', { role: 'phone', generation: 4, peer_connected: true, phone_paired: true, next_credential: 'z'.repeat(43) });
   await waitFor(() => lastOf('mic.state')?.producer_generation === 4, { label: 'mic.state on generation 4' });
   check('no credential value appears anywhere in the page', !(await page.content()).includes(TEST_CREDENTIAL) && !(await page.content()).includes(N1));
+
+  // ---- N-07: phrases go when the TV discards the session, and when the pairing ends ----------------
+  const SESSION_C = ids.session();
+  const beginC = tvMsg('session.begin', { family_mode: false, phrase_count: 1, cues_max: 3 }, { session_id: SESSION_C });
+  await waitAck(beginC, 'session.begin for the discarded session');
+  const heldBefore = await page.evaluate(() => ({ saved: document.querySelectorAll('#phrase-saved li').length, typed: document.getElementById('phrase-1').value }));
+  check('N-07: before the discard the page holds the saved phrase and the typed draft', heldBefore.saved >= 1 && heldBefore.typed !== '', JSON.stringify(heldBefore));
+  const discardId = tvMsg('session.end', { reason: 'discarded' }, { session_id: SESSION_C });
+  await waitAck(discardId, 'session.end discarded');
+  await page.waitForFunction(() => document.querySelectorAll('#phrase-saved li').length === 0);
+  const afterDiscard = await page.evaluate(() => ({ rows: document.querySelectorAll('#phrase-list li').length, typed: document.getElementById('phrase-1').value, html: document.body.innerHTML }));
+  check('N-07: after session.end discarded the saved list and the editor are empty (still paired)', afterDiscard.rows === 1 && afterDiscard.typed === '' && !afterDiscard.html.includes('onerror=alert') && !afterDiscard.html.includes('Another phrase') && (await page.isVisible('#view-setup')));
+  relayMsg('unpaired', { reason: 'room_closed' });
+  await page.waitForSelector('#view-join:not([hidden])');
+  const afterUnpair = await page.evaluate(() => ({ heading: document.getElementById('unpaired-heading').textContent, reason: document.getElementById('unpaired-reason').textContent, html: document.documentElement.outerHTML }));
+  check('N-07: after the room closed the page is back on Join with a plain explanation', afterUnpair.heading === 'This phone is no longer paired' && afterUnpair.reason === 'The TV closed this pairing.', JSON.stringify([afterUnpair.heading, afterUnpair.reason]));
+  check('N-07: no phrase text is left anywhere in the page', !afterUnpair.html.includes('onerror=alert') && !afterUnpair.html.includes('Another phrase') && !afterUnpair.html.includes('A household'));
 
   // ---- global checks ---------------------------------------------------------------
   check('every message the phone sent passed parseWireMessage', invalid.length === 0, invalid.join(' | '));

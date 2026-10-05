@@ -7,7 +7,9 @@
  *   SEC-W02  production build: ?relay= ignored, test hooks absent, response headers
  *   SEC-W04  the page refuses to be framed
  *   SEC-W07  cross-site WebSocket hijacking from a foreign origin
- *   N-01     a legitimate reconnect over a half-open socket (documented as an open finding with it.fails)
+ *   N-01     a legitimate reconnect over a half-open socket (fixed in the phone: refused resumes are retried for 30 s)
+ *   N-02     CSP connect-src/worker-src (the page's meta policy is fixed; the local server header is still an it.fails record)
+ *   N-12     measurement budget, cooldown and idle limit (cooldown asserted here; the rest in apps/phone unit tests)
  *
  * Tests wrapped in it.fails assert the DESIRED behaviour that the implementation does not have yet: they pass while the
  * finding is open and start failing, loudly, the day it is fixed (then flip them to it).
@@ -180,7 +182,7 @@ describe('SEC-W03 hostile QR: an attacker room that accepts anyone and then driv
     tv.client.close();
   }, 120_000);
 
-  it('TM-G1 RESIDUAL (N-12): once the person has said Yes and started the microphone, a paired TV can chain measurement windows without any session budget, cooldown or idle limit (recorded, not a pass of TM-G1)', async () => {
+  it('TM-G1 (N-12, fixed): once the person has said Yes and started the microphone, a paired TV that chains measurement windows is held to a 1 s cooldown (and a 5 minute session budget, and a 10 minute idle limit, covered by the phone unit tests)', async () => {
     const { page } = phone;
     await page.goto('about:blank');
     const { tv, code } = await createRoom(relay);
@@ -203,19 +205,25 @@ describe('SEC-W03 hostile QR: an attacker room that accepts anyone and then driv
     const mark = frames.length;
     const N = 15;
     let applied = 0;
+    const refusals: string[] = [];
     for (let i = 0; i < N; i += 1) {
       const ids = { session_id: session, window_id: `w_secbudget${String(i).padStart(3, '0')}`, attempt_id: `a_secbudget${String(i).padStart(3, '0')}` };
       const startId = tv.send('window.start', { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: -60 }, ids);
       await tv.client.waitUntil(() => tv.client.inbox.some((m) => m.type === 'ack' && m.payload['acked_message_id'] === startId), 8000, `ack for window ${i}`);
       const ack = tv.client.inbox.find((m) => m.type === 'ack' && m.payload['acked_message_id'] === startId) as Msg;
       if (ack.payload['outcome'] === 'applied') applied += 1;
+      else refusals.push(`${String(ack.payload['outcome'])}:${String(ack.payload['detail'])}`);
       await sleep(250);
       tv.send('window.cancel', { reason: 'user_cancel' }, ids);
       await sleep(250);
     }
     const levels = frames.slice(mark).filter((f) => f.dir === 'out' && f.msg.type === 'level').length;
-    console.log('N-12 chained windows applied by the phone with no budget:', applied, 'of', N, '; level frames sent:', levels);
-    expect(applied).toBe(N);
+    console.log('N-12 chained windows applied by the phone under the cooldown:', applied, 'of', N, '; refusals:', refusals.length, '; level frames sent:', levels);
+    // Each cycle starts a window, cancels it after 250 ms and starts the next 250 ms later: well inside the 1 s cooldown.
+    expect(applied).toBeGreaterThan(0);
+    expect(applied).toBeLessThan(N);
+    expect(refusals.length).toBe(N - applied);
+    expect(new Set(refusals)).toEqual(new Set(['rejected:cooldown']));
     expect(levels).toBeGreaterThan(0);
     stopPing();
     tv.client.close();
@@ -396,7 +404,7 @@ describe('N-01: a legitimate reconnect over a half-open socket (open finding)', 
     await relay?.stop();
   });
 
-  it.fails('OPEN FINDING N-01: after the phone\'s network dies without a close, its own reconnect within 25 s is refused as an impostor and the phone treats that as "no longer paired"', async () => {
+  it('N-01 (fixed): after the phone\'s network dies without a close, its own reconnect is refused while the relay holds the old socket, and the phone keeps retrying instead of treating that as "no longer paired"', async () => {
     const { page } = phone;
     const { tv, code } = await createRoom(relay);
     const accept = (async () => {
