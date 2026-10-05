@@ -62,7 +62,7 @@ React Native for Vega (RN 0.83.0, React 19.2.0), TypeScript, Vite, Web Audio API
 
 - A complete, tested session logic and protocol whose hidden-meter checks were differential-tested: a run with levels at -140 dBFS versus +20 dBFS (opposite verdicts) produced identical pre-reveal views and TV-to-phone traffic (EV-0027).
 - An independent review that found and fixed real defects before any demo, including a pairing flaw (a hostile QR code could point a phone at an attacker's relay), addressed by a phone-side confirmation step and number matching on the TV, and seven integration defects (DEF-001 to DEF-007) found by the end-to-end and fault-injection suites.
-- Challenges that are still open: the Vega SDK could not be installed on the build host (Rosetta 2 is absent on macOS 27), so the TV app has never run natively; the physical microphone experiment is frozen but has not run; the dependency audit for the TV app has open findings in vendor tooling (see `docs/release/SUPPLY_CHAIN.md`).
+- Challenges that are still open: the Vega SDK could not be installed on the build host (Rosetta 2 is absent on macOS 27), so the TV app has never run natively; the physical microphone experiment is frozen but has not run; the dependency audit for the TV app reports 70 findings in vendor build tooling (none in the shipped bundle), recorded as a documented exception rather than fixed (see `docs/release/SUPPLY_CHAIN.md`).
 
 ## What we learned (draft)
 

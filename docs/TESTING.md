@@ -1,6 +1,6 @@
 # Testing
 
-Status: every suite below was run on 2026-10-05 from a **clean clone at integration commit `63af0ae`** (macOS 27.0.1, Apple M4 Pro, Google Chrome 154.0.8037.97 headless; Node 24.11.1 for the root workspace and the end-to-end suites, Node 22.23.2 for `apps/tv` and the accessibility gate). The counts are the ones observed in those runs; they match the integration records EV-0037 to EV-0040 in `.build/evidence.jsonl` except where stated. Logs were kept outside the repository.
+Status: every suite below was run on 2026-10-05 from a **clean clone at integration commit `63af0ae`** (macOS 27.0.1, Apple M4 Pro, Google Chrome 154.0.8037.97 headless; Node 24.11.1 for the root workspace and the end-to-end suites, Node 22.23.2 for `apps/tv` and the accessibility gate). The counts are the ones observed in those runs; they match the integration records EV-0037 to EV-0040 in `.build/evidence.jsonl` except where stated, and the lead recorded these clean-clone runs as EV-0042. Logs were kept outside the repository. The lockfile was changed afterwards by the `vitest` 3.2.7 and `ws` 8.22.0 bumps (merged at `cfa5158`); after the merge only the root workspace was rerun (`npm run build`, `npm run typecheck` and `npm test` in the docs worktree, all exit 0, Node 24.11.1): the counts below are unchanged except session-core, which is now **378** tests (the new `privacy-copy.test.ts`), and relay, which showed 1,111 passed and 2 skipped because that worktree has no `cfn-lint` venv. The `apps/tv`, end-to-end, accessibility and phone Chrome suites were **not** rerun (see the pre-publication cleanup, item P4, in `docs/submission/SUBMISSION_CHECKLIST.md`).
 
 **Read the evidence class before quoting a result.** Everything here is `automated` or `web_preview`. **No suite uses a real phone microphone, the Vega runtime, a Vega Virtual Device, a physical Fire TV or AWS**, and no result may be promoted to those classes:
 
@@ -60,7 +60,7 @@ All drive system Google Chrome through `playwright-core`. No Playwright browser 
 | Infrastructure template | `services/relay/.venv/bin/cfn-lint -t infra/template.yaml --regions ap-south-1` | cfn-lint 1.57.1, exit 0 | automated (lint, not a deployment) |
 | Lambda bundle | `npm run bundle:lambda -w @atr/relay` | exit 0; two 1.99 MB bundles | automated |
 | Local relay start-up | `npm run start:local -w @atr/relay` with scratch dev certificates | listens, `/healthz` ok, security headers present; refuses unsafe configurations (exit 2) | automated (manual probe) |
-| Licence inventory, SBOM, `npm audit` | see [release/SUPPLY_CHAIN.md](release/SUPPLY_CHAIN.md) | root `--omit=dev` clean; `apps/tv` 70 findings (open) | automated |
+| Licence inventory, SBOM, `npm audit` | see [release/SUPPLY_CHAIN.md](release/SUPPLY_CHAIN.md) | root `--omit=dev` clean (also after the bumps); `apps/tv` 70 findings, recorded by the lead as an A7-01 exception for build-time tooling | automated |
 
 ## 4. Environment variables
 

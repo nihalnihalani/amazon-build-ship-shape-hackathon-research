@@ -18,7 +18,7 @@ Format per entry (the Devpost template as read): task, steps, expected versus ac
 | F-08 | API Gateway cannot choose close codes | Low | documented, not run on AWS |
 | F-09 | No per-connection timer on Lambda | Medium | worked around, not run on AWS |
 | F-10 | Undeclared `buffer` import in the SVG package | Low | verified in the docs pass |
-| F-11 | `npm audit` on `react-native` tooling | Medium | open |
+| F-11 | `npm audit` on `react-native` tooling | Medium | open upstream; recorded as an A7-01 exception by the lead |
 | F-12 | Vega documentation inconsistencies | Low | recorded, not resolved |
 | F-13 | Hackathon Dates tab versus Rules | Low | recorded |
 | F-14 | AWS credentials are the root user | Blocker (environment) | open (B-003) |
@@ -144,7 +144,7 @@ Format per entry (the Devpost template as read): task, steps, expected versus ac
 - **Expected:** a clean or small result for a production audit.
 - **Actual:** 70 findings (2 low, 19 moderate, 44 high, 5 critical): `react-native` and `@amazon-devices/react-native-kepler` list their command-line and Metro tooling as ordinary dependencies, so npm counts `logkitty`, `shell-quote`, `jscodeshift`, `@microsoft/api-extractor` and others as production. None of the packages carrying an advisory is in the 27-package JavaScript bundle. npm's suggested fixes are semver-major (`react-native` 0.87.1) and do not fit the Vega-supported line.
 - **Severity:** Medium: an open release-gate item.
-- **Workaround:** none applied; analysis in `docs/release/SUPPLY_CHAIN.md`.
+- **Workaround:** none applied to the packages. The lead recorded a documented A7-01 exception for build-time tooling (none of the affected packages is in the 27-package bundle; re-audit at every SDK bump and before any public release) in `docs/adr/AMENDMENTS-REV2.md`. Analysis in `docs/release/SUPPLY_CHAIN.md`.
 - **Suggestion:** move tooling out of the runtime dependency list of the Vega packages and `react-native`'s peer story.
 - **Reference:** `docs/release/audit/npm-audit-tv-omit-dev.json`; `docs/release/SUPPLY_CHAIN.md` section 3.
 

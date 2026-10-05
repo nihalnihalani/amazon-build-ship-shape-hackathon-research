@@ -13,7 +13,7 @@ Not a medical device. Does not diagnose or treat any condition.
 | Node.js (root workspace: shared packages, relay, phone page, tests) | **24.11.1** (`.nvmrc` at the repository root pins 24; `engines.node >=22`; also exercised on 22.23.2, 24.11.1 and 25.2.1 for the protocol package) | ADR-0007: the root `.nvmrc` pins 24 for the backend and shared packages | `.nvmrc`, `package.json`, `docs/adr/0007-runtime-and-toolchain.md` |
 | Node.js (`apps/tv`, the Vega toolchain) | **22.22.2** pinned in `apps/tv/.nvmrc` (the official starter's value; `engines.node >=22`; `@amazon-devices/react-native-kepler` needs `>=22.14.0`). This host has 22.23.2, which satisfies every declared range, but the pinned patch itself was **not** tried. | Keep the Vega toolchain Node isolated from the Lambda, phone and CI runtimes | `apps/tv/.nvmrc`, `docs/COMPATIBILITY.md` section 3 |
 | npm | the one shipped with those Node versions (11.6.2 and 10.9.8 were used) | `npm ci` with the committed lockfiles | |
-| TypeScript, Vitest | 5.8.3 and 3.2.4 (pinned in the root `package.json`, installed by `npm ci`) | | root `package.json` |
+| TypeScript, Vitest | 5.8.3 and 3.2.7 (pinned in the root `package.json`, installed by `npm ci`; Vitest was 3.2.4 at `63af0ae` and was bumped by the lead after the audit) | | root `package.json` |
 | React Native for Vega, React, OS | RN **0.83.0**, React **19.2.0**, OS min and target **1.2**, SDK 0.24 line (exact build not pinned: 0.24.9311 and 0.24.9914 both appear in official material). RN 0.83 is labelled "early access" in the official release notes. | The TV app only; needs the Vega SDK to build | ADR-0007, `docs/COMPATIBILITY.md` |
 | AWS Lambda runtime | `nodejs24.x` (generally available; Node 26 is a preview and is not used) | Relay deployment only (not deployed) | `docs/COMPATIBILITY.md` section 4 |
 | Google Chrome (system install) | 154.0.8037.97 was used | The end-to-end and accessibility suites drive it with `playwright-core` (`channel: 'chrome'` or `ATR_CHROME`); no Playwright browser download is needed | `tests/src/e2e-env.ts`, `apps/phone/e2e/lib.mjs` |
@@ -31,7 +31,7 @@ nvm use                       # reads .nvmrc (24.11.1); any Node >= 22 works
 npm ci
 ```
 
-Verified: `npm ci` exit 0 under Node 24.11.1 (110 packages; `npm audit` output follows the install, see [release/SUPPLY_CHAIN.md](release/SUPPLY_CHAIN.md)). The root `package.json` declares workspaces `packages/protocol`, `packages/phone-mic-meter`, `packages/ten-foot-meter`, `packages/session-core`, `services/relay`, `apps/phone` and `tests`. **`apps/tv` is not a workspace**: it is a standalone project with its own lockfile (section 5).
+Verified: `npm ci` exit 0 under Node 24.11.1 (110 packages at `63af0ae`; 105 after the `vitest` and `ws` bumps merged at `cfa5158`, rechecked; `npm audit` output follows the install, see [release/SUPPLY_CHAIN.md](release/SUPPLY_CHAIN.md)). The root `package.json` declares workspaces `packages/protocol`, `packages/phone-mic-meter`, `packages/ten-foot-meter`, `packages/session-core`, `services/relay`, `apps/phone` and `tests`. **`apps/tv` is not a workspace**: it is a standalone project with its own lockfile (section 5).
 
 Build, typecheck and test everything in the root workspace:
 

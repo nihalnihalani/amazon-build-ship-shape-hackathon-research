@@ -1,6 +1,6 @@
 # What was built, and when
 
-**PREPARED, NOT SUBMITTED.** This answers the Devpost "existing project: what was built or changed during the hackathon window" question. Every date and count below is taken from `git log` of this repository at integration commit `63af0ae` (author and commit dates on the build host's clock, shown in IST, UTC+5:30). They are **not** taken from `.build/evidence.jsonl`: that log's timestamps from EV-0033 onward (10:20 to 12:30 IST) are later than the commits they cite (05:30 to 06:40 IST) and later than the host clock when this was written, so they are unreliable until the lead reconciles them.
+**PREPARED, NOT SUBMITTED.** This answers the Devpost "existing project: what was built or changed during the hackathon window" question. Every date and count below is taken from `git log` of this repository at integration commit `63af0ae` (author and commit dates on the build host's clock, shown in IST, UTC+5:30). They are **not** taken from `.build/evidence.jsonl`: when this was first written that log's timestamps from EV-0033 onward (10:20 to 12:30 IST) were later than the commits they cite (05:30 to 06:40 IST). The lead has since corrected them from the recording commit times (EV-0041), so the log and git now agree; git remains the source here.
 
 ## Dates that matter
 
