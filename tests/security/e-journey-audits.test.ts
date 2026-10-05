@@ -526,13 +526,22 @@ describe('journey audits (network, storage, logs, hidden-meter leaks, literal re
     expect(await phone.page.isVisible('#view-setup')).toBe(false);
   });
 
-  it('N-07 (fixed): after the TV deleted its data and closed the room, the phone page no longer holds the household phrases (state, editor, saved list)', async () => {
-    const held = await phone.page.evaluate(() => ({
-      inputs: Array.from(document.querySelectorAll<HTMLInputElement>('#phrase-list input')).map((i) => i.value).filter((v) => v !== ''),
-      saved: document.querySelectorAll('#phrase-saved li').length,
-    }));
+  it('N-07 (fixed): after the TV deleted its data and closed the room, the phone page no longer holds the household phrases (state, editor, saved list, and nowhere in the DOM)', async () => {
+    const held = await phone.page.evaluate((bank) => {
+      const texts: string[] = [document.documentElement.textContent ?? ''];
+      for (const el of Array.from(document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select'))) texts.push(el.value);
+      for (const el of Array.from(document.querySelectorAll('*'))) for (const a of Array.from(el.attributes)) texts.push(a.value);
+      return {
+        inputs: Array.from(document.querySelectorAll<HTMLInputElement>('#phrase-list input')).map((i) => i.value).filter((v) => v !== ''),
+        saved: document.querySelectorAll('#phrase-saved li').length,
+        found: bank.filter((phrase) => texts.some((t) => t.includes(phrase))),
+      };
+    }, BANK);
     expect(held.saved).toBe(0);
     expect(held.inputs).toEqual([]);
+    expect(held.found, 'household phrases still present in the phone DOM (text, control values or attributes)').toEqual([]);
+    // the journey did type them: the same scan finds them while paired (checked against the recorded saved-list markup)
+    expect(phraseSavedHtml).toContain('Marker phrase alpha one');
   });
 
   it('A5-03 / A5-04 / A5-05: a stale checkpoint is discarded; summaries are kept 8 days and pruned after; corrupt values are survived', async () => {

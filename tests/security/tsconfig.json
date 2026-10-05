@@ -25,7 +25,9 @@
   },
   "include": [
     "./*.ts",
+    "./slow/*.ts",
     "../src/**/*.ts",
-    "../../apps/tv/src/globals.d.ts"
+    "../../apps/tv/src/globals.d.ts",
+    "../../apps/phone/src/vite-env.d.ts"
   ]
 }

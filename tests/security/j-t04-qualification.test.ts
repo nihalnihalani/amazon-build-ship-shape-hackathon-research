@@ -5,8 +5,7 @@
  * Question asked: can a FAILED experiment become a PASS? (ADR-0009, finding A9-01.) The inputs are synthetic series
  * generated here. Evidence class: automated, synthetic; nothing about a real phone.
  *
- * Tests wrapped in it.fails assert the behaviour the protocol document promises and the code does not deliver yet.
- * Revision 3 (dsp): N-08, N-09, N-10 and N-11 are fixed; their tests are plain `it` below and N-10/N-11 now assert the fix.
+ * Revision 3 (dsp): N-08, N-09, N-10 and N-11 are fixed; their tests are plain `it` below. No it.fails remain in this file.
  */
 import { describe, expect, it } from 'vitest';
 import { analyzeQualification, sdUpperConfidenceBound, chiSquareQuantile, QUALIFICATION_PARAMS, type NegativeCaseResult, type QualificationTrial } from '@atr/phone-mic-meter';

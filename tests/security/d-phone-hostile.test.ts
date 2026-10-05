@@ -8,11 +8,11 @@
  *   SEC-W04  the page refuses to be framed
  *   SEC-W07  cross-site WebSocket hijacking from a foreign origin
  *   N-01     a legitimate reconnect over a half-open socket (fixed in the phone: refused resumes are retried for 30 s)
- *   N-02     CSP connect-src/worker-src (the page's meta policy is fixed; the local server header is still an it.fails record)
- *   N-12     measurement budget, cooldown and idle limit (cooldown asserted here; the rest in apps/phone unit tests)
+ *   N-02     CSP connect-src/worker-src, in the local server header and in the page's meta policy (both fixed)
+ *   N-12     measurement cooldown asserted here; budget and idle limit in security/slow (opt-in, real time) and in the
+ *            apps/phone unit tests
  *
- * Tests wrapped in it.fails assert the DESIRED behaviour that the implementation does not have yet: they pass while the
- * finding is open and start failing, loudly, the day it is fixed (then flip them to it).
+ * No it.fails remain in this file: every finding it recorded is fixed and its test is a plain `it`.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import https from 'node:https';
@@ -206,13 +206,16 @@ describe('SEC-W03 hostile QR: an attacker room that accepts anyone and then driv
     const N = 15;
     let applied = 0;
     const refusals: string[] = [];
+    const appliedIds = new Set<string>();
     for (let i = 0; i < N; i += 1) {
       const ids = { session_id: session, window_id: `w_secbudget${String(i).padStart(3, '0')}`, attempt_id: `a_secbudget${String(i).padStart(3, '0')}` };
       const startId = tv.send('window.start', { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: -60 }, ids);
       await tv.client.waitUntil(() => tv.client.inbox.some((m) => m.type === 'ack' && m.payload['acked_message_id'] === startId), 8000, `ack for window ${i}`);
       const ack = tv.client.inbox.find((m) => m.type === 'ack' && m.payload['acked_message_id'] === startId) as Msg;
-      if (ack.payload['outcome'] === 'applied') applied += 1;
-      else refusals.push(`${String(ack.payload['outcome'])}:${String(ack.payload['detail'])}`);
+      if (ack.payload['outcome'] === 'applied') {
+        applied += 1;
+        appliedIds.add(ids.window_id);
+      } else refusals.push(`${String(ack.payload['outcome'])}:${String(ack.payload['detail'])}`);
       await sleep(250);
       tv.send('window.cancel', { reason: 'user_cancel' }, ids);
       await sleep(250);
@@ -225,10 +228,45 @@ describe('SEC-W03 hostile QR: an attacker room that accepts anyone and then driv
     expect(refusals.length).toBe(N - applied);
     expect(new Set(refusals)).toEqual(new Set(['rejected:cooldown']));
     expect(levels).toBeGreaterThan(0);
+    // T16 re-check of the rewrite: a refused window must not have measured anything. Every level frame belongs to a window that was applied.
+    const levelWindows = new Set(frames.slice(mark).filter((f) => f.dir === 'out' && f.msg.type === 'level').map((f) => String(f.msg.window_id)));
+    expect([...levelWindows].filter((w) => !appliedIds.has(w))).toEqual([]);
+    expect(levelWindows.size).toBeLessThanOrEqual(applied);
     stopPing();
     tv.client.close();
   }, 120_000);
 });
+
+/** Splits a Content-Security-Policy into directives (on ';') and sources (on whitespace). */
+function parseCsp(policy: string): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const part of policy.split(';')) {
+    const tokens = part.trim().split(/\s+/).filter((t) => t !== '');
+    const [name, ...sources] = tokens;
+    if (name !== undefined && !out.has(name.toLowerCase())) out.set(name.toLowerCase(), sources);
+  }
+  return out;
+}
+
+/** What may never appear in a source list of the phone page: scheme-only sources, bare wildcards, wildcard hosts, blob: and data:. */
+function cspSourceProblems(directive: string, sources: readonly string[]): string[] {
+  const problems: string[] = [];
+  for (const src of sources) {
+    if (/^[a-z][a-z0-9+.-]*:$/i.test(src)) problems.push(`${directive}: scheme-only source ${src}`);
+    else if (src === '*') problems.push(`${directive}: bare wildcard`);
+    else if (/^[a-z][a-z0-9+.-]*:\/\/\*\./i.test(src) || /^\*\./.test(src)) problems.push(`${directive}: wildcard host ${src}`);
+    else if (/^(blob|data|filesystem):/i.test(src)) problems.push(`${directive}: ${src}`);
+  }
+  return problems;
+}
+
+/** The sources of connect-src and worker-src (and script-src) judged by the rules above, over a whole policy. */
+function cspProblems(policy: string): string[] {
+  const parsed = parseCsp(policy);
+  const problems: string[] = [];
+  for (const d of ['connect-src', 'worker-src', 'script-src', 'default-src']) problems.push(...cspSourceProblems(d, parsed.get(d) ?? []));
+  return problems;
+}
 
 describe('SEC-W02 / SEC-W04 / SEC-W07: the production build and its response headers', () => {
   let relay: SecRelay;
@@ -281,19 +319,37 @@ describe('SEC-W02 / SEC-W04 / SEC-W07: the production build and its response hea
     expect(html).not.toMatch(/unsafe-inline|unsafe-eval|<script(?![^>]*src=)[^>]*>[^<]/); // no inline script
   });
 
-  it.fails('OPEN FINDING N-02: connect-src is not a bare wss: scheme wildcard and worker-src has no blob: (header and meta policy)', async () => {
-    const res = await new Promise<string>((resolve, reject) => {
+  it('N-02 (fixed): connect-src names only this origin and exact relay origins, no scheme wildcard, and worker-src has no blob:, in the server header and in the page meta policy', async () => {
+    // The checker itself must not be vacuous: it has to flag the revision 1 policies it replaces.
+    expect(cspProblems("default-src 'self'; connect-src 'self' wss:; worker-src 'self' blob:")).toEqual(['connect-src: scheme-only source wss:', 'worker-src: scheme-only source blob:']);
+    expect(cspProblems("default-src 'none'; connect-src 'self' wss:; img-src 'self'")).toEqual(['connect-src: scheme-only source wss:']); // the old meta policy: `wss:;` must not hide behind the semicolon
+    expect(cspProblems("connect-src 'self' ws: wss: https://*.example.test *")).toEqual(['connect-src: scheme-only source ws:', 'connect-src: scheme-only source wss:', 'connect-src: wildcard host https://*.example.test', 'connect-src: bare wildcard']);
+    expect(cspProblems("worker-src 'self' blob:https://x.test")).toEqual(['worker-src: blob:https://x.test']);
+    expect(cspProblems("default-src 'self'; connect-src 'self' wss://abc.execute-api.eu-west-1.amazonaws.com; worker-src 'self'")).toEqual([]);
+
+    const header = await new Promise<string>((resolve, reject) => {
       https.get({ host: 'localhost', port: relay.port, path: '/', ca: relay.ca }, (r) => {
         r.resume();
         resolve(String(r.headers['content-security-policy']));
       }).on('error', reject);
     });
-    const connect = /connect-src([^;]*)/.exec(res)?.[1] ?? '';
-    expect(connect.split(/\s+/)).not.toContain('wss:');
+    const h = parseCsp(header);
+    expect(cspProblems(header), header).toEqual([]);
+    expect(h.get('connect-src'), 'header connect-src').toContain("'self'");
+    for (const src of (h.get('connect-src') ?? []).filter((x) => x !== "'self'")) expect(src, 'header connect-src source').toMatch(/^wss?:\/\/(localhost|127\.0\.0\.1|\[::1\]|[a-z0-9.-]+)(:\d{1,5})?$/i);
+    expect(h.get('worker-src'), 'header worker-src').toEqual(["'self'"]);
+
+    // the page's own policy, in the production build that this relay serves
     const html = readFileSync(path.join(ROOT, 'apps/phone/dist/index.html'), 'utf8');
-    expect(/connect-src([^"]*)"/.exec(html)?.[1]?.split(/\s+/) ?? []).not.toContain('wss:');
-    const worker = /worker-src([^;]*)/.exec(res)?.[1] ?? '';
-    expect(worker.split(/\s+/)).not.toContain('blob:'); // the worklet is a same-origin file; a blob: worker source is not needed
+    const meta = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)"/i.exec(html)?.[1];
+    expect(meta, 'the page carries a meta policy').toBeDefined();
+    const m = parseCsp(meta as string);
+    expect(cspProblems(meta as string), meta).toEqual([]);
+    expect(m.get('script-src')).toEqual(["'self'"]);
+    expect(m.get('default-src')).toEqual(["'none'"]);
+    expect(m.get('connect-src')?.[0]).toBe("'self'");
+    for (const src of (m.get('connect-src') ?? []).filter((x) => x !== "'self'")) expect(src).toMatch(/^wss:\/\/[a-z0-9.-]+(:\d{1,5})?$/i); // production: wss only
+    expect(meta).not.toMatch(/blob:|data:|unsafe-inline|unsafe-eval/);
   });
 
   it('SEC-W04: the page cannot be framed (CSP frame-ancestors none)', async () => {
@@ -387,13 +443,15 @@ class HalfOpenProxy {
   }
 }
 
-describe('N-01: a legitimate reconnect over a half-open socket (open finding)', () => {
+describe('N-01: a legitimate reconnect over a half-open socket (fixed)', () => {
   let relay: SecRelay;
   let proxy: HalfOpenProxy;
   let phone: PhoneEnv;
   beforeEach(async () => {
     buildArtifacts();
-    relay = await startSecRelay({ staticDir: path.join(ROOT, 'apps/phone/dist-test') });
+    // The proxy listens on a random loopback port: the page's CSP (connect-src) must be told about loopback relay origins,
+    // exactly as tests/src/e2e-env.ts does since the CSP no longer allows any wss: host (N-02).
+    relay = await startSecRelay({ staticDir: path.join(ROOT, 'apps/phone/dist-test'), env: { ATR_RELAY_ORIGINS: 'wss://localhost:*,wss://127.0.0.1:*' } });
     proxy = new HalfOpenProxy(relay);
     await proxy.start();
     phone = await startPhone();
@@ -407,6 +465,15 @@ describe('N-01: a legitimate reconnect over a half-open socket (open finding)', 
   it('N-01 (fixed): after the phone\'s network dies without a close, its own reconnect is refused while the relay holds the old socket, and the phone keeps retrying instead of treating that as "no longer paired"', async () => {
     const { page } = phone;
     const { tv, code } = await createRoom(relay);
+    const stopPing = keepAlive(tv); // a real TV pings every 10 s; this raw one would be dropped for idleness (4408) during the long wait
+    const phoneFrames: Array<{ dir: 'in' | 'out'; msg: Msg }> = [];
+    page.on('websocket', (ws) => {
+      const rec = (dir: 'in' | 'out') => (f: { payload: string | Buffer }) => {
+        if (typeof f.payload === 'string') phoneFrames.push({ dir, msg: JSON.parse(f.payload) as Msg });
+      };
+      ws.on('framesent', rec('out'));
+      ws.on('framereceived', rec('in'));
+    });
     const accept = (async () => {
       const req = await tv.client.next('join.requested', 30_000);
       tv.send('join.confirm', { join_id: String(req.payload['join_id']), decision: 'accept' });
@@ -425,6 +492,19 @@ describe('N-01: a legitimate reconnect over a half-open socket (open finding)', 
     await page.waitForFunction(() => /connected|Connected/.test(document.querySelector('#link')?.textContent ?? ''), undefined, { timeout: 30_000 });
     expect(await page.isVisible('#view-setup')).toBe(true);
     expect(await page.innerText('body')).not.toMatch(/no longer paired/i);
+    // What happened on the wire: the phone's resumes were refused while the relay still held the old socket (generic
+    // `unauthorized`, nothing about why), and a later resume succeeded with the SAME credential (a refusal does not consume it).
+    const resumes = phoneFrames.filter((f) => f.dir === 'out' && f.msg.type === 'auth.resume');
+    const refusals = phoneFrames.filter((f) => f.dir === 'in' && f.msg.type === 'error' && f.msg.payload['code'] === 'unauthorized');
+    const ok = phoneFrames.filter((f) => f.dir === 'in' && f.msg.type === 'auth.ok');
+    console.log('N-01 wire: resumes', resumes.length, 'refusals', refusals.length, 'auth.ok', ok.length);
+    expect(refusals.length, 'at least one refused resume while the old socket was held').toBeGreaterThan(0);
+    expect(resumes.length).toBeGreaterThan(refusals.length);
+    expect(ok.length).toBeGreaterThan(0);
+    const creds = new Set(resumes.map((f) => String((f.msg.payload as { credential?: unknown }).credential)));
+    expect(creds.size, 'the same credential was presented until one resume succeeded (refusals do not consume it)').toBe(1);
+    expect(JSON.stringify(refusals.map((f) => f.msg.payload))).not.toMatch(/superseded|live|connected|still/i); // the refusal says nothing about why
+    stopPing();
     tv.client.close();
   }, 120_000);
 });
