@@ -12,6 +12,7 @@
  *   CONN#<conn_id>             CONN        connection record (state machine fields and counters)
  *   CRED#<cred_hash>           T           tombstone of a credential consumed by rotation (room, role, expiry): reuse detection
  *   MSG#<room>#<role>#<msg_id> M           recent-message-id marker for duplicate detection (per room and role)
+ *   CMSG#<conn_id>#<msg_id>    M           the same for pre-authentication messages, which have no room yet (per connection)
  *   CTR#<window_ms>#<key>#<n>  C           fixed-window counters (rate limits); `key` holds a keyed hash of the source address
  *   BO#<key>                   B           exponential-delay failure state {n, last_ms}; `key` holds a keyed hash of the source
  *   UC#<source hash>           U           concurrent unauthenticated connections of one source
@@ -997,6 +998,20 @@ export class DynamoDbRoomStore implements RoomStore {
       new PutCommand({
         TableName: this.tableName,
         Item: { pk: `MSG#${roomId}#${role}#${messageId}`, sk: 'M', msg_exp_ms: expires, expires_at: ttl(expires) },
+        ConditionExpression: `attribute_not_exists(${e.n('pk')}) OR ${e.n('msg_exp_ms')} <= ${e.v(now)}`,
+        ...withExpr(e),
+      }),
+    );
+    return r === undefined ? 'duplicate' : 'new';
+  }
+
+  async recordConnectionMessageId(connId: string, messageId: string, now: number): Promise<'new' | 'duplicate'> {
+    const e = new Expr();
+    const expires = now + MESSAGE_ID_WINDOW_MS;
+    const r = await this.conditional(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: { pk: `CMSG#${connId}#${messageId}`, sk: 'M', msg_exp_ms: expires, expires_at: ttl(expires) },
         ConditionExpression: `attribute_not_exists(${e.n('pk')}) OR ${e.n('msg_exp_ms')} <= ${e.v(now)}`,
         ...withExpr(e),
       }),

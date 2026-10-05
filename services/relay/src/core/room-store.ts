@@ -179,6 +179,14 @@ export interface RoomStore {
    */
   recordMessageId(roomId: string, role: PeerRole, messageId: string, now: number): Promise<'new' | 'duplicate'>;
   forgetMessageId(roomId: string, role: PeerRole, messageId: string): Promise<void>;
+  /**
+   * Conditional insert into the id window of ONE connection (DEF-006). Pre-authentication messages have no room yet,
+   * so a duplicated frame is detected per connection: `'duplicate'` when this connection already sent `messageId`.
+   * Unlike `recordMessageId` the id is kept even if the message is then refused: a pre-auth message is a one-shot
+   * request and a retry uses a fresh id, so only a transport duplicate repeats one. The marker goes with the
+   * connection (memory) or expires with the id window (DynamoDB).
+   */
+  recordConnectionMessageId(connId: string, messageId: string, now: number): Promise<'new' | 'duplicate'>;
   /** Conditional per-session counter: 'limit' once `max` cues were already accepted. Stores no cue text. */
   consumeCue(roomId: string, sessionId: string, max: number, now: number): Promise<'ok' | 'limit'>;
   /** Fixed-window counter: atomically adds one and returns the new count for the window containing `now`. */

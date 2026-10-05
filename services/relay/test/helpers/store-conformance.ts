@@ -634,6 +634,18 @@ export function describeStoreConformance(name: string, factory: () => RoomStore)
         expect(results.filter((r) => r === 'new')).toHaveLength(1);
       });
 
+      it('records pre-authentication message ids per connection, never forgetting them (DEF-006)', async () => {
+        expect(await s.recordConnectionMessageId('c1', 'm1', NOW)).toBe('new');
+        expect(await s.recordConnectionMessageId('c1', 'm1', NOW + 1)).toBe('duplicate');
+        expect(await s.recordConnectionMessageId('c1', 'm2', NOW)).toBe('new'); // another id on the same connection
+        expect(await s.recordConnectionMessageId('c2', 'm1', NOW)).toBe('new'); // the same id on another connection
+        // the per-room window is a different namespace: the same string there is unaffected, and vice versa
+        expect(await s.recordMessageId('c1', 'phone', 'm1', NOW)).toBe('new');
+        expect(await s.recordConnectionMessageId('c1', 'm1', NOW + 2)).toBe('duplicate');
+        const results = await Promise.all(Array.from({ length: 8 }, () => s.recordConnectionMessageId('c3', 'm9', NOW)));
+        expect(results.filter((r) => r === 'new')).toHaveLength(1);
+      });
+
       it('counts cues per session up to the maximum, atomically', async () => {
         const results = await Promise.all(Array.from({ length: 7 }, () => s.consumeCue('r1', 's1', 3, NOW)));
         expect(results.filter((r) => r === 'ok')).toHaveLength(3);

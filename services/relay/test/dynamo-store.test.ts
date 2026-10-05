@@ -59,6 +59,17 @@ describe('DynamoDbRoomStore specifics', () => {
     expect(dump).not.toMatch(/"[A-Za-z0-9_-]{43}"/);
   });
 
+  it('keeps a pre-authentication id marker for the 60 s id window only, holding the id and an expiry and nothing else (DEF-006)', async () => {
+    const fake = new FakeDynamo();
+    const s = new DynamoDbRoomStore(fake, 't');
+    expect(await s.recordConnectionMessageId('conn-1', 'm_abc', NOW)).toBe('new');
+    const marker = fake.items.get('CMSG#conn-1#m_abc\u0000M') as Record<string, number | string>;
+    expect(Object.keys(marker).sort()).toEqual(['expires_at', 'msg_exp_ms', 'pk', 'sk']);
+    expect(marker.msg_exp_ms).toBe(NOW + 60_000);
+    expect(await s.recordConnectionMessageId('conn-1', 'm_abc', NOW + 59_999)).toBe('duplicate');
+    expect(await s.recordConnectionMessageId('conn-1', 'm_abc', NOW + 60_000)).toBe('new'); // logical expiry, not TTL deletion
+  });
+
   it('keys abuse counters by the hashed source and holds counts only, with a TTL of at most one hour (A2-03)', async () => {
     const fake = new FakeDynamo();
     const s = new DynamoDbRoomStore(fake, 't');
