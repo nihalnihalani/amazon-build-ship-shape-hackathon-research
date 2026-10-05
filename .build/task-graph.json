@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T07:35:07+05:30",
+ "updated_at": "2026-10-05T07:59:01+05:30",
  "states": [
   "pending",
   "ready",
@@ -180,7 +180,7 @@
     "EV-0030"
    ],
    "commit": null,
-   "blocker": "B-002 physical Android phone; frozen protocol docs/evaluation/T04-protocol.md awaiting reviewer approval"
+   "blocker": "B-002 phone; protocol rev 2 rejected by security (T16 \u00a77) - rev 3 in progress"
   },
   {
    "id": "T04A",
@@ -621,7 +621,7 @@
     "T15"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "in_review",
    "attempts": 1,
    "acceptance_criteria": [
     "Threat model, adversarial tests, network/storage/log audit, privacy copy matches transmitted data"
@@ -630,9 +630,11 @@
     "docs/security/*"
    ],
    "reviewer": "lead",
-   "evidence_refs": [],
+   "evidence_refs": [
+    "EV-0044"
+   ],
    "commit": null,
-   "blocker": null
+   "blocker": "Residual fixes N-01,N-02,N-03,N-06,N-07,N-12 routed; AWS checks pending B-003"
   },
   {
    "id": "T17",
