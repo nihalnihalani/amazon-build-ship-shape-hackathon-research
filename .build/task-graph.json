@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T07:29:53+05:30",
+ "updated_at": "2026-10-05T07:35:07+05:30",
  "states": [
   "pending",
   "ready",
@@ -341,7 +341,8 @@
    ],
    "reviewer": "qa-accessibility",
    "evidence_refs": [
-    "EV-0019"
+    "EV-0019",
+    "EV-0043"
    ],
    "commit": "982910a",
    "blocker": "real_phone checks pending B-002"
