@@ -194,8 +194,7 @@ describe('hidden first attempt at positions 3, 6, 9', () => {
     h.advance(1500);
     expect(h.view.meter).toBeNull();
     h.answerPrecheck();
-    expect(h.view.meter?.levelRelDb).toBeNull();
-    expect(h.view.meter?.caption).toBe('No level reported');
+    expect(h.view.meter).toBeNull(); // window.start sent, the phone is not measuring yet (DEF-007)
     h.level(0, FLOOR + 10);
     expect(h.view.meter?.levelRelDb).toBe(10);
     expect(h.view.meter?.active).toBe(true);

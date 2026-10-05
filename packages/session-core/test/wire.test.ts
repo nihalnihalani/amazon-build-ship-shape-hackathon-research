@@ -52,6 +52,7 @@ describe('every message the TV sends is valid protocol', () => {
     h.ui('try_again');
     h.beginAndLead('begin_phrase');
     h.answerPrecheck();
+    h.phoneStartsMeasuring();
     h.ok(); // stop early
     h.back(); // cancel while closing
     h.ui('skip_phrase');

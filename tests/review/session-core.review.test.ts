@@ -228,6 +228,8 @@ describe('(a) hidden positions by phrase-bank size', () => {
     rig.advance(1500);
     rig.precheckResult();
     expect(rig.view.meter).toBeNull();
+    rig.startMeasuring(); // DEF-007: captured means the phone started measuring (a try that never starts stays blind)
+    expect(rig.view.meter).toBeNull();
     rig.back(); // cancel during capture
     expect(rig.view.stage).toBe('reveal');
     expect(rig.view.result?.label).toBe('Not scored');
@@ -332,12 +334,13 @@ describe('(b) no result or level information before reveal for a blind attempt',
         rig.ui('begin_phrase');
         rig.advance(1500);
         rig.precheckResult();
-        const before = JSON.stringify(rig.view);
         const start = rig.last('window.start');
-        rig.level(0, -140, false, false, start);
-        rig.level(1, 20, true, true, start);
-        rig.level(2, -140, true, false, start);
-        rig.level(3, 20, true, true, start);
+        rig.startMeasuring(start); // DEF-007: the first frame starts the capture; the extremes follow it
+        const before = JSON.stringify(rig.view);
+        rig.level(1, -140, false, false, start);
+        rig.level(2, 20, true, true, start);
+        rig.level(3, -140, true, false, start);
+        rig.level(4, 20, true, true, start);
         expect(JSON.stringify(rig.view)).toBe(before);
         expect(rig.view.stage).toBe('phrase_active');
         expect(rig.view.meter).toBeNull();
@@ -730,6 +733,10 @@ describe('(e) duplicate OK spam', () => {
     rig.ui('begin_phrase');
     rig.advance(1500);
     rig.precheckResult();
+    expect(rig.view.preferredAction).toBeNull(); // DEF-007: nothing to stop until the phone is measuring
+    rig.ok();
+    expect(rig.count('window.stop')).toBe(0);
+    rig.startMeasuring();
     expect(rig.view.preferredAction).toBe('stop_early');
     for (let i = 0; i < 20; i += 1) rig.ok();
     expect(rig.count('window.stop')).toBe(1);
@@ -891,7 +898,11 @@ describe('(g) link loss mid-window', () => {
     rig.windowResult({ rel: 30 }, old); // would score the live attempt if ids were not checked
     expect(rig.last('ack').payload['outcome']).toBe('ignored_stale');
     expect(rig.view.stage).toBe('phrase_active');
-    expect(rig.view.meter?.levelRelDb).toBeNull(); // the stray level never reached the live meter
+    // DEF-007: the stray frame did not even start the live capture (only the live window's first frame does)
+    expect(rig.view.meter).toBeNull();
+    expect(rig.view.timer).toBeNull();
+    rig.startMeasuring(fresh);
+    expect(rig.view.meter?.levelRelDb).not.toBeNull();
     rig.windowResult({ rel: 25 }, fresh);
     expect(rig.view.stage).toBe('reveal');
     expect(rig.view.result?.label).toBe(REACHED);
@@ -1548,6 +1559,7 @@ describe('(k) timeouts, migration, navigation and documented edge behaviour', ()
     rig.ui('begin_phrase');
     rig.advance(1500);
     rig.precheckResult();
+    rig.startMeasuring(); // DEF-007: the window maximum counts from the phone's first frame
     rig.advance(8499);
     expect(rig.count('window.stop')).toBe(0);
     rig.advance(1);
@@ -1987,7 +1999,7 @@ describe('(l1) revision 4: window_id is unique per measurement (DEF-002); a pre-
     expect(rig.count('ack') - acksBefore).toBeGreaterThanOrEqual(2); // stale acks (levels share one ack per window)
     for (const a of rig.wire.of('ack').slice(acksBefore)) expect(a.payload['outcome']).toBe('ignored_stale');
     expect(rig.view.stage).toBe('phrase_active');
-    expect(rig.view.meter?.levelRelDb).toBeNull(); // the stray level never reached the meter
+    expect(rig.view.meter).toBeNull(); // the stray level never reached the meter (and did not start the capture)
     rig.windowResult({ rel: 25 }, cap);
     expect(rig.view.stage).toBe('reveal');
     expect(rig.view.result?.label).toBe(REACHED);
@@ -2121,7 +2133,7 @@ describe('(l2) revision 4: quantised values on the wire', () => {
     rig.forge('window.result', { ...good, active_ms: 2500.5 }, w);
     expect(rig.wire.sent.length).toBe(before);
     expect(rig.view.stage).toBe('phrase_active');
-    expect(rig.view.meter?.levelRelDb).toBeNull();
+    expect(rig.view.meter).toBeNull(); // no off-grid frame started the capture
     rig.windowResult({ rel: 25 }, cap);
     expect(rig.view.stage).toBe('reveal');
   });
@@ -2734,11 +2746,20 @@ describe('(m6) A3-07: supersede, rotation and revocation', () => {
   });
 
   it('the other ending errors show the generic text, and a non-ending error does not leave pairing', async () => {
-    for (const code of ['expired', 'unauthorized', 'unauthenticated', 'not_found', 'superseded'] as const) {
+    for (const code of ['expired', 'superseded'] as const) {
       const rig = await new Rig({ seed: 722 }).boot();
       await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
       rig.relayError(code);
       expect(rig.view.banner?.text, code).toBe('The pairing with the relay was lost. Pair again.');
+    }
+    // DEF-005: unauthorized / not_found are room loss only on the TV's own resume (or an explicit resume_failed); on an
+    // authed link they are an ordinary relay error and the session stays (a phone that is offline is not a lost room).
+    for (const code of ['unauthorized', 'unauthenticated', 'not_found'] as const) {
+      const rig = await new Rig({ seed: 724 }).boot();
+      await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });
+      rig.relayError(code);
+      expect(rig.view.stage, code).toBe('phrase_ready');
+      expect(rig.view.banner?.text, code).toBe(`The relay reported: ${code}.`);
     }
     const rig = await new Rig({ seed: 723 }).boot();
     await rig.setupToPhrases({ bank: PHRASES.slice(0, 2) });

@@ -21,6 +21,7 @@ export const FLOOR = -50;
 export const CONFIRM_DIGITS = '42';
 
 export interface TvMessage {
+  message_id: string;
   type: string;
   payload: Record<string, unknown>;
   session_id: string | null;
@@ -204,7 +205,7 @@ export class ScriptedPhone {
   }
 
   cue(text: string, sessionId: string): void {
-    this.sendPhone('cue', { text }, { session_id: sessionId, window_id: null, attempt_id: null, type: 'cue', payload: {} });
+    this.sendPhone('cue', { text }, { message_id: '', session_id: sessionId, window_id: null, attempt_id: null, type: 'cue', payload: {} });
   }
 
   dropLink(): void {
@@ -247,6 +248,10 @@ export class ScriptedPhone {
         }
         break;
       case 'session.begin':
+        // DEF-003: the TV starts no measurement before it knows the phone applied this session.begin.
+        this.later(delay, () =>
+          this.sendPhone('ack', { acked_message_id: m.message_id, outcome: 'applied', detail: '' }, m),
+        );
         if (!this.bankSent && this.opts.bank !== undefined) {
           this.bankSent = true;
           this.later(delay * 5, () => {
