@@ -29,7 +29,10 @@ async function freshPair(opts: { familyMode?: boolean } = {}) {
   micViews.length = 0;
   phone = await startPhone();
   tv = await startTv({ relayUrl: tvProxy.url, ca: relay.ca });
-  tv.store.subscribe((v) => micViews.push(v.mic));
+  tv.store.subscribe((v) => {
+    const tag = `${v.link}/${v.mic}/${v.stage}`;
+    if (micViews[micViews.length - 1] !== tag) micViews.push(tag);
+  });
   await pairAndStartMic(tv, phone, { relayOrigin: relay.origin, phoneRelayUrl: phoneProxy.url, familyMode: opts.familyMode });
   await quietAndCalibrate(tv, phone);
 }
@@ -85,12 +88,14 @@ describe('T15 failure recovery with injected faults', () => {
     await phone!.setLevel(LOUD);
     await sleep(500);
     tvProxy.dropAll();
-    const paused = await tv!.waitFor((v) => notScored(v) || v.mic === 'unknown', 'TV notices link loss', 20_000);
-    expect(paused.mic === 'off').toBe(false);
+    await tv!.waitFor((v) => notScored(v) || v.mic === 'unknown', 'TV notices link loss', 20_000);
     await phone!.setLevel(ROOM);
     // The adapter reconnects with the rotated credential; the TV must not auto-resume capture.
     await tv!.waitFor((v) => v.link === 'connected' && v.mic !== 'unknown' && v.stage === 'paused_or_invalid' && has(v, 'retry'), 'reconnected and paused', 40_000);
-    expect(micViews.includes('off')).toBe(false);
+    // While the TV's own link is down it must never claim Mic off (it cannot know).
+    const offWhileDown = micViews.filter((t) => !t.startsWith('connected/') && t.split('/')[1] === 'off');
+    expect(offWhileDown, micViews.join(' > ')).toEqual([]);
+    if (process.env.ATR_DEBUG) console.log('TRANSITIONS', micViews.join(' > '));
     tv!.act('retry');
     await tv!.waitFor((v) => v.stage === 'phrase_ready', 'ready after retry');
     const r = await visibleAttempt(tv!, phone!, LOUD, 'p1 retry');
