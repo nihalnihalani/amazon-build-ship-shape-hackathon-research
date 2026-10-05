@@ -204,8 +204,12 @@ def oracle_precheck(purpose, duration_ms, frames, interrupted=False):
 # window
 # --------------------------------------------------------------------------------------------
 def oracle_window(kind, max_ms, floor, runs, finish):
+    return oracle_window_frames(kind, max_ms, floor, expand(runs), finish)
+
+
+def oracle_window_frames(kind, max_ms, floor, frames, finish):
     max_frames = min(700, max_ms // FRAME_MS)
-    frames = [f for f in expand(runs) if f["index"] < max_frames]
+    frames = [f for f in frames if f["index"] < max_frames]
     segs, _rej, unterminated, cands = oracle_vad(frames, floor)
     by = {f["index"]: f for f in frames}
     default = min(max_ms, (max(by) + 1) * FRAME_MS) if by else 0
@@ -346,21 +350,40 @@ def ar1(n, mu, sigma, rho, gauss):
     return out
 
 
-def ar1_silent_window_study(sigma, rho, seed, trials):
-    """Rooms that pass the quiet check, then a silent 8 s window from the same process.
-    Returns (attempts, trials with at least one accepted segment)."""
+CAL_MARGIN_DB = 13  # reference calibration margin used for the false-"reached" figures
+
+
+def ar1_silent_window_study(sigma, rho, seed, trials, floor_mode="quiet_check"):
+    """A silent 8 s phrase window in a noise-only room.
+
+    floor_mode "quiet_check": the room must pass a 100-frame quiet check; the session floor is its emitted
+    (quantised) floor_dbfs, so the floor carries estimation error (the conditioned study of this repository).
+    floor_mode "estimated_unconditioned": the floor is estimated from a 100-frame quiet check exactly as above but
+    rooms that fail the check are NOT rejected (isolates the effect of the floor estimate from the conditioning).
+    floor_mode "true_floor": no quiet check, the session floor is the process mean (-70 dBFS), the model of the
+    independent T16 review (docs/security/T16_GATE.md, N-05).
+
+    Returns dict(attempts, active, reached): `active` = trials with at least one accepted segment; `reached` =
+    trials whose phrase window is valid and whose emitted p95_active_dbfs - floor >= CAL_MARGIN_DB - 1 (the TV rule
+    with a calibration margin of 13 dB)."""
     rand = mulberry32(seed)
     gauss = make_gauss(rand)
-    valid = attempts = active = 0
+    valid = attempts = active = reached = 0
     while valid < trials:
         attempts += 1
-        quiet = [{"index": i, "finite": True, "db": d, "clipped": False} for i, d in enumerate(ar1(100, -70, sigma, rho, gauss))]
-        r = oracle_precheck("quiet_check", 5000, quiet)
-        if not r["valid"]:
-            continue
+        if floor_mode in ("quiet_check", "estimated_unconditioned"):
+            quiet = [{"index": i, "finite": True, "db": d, "clipped": False} for i, d in enumerate(ar1(100, -70, sigma, rho, gauss))]
+            r = oracle_precheck("quiet_check", 5000, quiet)
+            if floor_mode == "quiet_check" and not r["valid"]:
+                continue
+            floor = r["floor_dbfs"]
+        else:
+            floor = -70.0
         valid += 1
         window = [{"index": i, "finite": True, "db": d, "clipped": False} for i, d in enumerate(ar1(160, -70, sigma, rho, gauss))]
-        segs, _rej, _unt, _c = oracle_vad(window, r["floor_dbfs"])
-        if segs:
+        w = oracle_window_frames("phrase", 8000, floor, window, {"reason": "complete"})
+        if w["segments"] > 0:
             active += 1
-    return attempts, active
+        if w["valid"] and w["p95_active_dbfs"] is not None and (w["p95_active_dbfs"] - floor) >= CAL_MARGIN_DB - 1 - TOL:
+            reached += 1
+    return {"attempts": attempts, "active": active, "reached": reached}

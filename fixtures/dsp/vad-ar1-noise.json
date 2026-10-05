@@ -1,6 +1,6 @@
 {
   "note": "Seeded AR(1) noise in dB, silent 8 s phrase window. SYNTHETIC model, not measured room noise.",
-  "model": "Per-frame level (dBFS) = -70 + sigma * z, where z is AR(1) with correlation rho: z0 = gauss(); z = rho * z + sqrt(1 - rho^2) * gauss(). gauss() = sqrt(-2 ln u) * cos(2 pi v) from two uniforms of mulberry32(seed) (u redrawn while 0). A trial = a 100-frame quiet check (draws 1 + 100) that must be valid (quiet_check rules incl. quantisation); if valid, the session floor is the emitted floor_dbfs and an independent 160-frame window (draws 1 + 160) from the same generator is run through the VAD. Invalid quiet checks consume their draws and are not counted. 'Active' = at least one accepted segment (equivalently the phrase window is not no_voice).",
+  "model": "Per-frame level (dBFS) = -70 + sigma * z, where z is AR(1) with correlation rho: z0 = gauss(); z = rho * z + sqrt(1 - rho^2) * gauss(). gauss() = sqrt(-2 ln u) * cos(2 pi v) from two uniforms of mulberry32(seed) (u redrawn while 0). A trial = a 100-frame quiet check (draws 1 + 100) that must be valid (quiet_check rules incl. quantisation); if valid, the session floor is the emitted floor_dbfs and an independent 160-frame window (draws 1 + 160) from the same generator is run through the VAD. Invalid quiet checks consume their draws and are not counted. 'Active' = at least one accepted segment (equivalently the phrase window is not no_voice). 'Reached' = the window is valid and its emitted p95_active_dbfs minus the floor is at least cal_margin - 1 = 12 dB (calibration margin 13 dB).",
   "target_p_active_max": 0.01,
   "valid_trials_per_model": 10000,
   "models": [
@@ -14,7 +14,9 @@
       "p_quiet_check_valid": 0.9974,
       "active_trials": 3,
       "p_active": 0.0003,
-      "meets_target": true
+      "meets_target": true,
+      "reached_trials": 0,
+      "p_reached": 0.0
     },
     {
       "id": "ar1-sigma2.5-rho0.5",
@@ -26,7 +28,9 @@
       "p_quiet_check_valid": 0.9995,
       "active_trials": 0,
       "p_active": 0.0,
-      "meets_target": true
+      "meets_target": true,
+      "reached_trials": 0,
+      "p_reached": 0.0
     },
     {
       "id": "ar1-sigma2.5-rho0.8",
@@ -38,7 +42,23 @@
       "p_quiet_check_valid": 0.9893,
       "active_trials": 45,
       "p_active": 0.0045,
-      "meets_target": true
+      "meets_target": true,
+      "reached_trials": 3,
+      "p_reached": 0.0003
+    },
+    {
+      "id": "ar1-sigma2.5-rho0.9",
+      "sigma_db": 2.5,
+      "rho": 0.9,
+      "seed": 20261027,
+      "valid_trials": 10000,
+      "attempts": 10276,
+      "p_quiet_check_valid": 0.9731,
+      "active_trials": 95,
+      "p_active": 0.0095,
+      "meets_target": true,
+      "reached_trials": 4,
+      "p_reached": 0.0004
     },
     {
       "id": "ar1-sigma3.0-rho0.8",
@@ -50,7 +70,9 @@
       "p_quiet_check_valid": 0.902,
       "active_trials": 443,
       "p_active": 0.0443,
-      "meets_target": false
+      "meets_target": false,
+      "reached_trials": 77,
+      "p_reached": 0.0077
     },
     {
       "id": "ar1-sigma3.5-rho0.5",
@@ -62,7 +84,9 @@
       "p_quiet_check_valid": 0.6365,
       "active_trials": 345,
       "p_active": 0.0345,
-      "meets_target": false
+      "meets_target": false,
+      "reached_trials": 113,
+      "p_reached": 0.0113
     },
     {
       "id": "ar1-sigma3.5-rho0.9",
@@ -74,9 +98,86 @@
       "p_quiet_check_valid": 0.6964,
       "active_trials": 1646,
       "p_active": 0.1646,
-      "meets_target": false
+      "meets_target": false,
+      "reached_trials": 477,
+      "p_reached": 0.0477
     }
   ],
-  "finding": "Under the revision 2 VAD (open +10 dB, continue +6 dB, >= 4 candidates and a run of >= 3) the 1 % target is met only for noise with sigma <= 2.5 dB; at sigma 3.0 - 3.5 dB (the edge of what the quiet check admits: p80 - p20 = 1.683 sigma <= 6 allows sigma up to about 3.56) the rate is 3 - 17 %. This is recorded, not hidden: see fixtures/dsp/README.md for the comparison with alternative thresholds.",
-  "recorded_counts_note": "active_trials are the ORACLE's counts. The TypeScript test regenerates the same trials with its own implementation and must reproduce them exactly."
+  "t16_comparison": {
+    "note": "The independent T16 review (N-05) used the process mean as the session floor and no quiet check. The same trial generator with that floor reproduces its figures within sampling error. The conditioned models above differ because the session floor is the emitted median of a 5 s quiet check, which carries estimation error (up to a dB or more at rho 0.9), not because of the conditioning on a valid check.",
+    "model": "No quiet check: floor = -70 dBFS (the process mean). Per trial the window uses draws 1 + 160 from mulberry32(seed). The block `estimated_floor_unconditioned` of each model uses a 100-frame quiet check for the floor (draws 1 + 100, then 1 + 160) but keeps every room, valid or not: it separates the effect of the floor estimate from the effect of conditioning on a valid check.",
+    "models": [
+      {
+        "id": "t16-sigma2.5-rho0.9",
+        "sigma_db": 2.5,
+        "rho": 0.9,
+        "seed": 20261031,
+        "trials": 20000,
+        "active_trials": 53,
+        "p_active": 0.00265,
+        "reached_trials": 5,
+        "p_reached": 0.00025,
+        "t16_reported": {
+          "p_active": 0.003,
+          "p_reached": 0.00015
+        },
+        "estimated_floor_unconditioned": {
+          "seed": 20261131,
+          "trials": 20000,
+          "active_trials": 144,
+          "p_active": 0.0072,
+          "reached_trials": 9,
+          "p_reached": 0.00045
+        }
+      },
+      {
+        "id": "t16-sigma3.0-rho0.8",
+        "sigma_db": 3.0,
+        "rho": 0.8,
+        "seed": 20261032,
+        "trials": 20000,
+        "active_trials": 455,
+        "p_active": 0.02275,
+        "reached_trials": 67,
+        "p_reached": 0.00335,
+        "t16_reported": {
+          "p_active": 0.023,
+          "p_reached": 0.003
+        },
+        "estimated_floor_unconditioned": {
+          "seed": 20261132,
+          "trials": 20000,
+          "active_trials": 803,
+          "p_active": 0.04015,
+          "reached_trials": 137,
+          "p_reached": 0.00685
+        }
+      },
+      {
+        "id": "t16-sigma3.5-rho0.9",
+        "sigma_db": 3.5,
+        "rho": 0.9,
+        "seed": 20261033,
+        "trials": 20000,
+        "active_trials": 2249,
+        "p_active": 0.11245,
+        "reached_trials": 482,
+        "p_reached": 0.0241,
+        "t16_reported": {
+          "p_active": 0.102,
+          "p_reached": 0.023
+        },
+        "estimated_floor_unconditioned": {
+          "seed": 20261133,
+          "trials": 20000,
+          "active_trials": 3230,
+          "p_active": 0.1615,
+          "reached_trials": 950,
+          "p_reached": 0.0475
+        }
+      }
+    ]
+  },
+  "finding": "Under the revision 2 VAD (open +10 dB, continue +6 dB, >= 4 candidates and a run of >= 3) the 1 % target is met only for noise with sigma <= 2.5 dB; at sigma 3.0 - 3.5 dB (the edge of what the quiet check admits: p80 - p20 = 1.683 sigma <= 6 allows sigma up to about 3.56) the rate is 3 - 17 %. A silent window can also be scored reached (a few frames of noise at +12 dB or more can form an accepted segment whose p95 reaches the band edge): very unlikely at low noise, about 0.7 % and 4.8 % in the two noisiest conditioned models. This is recorded, not hidden: see fixtures/dsp/README.md.",
+  "recorded_counts_note": "active_trials and reached_trials are the ORACLE's counts. The TypeScript test regenerates the same trials with its own implementation and must reproduce them exactly."
 }

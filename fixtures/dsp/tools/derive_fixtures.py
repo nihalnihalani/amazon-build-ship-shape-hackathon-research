@@ -822,6 +822,7 @@ AR_MODELS = [
     ("ar1-sigma2.0-rho0.9", 2.0, 0.9, 20261021),
     ("ar1-sigma2.5-rho0.5", 2.5, 0.5, 20261022),
     ("ar1-sigma2.5-rho0.8", 2.5, 0.8, 20261023),
+    ("ar1-sigma2.5-rho0.9", 2.5, 0.9, 20261027),
     ("ar1-sigma3.0-rho0.8", 3.0, 0.8, 20261024),
     ("ar1-sigma3.5-rho0.5", 3.5, 0.5, 20261025),
     ("ar1-sigma3.5-rho0.9", 3.5, 0.9, 20261026),
@@ -829,30 +830,71 @@ AR_MODELS = [
 AR_MAX_P = 0.01
 ar_models = []
 for mid, sigma, rho, seed in AR_MODELS:
-    attempts, active = ar1_silent_window_study(sigma, rho, seed, AR_TRIALS)
-    p = active / AR_TRIALS
+    st = ar1_silent_window_study(sigma, rho, seed, AR_TRIALS)
+    p = st["active"] / AR_TRIALS
     ar_models.append({
         "id": mid,
         "sigma_db": sigma,
         "rho": rho,
         "seed": seed,
         "valid_trials": AR_TRIALS,
-        "attempts": attempts,
-        "p_quiet_check_valid": round(AR_TRIALS / attempts, 4),
-        "active_trials": active,
+        "attempts": st["attempts"],
+        "p_quiet_check_valid": round(AR_TRIALS / st["attempts"], 4),
+        "active_trials": st["active"],
         "p_active": p,
         "meets_target": p <= AR_MAX_P,
+        "reached_trials": st["reached"],
+        "p_reached": st["reached"] / AR_TRIALS,
     })
-    print(f"  {mid}: attempts {attempts}, active {active} ({p:.4f}) meets 1% target: {p <= AR_MAX_P}", flush=True)
+    print(f"  {mid}: attempts {st['attempts']}, active {st['active']} ({p:.4f}) meets 1% target: {p <= AR_MAX_P}, reached {st['reached']}", flush=True)
+
+# The independent T16 review's model (docs/security/T16_GATE.md N-05): floor = the process mean, no quiet check.
+T16_TRIALS = 20000
+T16_REPORTED = {  # typed from T16_GATE.md N-05: P(an accepted segment) and P(scored reached), cal_margin 13
+    (2.5, 0.9): (0.003, 0.00015),
+    (3.0, 0.8): (0.023, 0.003),
+    (3.5, 0.9): (0.102, 0.023),
+}
+t16_models = []
+for k, ((sigma, rho), (rep_active, rep_reached)) in enumerate(T16_REPORTED.items()):
+    seed = 20261031 + k
+    st = ar1_silent_window_study(sigma, rho, seed, T16_TRIALS, floor_mode="true_floor")
+    t16_models.append({
+        "id": f"t16-sigma{sigma}-rho{rho}",
+        "sigma_db": sigma,
+        "rho": rho,
+        "seed": seed,
+        "trials": T16_TRIALS,
+        "active_trials": st["active"],
+        "p_active": st["active"] / T16_TRIALS,
+        "reached_trials": st["reached"],
+        "p_reached": st["reached"] / T16_TRIALS,
+        "t16_reported": {"p_active": rep_active, "p_reached": rep_reached},
+    })
+    st2 = ar1_silent_window_study(sigma, rho, seed + 100, T16_TRIALS, floor_mode="estimated_unconditioned")
+    t16_models[-1]["estimated_floor_unconditioned"] = {
+        "seed": seed + 100,
+        "trials": T16_TRIALS,
+        "active_trials": st2["active"],
+        "p_active": st2["active"] / T16_TRIALS,
+        "reached_trials": st2["reached"],
+        "p_reached": st2["reached"] / T16_TRIALS,
+    }
+    print(f"  t16 model {sigma}/{rho}: active {st['active'] / T16_TRIALS:.4f} (T16 {rep_active}), reached {st['reached'] / T16_TRIALS:.5f} (T16 {rep_reached}); estimated floor, unconditioned: active {st2['active'] / T16_TRIALS:.4f}, reached {st2['reached'] / T16_TRIALS:.5f}", flush=True)
 
 AR_NOISE = {
     "note": "Seeded AR(1) noise in dB, silent 8 s phrase window. SYNTHETIC model, not measured room noise.",
-    "model": "Per-frame level (dBFS) = -70 + sigma * z, where z is AR(1) with correlation rho: z0 = gauss(); z = rho * z + sqrt(1 - rho^2) * gauss(). gauss() = sqrt(-2 ln u) * cos(2 pi v) from two uniforms of mulberry32(seed) (u redrawn while 0). A trial = a 100-frame quiet check (draws 1 + 100) that must be valid (quiet_check rules incl. quantisation); if valid, the session floor is the emitted floor_dbfs and an independent 160-frame window (draws 1 + 160) from the same generator is run through the VAD. Invalid quiet checks consume their draws and are not counted. 'Active' = at least one accepted segment (equivalently the phrase window is not no_voice).",
+    "model": "Per-frame level (dBFS) = -70 + sigma * z, where z is AR(1) with correlation rho: z0 = gauss(); z = rho * z + sqrt(1 - rho^2) * gauss(). gauss() = sqrt(-2 ln u) * cos(2 pi v) from two uniforms of mulberry32(seed) (u redrawn while 0). A trial = a 100-frame quiet check (draws 1 + 100) that must be valid (quiet_check rules incl. quantisation); if valid, the session floor is the emitted floor_dbfs and an independent 160-frame window (draws 1 + 160) from the same generator is run through the VAD. Invalid quiet checks consume their draws and are not counted. 'Active' = at least one accepted segment (equivalently the phrase window is not no_voice). 'Reached' = the window is valid and its emitted p95_active_dbfs minus the floor is at least cal_margin - 1 = 12 dB (calibration margin 13 dB).",
     "target_p_active_max": AR_MAX_P,
     "valid_trials_per_model": AR_TRIALS,
     "models": ar_models,
-    "finding": "Under the revision 2 VAD (open +10 dB, continue +6 dB, >= 4 candidates and a run of >= 3) the 1 % target is met only for noise with sigma <= 2.5 dB; at sigma 3.0 - 3.5 dB (the edge of what the quiet check admits: p80 - p20 = 1.683 sigma <= 6 allows sigma up to about 3.56) the rate is 3 - 17 %. This is recorded, not hidden: see fixtures/dsp/README.md for the comparison with alternative thresholds.",
-    "recorded_counts_note": "active_trials are the ORACLE's counts. The TypeScript test regenerates the same trials with its own implementation and must reproduce them exactly.",
+    "t16_comparison": {
+        "note": "The independent T16 review (N-05) used the process mean as the session floor and no quiet check. The same trial generator with that floor reproduces its figures within sampling error. The conditioned models above differ because the session floor is the emitted median of a 5 s quiet check, which carries estimation error (up to a dB or more at rho 0.9), not because of the conditioning on a valid check.",
+        "model": "No quiet check: floor = -70 dBFS (the process mean). Per trial the window uses draws 1 + 160 from mulberry32(seed). The block `estimated_floor_unconditioned` of each model uses a 100-frame quiet check for the floor (draws 1 + 100, then 1 + 160) but keeps every room, valid or not: it separates the effect of the floor estimate from the effect of conditioning on a valid check.",
+        "models": t16_models,
+    },
+    "finding": "Under the revision 2 VAD (open +10 dB, continue +6 dB, >= 4 candidates and a run of >= 3) the 1 % target is met only for noise with sigma <= 2.5 dB; at sigma 3.0 - 3.5 dB (the edge of what the quiet check admits: p80 - p20 = 1.683 sigma <= 6 allows sigma up to about 3.56) the rate is 3 - 17 %. A silent window can also be scored reached (a few frames of noise at +12 dB or more can form an accepted segment whose p95 reaches the band edge): very unlikely at low noise, about 0.7 % and 4.8 % in the two noisiest conditioned models. This is recorded, not hidden: see fixtures/dsp/README.md.",
+    "recorded_counts_note": "active_trials and reached_trials are the ORACLE's counts. The TypeScript test regenerates the same trials with its own implementation and must reproduce them exactly.",
 }
 
 

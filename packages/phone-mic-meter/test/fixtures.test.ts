@@ -348,14 +348,45 @@ interface ArModel {
   active_trials: number;
   p_active: number;
   meets_target: boolean;
+  reached_trials: number;
+  p_reached: number;
 }
 
-describe('fixtures/dsp/vad-ar1-noise.json (A1-03)', () => {
-  const file = load<{ target_p_active_max: number; models: ArModel[]; finding: string }>('vad-ar1-noise.json');
+interface T16Model {
+  id: string;
+  sigma_db: number;
+  rho: number;
+  seed: number;
+  trials: number;
+  active_trials: number;
+  p_active: number;
+  reached_trials: number;
+  p_reached: number;
+  t16_reported: { p_active: number; p_reached: number };
+  estimated_floor_unconditioned: { seed: number; trials: number; active_trials: number; reached_trials: number };
+}
 
-  /** Same generator as the oracle: mulberry32 + Box-Muller, AR(1) in dB around -70 dBFS. */
-  function study(model: ArModel): { attempts: number; active: number } {
-    const rand = mulberry32(model.seed);
+describe('fixtures/dsp/vad-ar1-noise.json (A1-03, T16 N-05)', () => {
+  const file = load<{
+    target_p_active_max: number;
+    models: ArModel[];
+    t16_comparison: { models: T16Model[] };
+    finding: string;
+  }>('vad-ar1-noise.json');
+
+  /**
+   * Same generator as the oracle: mulberry32 + Box-Muller, AR(1) in dB around -70 dBFS. `floorMode`
+   * 'quiet_check': the room must pass a quiet check and the floor is its emitted floor; 'true_floor': the
+   * floor is the process mean and there is no quiet check (the T16 review's model).
+   */
+  function study(
+    sigma: number,
+    rho: number,
+    seed: number,
+    trials: number,
+    floorMode: 'quiet_check' | 'true_floor' | 'estimated_unconditioned',
+  ): { attempts: number; active: number; reached: number } {
+    const rand = mulberry32(seed);
     const gauss = (): number => {
       let u = 0;
       while (u === 0) u = rand();
@@ -365,68 +396,109 @@ describe('fixtures/dsp/vad-ar1-noise.json (A1-03)', () => {
     const ar1 = (n: number): number[] => {
       const out: number[] = [];
       let z = gauss();
-      const k = Math.sqrt(1 - model.rho * model.rho);
+      const k = Math.sqrt(1 - rho * rho);
       for (let i = 0; i < n; i++) {
-        z = model.rho * z + k * gauss();
-        out.push(-70 + model.sigma_db * z);
+        z = rho * z + k * gauss();
+        out.push(-70 + sigma * z);
       }
       return out;
     };
     let valid = 0;
     let attempts = 0;
     let active = 0;
-    while (valid < model.valid_trials) {
+    let reached = 0;
+    while (valid < trials) {
       attempts += 1;
-      const quiet = summarizePrecheck(
-        ar1(100).map((db, i) => dbFrame(i, db)),
-        { purpose: 'quiet_check', durationMs: 5000 },
-      );
-      if (!quiet.valid) continue;
+      let floor = -70;
+      if (floorMode !== 'true_floor') {
+        const quiet = summarizePrecheck(
+          ar1(100).map((db, i) => dbFrame(i, db)),
+          { purpose: 'quiet_check', durationMs: 5000 },
+        );
+        if (floorMode === 'quiet_check' && !quiet.valid) continue;
+        floor = quiet.floor_dbfs as number;
+      }
       valid += 1;
-      const acc = new WindowAccumulator({
-        kind: 'phrase',
-        maxDurationMs: 8000,
-        sessionFloorDbfs: quiet.floor_dbfs as number,
-        sampleRate: 48000,
-      });
+      const acc = new WindowAccumulator({ kind: 'phrase', maxDurationMs: 8000, sessionFloorDbfs: floor, sampleRate: 48000 });
       ar1(160).forEach((db, i) => acc.push(dbFrame(i, db)));
-      if (acc.finish('complete').segments > 0) active += 1;
+      const w = acc.finish('complete');
+      if (w.segments > 0) active += 1;
+      // the TV rule with a calibration margin of 13 dB: reached when p95_active - floor >= 12 (same tolerance as the TV)
+      if (w.valid && w.p95_active_dbfs !== null && w.p95_active_dbfs - floor + 1e-9 >= 12) reached += 1;
     }
-    return { attempts, active };
+    return { attempts, active, reached };
   }
 
   it('the model grid covers noise up to the edge of what the quiet check admits (sigma 3.5 dB)', () => {
     expect(Math.max(...file.models.map((m) => m.sigma_db))).toBeGreaterThanOrEqual(3.5);
     expect(file.models.every((m) => m.valid_trials === 10000)).toBe(true);
     expect(file.target_p_active_max).toBe(0.01);
+    expect(file.models.length).toBeGreaterThanOrEqual(7);
   });
 
-  for (const model of ['ar1-sigma2.0-rho0.9', 'ar1-sigma2.5-rho0.5', 'ar1-sigma2.5-rho0.8', 'ar1-sigma3.0-rho0.8', 'ar1-sigma3.5-rho0.5', 'ar1-sigma3.5-rho0.9']) {
+  for (const id of [
+    'ar1-sigma2.0-rho0.9',
+    'ar1-sigma2.5-rho0.5',
+    'ar1-sigma2.5-rho0.8',
+    'ar1-sigma2.5-rho0.9',
+    'ar1-sigma3.0-rho0.8',
+    'ar1-sigma3.5-rho0.5',
+    'ar1-sigma3.5-rho0.9',
+  ]) {
     it(
-      `${model}: 10000 valid-room trials reproduce the oracle's counts`,
+      `${id}: 10000 valid-room trials reproduce the oracle's counts (accepted segments and false reached)`,
       () => {
-        const m = file.models.find((x) => x.id === model) as ArModel;
-        const got = study(m);
+        const m = file.models.find((x) => x.id === id) as ArModel;
+        const got = study(m.sigma_db, m.rho, m.seed, m.valid_trials, 'quiet_check');
         expect(got.attempts, 'quiet-check validity decisions agree on every attempt').toBe(m.attempts);
         expect(got.active, 'accepted-segment decisions agree on every trial').toBe(m.active_trials);
+        expect(got.reached, 'false-reached decisions agree on every trial').toBe(m.reached_trials);
         const p = got.active / m.valid_trials;
         // P(active) <= 1 % is asserted wherever the revision 2 rule achieves it; elsewhere the rate is
         // recorded with its flag (see the finding in the fixture and fixtures/dsp/README.md).
         expect(p <= file.target_p_active_max).toBe(m.meets_target);
         if (m.meets_target) expect(p).toBeLessThanOrEqual(0.01);
+        expect(m.p_reached).toBeLessThanOrEqual(m.p_active); // every false reached has an accepted segment
       },
       180_000,
     );
   }
 
-  it('records the finding that the 1 % target is not met at the edge of quiet-check validity', () => {
+  for (const id of ['t16-sigma2.5-rho0.9', 't16-sigma3.0-rho0.8', 't16-sigma3.5-rho0.9']) {
+    it(
+      `${id}: the T16 model (floor = process mean, no quiet check) reproduces the oracle and is consistent with the T16 figures`,
+      () => {
+        const m = file.t16_comparison.models.find((x) => x.id === id) as T16Model;
+        const got = study(m.sigma_db, m.rho, m.seed, m.trials, 'true_floor');
+        expect(got.active).toBe(m.active_trials);
+        expect(got.reached).toBe(m.reached_trials);
+        // Consistent with what the independent review reported, within 3 combined standard errors. Its test file
+        // uses 4,000 trials for the accepted-segment figure and 20,000 for the false-reached figure.
+        const se = (p: number, n: number): number => Math.sqrt((p * (1 - p)) / n);
+        const tolActive = 3 * Math.hypot(se(m.t16_reported.p_active, 4000), se(m.t16_reported.p_active, m.trials));
+        const tolReached = 3 * Math.hypot(se(m.t16_reported.p_reached, 20000), se(m.t16_reported.p_reached, m.trials));
+        expect(Math.abs(got.active / m.trials - m.t16_reported.p_active)).toBeLessThan(tolActive + 0.001);
+        expect(Math.abs(got.reached / m.trials - m.t16_reported.p_reached)).toBeLessThan(tolReached + 0.001);
+        // the same rooms with an estimated floor (quiet check run, no room rejected) reproduce the oracle too
+        const e = m.estimated_floor_unconditioned;
+        const est = study(m.sigma_db, m.rho, e.seed, e.trials, 'estimated_unconditioned');
+        expect(est.active).toBe(e.active_trials);
+        expect(est.reached).toBe(e.reached_trials);
+        // the floor estimate, not the conditioning, is what raises the rates above the review's
+        expect(est.active).toBeGreaterThan(got.active);
+      },
+      180_000,
+    );
+  }
+
+  it('records the finding that the 1 % target is not met at the edge of quiet-check validity, and that a false reached is possible', () => {
     const edge = file.models.filter((m) => m.sigma_db >= 3.0);
     expect(edge.length).toBeGreaterThan(0);
     expect(edge.every((m) => !m.meets_target)).toBe(true);
+    expect(edge.some((m) => m.reached_trials > 0)).toBe(true);
     expect(file.finding).toContain('3 - 17 %');
   });
 });
-
 
 // ---- the expected payloads can travel on the protocol revision 4 wire -----------------------------
 

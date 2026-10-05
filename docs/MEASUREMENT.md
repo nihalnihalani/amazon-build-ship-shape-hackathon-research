@@ -116,11 +116,46 @@ shifts a burst across the 50 ms frame grid in 40 steps):
 - A **200 ms burst** is always accepted at about +20 dB, but at +10 dB only at 27 of 40 phases: the
   frame before the opening frame is never a candidate. This is a finding against the wording of
   amendment A1-01 ("200 ms or more always accepted"), recorded in the fixture.
-- A noisy room can still start a segment. In the synthetic AR(1) noise model
-  (`fixtures/dsp/vad-ar1-noise.json`, rooms that pass the quiet check, silent 8 s window) the chance of
-  a false accepted segment is below 1 % for noise with a spread of 2.5 dB or less and 3 - 17 % at 3.0 -
-  3.5 dB, which is about the widest spread the quiet check admits. The model is synthetic, not
+- **A noisy room can still start a segment, and a silent window can even be scored `reached`.** It is
+  very unlikely in a quiet or ordinary room and possible in the noisiest rooms the quiet check admits;
+  see "Can a silent window be scored `reached`?" below for the figures. The model is synthetic, not
   measured room noise.
+
+### Can a silent window be scored `reached`?
+
+Yes, but very rarely, and only because room noise can open an accepted segment whose few active frames
+happen to reach the band edge. Earlier wording that a silent window "cannot become a false `reached`" was
+too strong (independent review finding N-05) and is withdrawn. A silent window is normally `no_voice` or
+scored below the band. What can happen: a burst of noise reaches +10 dB over the floor and opens a segment,
+stays above +6 dB for at least 4 frames with a run of 3, and the 95th percentile of those few frames (for
+5 to 10 frames it is the largest) is at least `cal_margin - 1` (12 dB for the smallest accepted margin of
+13 dB). The phone cannot tell this from speech.
+
+Simulated rates, silent 8 s window, calibration margin 13 dB, noise = AR(1) in dB around -70 dBFS with
+spread sigma (dB) and correlation rho. The noisiest rooms the quiet check admits have a spread of about
+3.5 dB (`p80 - p20 = 1.683 sigma` may be at most 6). Two models, two sets of numbers:
+
+| sigma / rho | Independent review (T16 N-05): floor = true mean, no quiet check. P(accepted segment) / P(scored reached) | This repository: the session floor is the emitted median of a 5 s quiet check that must pass (10,000 rooms). P(accepted segment) / P(scored reached) |
+|---|---|---|
+| 2.5 / 0.9 | 0.3 % / 0.015 % | 0.95 % / 0.04 % |
+| 3.0 / 0.8 | 2.3 % / 0.3 % | 4.4 % / 0.77 % |
+| 3.5 / 0.9 | 10.2 % / 2.3 % | 16.5 % / 4.8 % |
+
+The two sets differ in the model, not in the code. With the review's assumption (floor equal to the process
+mean, no quiet check) the same trial generator gives 0.27 % / 0.025 %, 2.3 % / 0.34 % and 11.2 % / 2.4 %,
+consistent with the review's figures within sampling error. Estimating the floor from a 5 second quiet
+check but keeping every room, valid or not, gives 0.72 % / 0.045 %, 4.0 % / 0.69 % and 16.2 % / 4.8 %: that
+is, nearly all of the increase comes from the floor estimate (a floor estimated a little too low turns
+ordinary noise into frames at +10 dB), and conditioning on a valid quiet check changes the rates very
+little (all of it in `vad-ar1-noise.json`, block `t16_comparison`). The conditioned numbers are the more
+realistic ones and the higher. Neither is measured noise; T04 traces must replace them. In a room with a
+noise spread of 2 dB (2.0 / 0.9) the simulation gave 0.03 % accepted segments and no false `reached` in
+10,000 rooms.
+
+Consequences. A scored `reached` after a silent attempt is therefore not impossible: do not describe it as
+impossible in any copy. The pre-window check and the quiet check reduce it but cannot remove it, and T04
+measures it directly (negative case N8: a silent speaker in the real quiet room, 0 of 10 windows scored
+`reached` expected, reported value).
 
 `active_ms` is the sum over accepted segments of (end - onset) and **includes bridged gaps**;
 `longest_active_ms` is the longest one. Duration is less dependent on absolute calibration than

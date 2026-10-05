@@ -3,24 +3,35 @@
 | | |
 |---|---|
 | **Status** | **FROZEN, awaiting reviewer approval. NOT EXECUTED. No trial has been run and no result exists.** |
-| Protocol revision | 2 (2026-10-05): revision 1 reworked after the independent review (ADR amendments A1-01, A1-03, A9-01, A9-03, A9-04, A9-05). Revision 1 was never approved or executed. |
+| Protocol revision | **3** (2026-10-05). Revision 1 was never approved. **Revision 2 was REJECTED by the security reviewer** (see the revision history below). Neither was ever executed. |
 | Task / requirement | T04, R-Q2 (frozen experiment protocol before trials; randomized repeats; negative cases; full recording fields; failures recorded) |
 | Specification | ADR-0001 and ADR-0009 as amended by `docs/adr/AMENDMENTS-REV2.md`, `docs/MEASUREMENT.md` |
-| Criteria | Section 8 and `packages/phone-mic-meter/src/qualification.ts` (`analyzeQualification`): the two are frozen together |
+| Criteria | Section 8, `packages/phone-mic-meter/src/qualification.ts` (`analyzeQualification`) and `percentile.ts` (the nearest-rank median it uses): frozen together |
 | Blocker | B-002: no physical Android phone is available. Until one is, every results cell below stays `pending`. |
 | Author role | audio-dsp (writes the protocol only; cannot run it) |
 | Reviewer | Opus lead, then qa-accessibility. Approval is recorded in the Approval block at the end. |
 
+## Revision history
+
+| Revision | Date | Outcome |
+|---|---|---|
+| 1 | 2026-10-05 | Written by audio-dsp. Never approved: the independent review of the ADRs (A1-01, A1-03, A9-01, A9-03, A9-04, A9-05) required a slope criterion, 15 repeats with an SD confidence bound, negative-case limits and a freeze hash. |
+| 2 | 2026-10-05 | Reworked to those amendments and frozen at hash `3ba1fdff...d820` (EV-0030). **REJECTED** by the security reviewer (`docs/security/T16_GATE.md` section 7). No trial ran, so the only cost is this re-freeze. Reasons: **N-08** the slope criterion trusted the nominal levels the caller supplied, so a 3:1 compressor relabelled at -30, -28, -26 dBFS passed C2; **N-09** missing or malformed negative-case results passed C7 (an empty list, no N1 or N2, `NaN`, a negative count, N2 on 1 window); **N-10** trial validity was a caller flag with no reason and no count, so dropping the five worst trials per level flipped C4; **N-11** a caller could pass its own parameters and relax any criterion (a 12 dB step tolerance let 3:1 compression pass) and the result did not say which parameters were used; **N-13** the freeze hash omitted `percentile.ts`, which the criteria import; non-finite numeric inputs were not rejected; the N-05 negative case (a silent speaker in the real quiet room) was missing. |
+| 3 | 2026-10-05 | This document. Changes: C3 requires exactly the three frozen levels and the full planned trial list of 45 slots per stimulus (N-08, N-10); every excluded attempt carries one of four reason codes and the output reports the exclusion count and reasons (N-10); C7 passes only with N1 and N2 present exactly once, at least 10 windows and finite integer counts (N-09); the parameters cannot be overridden and are echoed in the result (N-11); the freeze hash covers `percentile.ts` and the verdict-function commit stays in the session record (N-13); every numeric input must be finite or its criterion fails; negative case N8 (a silent speaker in the real quiet room, 0 of 10 reached, reported) is added; the negative-case order table now has 80 trials. Approval pending. |
+
 **Freeze rule.** No trial may start before (a) the Approval block at the end is filled in with the
 reviewer and the approving commit, and (b) the lead has recorded, in `.build/evidence.jsonl`, the
 **commit SHA and the SHA-256 of this protocol plus its criteria** (A9-04). Print the values with
-`python3 fixtures/dsp/tools/freeze_hash.py` (it hashes this file up to, not including, the Approval block, so that filling in the
-Approval block does not change the frozen content, and `qualification.ts`, and prints a combined hash
-and a ready-to-paste evidence line; it writes nothing). After that this document and
-`qualification.ts` are read-only. A change (a threshold, a level, a trial, a stimulus, a criterion)
-creates revision 3 through an ADR amendment that keeps the original criteria and any failing
-result; data collected under revision 2 stays labelled revision 2. Criteria are never changed after
-seeing data. A failed experiment is recorded as failed (ADR-0009).
+`python3 fixtures/dsp/tools/freeze_hash.py`: it hashes this file up to, not including, the Approval
+block (so that filling in the Approval block does not change the frozen content), `qualification.ts`
+and `percentile.ts` (the nearest-rank median the analysis uses, N-13), and prints a combined hash and a
+ready-to-paste evidence line; it writes nothing. The **verdict function** that decides what counts as
+`reached` for N1, N2 and N8 (`@atr/session-core`) is not in the hash: its commit is recorded in the
+session record of every run (section 10). After the freeze this document, `qualification.ts` and
+`percentile.ts` are read-only. A change (a threshold, a level, a trial, a stimulus, a criterion)
+creates revision 4 through an ADR amendment that keeps the original criteria and any failing result;
+data collected under revision 3 stays labelled revision 3. Criteria are never changed after seeing
+data. A failed experiment is recorded as failed (ADR-0009).
 
 **What this experiment can and cannot show.** It can show whether, on one specific phone, browser
 and input, the app's relative level is monotonic, follows a known digital step to within 2 dB and is
@@ -124,12 +135,14 @@ VAD synthetic block (section 7) → negative-case block (section 5).
 **Quiet-room check** at the start of every block: a valid 5 s `quiet_check` (ADR-0001 §2) with the
 room in the experiment state; its floor is recorded. If it is invalid the block does not start.
 
-**A level trial** (S1, S2, S3), repeated 45 times per block (3 levels × **15 repeats**, order from the
-tables in section 9):
+**A level trial** (S1, S2, S3). Each block has **45 planned slots** (3 levels × **15 repeats**; slot codes
+`Ln-rr`, order from the tables in section 9). A slot has one counted attempt and, at most, one excluded
+first attempt that was re-run:
 
 1. Pre-window check: a 2 s `pre_window` precheck in silence. Its floor `F_pre` (median) is recorded.
-   If it is invalid (coverage, clipping, non-finite or burst rule), the trial is **blocked**, logged,
-   and re-run once at the end of the block (both attempts are reported).
+   If it is invalid (any `pre_window` reason: nonfinite, low coverage, silent input, clipping or burst
+   rule), the attempt is excluded as `blocked`, logged, and the slot is re-run once at the end of the
+   block (both attempts are reported).
 2. A phrase-kind window of 8.0 s (160 frames) starts on the phone (it logs every frame). Its VAD
    floor is the block's quiet-check floor.
 3. About 1 s after the phone shows "Measuring", the operator starts the file named in the order
@@ -143,12 +156,23 @@ finite frame levels (dBFS) over the whole 8 s window (the burst covers about hal
 the top 5 % of frames lie inside the plateau). `rel95 = L95 - F_pre`. The window's own
 `p95_active_dbfs` and VAD segments are recorded as secondary values.
 
-**Valid trial.** A trial is valid for the statistics when it was not blocked, not marked disturbed,
-its capture was not interrupted and it was not a capture fault. A **capture fault** is a window with
-coverage below 0.90 or any non-finite frame: it says the measurement pipeline dropped data, not
-anything about the level, so the trial is marked disturbed and re-run once at the end of the block
-(both attempts are reported). A clipped frame is never grounds for exclusion (C5). A window the VAD
-calls `no_voice` is still a valid trial for `rel95` (the metric does not use the VAD).
+**Counted and excluded attempts.** `analyzeQualification` is given the **full planned trial list**: every
+attempt of every slot, in both level blocks, with nothing left out. An attempt is **counted** unless it
+carries one of four closed reason codes:
+
+| Reason code | When |
+|---|---|
+| `blocked` | the pre-window precheck was invalid |
+| `disturbed` | an unplanned event (door, voices, notification, app crash, permission loss) was written in the live log before the result was read |
+| `interrupted` | the capture was interrupted (track ended or muted, audio suspended) |
+| `capture_fault` | the window had coverage below 0.90 or any non-finite frame: the pipeline dropped data, which says nothing about the level |
+
+An excluded attempt is re-run **once** at the end of the block (same slot); the re-run is the slot's counted
+attempt. There is no other way to exclude an attempt: not a clipped frame (C5 counts clipping in every
+attempt, excluded ones included), not a `no_voice` window (the metric does not use the VAD), and never a
+value (no outliers). The output reports the exclusion count and the reasons, and **C3 fails** if any of the
+45 planned slots per stimulus lacks exactly one counted attempt, if a level other than the three frozen
+ones appears, or if a reason outside the four above is used.
 
 **Randomization.** Each block's order is a seeded Fisher-Yates shuffle (section 9 gives the
 algorithm and the printed order). The operator follows the printed order and does not choose.
@@ -175,17 +199,24 @@ shipped verdict function at a recorded commit.
 | N5 | Instrumental music at moderate volume | silent | same as N1 |
 | N6 | Moved phone: after calibration the phone is displaced 0.5 m farther along the stand (returned to the mark after the trial) | volunteer speaks the fixed sentence, normal effort | `rel95` shift relative to the baseline distribution; verdict |
 | N7 | Screen lock: the operator presses the power button 3 s into the window | volunteer speaks the sentence | track and AudioContext events, whether capture continued, whether the window ended `interrupted` or produced no result, whether the next window after unlock starts clean |
+| N8 | **Silent speaker in the real quiet room** (T16 N-05): no added condition, the room exactly as it stood for the quiet check | silent | accepted segments, window verdict, **number of the 10 windows scored `reached` (expected 0, reported value)** |
 
-**Predeclared limits (A9-03)** are parameters of `analyzeQualification` and are frozen with it: for N1
+**Predeclared limits (A9-03)** are frozen with `analyzeQualification` and cannot be overridden: for N1
 (fan) and N2 (television speech) at most **0 of 10** windows may be scored `reached` after the gate
-(a window the gate blocked, or that the analysis marks contaminated, is not scored). N3 - N7 have no
-limit. Exceeding a limit sets `limited: noise-sensitive` for the phone and the result is shown in
+(a window the gate blocked, or that the analysis marks contaminated, is not scored). **C7 passes only if
+N1 and N2 are each present exactly once, with at least 10 windows and a `scoredReached` count that is a
+finite integer within 0..windows**; anything missing or malformed fails (N-09). N3 - N8 have no limit. Exceeding a limit sets `limited: noise-sensitive` for the phone and the result is shown in
 Settings.
 
-N1 - N5 test false acceptance while the intended speaker is silent. N3 - N5 are **known limitation
+N1 - N5 and N8 test false acceptance while the intended speaker is silent. **N8 is the base case:** the
+revision 2 voice-activity rule can, rarely, open a segment from room noise, and such a window can even be
+scored `reached` (docs/MEASUREMENT.md gives the simulated rates, which grow with the room's noise spread;
+in the three noisiest rooms the quiet check admits they are 0.015 % to 4.8 %, so 0 of 10 is expected in
+a normal room). N8 is a **reported value**: it is recorded for every phone and shown with the result, but
+it does not gate qualification (setting a limit would change the frozen criteria). N3 - N5 are **known limitation
 cases** (ADR-0001 §3: level cannot tell a cough, music or another voice from the intended speaker);
 they are reported, not gated. N6 is evidence for why cross-session comparison is disabled; it has no
-pass or fail value. N7 tests lifecycle handling and the no-stale-scoring rule.
+pass or fail value. The window-count table in section 11 lists all eight conditions. N7 tests lifecycle handling and the no-stale-scoring rule.
 
 ## 6. Quality rules
 
@@ -193,10 +224,10 @@ pass or fail value. N7 tests lifecycle handling and the no-stale-scoring rule.
 2. Playback volume, loudspeaker position, TV state and phone settings frozen after the pilot.
 3. Every trial has a valid `pre_window` precheck, otherwise it is blocked and re-run once (reported).
 4. Unplanned events (door, voices, notification, app crash, permission loss) are written in the
-   log **at the time, before the result is read**. Such a trial is marked disturbed and re-run once
-   at the end of the block; both attempts are reported.
-5. No trial is dropped or edited because of its value. All 45 planned trials per block appear in the
-   report, with every attempt.
+   log **at the time, before the result is read**. Such an attempt is excluded as `disturbed` and the
+   slot is re-run once at the end of the block; both attempts are reported.
+5. No attempt is dropped or edited because of its value. All 45 planned slots per block appear in the
+   report, with every attempt and every reason code; the analysis fails if the plan is not complete.
 6. The analysis (`analyzeQualification`, formulas in section 8) is committed **before** data
    collection and is part of the freeze hash. No outlier removal.
 7. Numeric traces are exported unmodified; their hashes are recorded.
@@ -253,14 +284,20 @@ no timing accuracy may be claimed.
 
 ## 8. Analysis plan and frozen acceptance criteria
 
-**Statistics (fixed).** `analyzeQualification` (`packages/phone-mic-meter/src/qualification.ts`) takes
-the valid level trials (stimulus, nominal level, `rel95`, clipped frames), the browser's reported
-settings and the negative-case counts, and returns pass or fail per criterion. For each stimulus and
-level it uses the 15 values of `rel95`: the nearest-rank median; the sample standard deviation s
-(n - 1); and the **one-sided 95 % upper confidence bound of the SD**,
+**Statistics (fixed).** `analyzeQualification` (`packages/phone-mic-meter/src/qualification.ts`) takes the
+**full planned trial list** of the two level blocks (every attempt: stimulus, nominal level, slot, `rel95`,
+clipped frames, and the reason code of each excluded attempt), the browser's reported settings and the
+negative-case counts, and returns pass or fail per criterion. Its parameters are the frozen
+`QUALIFICATION_PARAMS`: they cannot be overridden (a different parameter object makes the analysis fail),
+and the result echoes them together with the planned-slot counts and the exclusion count and reasons.
+For each stimulus and level it uses the 15 counted values of `rel95`: the nearest-rank median; the sample
+standard deviation s (n - 1); and the **one-sided 95 % upper confidence bound of the SD**,
 `s * sqrt((n - 1) / chi2_0.05(n - 1))`, where chi2_0.05 is the 5th percentile of the chi-square
 distribution (6.5706 for n - 1 = 14, so the factor is 1.4597 and the SD estimate must be at most
 1.03 dB). The largest deviation from the median is reported. No other hypothesis test is made.
+**Every numeric input must be finite** (counts must also be integers): a non-finite `rel95` in a counted
+attempt fails C1, C2 and C4, a malformed clipped-frame count fails C5, a non-finite nominal level fails
+C3, and a malformed negative-case count fails C7. Nothing non-finite is ever skipped.
 
 > **Engineering proposals, not measured accuracy, require reviewer approval before trials.** The
 > following criteria were chosen before any data existed. They are not derived from measurements, do
@@ -270,11 +307,11 @@ distribution (6.5706 for n - 1 = 14, so the factor is 1.4597 and the SD estimate
 |---|---|---|
 | C1 | S1 and S2, each | **Monotonic medians:** the median `rel95` rises strictly with the nominal level (L1 < L2 < L3) |
 | C2 | S1 and S2, each | **Slope (A9-01):** each adjacent median step is within the nominal step ± 2 dB (the nominal step is 12 dB, so 10 - 14 dB). A 3:1 compressing input fails here. |
-| C3 | S1 and S2, each | **Repeats (A9-05):** at least 15 valid repeats at each of the 3 levels |
+| C3 | S1 and S2, each | **Planned trials and frozen levels (A9-05, N-08, N-10):** the levels are exactly the three frozen nominal levels **-30, -18 and -6 dBFS** (any other level set fails); each level lists exactly 15 planned slots; every slot has exactly one counted attempt and at most one excluded first attempt (at most 2 attempts); every exclusion carries one of the four reason codes. The output reports the planned count (45 slots per stimulus), the exclusion count and the reasons. |
 | C4 | S1 and S2, each level | **Repeatability (A9-05):** the one-sided 95 % upper confidence bound of the SD is at most 1.5 dB |
-| C5 | all valid trials | **Zero clipped frames** (window and precheck) |
+| C5 | all attempts | **Zero clipped frames** (window and precheck), in counted and excluded attempts alike |
 | C6 | settings readback | The browser reported `autoGainControl: false` after open. Echo cancellation and noise suppression are recorded and reported. A reported `true` or `null`, or no readback, fails C6; a reported `false` is not proof that the operating system or hardware applies no gain control. |
-| C7 | negative cases (A9-03) | N1 and N2: at most 0 of 10 windows scored `reached` after the gate. Exceeding a limit sets `limited: noise-sensitive`. N3 - N7 are reported, not gated. Missing results fail C7. |
+| C7 | negative cases (A9-03, N-09) | N1 and N2 must each be present exactly once, with `windows` a finite integer of at least 10 and `scoredReached` a finite integer within 0..windows (no case id may repeat or be unknown); at most 0 of 10 windows scored `reached` after the gate for each. Exceeding a limit sets `limited: noise-sensitive`. N3 - N8 are reported, not gated. Anything missing or malformed fails C7. |
 
 Recorded but **not computed** by `analyzeQualification`:
 
@@ -284,7 +321,7 @@ Recorded but **not computed** by `analyzeQualification`:
 | C9 | VAD (section 7) | Proposal, evaluated only with an independent reference: onset median < 100 ms and longest-active-run duration error <= 0.3 s on sustained bursts of 1 s or more; `A100` accepted 0 of 5; `A250` and `A300` accepted 5 of 5; `A150` and `A200` acceptance rates reported. N7: no stale scoring (the window after the lock is a fresh window). |
 
 **Outcome rule.** `analyzeQualification` returns `passed` only if C1 - C7 all pass for both S1 and
-S2; otherwise `failed` (and `not_run` without trials). *Passed* is the evidence for the
+S2 and the parameters were the frozen ones; otherwise `failed` (and `not_run` without any attempt). *Passed* is the evidence for the
 `relative_band` mode on this phone, browser and input only; *failed* forces the Listener Edition with
 band verdicts hidden (ADR-0009 as amended: the qualification state is per phone description and
 `mic.state.mode` is a label, never evidence). `limited: noise-sensitive` is reported separately. The
@@ -385,16 +422,17 @@ A100-3 D20-4 A150-3 A200-3 D20-5 D20-2 A300-3 D10-4 D10-1 G300-4
 G300-5 SIL-4 A250-5 A100-1 A250-4
 ```
 
-**Negative-case block** (70 trials, read left to right, row by row; code `Nn-rr` as in section 5):
+**Negative-case block** (80 trials, read left to right, row by row; code `Nn-rr` as in section 5):
 
 ```
-N2-01 N7-07 N6-05 N4-02 N6-10 N7-01 N2-07 N1-07 N2-04 N7-05
-N7-09 N2-02 N1-08 N5-09 N6-03 N3-03 N3-09 N7-03 N4-05 N6-01
-N5-10 N7-04 N1-01 N2-06 N5-01 N6-02 N3-04 N4-06 N4-07 N1-03
-N4-01 N7-02 N2-03 N3-08 N3-01 N1-10 N1-09 N5-05 N6-09 N3-06
-N2-05 N3-02 N4-03 N5-07 N1-02 N1-05 N5-08 N4-10 N3-10 N6-04
-N5-03 N7-10 N2-09 N4-08 N7-08 N2-08 N6-06 N7-06 N5-02 N1-06
-N3-07 N5-06 N5-04 N4-04 N6-08 N1-04 N2-10 N4-09 N6-07 N3-05
+N7-01 N5-03 N7-03 N7-02 N2-02 N1-08 N2-09 N1-09 N4-08 N8-04
+N1-10 N3-06 N6-04 N8-02 N2-06 N1-01 N6-06 N4-02 N3-04 N5-02
+N3-05 N5-04 N7-04 N1-05 N3-09 N8-01 N2-04 N4-04 N6-07 N2-10
+N4-07 N2-05 N6-05 N3-03 N8-05 N4-05 N5-10 N6-10 N5-07 N7-08
+N4-10 N1-07 N2-07 N6-09 N6-02 N2-03 N2-01 N1-03 N8-10 N4-03
+N2-08 N3-07 N5-01 N6-08 N1-02 N7-10 N5-08 N7-09 N4-06 N8-09
+N8-03 N3-10 N8-07 N8-08 N5-06 N3-01 N7-06 N8-06 N5-09 N1-06
+N4-01 N6-03 N6-01 N4-09 N7-07 N1-04 N3-02 N5-05 N7-05 N3-08
 ```
 
 The orders can be regenerated from the algorithm and seeds above; the printed tables are normative.
@@ -404,7 +442,7 @@ The orders can be regenerated from the algorithm and seeds above; the printed ta
 **Session record (once per run):** date and time (IST and UTC); operator; phone make, model and
 Android version and build; browser name and full version (and WebView version if used); selected
 input device label and `deviceId` class (built-in or external); accessories and case state; page
-**build commit**; the freeze hash (protocol plus criteria SHA-256) and the commit it was recorded at; analysis commit; verdict-function commit; the exact
+**build commit**; the freeze hash (protocol plus criteria SHA-256) and the commit it was recorded at; analysis commit; **verdict-function commit** (`@atr/session-core`, not covered by the freeze hash); the exact
 **constraints requested** (`getUserMedia` argument as sent); `getSupportedConstraints()` output;
 **settings reported** by `track.getSettings()` after open (AGC, echo cancellation, noise
 suppression, sample rate, channel count; unknown recorded as null); AudioContext sample rate and
@@ -413,7 +451,7 @@ description and HVAC state; quiet-check statistics; loudspeaker model, playback 
 setting, stimulus file hashes; battery, brightness, Do Not Disturb, network state, wake-lock state,
 visibility; temperature if relevant; deviations from the protocol.
 
-**Per trial:** trial number and code; attempt number; timestamp; precheck summary (`F_pre`, p20, p80,
+**Per attempt (every attempt, excluded ones too):** slot code; attempt number; **exclusion reason code or none**; timestamp; precheck summary (`F_pre`, p20, p80,
 p95, coverage, valid, reason); window summary (all `WindowResultPayload` fields); the **numeric trace**
 (every frame's `frame_index`, `t_audio_ms`, `dbfs`, clipped and finite flags) with the file name and
 hash; `L95`, `rel95`; clipped frame count and dropouts (missing frames, coverage); track and
@@ -422,7 +460,7 @@ accepted segments and the reference label times and method; for negative cases t
 outcomes; pass or fail per criterion; limitations observed.
 
 **Per run:** per-level repeat distributions (all 15 values), medians, SDs, SD upper confidence bounds;
-the full `analyzeQualification` output (criterion results C1 - C7, `status`, `limited`) and the
+the full `analyzeQualification` output (criterion results C1 - C7, `status`, `limited`, the echoed parameters, the planned-slot counts and the exclusion count and reasons) and the
 recorded C8 and C9 values; the outcome statement; limitations; links to the raw numeric files.
 
 Excluded from every record: audio, waveforms, sample arrays, credentials, personal identifiers (consent
@@ -457,13 +495,14 @@ forms are stored separately by the operator).
 |---|---|---|---|
 | C1 monotonic medians | pending | pending | pending (informational) |
 | C2 slope: steps within nominal ± 2 dB (measured steps) | pending | pending | n/a |
-| C3 15 valid repeats at each level | pending | pending | n/a |
+| C3 planned trials: exactly levels -30, -18, -6 dBFS; 45 slots, each with one counted attempt | pending | pending | n/a |
 | C4 SD upper bound <= 1.5 dB | pending | pending | n/a |
 | C5 zero clipped frames | pending | pending | pending |
 | C6 AGC reported false | pending | | |
-| C7 negative-case limits | pending | | |
+| C7 negative cases: N1 and N2 present once, >= 10 windows, limits (0 of 10) | pending | | |
 | C9 VAD timing (with an independent reference) | pending | | |
-| `analyzeQualification` status / limited | pending | | |
+| `analyzeQualification` status / limited / parameters accepted | pending | | |
+| Exclusions: count and reasons (`blocked`, `disturbed`, `interrupted`, `capture_fault`) | pending | pending | |
 
 **VAD synthetic block**
 
@@ -490,6 +529,7 @@ forms are stored separately by the operator).
 | N5 music | pending | pending | pending | pending | pending | pending |
 | N6 moved phone (rel95 shift) | n/a | n/a | pending | pending | pending | pending |
 | N7 screen lock | n/a | n/a | pending | pending | pending | pending |
+| N8 silent speaker, real quiet room | n/a | n/a | pending | pending | pending (expected 0; reported) | pending |
 
 **Outcome:** pending. **Limitations observed:** pending. **Deviations from protocol:** pending.
 
@@ -502,6 +542,11 @@ forms are stored separately by the operator).
   chain until repeated with a second loudspeaker.
 - n = 15 per level and the SD bound are predeclared engineering choices, not a guarantee; passing
   does not establish cross-day reproducibility.
+- The analysis takes the planned list and a closed set of exclusion reasons, but it cannot see whether a
+  `disturbed` note was really written before the result was read: the live log remains a process control.
+- The verdict function that scores N1, N2 and N8 is outside the freeze hash (its commit is recorded).
+- N8 is a reported value, not a gate: the voice-activity rule can score a silent window `reached`, rarely
+  (docs/MEASUREMENT.md).
 - Method A for onset timing includes unknown display and output latencies; without method B or C no
   absolute onset accuracy is claimed.
 - The browser's reported settings are not proof that the operating system or hardware applies no
@@ -515,12 +560,15 @@ forms are stored separately by the operator).
 
 | Field | Value |
 |---|---|
-| Reviewer | security (`claude-sonnet-5-5`), independent of the author (audio-dsp) |
-| Date | 2026-10-05 |
-| Approving commit | none: revision 2 REJECTED at `da018d7` (docs/security/T16_GATE.md §7) |
-| Freeze hash: SHA-256 of this protocol + criteria (`python3 fixtures/dsp/tools/freeze_hash.py`) | `3ba1fdff6444e079e1b2b6c6e57330c3dded1d54e884681cce4087347ef4d820` (revision 2, not approved) |
-| Recorded in `.build/evidence.jsonl` by the lead (commit SHA and hash, before the first trial) | EV-0030 (revision 2 freeze); revision 3 must be re-frozen and re-recorded |
-| Changes requested before freeze | T16_GATE.md §7 items 1–8 (N-08, N-09, N-10, N-11, N-13, finite inputs, N-05 negative case, re-freeze) |
+| Reviewer | pending (revision 3) |
+| Date | pending (revision 3) |
+| Approving commit | pending (revision 3) |
+| Freeze hash: SHA-256 of this protocol + criteria (`python3 fixtures/dsp/tools/freeze_hash.py`) | pending (revision 3) |
+| Recorded in `.build/evidence.jsonl` by the lead (commit SHA and hash, before the first trial) | pending (revision 3; EV-0030 is the revision 2 freeze and was rejected) |
+| Changes requested before freeze | pending (revision 3) |
+
+Revision 2 was rejected on 2026-10-05 (see the revision history above and `docs/security/T16_GATE.md`
+section 7); that decision stays on record and does not carry over to revision 3.
 
 **Reminder (A9-04).** Before the first trial the lead records one line in `.build/evidence.jsonl`
 with the commit SHA and the SHA-256 of this protocol plus its criteria, produced by
