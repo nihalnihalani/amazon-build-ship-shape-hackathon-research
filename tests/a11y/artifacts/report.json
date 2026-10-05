@@ -9,8 +9,8 @@
   "environment": {
     "chrome": "154.0.8037.97",
     "preview_url": "http://127.0.0.1:5179",
-    "commit": "80253a3b7698a6c312d7e95c95a23220d7f88c44",
-    "timestamp_utc": "2026-10-04T23:26:46.786Z",
+    "commit": "d239809c5bf78634b55df4c623c924b05afceaa7",
+    "timestamp_utc": "2026-10-05T00:28:08.181Z",
     "node": "v25.2.1",
     "viewport": "1920x1124"
   },
@@ -47,7 +47,7 @@
       ],
       "screenshot": {
         "file": "onboarding.png",
-        "sha256": "0d17aa684d52a1f347f253725652fb0b3a6e265ab6e4cc95460440fb9bdf1a78",
+        "sha256": "fae63cdc83393e1c1f834b54ffd5d91fc2be54780b0a8c3ff1143d309100a6a1",
         "committed": false
       },
       "ariaOrder": [
@@ -86,7 +86,7 @@
       ],
       "screenshot": {
         "file": "home.png",
-        "sha256": "d6aa91d283bdf304895411489ccb0b13283ccdbb42b2a1dae1e768acecb075cc",
+        "sha256": "f3b447a47aeea4ec84f6f2fa40e8242bd6febd33d4a20dc73a331723d2cf0eaf",
         "committed": true
       },
       "ariaOrder": [
@@ -110,7 +110,7 @@
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 6,
+        "presses": 5,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -128,20 +128,20 @@
       ],
       "screenshot": {
         "file": "pairing.png",
-        "sha256": "21330d992aea04a0a485a8dd96b9fac33bd41884285438ddceb213d82d2f9ebd",
+        "sha256": "757ab5abfb51171f4e25c7c40946517b7b474e2ac8bbc7a808450a19d88915a9",
         "committed": false
       },
       "ariaOrder": [
-        "button:Cancel",
-        "button:Refresh code"
+        "button:New code",
+        "button:Cancel"
       ]
     },
     {
       "name": "join_confirm",
       "mode": "fixture",
       "screen": "screen-join_confirm",
-      "controls": 2,
-      "enabledControls": 2,
+      "controls": 4,
+      "enabledControls": 4,
       "preferredCount": 1,
       "focused": "action-reject_join",
       "focusTarget": "preferred_focused",
@@ -150,30 +150,22 @@
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 6,
+        "presses": 15,
         "ringViolations": 0
       },
       "footerOk": true,
       "arcMeter": false,
-      "axe": [
-        {
-          "id": "aria-allowed-role",
-          "impact": "minor",
-          "help": "ARIA role should be appropriate for the element",
-          "nodes": 1,
-          "targets": [
-            "#atr-body-0"
-          ]
-        }
-      ],
+      "axe": [],
       "screenshot": {
         "file": "join_confirm.png",
-        "sha256": "4257a610aed322b598cdf5c2a5353c1e21b6fcf7b70def7d1d886009e8b89eee",
+        "sha256": "ca63f6fb693d21fe9b3bfebe87091a47718285836824f69fdda0cf96462b9871",
         "committed": false
       },
       "ariaOrder": [
-        "button:Reject",
-        "button:Accept"
+        "button:42",
+        "button:17",
+        "button:86",
+        "button:Reject"
       ]
     },
     {
@@ -218,7 +210,7 @@
       ],
       "screenshot": {
         "file": "permission_pending.png",
-        "sha256": "fe40cbb2128779f23b602283664c26a03addd6610de91ad53536ac6a9b5562f7",
+        "sha256": "7153d41652e3447a884e1616983ddc0035dc53c29de0fcbcf647070a9f97273a",
         "committed": false
       },
       "ariaOrder": [
@@ -229,12 +221,12 @@
       "name": "quiet_check",
       "mode": "fixture",
       "screen": "screen-quiet_check",
-      "controls": 1,
-      "enabledControls": 1,
-      "preferredCount": 1,
-      "focused": "action-cancel",
-      "focusTarget": "preferred_focused",
-      "ringContrast": 13.262207538502933,
+      "controls": 0,
+      "enabledControls": 0,
+      "preferredCount": 0,
+      "focused": null,
+      "focusTarget": "no_focusable_controls",
+      "ringContrast": null,
       "unnamed": [],
       "disabledFocusable": [],
       "reachable": {
@@ -247,12 +239,10 @@
       "axe": [],
       "screenshot": {
         "file": "quiet_check.png",
-        "sha256": "a479af878e74513471a9e5d91e9fa393f55b22fcb494cd017022afbfd6fd51b4",
+        "sha256": "8dfb43542af5bcf58ca839751eb85958a95c772594efba21658b5661cbe22845",
         "committed": false
       },
-      "ariaOrder": [
-        "button:Cancel"
-      ]
+      "ariaOrder": []
     },
     {
       "name": "calibration",
@@ -276,7 +266,7 @@
       "axe": [],
       "screenshot": {
         "file": "calibration.png",
-        "sha256": "b92109b3ea2dba44b7448ca419a3b87136e7924bb843089a28238c3ee857bbe4",
+        "sha256": "f8fb9e9f0bbb994f3a86f6f6c09c4b266c1e66886f83558c79ffc22825e912ce",
         "committed": false
       },
       "ariaOrder": [
@@ -287,8 +277,8 @@
       "name": "vowel_ready",
       "mode": "fixture",
       "screen": "screen-vowel",
-      "controls": 2,
-      "enabledControls": 2,
+      "controls": 3,
+      "enabledControls": 3,
       "preferredCount": 1,
       "focused": "action-begin_vowel",
       "focusTarget": "preferred_focused",
@@ -297,7 +287,7 @@
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 6,
+        "presses": 8,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -315,20 +305,21 @@
       ],
       "screenshot": {
         "file": "vowel_ready.png",
-        "sha256": "1e16b0fc8b3458dac8154048de39b77ec11752c6d895e49b3566ded09fbf7d49",
+        "sha256": "b95e015837bbd1a8945a501924ae7ea19159b31f9e6794fcbab6771a0b2f46d8",
         "committed": false
       },
       "ariaOrder": [
         "button:Begin",
-        "button:Skip"
+        "button:Skip this step",
+        "button:Settings"
       ]
     },
     {
       "name": "vowel_active",
       "mode": "fixture",
       "screen": "screen-vowel",
-      "controls": 1,
-      "enabledControls": 1,
+      "controls": 2,
+      "enabledControls": 2,
       "preferredCount": 1,
       "focused": "action-stop_early",
       "focusTarget": "preferred_focused",
@@ -337,7 +328,7 @@
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 0,
+        "presses": 6,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -345,11 +336,12 @@
       "axe": [],
       "screenshot": {
         "file": "vowel_active.png",
-        "sha256": "de04179e2d4e59f94401d9a4675154c7880f06ce0d9bb9c8f7286d0c7f9aa3a1",
+        "sha256": "689d4d6de48099c096ab4b1976d0d05d58fe4b0de9c0353234be75992ba25c0c",
         "committed": false
       },
       "ariaOrder": [
-        "button:Stop"
+        "button:Stop now",
+        "button:Cancel window"
       ]
     },
     {
@@ -384,20 +376,20 @@
       ],
       "screenshot": {
         "file": "vowel_result.png",
-        "sha256": "4daf9ac83bfc6440181681a6c6489a2eebfac4c7620f1978d925f4ff8a08f19f",
+        "sha256": "40eefcbc463ac10d29131eb1382bded5fd6cec7f4fa370584050b416ee729235",
         "committed": false
       },
       "ariaOrder": [
-        "button:Continue",
-        "button:Redo"
+        "button:Continue to phrases",
+        "button:Rest, then try again"
       ]
     },
     {
       "name": "phrase_ready",
       "mode": "fixture",
       "screen": "screen-phrase",
-      "controls": 2,
-      "enabledControls": 2,
+      "controls": 4,
+      "enabledControls": 4,
       "preferredCount": 1,
       "focused": "action-begin_phrase",
       "focusTarget": "preferred_focused",
@@ -406,7 +398,7 @@
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 6,
+        "presses": 10,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -424,29 +416,31 @@
       ],
       "screenshot": {
         "file": "phrase_ready.png",
-        "sha256": "2a5e2e5ce9d9e7c565290a67f1dcbebacd15f11a4ddf07b6761cd06bb0d1e268",
+        "sha256": "922566886e9129dc0ff9e896fa66bbf4357fcbf6e57284dc21e07ec1aaff1211",
         "committed": false
       },
       "ariaOrder": [
         "button:Begin",
-        "button:Skip phrase"
+        "button:Skip phrase",
+        "button:Finish early",
+        "button:Settings"
       ]
     },
     {
       "name": "phrase_active_visible",
       "mode": "fixture",
       "screen": "screen-phrase",
-      "controls": 0,
-      "enabledControls": 0,
-      "preferredCount": 0,
-      "focused": null,
-      "focusTarget": "no_focusable_controls",
-      "ringContrast": null,
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-stop_early",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
       "unnamed": [],
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 0,
+        "presses": 6,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -454,26 +448,29 @@
       "axe": [],
       "screenshot": {
         "file": "phrase_active_visible.png",
-        "sha256": "ffceb82ac5e14b7434c993b8ed7b32a4952130bcbfbe6f4c0652b9d50fb49300",
+        "sha256": "ed9d2e67d0fbd01a4927fc581aa93f0ddeba7eed94d9fb63c067871893f482a9",
         "committed": false
       },
-      "ariaOrder": []
+      "ariaOrder": [
+        "button:Stop now",
+        "button:Cancel window"
+      ]
     },
     {
       "name": "phrase_active_hidden",
       "mode": "fixture",
       "screen": "screen-phrase",
-      "controls": 0,
-      "enabledControls": 0,
-      "preferredCount": 0,
-      "focused": null,
-      "focusTarget": "no_focusable_controls",
-      "ringContrast": null,
+      "controls": 2,
+      "enabledControls": 2,
+      "preferredCount": 1,
+      "focused": "action-stop_early",
+      "focusTarget": "preferred_focused",
+      "ringContrast": 13.262207538502933,
       "unnamed": [],
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 0,
+        "presses": 6,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -481,10 +478,13 @@
       "axe": [],
       "screenshot": {
         "file": "phrase_active_hidden.png",
-        "sha256": "898cc5f3945cf7e430e21cf696e56cd7a29489f6538cec7028f1b3117c6d5e79",
+        "sha256": "6e749c60cdd09ee07155a084c953a05cdb655046cdafd05a85164f4108ca97ce",
         "committed": true
       },
-      "ariaOrder": []
+      "ariaOrder": [
+        "button:Stop now",
+        "button:Cancel window"
+      ]
     },
     {
       "name": "response_rating",
@@ -493,14 +493,14 @@
       "controls": 3,
       "enabledControls": 3,
       "preferredCount": 1,
-      "focused": "action-rate_felt_normal",
+      "focused": "action-rate_felt_loud",
       "focusTarget": "preferred_focused",
       "ringContrast": 13.262207538502933,
       "unnamed": [],
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 7,
+        "presses": 8,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -518,7 +518,7 @@
       ],
       "screenshot": {
         "file": "response_rating.png",
-        "sha256": "0583d48858d1ab4f34bee909a129a32834f85cff8dbffb176854bd8d56143946",
+        "sha256": "bc64d87104936ff1dbcc5190e156e3a7763baed5825eda41243876ec8ef7b9ca",
         "committed": true
       },
       "ariaOrder": [
@@ -559,7 +559,7 @@
       ],
       "screenshot": {
         "file": "response_listener_waiting.png",
-        "sha256": "d1c377e310e2858c8613029a60901868c52cc2da04e8ec3f937799c8c3e6ef0c",
+        "sha256": "943bc69d67f6f038d6606e1eaec0e5a4cadd66b7fa6fa10462af6e67a432bb09",
         "committed": false
       },
       "ariaOrder": [
@@ -589,7 +589,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_reached.png",
-        "sha256": "c1ea0b6c86018393e8f97df0e60998735d7597f24861026303a5027c1897bd07",
+        "sha256": "ee432b045e9b940f08e6986997acece860e6bd6c5250a17c1117dedab5a5489d",
         "committed": false
       },
       "ariaOrder": [
@@ -620,7 +620,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_below.png",
-        "sha256": "a07f1c479d8707c58ebb7c870fd66e4f9ec36419205d526879ca04cc98dd77fe",
+        "sha256": "86b5bc089e14254cae0899451ca4fcced22fbd8659a17009bc34c87261521596",
         "committed": true
       },
       "ariaOrder": [
@@ -650,7 +650,7 @@
       "axe": [],
       "screenshot": {
         "file": "reveal_not_scored.png",
-        "sha256": "99e1149a07ffd8edf263c38a74e5a88eb49194e2115c1a5eb4c92804142b94f0",
+        "sha256": "3ef5475ed9f80d8979993c5420d80ea4228ce59521f9e3ae54a794c990411156",
         "committed": false
       },
       "ariaOrder": [
@@ -680,7 +680,7 @@
       "axe": [],
       "screenshot": {
         "file": "summary.png",
-        "sha256": "f2e0fb1119d1d771bc8e721cb8ea786f37d4620e49a28d1e79f9259fa88ade3d",
+        "sha256": "8702381944a1794b3d2879c8ebe585940ef01dcd911fec966a902b2b4feeb123",
         "committed": false
       },
       "ariaOrder": [
@@ -710,7 +710,7 @@
       "axe": [],
       "screenshot": {
         "file": "summary_incomplete.png",
-        "sha256": "2d57478938d7070e6af819e0a6df0120cfc2e2ab1bd5e9e9ab789c8118c0d917",
+        "sha256": "0197056c0f99bc69f515f6662e0bd4aa92c474871c5f88da057e6a58b53aff5c",
         "committed": false
       },
       "ariaOrder": [
@@ -739,7 +739,7 @@
       "axe": [],
       "screenshot": {
         "file": "history.png",
-        "sha256": "1803fb2adf4bdc83e0a4818c1ee08c048b5de08eff5e5ef8e22ff281ee3364b9",
+        "sha256": "0baf61cafc23a0a3473b9ee2fa86c8f52275f4670e273e08fd5fcf083fb45f98",
         "committed": true
       },
       "ariaOrder": [
@@ -750,10 +750,10 @@
       "name": "paused_or_invalid",
       "mode": "fixture",
       "screen": "screen-paused_or_invalid",
-      "controls": 2,
+      "controls": 3,
       "enabledControls": 2,
       "preferredCount": 1,
-      "focused": "action-retry",
+      "focused": "action-skip_phrase",
       "focusTarget": "preferred_focused",
       "ringContrast": 13.262207538502933,
       "unnamed": [],
@@ -778,12 +778,13 @@
       ],
       "screenshot": {
         "file": "paused_or_invalid.png",
-        "sha256": "6fa7fd0743823044f6930525c3a5c1687a859f33ab5f338bfa7873ad894787f9",
+        "sha256": "a9d04c3ec0872d8ad91a4e328985293a2a7cdbd725ee2cd21d3349c233ccff1c",
         "committed": false
       },
       "ariaOrder": [
-        "button:Pair again",
-        "button:End session"
+        "button:Try again (disabled)",
+        "button:Skip phrase",
+        "button:Finish early"
       ]
     },
     {
@@ -818,7 +819,7 @@
       ],
       "screenshot": {
         "file": "resume_or_discard.png",
-        "sha256": "1669cb67a142ec6c57aeae73a75902c83906c99924ad57d8eed211cc95c20c59",
+        "sha256": "15eccdb9d54d9f1f651effbc8dcc8e604a9b704a0f808d493b89dfc99610de85",
         "committed": false
       },
       "ariaOrder": [
@@ -830,8 +831,8 @@
       "name": "settings",
       "mode": "fixture",
       "screen": "screen-settings",
-      "controls": 6,
-      "enabledControls": 6,
+      "controls": 7,
+      "enabledControls": 5,
       "preferredCount": 1,
       "focused": "action-toggle_family_mode",
       "focusTarget": "preferred_focused",
@@ -840,7 +841,7 @@
       "disabledFocusable": [],
       "reachable": {
         "unreachable": [],
-        "presses": 10,
+        "presses": 11,
         "ringViolations": 0
       },
       "footerOk": true,
@@ -858,16 +859,17 @@
       ],
       "screenshot": {
         "file": "settings.png",
-        "sha256": "cf50ee664d42de75e10e23b7b694d04ed66459945fa658f112dd1e9bbff6f442",
+        "sha256": "ec7a7e61bba6b52fc02b12f7dcd126cdef519a2205aa673c17107ff971450b23",
         "committed": false
       },
       "ariaOrder": [
-        "button:Family mode: Off",
-        "button:Reset today's band",
-        "button:Unpair phone",
+        "button:Family mode",
+        "button:Reset today's band (disabled)",
         "button:Delete local practice data",
+        "button:Unpair phone (disabled)",
         "button:About",
-        "button:Diagnostics"
+        "button:Diagnostics (developer)",
+        "button:Back"
       ]
     },
     {
@@ -889,25 +891,15 @@
       },
       "footerOk": true,
       "arcMeter": false,
-      "axe": [
-        {
-          "id": "aria-dialog-name",
-          "impact": "serious",
-          "help": "ARIA dialog and alertdialog nodes should have an accessible name",
-          "nodes": 1,
-          "targets": [
-            "div[role=\"alertdialog\"]"
-          ]
-        }
-      ],
+      "axe": [],
       "screenshot": {
         "file": "confirm_dialog_destructive.png",
-        "sha256": "4e1eb7801c0a7a0709c69f328392e8b4c56c308e9c46e9ec023562ea64ec80be",
+        "sha256": "6a8f3309aafb1cf16426bcdc16766045048532716f97880eeb54bfad28de0517",
         "committed": true
       },
       "ariaOrder": [
         "button:Cancel",
-        "button:Delete"
+        "button:Delete data"
       ]
     },
     {
@@ -929,25 +921,15 @@
       },
       "footerOk": true,
       "arcMeter": false,
-      "axe": [
-        {
-          "id": "aria-dialog-name",
-          "impact": "serious",
-          "help": "ARIA dialog and alertdialog nodes should have an accessible name",
-          "nodes": 1,
-          "targets": [
-            "div[role=\"alertdialog\"]"
-          ]
-        }
-      ],
+      "axe": [],
       "screenshot": {
         "file": "confirm_dialog_wrong_preference.png",
-        "sha256": "747bf495c60b8cfcf7668854b5cf4efc0af808e72a17f98fd64273010918a88d",
+        "sha256": "fb3451ec030b5b555ea284df706077e928fa54ece6d21ed8ea75ba5192473edd",
         "committed": false
       },
       "ariaOrder": [
         "button:Cancel",
-        "button:Delete"
+        "button:Delete data"
       ]
     },
     {
@@ -969,20 +951,10 @@
       },
       "footerOk": true,
       "arcMeter": false,
-      "axe": [
-        {
-          "id": "aria-dialog-name",
-          "impact": "serious",
-          "help": "ARIA dialog and alertdialog nodes should have an accessible name",
-          "nodes": 1,
-          "targets": [
-            "div[role=\"alertdialog\"]"
-          ]
-        }
-      ],
+      "axe": [],
       "screenshot": {
         "file": "confirm_dialog_plain.png",
-        "sha256": "e3d1fef998dfec522b6613c0c640fa462098024e53feeee9b04c208a5a7d3731",
+        "sha256": "a49944999a75f2822130cc5b5f2e22d5e2d83c18f4b99e9689975c1fe25180c1",
         "committed": false
       },
       "ariaOrder": [
@@ -1022,7 +994,7 @@
       ],
       "screenshot": {
         "file": "about.png",
-        "sha256": "535612c5f93702c7cb11060a0d3283b0584ef93b25b356abe731b6672da2a26a",
+        "sha256": "6604995c7a24c5b187bce52a84f040cc55b8b5ad0698716273228cef0cbbd833",
         "committed": false
       },
       "ariaOrder": [
@@ -1051,7 +1023,7 @@
       "axe": [],
       "screenshot": {
         "file": "diagnostics.png",
-        "sha256": "798a2b5635b2f5a51663c41e08a71da866199ea250a87acca2a2ea6e65c1334c",
+        "sha256": "ff983574dd574d0ff3aebf9fa4592c26d161f0faf4d67df13381cccc1e582ccb",
         "committed": false
       },
       "ariaOrder": [
@@ -1063,2064 +1035,1404 @@
     {
       "scale": 1,
       "screen": "onboarding",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "home",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "pairing",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "join_confirm",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "permission_pending",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "quiet_check",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 0,
+      "reached": 0,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "calibration",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "vowel_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "vowel_active",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "vowel_result",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "phrase_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "phrase_active_visible",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "phrase_active_hidden",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "response_rating",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "response_listener_waiting",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "reveal_reached",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "reveal_below",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "reveal_not_scored",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "summary",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "summary_incomplete",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "history",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "paused_or_invalid",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "resume_or_discard",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "settings",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 5,
+      "reached": 5,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "confirm_dialog_destructive",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "confirm_dialog_wrong_preference",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "confirm_dialog_plain",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "about",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1,
       "screen": "diagnostics",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "onboarding",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "home",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "pairing",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "join_confirm",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "permission_pending",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "quiet_check",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 0,
+      "reached": 0,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "calibration",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "vowel_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "vowel_active",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "vowel_result",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "phrase_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "phrase_active_visible",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "phrase_active_hidden",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "response_rating",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "response_listener_waiting",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "reveal_reached",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "reveal_below",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "reveal_not_scored",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "summary",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "summary_incomplete",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "history",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "paused_or_invalid",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "resume_or_discard",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "settings",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 5,
+      "reached": 5,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "confirm_dialog_destructive",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "confirm_dialog_wrong_preference",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "confirm_dialog_plain",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "about",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.25,
       "screen": "diagnostics",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "onboarding",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "home",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1800,
-            "bottom": 1203,
-            "left": 120,
-            "top": 435
-          },
-          {
-            "testId": "action-pair_phone",
-            "tag": "button",
-            "right": 600,
-            "bottom": 1167,
-            "left": 120,
-            "top": 1011
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 531,
-            "bottom": 1127,
-            "left": 189,
-            "top": 1052
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1800,
-            "bottom": 1306,
-            "left": 120,
-            "top": 1227
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1800,
-            "bottom": 1306,
-            "left": 120,
-            "top": 1253
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "pairing",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "join_confirm",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "permission_pending",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "quiet_check",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 0,
+      "reached": 0,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "calibration",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "side-by-side",
-            "tag": "div",
-            "right": 1968,
-            "bottom": 949,
-            "left": -48,
-            "top": 244
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "vowel_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "vowel_active",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "vowel_result",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "phrase_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "phrase_active_visible",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "side-by-side",
-            "tag": "div",
-            "right": 1781,
-            "bottom": 1138,
-            "left": 139,
-            "top": 553
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 859,
-            "bottom": 1138,
-            "left": 211,
-            "top": 553
-          },
-          {
-            "testId": "arc-meter",
-            "tag": "div",
-            "right": 859,
-            "bottom": 1138,
-            "left": 211,
-            "top": 553
-          },
-          {
-            "testId": "arc-legend",
-            "tag": "div",
-            "right": 780,
-            "bottom": 1138,
-            "left": 291,
-            "top": 1078
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "phrase_active_hidden",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "response_rating",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "response_listener_waiting",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "reveal_reached",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "reveal_below",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "reveal_not_scored",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "summary",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 219,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "summary_incomplete",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 219,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "history",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "paused_or_invalid",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "resume_or_discard",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "settings",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 5,
+      "reached": 5,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "confirm_dialog_destructive",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "confirm_dialog_wrong_preference",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "confirm_dialog_plain",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "about",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 1.5,
       "screen": "diagnostics",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "onboarding",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1172,
-            "left": 160,
-            "top": 916
-          },
-          {
-            "testId": "action-continue",
-            "tag": "button",
-            "right": 816,
-            "bottom": 1129,
-            "left": 144,
-            "top": 911
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1308,
-            "left": 160,
-            "top": 1204
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1308,
-            "left": 160,
-            "top": 1238
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 1,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "home",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1720,
-            "left": 160,
-            "top": 696
-          },
-          {
-            "testId": "action-open_history",
-            "tag": "button",
-            "right": 800,
-            "bottom": 1160,
-            "left": 160,
-            "top": 952
-          },
-          {
-            "testId": "action-open_settings",
-            "tag": "button",
-            "right": 800,
-            "bottom": 1416,
-            "left": 160,
-            "top": 1208
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 708,
-            "bottom": 1362,
-            "left": 252,
-            "top": 1262
-          },
-          {
-            "testId": "action-pair_phone",
-            "tag": "button",
-            "right": 800,
-            "bottom": 1672,
-            "left": 160,
-            "top": 1464
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 708,
-            "bottom": 1618,
-            "left": 252,
-            "top": 1518
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1856,
-            "left": 160,
-            "top": 1752
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1856,
-            "left": 160,
-            "top": 1786
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 378,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "pairing",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 2030,
-            "bottom": 1051,
-            "left": -110,
-            "top": 422
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1241,
-            "bottom": 976,
-            "left": -110,
-            "top": 496
-          },
-          {
-            "testId": "pairing-code",
-            "tag": "div",
-            "right": 1241,
-            "bottom": 976,
-            "left": -110,
-            "top": 576
-          },
-          {
-            "testId": "qr-code",
-            "tag": "div",
-            "right": 2030,
-            "bottom": 1051,
-            "left": 1401,
-            "top": 422
-          },
-          {
-            "testId": null,
-            "tag": "svg",
-            "right": 2030,
-            "bottom": 1051,
-            "left": 1401,
-            "top": 422
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 2030,
-            "bottom": 1051,
-            "left": 1401,
-            "top": 422
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 1962,
-            "bottom": 507,
-            "left": 1843,
-            "top": 490
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 1962,
-            "bottom": 524,
-            "left": 1945,
-            "top": 507
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 1928,
-            "bottom": 541,
-            "left": 1877,
-            "top": 524
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 1962,
-            "bottom": 541,
-            "left": 1945,
-            "top": 524
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 1928,
-            "bottom": 558,
-            "left": 1877,
-            "top": 541
-          },
-          {
-            "testId": null,
-            "tag": "rect",
-            "right": 1962,
-            "bottom": 558,
-            "left": 1945,
-            "top": 541
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 302,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "join_confirm",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 343,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 1,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": [
+        "action-pick_choice_3 (H|canvas=true visible=0.85 footer=false left=1258 right=1846 top=366 bottom=744)",
+        "action-pick_choice_1 (H|canvas=true visible=0.74 footer=false left=10 right=598 top=366 bottom=744)"
+      ]
     },
     {
       "scale": 2,
       "screen": "permission_pending",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "status-mic",
-            "tag": "div",
-            "right": 2075,
-            "bottom": 560,
-            "left": 160,
-            "top": 444
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 2033,
-            "bottom": 542,
-            "left": 202,
-            "top": 462
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1228,
-            "left": 160,
-            "top": 1124
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1228,
-            "left": 160,
-            "top": 1158
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 47,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "quiet_check",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 0,
+      "reached": 0,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "calibration",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "side-by-side",
-            "tag": "div",
-            "right": 2304,
-            "bottom": 1070,
-            "left": -384,
-            "top": 130
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 672,
-            "bottom": 868,
-            "left": -288,
-            "top": 332
-          },
-          {
-            "testId": "timer",
-            "tag": "div",
-            "right": 672,
-            "bottom": 868,
-            "left": -288,
-            "top": 332
-          },
-          {
-            "testId": "timer-label",
-            "tag": "div",
-            "right": 597,
-            "bottom": 812,
-            "left": -213,
-            "top": 732
-          },
-          {
-            "testId": "timer-bar",
-            "tag": "div",
-            "right": 672,
-            "bottom": 868,
-            "left": -288,
-            "top": 836
-          },
-          {
-            "testId": "timer-bar-fill",
-            "tag": "div",
-            "right": 352,
-            "bottom": 868,
-            "left": -288,
-            "top": 836
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 2208,
-            "bottom": 1070,
-            "left": 864,
-            "top": 130
-          },
-          {
-            "testId": "arc-meter",
-            "tag": "div",
-            "right": 2208,
-            "bottom": 1070,
-            "left": 864,
-            "top": 130
-          },
-          {
-            "testId": null,
-            "tag": "svg",
-            "right": 2208,
-            "bottom": 874,
-            "left": 864,
-            "top": 130
-          },
-          {
-            "testId": null,
-            "tag": "path",
-            "right": 2136,
-            "bottom": 802,
-            "left": 936,
-            "top": 202
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 2025,
-            "bottom": 990,
-            "left": 1047,
-            "top": 890
-          },
-          {
-            "testId": "arc-cue-text",
-            "tag": "div",
-            "right": 2025,
-            "bottom": 990,
-            "left": 1175,
-            "top": 890
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 150,
+      "footerInside": true,
+      "horizontalOutside": 10,
+      "horizontalClipped": 1,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "vowel_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "vowel_active",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "side-by-side",
-            "tag": "div",
-            "right": 2093,
-            "bottom": 1062,
-            "left": -173,
-            "top": 42
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 461,
-            "bottom": 792,
-            "left": -77,
-            "top": 312
-          },
-          {
-            "testId": "timer",
-            "tag": "div",
-            "right": 461,
-            "bottom": 792,
-            "left": -77,
-            "top": 312
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 461,
-            "bottom": 712,
-            "left": -77,
-            "top": 312
-          },
-          {
-            "testId": "timer-value",
-            "tag": "div",
-            "right": 400,
-            "bottom": 712,
-            "left": -77,
-            "top": 312
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1997,
-            "bottom": 1062,
-            "left": 653,
-            "top": 42
-          },
-          {
-            "testId": "arc-meter",
-            "tag": "div",
-            "right": 1997,
-            "bottom": 1062,
-            "left": 653,
-            "top": 42
-          },
-          {
-            "testId": null,
-            "tag": "svg",
-            "right": 1997,
-            "bottom": 786,
-            "left": 653,
-            "top": 42
-          },
-          {
-            "testId": null,
-            "tag": "path",
-            "right": 1925,
-            "bottom": 714,
-            "left": 725,
-            "top": 114
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 138,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "vowel_result",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 170,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "phrase_ready",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1168,
-            "left": 160,
-            "top": 1064
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1168,
-            "left": 160,
-            "top": 1098
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 313,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 4,
+      "reached": 4,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "phrase_active_visible",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1760,
-            "bottom": 614,
-            "left": 160,
-            "top": 34
-          },
-          {
-            "testId": "phrase-counter",
-            "tag": "div",
-            "right": 1074,
-            "bottom": 134,
-            "left": 846,
-            "top": 34
-          },
-          {
-            "testId": "side-by-side",
-            "tag": "div",
-            "right": 2004,
-            "bottom": 1442,
-            "left": -84,
-            "top": 662
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 830,
-            "bottom": 1442,
-            "left": -34,
-            "top": 662
-          },
-          {
-            "testId": "arc-meter",
-            "tag": "div",
-            "right": 830,
-            "bottom": 1442,
-            "left": -34,
-            "top": 662
-          },
-          {
-            "testId": null,
-            "tag": "svg",
-            "right": 830,
-            "bottom": 1166,
-            "left": -34,
-            "top": 662
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 741,
-            "bottom": 1282,
-            "left": 54,
-            "top": 1182
-          },
-          {
-            "testId": "arc-cue-glyph",
-            "tag": "div",
-            "right": 150,
-            "bottom": 1280,
-            "left": 54,
-            "top": 1184
-          },
-          {
-            "testId": null,
-            "tag": "svg",
-            "right": 150,
-            "bottom": 1280,
-            "left": 54,
-            "top": 1184
-          },
-          {
-            "testId": null,
-            "tag": "path",
-            "right": 136,
-            "bottom": 1259,
-            "left": 67,
-            "top": 1205
-          },
-          {
-            "testId": "arc-cue-text",
-            "tag": "div",
-            "right": 741,
-            "bottom": 1282,
-            "left": 182,
-            "top": 1182
-          },
-          {
-            "testId": "arc-caption",
-            "tag": "div",
-            "right": 804,
-            "bottom": 1362,
-            "left": -9,
-            "top": 1282
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 199,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "phrase_active_hidden",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "response_rating",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1288,
-            "left": 160,
-            "top": 776
-          },
-          {
-            "testId": "action-rate_skip",
-            "tag": "button",
-            "right": 800,
-            "bottom": 1240,
-            "left": 160,
-            "top": 1032
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 708,
-            "bottom": 1186,
-            "left": 252,
-            "top": 1086
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1424,
-            "left": 160,
-            "top": 1320
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1424,
-            "left": 160,
-            "top": 1354
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 279,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "response_listener_waiting",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1208,
-            "left": 160,
-            "top": 696
-          },
-          {
-            "testId": "action-continue_without_listener",
-            "tag": "button",
-            "right": 1498,
-            "bottom": 1160,
-            "left": 160,
-            "top": 952
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1344,
-            "left": 160,
-            "top": 1240
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1344,
-            "left": 160,
-            "top": 1274
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 336,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "reveal_reached",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1248,
-            "left": 160,
-            "top": 1144
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1248,
-            "left": 160,
-            "top": 1178
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 491,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 3,
+      "reached": 3,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "reveal_below",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 414,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "reveal_not_scored",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 337,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "summary",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "summary",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1506,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1174,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 960,
-            "bottom": 1174,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 896,
-            "bottom": -190,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 896,
-            "bottom": -18,
-            "left": 160,
-            "top": -178
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 896,
-            "bottom": 74,
-            "left": 160,
-            "top": -6
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1174,
-            "left": 960,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 1696,
-            "bottom": -110,
-            "left": 960,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 1696,
-            "bottom": 142,
-            "left": 960,
-            "top": -98
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 1696,
-            "bottom": 1162,
-            "left": 960,
-            "top": 922
-          },
-          {
-            "testId": "summary-rule",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1330,
-            "left": 160,
-            "top": 1190
-          },
-          {
-            "testId": "summary-notes",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1506,
-            "left": 160,
-            "top": 1346
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 977,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "summary_incomplete",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "summary",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1506,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1174,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 960,
-            "bottom": 1174,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 896,
-            "bottom": -30,
-            "left": 160,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 896,
-            "bottom": 142,
-            "left": 160,
-            "top": -18
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1174,
-            "left": 960,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 1696,
-            "bottom": -110,
-            "left": 960,
-            "top": -270
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 1696,
-            "bottom": 142,
-            "left": 960,
-            "top": -98
-          },
-          {
-            "testId": "summary-line",
-            "tag": "div",
-            "right": 1696,
-            "bottom": 1162,
-            "left": 960,
-            "top": 922
-          },
-          {
-            "testId": "summary-rule",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1330,
-            "left": 160,
-            "top": 1190
-          },
-          {
-            "testId": "summary-notes",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1506,
-            "left": 160,
-            "top": 1346
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1426,
-            "left": 160,
-            "top": 1346
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 1054,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "history",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 346,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "paused_or_invalid",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1172,
-            "left": 160,
-            "top": 916
-          },
-          {
-            "testId": "action-retry",
-            "tag": "button",
-            "right": 816,
-            "bottom": 1129,
-            "left": 144,
-            "top": 911
-          },
-          {
-            "testId": "action-cancel",
-            "tag": "button",
-            "right": 1504,
-            "bottom": 1124,
-            "left": 864,
-            "top": 916
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1308,
-            "left": 160,
-            "top": 1204
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1308,
-            "left": 160,
-            "top": 1238
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 362,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "resume_or_discard",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "settings",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [
-          {
-            "testId": "actions",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1720,
-            "left": 160,
-            "top": 696
-          },
-          {
-            "testId": "action-reset_calibration",
-            "tag": "button",
-            "right": 985,
-            "bottom": 1160,
-            "left": 160,
-            "top": 952
-          },
-          {
-            "testId": "action-unpair_phone",
-            "tag": "button",
-            "right": 1689,
-            "bottom": 1160,
-            "left": 1049,
-            "top": 952
-          },
-          {
-            "testId": "action-delete_local_data",
-            "tag": "button",
-            "right": 1183,
-            "bottom": 1416,
-            "left": 160,
-            "top": 1208
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1091,
-            "bottom": 1362,
-            "left": 252,
-            "top": 1262
-          },
-          {
-            "testId": "action-open_about",
-            "tag": "button",
-            "right": 800,
-            "bottom": 1672,
-            "left": 160,
-            "top": 1464
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 708,
-            "bottom": 1618,
-            "left": 252,
-            "top": 1518
-          },
-          {
-            "testId": "action-open_diagnostics",
-            "tag": "button",
-            "right": 1504,
-            "bottom": 1672,
-            "left": 864,
-            "top": 1464
-          },
-          {
-            "testId": null,
-            "tag": "div",
-            "right": 1412,
-            "bottom": 1618,
-            "left": 956,
-            "top": 1518
-          },
-          {
-            "testId": "footer-bar",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1856,
-            "left": 160,
-            "top": 1752
-          },
-          {
-            "testId": "footer",
-            "tag": "div",
-            "right": 1760,
-            "bottom": 1856,
-            "left": 160,
-            "top": 1786
-          }
-        ],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 578,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 5,
+      "reached": 5,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "confirm_dialog_destructive",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "confirm_dialog_wrong_preference",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "confirm_dialog_plain",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 2,
+      "reached": 2,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "about",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": true,
+      "overflowPx": 331,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     },
     {
       "scale": 2,
       "screen": "diagnostics",
-      "overflow": {
-        "horizontalScroll": false,
-        "outside": [],
-        "clippedText": []
-      }
+      "scrolls": false,
+      "overflowPx": 0,
+      "footerInside": true,
+      "horizontalOutside": 0,
+      "horizontalClipped": 0,
+      "controls": 1,
+      "reached": 1,
+      "notFullyVisibleOnFocus": []
     }
   ],
   "store": {
     "axe_summary": {
       "byImpact": {
-        "minor": 14,
-        "moderate": 1,
-        "serious": 3
+        "minor": 13,
+        "moderate": 1
       },
       "byRule": {
         "aria-allowed-role": {
@@ -3129,7 +2441,6 @@
             "onboarding",
             "home",
             "pairing",
-            "join_confirm",
             "permission_pending",
             "vowel_ready",
             "vowel_result",
@@ -3141,7 +2452,7 @@
             "settings",
             "about"
           ],
-          "nodes": 15
+          "nodes": 14
         },
         "landmark-unique": {
           "impact": "moderate",
@@ -3149,70 +2460,209 @@
             "permission_pending"
           ],
           "nodes": 1
-        },
-        "aria-dialog-name": {
-          "impact": "serious",
-          "screens": [
-            "confirm_dialog_destructive",
-            "confirm_dialog_wrong_preference",
-            "confirm_dialog_plain"
-          ],
-          "nodes": 3
         }
       }
     },
-    "aria_dialog_name_offenders": [
-      "confirm_dialog_destructive",
-      "confirm_dialog_wrong_preference",
-      "confirm_dialog_plain"
+    "aria_dialog_name_offenders": [],
+    "scale_1_failures": [],
+    "scale_1_horizontal_clipping": [],
+    "scale_1_screens_that_scroll": [],
+    "scale_1_max_focus_settle_ms": 4,
+    "scale_1.25_failures": [],
+    "scale_1.25_horizontal_clipping": [],
+    "scale_1.25_screens_that_scroll": [],
+    "scale_1.25_max_focus_settle_ms": 3,
+    "scale_1.5_failures": [],
+    "scale_1.5_horizontal_clipping": [],
+    "scale_1.5_screens_that_scroll": [
+      "summary(219px)",
+      "summary_incomplete(219px)"
     ],
-    "scale_1_failing_screens": [],
-    "scale_1.25_failing_screens": [],
-    "scale_1.5_failing_screens": [
-      "home(5)",
-      "calibration(1)",
-      "phrase_active_visible(4)"
+    "scale_1.5_max_focus_settle_ms": 2,
+    "scale_2_failures": [],
+    "scale_2_horizontal_clipping": [
+      "join_confirm: content wider than its viewport, clipped {\"testId\":\"screen-scroll\",\"tag\":\"div\",\"scrollWidth\":1736,\"clientWidth\":1600}",
+      "join_confirm: control cut off at the side when focused: action-pick_choice_3 (canvas=true visible=0.85 footer=false left=1258 right=1846 top=366 bottom=744)",
+      "join_confirm: control cut off at the side when focused: action-pick_choice_1 (canvas=true visible=0.74 footer=false left=10 right=598 top=366 bottom=744)",
+      "calibration: 10 element(s) beyond the left/right edge, first {\"testId\":null,\"tag\":\"div\",\"left\":-105,\"right\":855}",
+      "calibration: content wider than its viewport, clipped {\"testId\":\"screen-scroll\",\"tag\":\"div\",\"scrollWidth\":1865,\"clientWidth\":1600}"
     ],
-    "scale_2_failing_screens": [
-      "onboarding(4)",
-      "home(8)",
-      "pairing(12)",
-      "permission_pending(4)",
-      "calibration(12)",
-      "vowel_active(9)",
-      "phrase_ready(2)",
-      "phrase_active_visible(12)",
-      "response_rating(5)",
-      "response_listener_waiting(4)",
-      "reveal_reached(2)",
-      "summary(12)",
-      "summary_incomplete(12)",
-      "paused_or_invalid(5)",
-      "settings(11)"
+    "scale_2_screens_that_scroll": [
+      "home(378px)",
+      "pairing(302px)",
+      "join_confirm(343px)",
+      "permission_pending(47px)",
+      "calibration(150px)",
+      "vowel_active(138px)",
+      "vowel_result(170px)",
+      "phrase_ready(313px)",
+      "phrase_active_visible(199px)",
+      "response_rating(279px)",
+      "response_listener_waiting(336px)",
+      "reveal_reached(491px)",
+      "reveal_below(414px)",
+      "reveal_not_scored(337px)",
+      "summary(977px)",
+      "summary_incomplete(1054px)",
+      "history(346px)",
+      "paused_or_invalid(362px)",
+      "settings(578px)",
+      "about(331px)"
+    ],
+    "scale_2_max_focus_settle_ms": 833,
+    "ring_clipped_by_scroller": [
+      "1:onboarding:action-continue (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:home:action-start_session (left=72 right=408 top=634 bottom=722 visible=0.976)",
+      "1:home:action-open_history (left=72 right=408 top=734 bottom=822 visible=0.976)",
+      "1:home:action-open_settings (left=72 right=408 top=834 bottom=922 visible=0.976)",
+      "1:home:action-pair_phone (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:pairing:action-refresh_code (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:permission_pending:action-cancel (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:calibration:action-cancel (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:vowel_ready:action-begin_vowel (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:vowel_active:action-stop_early (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:vowel_result:action-continue (left=69 right=525 top=934 bottom=1022 visible=0.976)",
+      "1:phrase_ready:action-begin_phrase (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:phrase_active_visible:action-stop_early (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:phrase_active_hidden:action-stop_early (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:response_rating:action-rate_felt_loud (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:response_listener_waiting:action-keep_waiting (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:reveal_reached:action-next_phrase (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:reveal_below:action-next_phrase (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:reveal_not_scored:action-try_again (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:summary:action-done (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:summary_incomplete:action-done (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:history:action-done (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:resume_or_discard:action-resume_session (left=71 right=458 top=934 bottom=1022 visible=0.976)",
+      "1:settings:action-toggle_family_mode (left=72 right=408 top=834 bottom=922 visible=0.976)",
+      "1:settings:action-open_about (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:about:action-back (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1:diagnostics:action-back (left=72 right=408 top=934 bottom=1022 visible=0.976)",
+      "1.25:onboarding:action-continue (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:home:action-start_session (left=90 right=510 top=507 bottom=619 visible=0.976)",
+      "1.25:home:action-open_history (left=90 right=510 top=633 bottom=745 visible=0.976)",
+      "1.25:home:action-open_settings (left=90 right=510 top=759 bottom=871 visible=0.976)",
+      "1.25:home:action-pair_phone (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:pairing:action-refresh_code (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:permission_pending:action-cancel (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:calibration:action-cancel (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:vowel_ready:action-begin_vowel (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:vowel_active:action-stop_early (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:vowel_result:action-continue (left=86 right=655 top=885 bottom=997 visible=0.976)",
+      "1.25:phrase_ready:action-begin_phrase (left=90 right=510 top=759 bottom=871 visible=0.976)",
+      "1.25:phrase_ready:action-open_settings (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:phrase_active_visible:action-stop_early (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:phrase_active_hidden:action-stop_early (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:response_rating:action-rate_felt_loud (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:response_listener_waiting:action-keep_waiting (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:reveal_reached:action-next_phrase (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:reveal_below:action-next_phrase (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:reveal_not_scored:action-try_again (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:summary:action-done (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:summary_incomplete:action-done (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:history:action-done (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:resume_or_discard:action-resume_session (left=88 right=572 top=885 bottom=997 visible=0.976)",
+      "1.25:settings:action-toggle_family_mode (left=90 right=510 top=633 bottom=745 visible=0.976)",
+      "1.25:settings:action-back (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:about:action-back (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.25:diagnostics:action-back (left=90 right=510 top=885 bottom=997 visible=0.976)",
+      "1.5:onboarding:action-continue (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:home:action-start_session (left=108 right=612 top=403 bottom=535 visible=0.976)",
+      "1.5:home:action-open_history (left=108 right=612 top=553 bottom=685 visible=0.976)",
+      "1.5:home:action-open_settings (left=108 right=612 top=703 bottom=835 visible=0.976)",
+      "1.5:home:action-pair_phone (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:pairing:action-refresh_code (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:permission_pending:action-cancel (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:calibration:action-cancel (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:vowel_ready:action-begin_vowel (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:vowel_active:action-stop_early (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:vowel_result:action-continue (left=104 right=782 top=853 bottom=985 visible=0.976)",
+      "1.5:phrase_ready:action-begin_phrase (left=108 right=612 top=703 bottom=835 visible=0.976)",
+      "1.5:phrase_ready:action-open_settings (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:phrase_active_visible:action-stop_early (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:phrase_active_hidden:action-stop_early (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:response_rating:action-rate_felt_loud (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:response_listener_waiting:action-keep_waiting (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:reveal_reached:action-next_phrase (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:reveal_below:action-next_phrase (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:reveal_not_scored:action-try_again (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:summary:action-done (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:summary_incomplete:action-done (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:history:action-done (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:resume_or_discard:action-resume_session (left=106 right=683 top=853 bottom=985 visible=0.976)",
+      "1.5:settings:action-toggle_family_mode (left=108 right=612 top=403 bottom=535 visible=0.976)",
+      "1.5:settings:action-delete_local_data (left=101 right=913 top=553 bottom=685 visible=0.976)",
+      "1.5:settings:action-back (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:settings:action-open_about (left=108 right=612 top=703 bottom=835 visible=0.976)",
+      "1.5:about:action-back (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "1.5:diagnostics:action-back (left=108 right=612 top=853 bottom=985 visible=0.976)",
+      "2:onboarding:action-continue (left=144 right=816 top=764 bottom=940 visible=0.976)",
+      "2:home:action-start_session (left=144 right=816 top=163 bottom=339 visible=0.976)",
+      "2:home:action-open_history (left=144 right=816 top=363 bottom=539 visible=0.976)",
+      "2:home:action-open_settings (left=144 right=816 top=563 bottom=739 visible=0.976)",
+      "2:home:action-pair_phone (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:pairing:action-refresh_code (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:join_confirm:action-pick_choice_3 (left=1258 right=1846 top=366 bottom=744 visible=0.854)",
+      "2:join_confirm:action-pick_choice_1 (left=10 right=598 top=366 bottom=744 visible=0.745)",
+      "2:permission_pending:action-cancel (left=144 right=816 top=795 bottom=971 visible=0.953)",
+      "2:calibration:action-cancel (left=144 right=816 top=795 bottom=971 visible=0.953)",
+      "2:vowel_ready:action-begin_vowel (left=144 right=816 top=563 bottom=739 visible=0.976)",
+      "2:vowel_ready:action-open_settings (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:vowel_active:action-stop_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:vowel_result:action-continue (left=139 right=1035 top=563 bottom=739 visible=0.976)",
+      "2:vowel_result:action-rest (left=140 right=999 top=763 bottom=939 visible=0.976)",
+      "2:phrase_ready:action-begin_phrase (left=144 right=816 top=563 bottom=739 visible=0.976)",
+      "2:phrase_ready:action-finish_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:phrase_active_visible:action-stop_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:phrase_active_hidden:action-stop_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:response_rating:action-rate_felt_loud (left=144 right=816 top=563 bottom=739 visible=0.976)",
+      "2:response_rating:action-rate_skip (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:response_listener_waiting:action-keep_waiting (left=144 right=816 top=563 bottom=739 visible=0.976)",
+      "2:response_listener_waiting:action-continue_without_listener (left=127 right=1531 top=763 bottom=939 visible=0.976)",
+      "2:reveal_reached:action-next_phrase (left=144 right=816 top=563 bottom=739 visible=0.976)",
+      "2:reveal_reached:action-finish_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:reveal_below:action-next_phrase (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:reveal_not_scored:action-try_again (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:summary:action-done (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:summary_incomplete:action-done (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:history:action-done (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:paused_or_invalid:action-finish_early (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:resume_or_discard:action-resume_session (left=142 right=906 top=763 bottom=939 visible=0.976)",
+      "2:settings:action-toggle_family_mode (left=144 right=816 top=156 bottom=332 visible=0.976)",
+      "2:settings:action-delete_local_data (left=134 right=1208 top=163 bottom=339 visible=0.976)",
+      "2:settings:action-open_diagnostics (left=136 right=1161 top=563 bottom=739 visible=0.976)",
+      "2:settings:action-back (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:about:action-back (left=144 right=816 top=763 bottom=939 visible=0.976)",
+      "2:diagnostics:action-back (left=144 right=816 top=763 bottom=939 visible=0.976)"
     ],
     "journey": {
-      "join_confirm_preferred": "action-accept_join",
+      "join_confirm_preferred": "action-reject_join",
+      "chips_visual_only_while_capturing": 4,
       "p3_capture_shot": {
         "file": "store_p3_blind_capture.png",
-        "sha256": "d87711e29b5244d44422f4058e1fbec39fdf0d7f550aec4bc52aabdf06445862",
+        "sha256": "4d87d3f3f162dd298636e237ebf411d7708b093077707d87a0664a40b0c79cc4",
         "committed": true
       },
       "live_log_entries": 26,
-      "phone_received": "room.create,join.confirm,session.begin,session.state,session.state,ack,precheck.start,ack,session.state,window.start,ack,session.state,session.state,session.state,precheck.start,ack,window.start,window.cancel,session.state,ack,session.state,session.state,precheck.start,ack,window.start,ack,ack,attempt.reveal,session.state,session.state,session.state,precheck.start,ack,window.start,ack,attempt.reveal,session.state,session.state,session.state,precheck.start,ack,window.start,ack,session.state,attempt.reveal,session.state,session.end"
+      "phone_received": "room.create,join.confirm,session.begin,session.state,session.state,ack,precheck.start,ack,session.state,window.start,ack,session.state,session.state,session.state,precheck.start,ack,window.start,window.cancel,ack,session.state,session.state,precheck.start,ack,window.start,ack,ack,attempt.reveal,session.state,session.state,precheck.start,ack,window.start,ack,attempt.reveal,session.state,session.state,precheck.start,ack,window.start,ack,attempt.reveal,session.end"
     },
     "settings_disabled_controls": [
       {
         "id": "action-reset_calibration",
-        "tabIndex": 0,
-        "ariaDisabled": null
+        "tabIndex": -1,
+        "ariaDisabled": "true"
       },
       {
         "id": "action-unpair_phone",
-        "tabIndex": 0,
-        "ariaDisabled": null
+        "tabIndex": -1,
+        "ariaDisabled": "true"
       }
     ],
-    "silent_input_quiet_check_text": "Quiet check did not pass\nPhone microphone: Microphone open, not measuring\nRelay: Connected\nFixture replay\nThe window could not be scored.\nTry again\nCancel\nQuiet check did not pass. The window could not be scored.\nNot a medical device. Does not diagnose or treat any condition.",
+    "screen_reader_lead_ms": {
+      "on": 3070,
+      "off": 1603
+    },
+    "silent_input_quiet_check_text": "Quiet check did not pass\nPhone microphone: Microphone open, not measuring\nRelay: Connected\nFixture replay\nThe phone microphone looks muted or blocked.\nTry again\nCancel\nQuiet check did not pass. The phone microphone looks muted or blocked.\nNot a medical device. Does not diagnose or treat any condition.",
     "link_loss_focus": {
       "active": "action-cancel",
       "controls": [
@@ -3222,10 +2672,10 @@
     },
     "credential_trail": {
       "resumedCount": 2,
-      "secondIsRotated": false
+      "secondIsRotated": true
     }
   },
   "hashes": {
-    "aria_order_all_screens": "9f6aef94ea86a3db4c06bc5177a819d99ef69862ccba317d327fe1c7dda58a1f"
+    "aria_order_all_screens": "d916ba52bd19c12c3eefc80b2794a0cdb5a853c36be3984d9c2b793ada5b5ba1"
   }
 }

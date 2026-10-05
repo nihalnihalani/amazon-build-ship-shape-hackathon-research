@@ -50,8 +50,64 @@ export interface PhoneOptions {
   silentFirstQuietCheck?: boolean;
 }
 
+/**
+ * The window.result a phone reports for a capture the TV commanded with `max_duration_ms`. The TV re-validates it
+ * (A1-09): the protocol invariants (frame counts, coverage, active time, percentile order) AND its own timing rule
+ * `duration_ms <= max_duration_ms + 500`. A calibration window is commanded for 6000 ms, so it must be reported as
+ * (at most) 6000 ms; a fixed 8000 ms makes the TV answer `integrity`. `active_ms` must not exceed `duration_ms`.
+ */
+export function windowResultPayload(
+  kind: 'calibration' | 'vowel' | 'phrase',
+  maxDurationMs: number,
+  script: Pick<PhraseScript, 'rel' | 'valid' | 'reason'>,
+): PayloadMap['window.result'] {
+  const valid = script.valid !== false;
+  const durationMs = Math.min(Math.round(maxDurationMs), 8000);
+  const frames = Math.floor(durationMs / 50);
+  return {
+    kind,
+    valid,
+    invalid_reason: valid ? null : (script.reason ?? 'no_voice'),
+    frame_count: frames,
+    expected_frames: frames,
+    coverage: quantizeCoverage(1),
+    active_ms: 2500,
+    longest_active_ms: 2500,
+    segments: 1,
+    onset_ms: 200,
+    p50_active_dbfs: quantizeDb(FLOOR + script.rel - 4),
+    p95_active_dbfs: valid ? quantizeDb(FLOOR + script.rel) : null,
+    peak_dbfs: quantizeDb(FLOOR + script.rel + 2),
+    clipped_frames: 0,
+    nonfinite_frames: 0,
+    duration_ms: durationMs,
+  };
+}
+
+/** A valid precheck aggregate: floor -50 dBFS, stable, unclipped, full coverage, the commanded duration. */
+export function precheckPayload(purpose: 'quiet_check' | 'pre_window'): PayloadMap['precheck.result'] {
+  const frames = purpose === 'quiet_check' ? 100 : 40;
+  return {
+    purpose,
+    valid: true,
+    invalid_reason: null,
+    floor_dbfs: quantizeDb(FLOOR),
+    p20_dbfs: quantizeDb(FLOOR - 1),
+    p80_dbfs: quantizeDb(FLOOR + 1),
+    p95_dbfs: quantizeDb(FLOOR + 3),
+    frame_count: frames,
+    expected_frames: frames,
+    coverage: quantizeCoverage(1),
+    clipped_frames: 0,
+    nonfinite_frames: 0,
+    duration_ms: purpose === 'quiet_check' ? 5000 : 2000,
+  };
+}
+
 export class ScriptedPhone {
   readonly received: TvMessage[] = [];
+  /** Wall-clock time (ms) at which each entry of `received` arrived. */
+  readonly receivedAt: number[] = [];
   private ws: WebSocketRoute | null = null;
   private readonly phone: MessageFactory;
   private readonly relay: MessageFactory;
@@ -157,6 +213,7 @@ export class ScriptedPhone {
 
   private onTv(m: TvMessage): void {
     this.received.push(m);
+    this.receivedAt.push(Date.now());
     const delay = this.opts.answerDelayMs ?? 80;
     switch (m.type) {
       case 'room.create':
@@ -246,25 +303,7 @@ export class ScriptedPhone {
       );
       return;
     }
-    this.sendPhone(
-      'precheck.result',
-      {
-        purpose,
-        valid: true,
-        invalid_reason: null,
-        floor_dbfs: quantizeDb(FLOOR),
-        p20_dbfs: quantizeDb(FLOOR - 1),
-        p80_dbfs: quantizeDb(FLOOR + 1),
-        p95_dbfs: quantizeDb(FLOOR + 3),
-        frame_count: frames,
-        expected_frames: frames,
-        coverage: quantizeCoverage(1),
-        clipped_frames: 0,
-        nonfinite_frames: 0,
-        duration_ms: purpose === 'quiet_check' ? 5000 : 2000,
-      },
-      m,
-    );
+    this.sendPhone('precheck.result', precheckPayload(purpose), m);
   }
 
   private scriptFor(m: TvMessage): PhraseScript {
@@ -290,28 +329,7 @@ export class ScriptedPhone {
 
   private sendWindowResult(m: TvMessage, script: PhraseScript): void {
     const kind = m.payload['kind'] as 'calibration' | 'vowel' | 'phrase';
-    const valid = script.valid !== false;
-    this.sendPhone(
-      'window.result',
-      {
-        kind,
-        valid,
-        invalid_reason: valid ? null : (script.reason ?? 'no_voice'),
-        frame_count: 160,
-        expected_frames: 160,
-        coverage: 1,
-        active_ms: 2500,
-        longest_active_ms: 2500,
-        segments: 1,
-        onset_ms: 200,
-        p50_active_dbfs: quantizeDb(FLOOR + script.rel - 4),
-        p95_active_dbfs: valid ? quantizeDb(FLOOR + script.rel) : null,
-        peak_dbfs: quantizeDb(FLOOR + script.rel + 2),
-        clipped_frames: 0,
-        nonfinite_frames: 0,
-        duration_ms: 8000,
-      },
-      m,
-    );
+    const max = Number(m.payload['max_duration_ms']);
+    this.sendPhone('window.result', windowResultPayload(kind, Number.isFinite(max) ? max : 8000, script), m);
   }
 }

@@ -25,17 +25,18 @@ import {
   activeId,
   clearDispatched,
   contrastRatio,
+  controlVisibility,
   inspect,
   launchChrome,
+  layoutProbe,
   liveLog,
-  overflow,
   preview,
   ringCount,
   runAxe,
   sha256File,
   sha256Text,
 } from './helpers.js';
-import type { AxeViolation, ControlInfo, Overflow, ScreenInfo } from './helpers.js';
+import type { AxeViolation, ControlInfo, ControlVisibility, LayoutProbe, ScreenInfo } from './helpers.js';
 import { CREDENTIAL, ScriptedPhone } from './scripted-phone.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -110,7 +111,18 @@ const report = {
   not_observed: ['VoiceView', 'real D-pad / Vega focus engine', 'real UI-scale setting', 'Vega rendering and latency'],
   environment: {} as Record<string, string>,
   screens: [] as ScreenReport[],
-  scale: [] as { scale: number; screen: string; overflow: Overflow }[],
+  scale: [] as {
+    scale: number;
+    screen: string;
+    scrolls: boolean;
+    overflowPx: number;
+    footerInside: boolean;
+    horizontalOutside: number;
+    horizontalClipped: number;
+    controls: number;
+    reached: number;
+    notFullyVisibleOnFocus: string[];
+  }[],
   store: {} as Record<string, unknown>,
   hashes: {} as Record<string, string>,
 };
@@ -281,6 +293,8 @@ describe('A. every fixture screen: focus, names, footer, meter, keyboard, axe, s
       const viewDisabled = new Set(((views?.view as { actions: { id: string; disabled?: boolean }[] }).actions ?? []).filter((a) => a.disabled === true).map((a) => `action-${a.id}`));
       const disabledFocusable = info.controls.filter((c) => viewDisabled.has(c.testId ?? '') && c.tabIndex >= 0 && c.ariaDisabled !== 'true').map((c) => c.testId ?? '');
 
+      expect(disabledFocusable, `${name}: controls the view marks disabled must not be focusable`).toEqual([]);
+
       // visible focus: exactly one element, the preferred one, with a ring and an enlarged scale
       const enabled = info.controls.filter((c) => !viewDisabled.has(c.testId ?? ''));
       const preferred = info.controls.filter((c) => c.preferred);
@@ -393,7 +407,7 @@ describe('A. every fixture screen: focus, names, footer, meter, keyboard, axe, s
     expect(byImpact['critical'] ?? 0, JSON.stringify(byRule)).toBe(0);
   });
 
-  defect('A11Y-02', 'the confirmation dialogs use role="alertdialog" without an accessible name (axe aria-dialog-name, serious)', () => {
+  it('A11Y-02 (fixed in wave 2): the confirmation dialogs are named (axe aria-dialog-name finds nothing) and the title is rendered once', () => {
     const offenders = report.screens.filter((sc) => sc.axe.some((v) => v.id === 'aria-dialog-name')).map((sc) => sc.name);
     report.store['aria_dialog_name_offenders'] = offenders;
     expect(offenders).toEqual([]);
@@ -415,8 +429,13 @@ describe('B. destructive dialogs open with Cancel focused and trap focus', () =>
       const page = await context.newPage();
       await openFixture(page, name);
       expect(await activeId(page)).toBe('action-cancel_destructive');
-      const view = (await preview(page))?.view as { dialog: { preferred: string; confirm: { destructive?: boolean } } };
+      const view = (await preview(page))?.view as { dialog: { title: string; preferred: string; confirm: { destructive?: boolean } } };
       expect(view.dialog.confirm.destructive).toBe(true);
+      // A11Y-02: the dialog is named by its title and the title is rendered (and read) once, not as screen title plus dialog heading.
+      const dialogInfo = await inspect(page);
+      expect(dialogInfo.bodyText.split(view.dialog.title).length - 1, 'dialog title rendered once').toBe(1);
+      const named = await page.$eval('[data-testid="dialog"]', (e) => ({ role: e.getAttribute('role'), label: e.getAttribute('aria-label'), by: e.getAttribute('aria-labelledby') }));
+      expect(named.label !== null || named.by !== null, 'the alertdialog has an accessible name').toBe(true);
       for (const key of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']) {
         await press(page, key, 60);
         expect(['action-cancel_destructive', 'action-confirm_destructive']).toContain(await activeId(page));
@@ -436,30 +455,129 @@ describe('B. destructive dialogs open with Cancel focused and trap focus', () =>
 
 /* ================================================================== C. scale */
 
-describe('C. UI-scale layout gate (web_preview ?scale=; the shim applies one multiplier to text, size and space)', () => {
+/**
+ * Keyboard walk over the enabled controls of the current screen. After every focus change the control is measured
+ * (after a short settle so focus-driven scrolling can finish): it must be fully on the canvas, fully inside the
+ * visible part of its scroll container and not under the pinned footer.
+ */
+async function tourVisibility(page: Page, enabled: string[]): Promise<{ reached: string[]; notFullyVisible: string[]; ringClipped: string[]; maxSettleMs: number }> {
+  const settle = { max: 0 };
+  const reached = new Set<string>();
+  const bad = new Map<string, string>();
+  const clipped = new Map<string, string>();
+  const measure = async (): Promise<void> => {
+    const id = await activeId(page);
+    if (id === null) return;
+    reached.add(id);
+    // Focus-driven scrolling is asynchronous: poll until the control is fully visible (at most 800 ms) and record how long it took.
+    const started = Date.now();
+    let v: ControlVisibility | null = null;
+    for (;;) {
+      v = await controlVisibility(page, id);
+      if (v !== null && v.insideCanvas && v.insideScrollerVertically && !v.overlapsFooter) break;
+      if (Date.now() - started > 800) break;
+      await page.waitForTimeout(30);
+    }
+    settle.max = Math.max(settle.max, Date.now() - started);
+    // Ruling: the control must be on the canvas, essentially fully visible in its scroll viewport (at least 90 %) and not
+    // under the pinned footer. Anything smaller that is still cut (the focus ring at the edge) is defect A11Y-04.
+    if (v !== null && !(v.insideCanvas && v.visibleFraction >= 0.9 && !v.overlapsFooter)) {
+      bad.set(id, `${v.clippedHorizontallyByScroller ? 'H|' : ''}canvas=${v.insideCanvas} visible=${v.visibleFraction.toFixed(2)} footer=${v.overlapsFooter} left=${Math.round(v.box.left)} right=${Math.round(v.box.right)} top=${Math.round(v.box.top)} bottom=${Math.round(v.box.bottom)}`);
+    } else bad.delete(id);
+    if (v !== null && (v.clippedHorizontallyByScroller || !v.insideScrollerVertically)) {
+      clipped.set(id, `left=${Math.round(v.box.left)} right=${Math.round(v.box.right)} top=${Math.round(v.box.top)} bottom=${Math.round(v.box.bottom)} visible=${v.visibleFraction.toFixed(3)}`);
+    } else clipped.delete(id);
+  };
+  await measure();
+  for (let round = 0; round < 2 && reached.size < enabled.length; round += 1) {
+    for (const dir of ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']) {
+      for (let i = 0; i < 12; i += 1) {
+        const before = await activeId(page);
+        await page.keyboard.press(dir);
+        await page.waitForTimeout(40);
+        const after = await activeId(page);
+        if (after === before) break;
+        await measure();
+      }
+    }
+  }
+  return {
+    reached: [...reached],
+    notFullyVisible: [...bad.entries()].map(([id, why]) => `${id} (${why})`),
+    ringClipped: [...clipped.entries()].map(([id, why]) => `${id} (${why})`),
+    maxSettleMs: settle.max,
+  };
+}
+
+describe('C. UI-scale layout gate at 1.0, 1.25, 1.5 and 2.0 (web_preview ?scale=; ruling: scrolling is acceptable at large scales)', () => {
+  const scrolling: Record<string, string[]> = {};
+  const ringClipped: string[] = [];
   for (const scale of SCALES) {
-    it(`scale ${scale}: no horizontal scroll and nothing beyond the 1920x1080 canvas on any screen`, async () => {
+    it(`scale ${scale}: the footer stays visible, no content is clipped horizontally, every control is fully on the canvas when focused${scale <= 1.25 ? ', and nothing scrolls' : ''}`, async () => {
       const page = await context.newPage();
-      const failing: string[] = [];
+      const failures: string[] = [];
+      const horizontal: string[] = [];
+      let maxSettle = 0;
+      scrolling[String(scale)] = [];
       for (const name of FIXTURES) {
         await openFixture(page, name, scale);
-        const o = await overflow(page);
-        report.scale.push({ scale, screen: name, overflow: o });
-        if (o.horizontalScroll || o.outside.length > 0) failing.push(`${name}(${o.outside.length})`);
-        // The focused control (with its 1.05 scale) must stay on screen.
+        const probe: LayoutProbe = await layoutProbe(page);
         const info = await inspect(page);
-        const focused = info.controls.find((c) => c.focused);
-        if (focused !== undefined) expect(focused.ringVisible).toBe(true);
+        const enabled = info.controls.filter((c) => c.enabled).map((c) => c.testId ?? '');
+        let reached: string[] = [];
+        let notFullyVisible: string[] = [];
+        if (enabled.length > 0) {
+          const t = await tourVisibility(page, enabled);
+          reached = t.reached;
+          notFullyVisible = t.notFullyVisible;
+          maxSettle = Math.max(maxSettle, t.maxSettleMs);
+          for (const c of t.ringClipped) ringClipped.push(`${scale}:${name}:${c}`);
+        }
+        report.scale.push({
+          scale,
+          screen: name,
+          scrolls: probe.scrolls,
+          overflowPx: Math.round(probe.overflowPx),
+          footerInside: probe.footer.inside,
+          horizontalOutside: probe.horizontalOutside.length,
+          horizontalClipped: probe.horizontalClipped.length,
+          controls: enabled.length,
+          reached: reached.length,
+          notFullyVisibleOnFocus: notFullyVisible,
+        });
+        if (probe.scrolls) (scrolling[String(scale)] as string[]).push(`${name}(${Math.round(probe.overflowPx)}px)`);
+        if (!probe.footer.inside) failures.push(`${name}: footer not fully visible`);
+        if (probe.horizontalOutside.length > 0) horizontal.push(`${name}: ${probe.horizontalOutside.length} element(s) beyond the left/right edge, first ${JSON.stringify(probe.horizontalOutside[0])}`);
+        if (probe.horizontalClipped.length > 0) horizontal.push(`${name}: content wider than its viewport, clipped ${JSON.stringify(probe.horizontalClipped[0])}`);
+        if (enabled.length > 0 && reached.length < enabled.length) failures.push(`${name}: controls never reached by keys: ${enabled.filter((id) => !reached.includes(id)).join(', ')}`);
+        for (const nf of notFullyVisible) {
+          // A control cut off at the side belongs to the horizontal-clipping gate (open defect A11Y-05 at 2.0).
+          if (nf.includes('(H|')) horizontal.push(`${name}: control cut off at the side when focused: ${nf.replace('H|', '')}`);
+          else failures.push(`${name}: not fully visible when focused: ${nf}`);
+        }
+        if (scale <= 1.25) {
+          if (probe.scrolls) failures.push(`${name}: scrolls by ${Math.round(probe.overflowPx)} px`);
+          if (probe.verticalOutsideFixed.length > 0) failures.push(`${name}: fixed element beyond the top/bottom edge ${JSON.stringify(probe.verticalOutsideFixed[0])}`);
+        }
       }
       await page.close();
-      report.store[`scale_${scale}_failing_screens`] = failing;
-      // Nothing may overflow at the default scale or at 1.25. Larger scales are recorded (the shim is not Vega's multiplier).
-      if (scale <= 1.25) expect(failing).toEqual([]);
+      report.store[`scale_${scale}_failures`] = failures;
+      report.store[`scale_${scale}_horizontal_clipping`] = horizontal;
+      report.store[`scale_${scale}_screens_that_scroll`] = scrolling[String(scale)] ?? [];
+      report.store[`scale_${scale}_max_focus_settle_ms`] = maxSettle;
+      expect(failures).toEqual([]);
+      // Horizontal clipping is a hard gate up to 1.5; at 2.0 it is the open defect A11Y-05 below.
+      if (scale <= 1.5) expect(horizontal).toEqual([]);
     });
   }
 
-  defect('A11Y-03', 'at UI scale 1.5 content and the footer extend beyond the 1920x1080 canvas (Home: Pair phone control and the footer are off screen)', () => {
-    expect(report.store['scale_1.5_failing_screens']).toEqual([]);
+  defect('A11Y-05', 'at UI scale 2.0 content is clipped horizontally: the number-matching choices on join_confirm and the timer plus meter row on calibration are wider than the screen', () => {
+    expect(report.store['scale_2_horizontal_clipping']).toEqual([]);
+  });
+
+  defect('A11Y-04', 'the screen scroller clips the focus ring (the 6 px ring and the 1.05 scale grow beyond the control box): the left edge of left-aligned controls is cut by about 8 px on every screen at every scale, and at 2.0 the bottom of the last control by a few px', () => {
+    report.store['ring_clipped_by_scroller'] = ringClipped;
+    expect(ringClipped).toEqual([]);
   });
 });
 
@@ -481,8 +599,8 @@ async function pickMatchingChoice(page: Page, digits: string, wrong = false): Pr
   return (target as { id: string }).id;
 }
 
-/** Store-mode groups drive the real session store through the number-matching join UI, which the tv rework delivers. */
-const storeDescribe = process.env['TV_UI_REV2'] === '1' ? describe : describe.skip;
+/** Store-mode groups drive the real session store through the number-matching join UI (the tv rework merged at 7806229). TV_UI_REV2=0 skips them against an older UI. */
+const storeDescribe = process.env['TV_UI_REV2'] === '0' ? describe.skip : describe;
 
 
 storeDescribe('D. store mode: real session store, scripted phone, keyboard only', () => {
@@ -625,9 +743,17 @@ storeDescribe('D. store mode: real session store, scripted phone, keyboard only'
     expect(info.liveRegion.ariaLive).toBe('off');
     expect(info.liveRegion.text).toBe('');
     expect(info.controls.map((c) => c.testId)).toContain('action-cancel');
+    // A8-01: while a window is open the status chips and labels are visual only (hidden from the accessibility tree, no label).
+    const chipsDuring = await page.$$eval('[data-testid="status-mic"], [data-testid="status-link"], [data-testid="labels"] > *, [data-testid="banner"]', (els) =>
+      els.map((e) => ({ id: e.getAttribute('data-testid') ?? e.tagName, hidden: e.getAttribute('aria-hidden'), label: e.getAttribute('aria-label') })),
+    );
+    expect(chipsDuring.length).toBeGreaterThanOrEqual(3);
+    for (const c of chipsDuring) expect(c, 'visual-only while capturing').toMatchObject({ hidden: 'true', label: null });
+    storeShots['chips_visual_only_while_capturing'] = chipsDuring.length;
     await press(page, 'Escape');
     await wait('reveal');
     expect(await text()).toContain('Not scored');
+    expect(await page.$eval('[data-testid="status-mic"]', (e) => e.getAttribute('aria-label'))).toMatch(/Phone microphone:/); // labelled again once the window is closed
     expect(phone.count('window.cancel')).toBe(1);
     expect(phone.last('window.cancel')?.payload['reason']).toBe('user_cancel');
     expect(await activeId(page)).toBe('action-try_again');
@@ -697,7 +823,7 @@ storeDescribe('D. store mode: real session store, scripted phone, keyboard only'
     // The live-region log never carried a verdict between the start of phrase 3 and its rating prompt.
     const log = await liveLog(page);
     const p3Start = log.findIndex((e) => e.text.includes('Phrase 3 of 3'));
-    const prompt = log.findIndex((e) => e.text.includes('How loud did that feel'));
+    const prompt = log.findIndex((e) => e.text.includes('How did that feel'));
     expect(p3Start).toBeGreaterThan(-1);
     expect(prompt).toBeGreaterThan(p3Start);
     for (const e of log.slice(p3Start, prompt + 1)) {
@@ -712,11 +838,11 @@ storeDescribe('D. store mode: real session store, scripted phone, keyboard only'
     await press(page, 'Enter'); // See summary
     await wait('summary');
     const summary = await text();
-    expect(summary).toContain('Phrases completed: 3 of 3 attempted');
-    expect(summary).toContain('Attempts not scored: 1');
-    expect(summary).toContain('cancelled: 1');
-    expect(summary).toContain('blind checks: 1 of 1');
-    expect(summary).toContain('other phrases: 1 of 2');
+    expect(summary).toContain('Phrases completed: 3 of 3 attempted, 0 skipped');
+    expect(summary).toContain('Attempts not scored: 1 (cancelled 1)');
+    expect(summary).toMatch(/blind checks: 1 of 1/);
+    expect(summary).toMatch(/other phrases: 1 of 2/);
+    expect(summary).not.toMatch(/far side/i); // ADR-0001 section 8 wording (OBS-A4 resolved)
     expect((await inspect(page)).footer).toBe(FOOTER_TEXT);
     await shot(page, 'store_summary');
     expect(phone.count('session.end')).toBe(1);
@@ -734,7 +860,7 @@ storeDescribe('D. store mode: real session store, scripted phone, keyboard only'
     await page.close();
   });
 
-  defect('A11Y-01', 'Settings: controls the session view marks disabled (Reset band, Unpair outside a session) stay keyboard-focusable and expose no aria-disabled in the preview', async () => {
+  it('A11Y-01 (fixed in wave 2): Settings: controls the session view marks disabled (Reset band, Unpair outside a session) are not focusable and expose aria-disabled', async () => {
     const page = await context.newPage();
     await page.goto(`${PREVIEW_URL}/?mode=store`);
     await page.waitForSelector('[data-testid="screen-onboarding"]');
@@ -768,8 +894,8 @@ async function waitUntil(cond: () => boolean | Promise<boolean>, timeoutMs = 15_
 }
 
 /** Onboarding -> Start session -> pair with the scripted phone -> quiet-check ready screen, keyboard only. */
-async function pairToQuiet(page: Page, phone: ScriptedPhone): Promise<void> {
-  await page.goto(`${PREVIEW_URL}/?mode=store`);
+async function pairToQuiet(page: Page, phone: ScriptedPhone, query = ''): Promise<void> {
+  await page.goto(`${PREVIEW_URL}/?mode=store${query}`);
   await page.waitForSelector('[data-testid="screen-onboarding"]');
   await press(page, 'Enter');
   await page.waitForSelector('[data-testid="screen-home"]');
@@ -817,6 +943,34 @@ storeDescribe('D2. protocol revision 4 and contract revision 2 in the real UI (s
     await page.waitForSelector('[data-testid="screen-quiet_check"]', { timeout: 15_000 });
     expect(phone.last('join.confirm')?.payload['decision']).toBe('accept');
     await page.close();
+  });
+
+  it('A8-02: with the screen reader on (?screenReader=1) the ready screens carry the spoken script and the quiet lead is 3 s; off, it is 1.5 s', async () => {
+    const lead = async (query: string): Promise<{ ms: number; announcement: string }> => {
+      const page = await context.newPage();
+      const phone = new ScriptedPhone(page, {});
+      await phone.install();
+      await pairToQuiet(page, phone, query);
+      await waitUntil(async () => (await micChip(page)).includes('Microphone open'), 10_000, 'mic open chip');
+      const announcement = (await inspect(page)).liveRegion.text;
+      const before = phone.count('precheck.start');
+      const t0 = Date.now();
+      await press(page, 'Enter', 20);
+      await waitUntil(() => phone.count('precheck.start') > before, 10_000, 'precheck.start');
+      const idx = phone.received.map((m) => m.type).lastIndexOf('precheck.start');
+      const ms = (phone.receivedAt[idx] ?? Date.now()) - t0;
+      await page.close();
+      return { ms, announcement };
+    };
+    const on = await lead('&screenReader=1');
+    expect(on.announcement).toContain('After this message, stay quiet for the whole check. Measurement lasts five seconds.');
+    expect(on.ms).toBeGreaterThanOrEqual(2900);
+    expect(on.ms).toBeLessThan(4500);
+    const off = await lead('');
+    expect(off.announcement).not.toContain('After this message');
+    expect(off.ms).toBeGreaterThanOrEqual(1400);
+    expect(off.ms).toBeLessThan(2600);
+    report.store['screen_reader_lead_ms'] = { on: on.ms, off: off.ms };
   });
 
   it('silent_input: the quiet check fails with Try again focused, the footer stays, and a good check recovers', async () => {
