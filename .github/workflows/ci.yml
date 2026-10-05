@@ -1,0 +1,133 @@
+# Portable CI for "Across the Room: the far-side check" (Linux only).
+#
+# What this workflow covers (everything runs on a stock ubuntu-24.04 runner, nothing is fetched at test time
+# except npm packages through `npm ci`):
+#   - workspace:     npm ci, build, typecheck and test of the root npm workspaces (Node 22 and 24), in that order.
+#   - tv:            apps/tv typecheck (tsc) and jest under Node 22 (apps/tv is a standalone project, not a root workspace).
+#   - browser-e2e:   the two local end-to-end suites (T12, T15) and the reviewer's extra checks, driven through
+#                    playwright-core with the Google Chrome that ships on the runner image. NON-BLOCKING, see the job.
+#
+# What this workflow does NOT cover, and does not claim to:
+#   - There is NO Vega, Kepler or VVD check here. `react-native build-vega`, the Vega Virtual Device and the native
+#     checks need a supported host with the Vega SDK installed (blocker B-001). Evidence from this workflow is
+#     class `automated`. It is never `real_VVD` and never `real_phone`.
+#   - `npm run bundle:js` in apps/tv (Metro bundle for the kepler platform) is left out. It produces a JavaScript bundle,
+#     not a Vega package; docs/evaluation/T18_CLEAN_BUILD.md records it as a local run only.
+#   - The accessibility web-preview gate (`npm run test:a11y -w @atr/tests`) is EXCLUDED: tests/a11y/helpers.ts hard-codes
+#     the macOS Chrome path and ignores ATR_CHROME (defect QA-T18-01 in docs/evaluation/T18_CLEAN_BUILD.md). Add it to
+#     browser-e2e after that file honours ATR_CHROME (one line, patch in that document).
+#
+# Ordering facts established in a clean clone (docs/evaluation/T18_CLEAN_BUILD.md, probes 21 to 34 and 52):
+#   - root `typecheck` and `test` fail unless `npm run build` ran first (workspace packages resolve each other through dist);
+#   - the e2e suites also need that build before vitest starts (the test files import @atr/protocol statically);
+#   - apps/tv needs neither a root install nor a root build.
+#
+# How this file was checked (2026-10-05), and what that does not show:
+#   - It parses with PyYAML (an earlier draft had an unquoted ": " in a step name; that was found and fixed).
+#   - actionlint (npm package "actionlint" 2.0.6, the wasm build) reports exactly three findings, all "label ubuntu-24.04 is
+#     unknown": that build's runner-label list predates 24.04. A copy of this file with ubuntu-22.04 lints with 0 findings.
+#     The label itself exists: the actions/runner-images Ubuntu 2404 readme (image 20260927.320.1) lists Google Chrome
+#     154.0.8037.57, OpenSSL 3.0.13 and Node 22.23.3, and announces the Ubuntu 22 images' deprecation. That readme does not
+#     state the Chrome install path, which is why browser-e2e starts by checking ATR_CHROME is executable.
+#   - It has NOT been pushed or run on GitHub, and the browser-e2e job has not been run on Linux at all.
+name: ci
+
+on:
+  push:
+    branches: [main, 'build/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NPM_CONFIG_FUND: 'false'
+  NPM_CONFIG_AUDIT: 'false'
+
+jobs:
+  workspace:
+    name: workspace (Node ${{ matrix.node }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Root engines is ">=22"; the root .nvmrc pins 24 for the backend and shared packages (ADR-0007).
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install (lockfile only)
+        run: npm ci
+      - name: Build all workspaces
+        run: npm run build
+      - name: Typecheck all workspaces
+        run: npm run typecheck
+      - name: Test all workspaces
+        # services/relay tests start a real HTTPS and WSS server with a throwaway CA and need openssl on PATH
+        # (preinstalled on the runner image; that relay test group skips itself if openssl is missing).
+        run: npm test
+
+  tv:
+    name: apps/tv typecheck and jest (Node 22)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/tv
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: apps/tv/.nvmrc
+          cache: npm
+          cache-dependency-path: apps/tv/package-lock.json
+      - name: Install apps/tv (lockfile only, no install scripts)
+        run: npm ci --ignore-scripts
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Jest
+        run: npm test -- --ci
+
+  browser-e2e:
+    name: browser e2e (Linux Chrome, non-blocking)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: [workspace]
+    # NOT verified on Linux by the author: all evidence for these suites is from macOS (Chrome 154, Node 24). Treat a
+    # failure here as information until the first green Linux run, then delete `continue-on-error` to make it required.
+    # Known local flake rate of the T15 suite at the time of writing: 2 of 9 full runs (docs/evaluation/QA_REVIEW_T12_T15.md).
+    continue-on-error: true
+    env:
+      # playwright-core never downloads a browser. tests/src/e2e-env.ts launches the executable named by ATR_CHROME
+      # (its default is the macOS path), so nothing is fetched at test time.
+      ATR_CHROME: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Show the browser the suites will launch
+        run: |
+          test -x "$ATR_CHROME"
+          "$ATR_CHROME" --version
+      - name: Install (lockfile only)
+        run: npm ci
+      - name: Build first, because the test files import the built packages statically
+        run: npm run build
+      - name: Local end-to-end suites (T12 journey and T15 fault recovery)
+        run: npm run test:e2e -w @atr/tests
+      - name: Independent review end-to-end checks
+        working-directory: tests
+        run: npx vitest run --config review-e2e/vitest.config.ts

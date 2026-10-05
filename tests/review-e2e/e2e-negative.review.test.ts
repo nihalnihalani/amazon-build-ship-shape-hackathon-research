@@ -13,6 +13,9 @@
  * Evidence class: automated (synthetic audio in desktop Chrome, headless TV). Not real_phone, not real_VVD.
  *
  * Run (from tests/):  npx vitest run --config review-e2e/vitest.config.ts
+ * Needs `npm run build` at the repository root first (the imports below resolve built packages), and Google Chrome
+ * (ATR_CHROME overrides the macOS default path). Switches: QA_STRICT=1 makes the QA-E2E-01 defect repro fail;
+ * ATR_QA_LOG=<file> appends the whole relay log when a check fails.
  */
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
