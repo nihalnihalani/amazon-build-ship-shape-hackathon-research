@@ -53,7 +53,7 @@ scripts/dev-certs/make-dev-certs.sh 192.168.1.23      # plus your Mac's LAN IP, 
 scripts/dev-certs/make-dev-certs.sh --out /some/dir macbook.local
 ```
 
-Verified (`--out` a scratch directory, argument `192.168.1.23`): exit 0; created `ca.crt`, `ca.key`, `server.crt`, `server.key`; the server certificate is valid 365 days with subject alternative names `localhost`, `127.0.0.1`, `::1` and `192.168.1.23`; the CA is name-constrained (critical) to `localhost`, `.local`, `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16`, so a leaked `ca.key` cannot impersonate public sites. It prints the CA's SHA-256 fingerprint to compare on the phone. `certs/` is git-ignored. Re-running keeps the CA and re-issues only the server certificate. **Never commit or share `ca.key` or `server.key`.** The script installs and trusts nothing and uploads nothing.
+Verified (`--out` a scratch directory, argument `192.168.1.23`): exit 0; created `ca.crt`, `ca.key`, `server.crt`, `server.key`; the server certificate is valid 365 days with subject alternative names `localhost`, `127.0.0.1`, `::1` and `192.168.1.23`; the CA is name-constrained (critical) to `localhost`, `.local`, `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16`, so a leaked `ca.key` cannot impersonate public sites. The CA itself is currently valid for 3650 days (checked in the script); the T16 gate (N-06) decided on 90 days, which had not landed at `ac556df`, so a phone that trusts it keeps trusting it for ten years until then. It prints the CA's SHA-256 fingerprint to compare on the phone. `certs/` is git-ignored. Re-running keeps the CA and re-issues only the server certificate. **Never commit or share `ca.key` or `server.key`.** The script installs and trusts nothing and uploads nothing.
 
 Important: the certificate must contain the address you will actually use. The relay prints the LAN addresses it detected; pass that address to the script.
 
@@ -65,7 +65,7 @@ scripts/dev-certs/make-dev-certs.sh 192.168.1.23
 npm run start:local -w @atr/relay        # builds @atr/protocol and the relay, then listens on https://0.0.0.0:8443
 ```
 
-Verified (with `ATR_PORT=18443` and the scratch certificates through `ATR_TLS_CERT` and `ATR_TLS_KEY`): the relay printed `listening on https://0.0.0.0:18443 (phone page at /, WebSocket at /ws, health at /healthz)`, `static files from .../apps/phone/dist` and the allowed browser origins (`https://localhost:PORT`, `https://127.0.0.1:PORT` and each detected LAN IPv4). `curl --cacert certs/ca.crt https://localhost:18443/healthz` answered `{"status":"ok"}`; `GET /` answered 200 `text/html` with `Content-Security-Policy` (`default-src 'self'; connect-src 'self' wss:; script-src 'self'; ...`), `Permissions-Policy: microphone=(self), camera=(), geolocation=()`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` and `Strict-Transport-Security: max-age=300`. State is in memory: restarting the relay empties it and the TV and phone pair again.
+Verified (with `ATR_PORT=18443` and the scratch certificates through `ATR_TLS_CERT` and `ATR_TLS_KEY`): the relay printed `listening on https://0.0.0.0:18443 (phone page at /, WebSocket at /ws, health at /healthz)`, `static files from .../apps/phone/dist` and the allowed browser origins (`https://localhost:PORT`, `https://127.0.0.1:PORT` and each detected LAN IPv4). `curl --cacert certs/ca.crt https://localhost:18443/healthz` answered `{"status":"ok"}`; `GET /` answered 200 `text/html` with `Content-Security-Policy` (`default-src 'self'; connect-src 'self' wss:; script-src 'self'; ...`), `Permissions-Policy: microphone=(self), camera=(), geolocation=()`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` and `Strict-Transport-Security: max-age=300`. (T16 N-02: the `connect-src 'self' wss:` and `worker-src 'self' blob:` parts are decided to narrow to the configured relay origin and drop `blob:`; not landed at `ac556df`.) State is in memory: restarting the relay empties it and the TV and phone pair again.
 
 The relay refuses unsafe starts (all verified, exit 2 with a message):
 
@@ -129,7 +129,7 @@ Verified: `npx vite` (Node 22.23.2, vite 8.3.2) was ready in 169 ms and served `
 | Phone page, test build | `npm run build:test -w @atr/phone` | `apps/phone/dist-test`: synthetic test audio, a persistent test banner, `window.__atrTestAudio` hooks, and a `?relay=` override. Used by the end-to-end suites. Never deploy it. |
 | Lambda bundle | `npm run bundle:lambda -w @atr/relay` | `services/relay/dist-lambda/relay.mjs`, `deadline.mjs`, `MANIFEST.txt` with hashes. Verified (exit 0): 540 inputs, 1,993,168 and 1,993,182 bytes. Not deployed. |
 | DSP fixtures | `python3 fixtures/dsp/tools/derive_fixtures.py` | Regenerates `fixtures/dsp/*.json` only if an independent Python oracle reproduces every hand-derived value (about 20 s). Arithmetic fixtures, not measurements. |
-| T04 freeze hash | `python3 fixtures/dsp/tools/freeze_hash.py` | Prints the frozen protocol and criteria hashes; writes nothing. At `63af0ae` they match evidence EV-0030. |
+| T04 freeze hash | `python3 fixtures/dsp/tools/freeze_hash.py` | Prints the protocol and criteria hashes; writes nothing. At `63af0ae` and `da018d7` they match evidence EV-0030 (revision 2, **rejected** by the T16 gate; revision 3 will have new hashes). |
 
 ## 7. Optional: infrastructure lint
 

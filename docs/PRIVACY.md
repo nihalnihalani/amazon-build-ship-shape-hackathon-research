@@ -11,7 +11,7 @@ Product framing: **Not a medical device. Does not diagnose or treat any conditio
 | Is audio uploaded or sent anywhere? | No. Raw samples exist in the phone's audio thread and one 50 ms frame, are reduced to numbers, and are discarded. | `@atr/phone-mic-meter` has no network, storage or recorder code (scan test); the protocol rejects payloads with audio-like keys or long strings or arrays (`audio_rejected`); the phone bundle is scanned for `MediaRecorder` and storage APIs |
 | Is audio recorded or saved? | No. There is no `MediaRecorder`, no waveform, no blob, no saved clip. | Same tests; phone e2e checks that cookies, `localStorage`, `sessionStorage`, IndexedDB and the Cache API are empty |
 | Is there speech recognition or an LLM? | No. No model decides any result; the verdict is arithmetic on the TV. | By construction; no such dependency exists |
-| Does any analytics, advertising or third-party service receive data? | No third-party origin is contacted. The phone page's Content-Security-Policy allows only its own origin and the relay's WSS. | CSP in `apps/phone/index.html`; phone smoke test "no network request left this machine" (desktop Chrome, scripted) |
+| Does any analytics, advertising or third-party service receive data? | No third-party origin is contacted by the code: the phone smoke test saw no request leave the machine, and the T16 gate audited every frame and request of one full journey (no third-party request, no browser API that can carry audio). **The page's Content-Security-Policy is looser than that:** it currently allows its own origin plus any `wss:` host and a `blob:` worker (T16 finding N-02); the decided fix is `connect-src 'self'` plus the configured relay origin only, not landed at `ac556df`. | CSP in `apps/phone/index.html` and `services/relay/src/local/static.ts`; phone smoke test; `tests/security` (e) |
 | Is the relay end-to-end encrypted? | **No.** TLS protects each client-to-relay link only. The relay holds plaintext payloads in memory to validate and forward them. | ADR-0002 forbids the claim; `docs/operations/SECURITY-NOTES.md` section 3 |
 | Are accounts, cookies or cross-device identifiers used? | No accounts. The phone sets no cookies and stores nothing. | Phone e2e and unit tests |
 
@@ -33,6 +33,8 @@ Each row is a protocol message (`docs/PROTOCOL.md` section 3.3), sent over WSS t
 
 Never sent: audio, PCM, waveforms, recordings, per-frame spectra, verdicts, ratings, results or history. The phone also never receives the verdict, the meter, or which phrase positions are blind (`QA-05`): it sees only a neutral stage name and an explicit `listener.open`.
 
+**Measurement budget (T16 N-12).** Level frames and voice-activity timing leave the phone only while a window the TV started is open and the page shows the Measuring badge. At `ac556df` the phone has no per-session budget, cooldown or idle limit, so a paired TV (or a hostile relay holding a stolen TV credential) could chain windows for as long as the page stays open and visible; in the gate's test a raw TV had 15 consecutive windows applied. The decided fix is a budget of 5 minutes of cumulative capture per session, at least 1 s between windows and a microphone that turns itself off after 10 minutes without a TV command, with a visible message (routed, not landed).
+
 ## 3. Exactly what leaves the TV
 
 | Category | Fields | When | Destination |
@@ -50,16 +52,16 @@ The TV does **not** send results, verdicts, speaker ratings, history, phrase tex
 
 > Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.
 
-**TV, Settings > About** (`packages/session-core/src/copy.ts`, shown by the `about` view; **fix in progress (tv)**: the About screen in `apps/tv/src/screens/AboutScreen.tsx` still also renders its own storage and licence lines from `apps/tv/src/copy.ts`, which is routed to the tv owner and had not landed at `cfa5158`):
+**TV, Settings > About** (`packages/session-core/src/copy.ts`, rendered by the `about` view; since the tv fix `99da796` (merged) the About screen in `apps/tv/src/screens/AboutScreen.tsx` renders that body as the **single source** of the privacy and storage disclosure and adds only a one-line licence notice and, if the body has none, the version; checked by reading the diff and by the new `apps/tv/src/__tests__/about.test.tsx`; not seen on a Vega device):
 
 - "Practice data is stored unencrypted on this TV. Session summaries keep positions and counts only, never phrase text, cue words or phone names, for 8 days. Your phrase bank stays on this TV until you delete it in Settings."
 - "This TV tells the relay and your phone which practice step you are on and the room's background level. It does not send your results, ratings or history."
 - "The relay keeps short-lived abuse-prevention counters (counts only) keyed by a keyed hash of the connection's network address. The key changes at least daily and the counters expire within an hour."
-- "Practice data stays on this TV, stored unencrypted. Delete it in Settings. Sound is never recorded or sent by this TV." (the `apps/tv` copy: the second source, **fix in progress (tv)**; until it lands the About screen shows both this line and the session-core storage line above)
+- "Licences: MIT for this app, qrcode-generator, React Native and React; the Vega packages are used under the Amazon Vega SDK licence terms." (the one line the `apps/tv` copy adds; the earlier second storage sentence was removed by the fix. The wording about the Vega packages is shorthand: the precise licence is Amazon's Program Materials License Agreement, see [release/LICENSES.md](release/LICENSES.md).)
 
 **TV footer, every screen:** "Not a medical device. Does not diagnose or treat any condition."
 
-**Resolved in session-core (merged at `cfa5158`, commit `0061d83`).** The TV's onboarding and pairing screens previously showed the ADR-0002 revision 1 sentence, which omits voice-activity timing, phone status and the device name. `PRIVACY_LINE` in `packages/session-core/src/copy.ts` is now the exact amended A2-01 sentence, the same one the phone shows, and `packages/session-core/test/privacy-copy.test.ts` checks that it matches the A2-01 row of `docs/adr/AMENDMENTS-REV2.md`, that onboarding and pairing each show it once, and that the revision 1 wording appears nowhere in the TV copy table. **Still open: the About screen's second copy source (fix in progress, tv)**, described above.
+**Resolved in session-core (merged at `cfa5158`, commit `0061d83`).** The TV's onboarding and pairing screens previously showed the ADR-0002 revision 1 sentence, which omits voice-activity timing, phone status and the device name. `PRIVACY_LINE` in `packages/session-core/src/copy.ts` is now the exact amended A2-01 sentence, the same one the phone shows, and `packages/session-core/test/privacy-copy.test.ts` checks that it matches the A2-01 row of `docs/adr/AMENDMENTS-REV2.md`, that onboarding and pairing each show it once, and that the revision 1 wording appears nowhere in the TV copy table. The About screen's second copy source, which had repeated the storage sentence, was removed by the tv fix `99da796` (merged at `ac556df`), so the three screens that carry a privacy statement now take it from session-core only.
 
 **Claims that must not be made** (ADR-0002): "end-to-end encrypted", "no data leaves the household", "only numbers", "relay never inspects payloads". Also not allowed anywhere: dB SPL, intelligibility, comprehension, hearing or clinical claims, and any efficacy claim.
 
@@ -117,7 +119,7 @@ Credentials, pairing codes, levels and audio are **never** stored (memory only).
 | Reset today's band | Clears the current session's floor and band only | session-core tests |
 | Unpair | Revokes the phone's credential at the relay | relay and session-core tests |
 | Relay room | `room.close` revokes everything; otherwise the room expires logically after 12 hours (or 30 minutes with no connection); DynamoDB TTL removes items later | relay tests on the memory store and a strict DynamoDB model; **not tested on real DynamoDB** (B-003) |
-| Phone | Nothing is stored. Closing or reloading the page discards the credential and pairing. On session end, unpair, background or expiry the page stops all tracks, closes its audio context and releases the wake lock. | phone unit tests and real-Chrome tests with synthetic audio; a real phone's capture indicator is **not verified** (B-002) |
+| Phone | Nothing is stored. Closing or reloading the page discards the credential and pairing. On session end, unpair, background or expiry the page stops all tracks, closes its audio context and releases the wake lock. | phone unit tests and real-Chrome tests with synthetic audio; a real phone's capture indicator is **not verified** (B-002). **Residual (T16 N-07):** after the TV deletes its data and closes the room the phone page leaves the paired view but still holds the household phrases in memory until the tab is closed; the decided fix clears phrase state with the credential (routed, not landed at `ac556df`) |
 | Logs | Contain no personal content by design and age out after at most 14 days on AWS. There is no per-person log deletion tool. | redaction tests |
 
 ## 9. What is verified and what is not
@@ -129,12 +131,13 @@ Credentials, pairing codes, levels and audio are **never** stored (memory only).
 | Relay logs and storage contain no bodies, phrases, credentials, codes, labels or addresses | automated (memory store, strict DynamoDB model, real local HTTPS/WSS server) | `@atr/relay` tests (1,113 with cfn-lint) |
 | IaC keeps tracing, access logging, PITR and X-Ray off and log retention at 14 days | automated (template assertions, cfn-lint) | `services/relay/test/infra.test.ts` |
 | TV copy, deletion flow, retention | automated (jest with mocks; session-core fakes) | `apps/tv` jest (639), session-core (371) |
+| Every frame and request of one full journey audited: fields, no audio or base64, quantised values, levels only inside TV-started windows, no third-party request; relay logs closed-vocabulary with no secrets, codes, phrases, labels or addresses; no browser storage; hidden-attempt leak differential | automated (local relay as a child process, desktop Chrome, headless TV core, TV web preview) | T16 gate, `tests/security` (113 tests), `docs/security/T16_GATE.md`: pass with residuals |
 | Real network capture from a physical phone showing only the documented messages | **pending** | B-002 |
 | Hosted logs contain no content; platform-level records | **pending** | B-003 |
 | AsyncStorage contents and deletion on a real Vega device | **pending** | B-001, B-004 |
 
 ## 10. Decisions and items for the owner
 
-1. ~~Align the TV's onboarding and pairing sentence with the amended phone sentence~~ done in session-core. Remaining: confirm that the tv owner's removal of the About screen's second copy source has landed, then update section 4.
+1. ~~Align the TV's onboarding and pairing sentence with the amended phone sentence~~ done in session-core (`0061d83`); ~~remove the About screen's second copy source~~ done (`99da796`). Nothing remains here except the on-device check that the About screen reads correctly on Vega (T17, B-001).
 2. Provide a real privacy contact and decide whether a public privacy notice is required for any store or public launch. This document is not one.
 3. Before any hosted use: deploy, then run the log-content check in section 6 and update this document and the README with the result.
