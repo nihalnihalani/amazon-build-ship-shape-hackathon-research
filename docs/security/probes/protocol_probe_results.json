@@ -1,11 +1,9 @@
 {
  "node": "v25.2.1",
- "protocol_dist": "/private/tmp/claude-501/-Users-nihalnihalani-Desktop-Github-amazon-devpost-hackathon/2e2f0430-d221-42c2-85f0-57d59e5f4d5b/scratchpad/atr-probe/dist/index.js",
+ "protocol_dist": "/private/tmp/claude-501/-Users-nihalnihalani-Desktop-Github-amazon-devpost-hackathon/2e2f0430-d221-42c2-85f0-57d59e5f4d5b/scratchpad/atr-probe/dist4/index.js",
  "counts": {
-  "PASS": 150,
-  "GAP": 55,
-  "FAIL": 1,
-  "INFO": 22
+  "PASS": 200,
+  "INFO": 36
  },
  "rows": [
   {
@@ -121,7 +119,7 @@
    "klass": "prototype pollution",
    "input": "validateMessageObject(Object.create({polluted:1}) with envelope fields)",
    "expect": "bad_schema",
-   "observed": "bad_schema: message is not an object",
+   "observed": "bad_schema: message is not plain data",
    "status": "PASS",
    "note": ""
   },
@@ -149,8 +147,8 @@
    "input": "\"type\" appears twice (\"ping\" then \"unpair\")",
    "expect": "ok",
    "observed": "ok(unpair)",
-   "status": "GAP",
-   "note": "last wins: parsed type=unpair; a first-wins component (log scrubber, proxy) would see \"ping\". Forward a canonical re-serialization, not the raw frame."
+   "status": "INFO",
+   "note": "validator: last wins (type=unpair); the relay forwards the canonical re-serialization (PK-04), verified end to end in tests/security (SEC-V03)"
   },
   {
    "id": "C02",
@@ -158,7 +156,7 @@
    "input": "\"message_id\" twice (B..., then A...)",
    "expect": "ok",
    "observed": "ok(ping)",
-   "status": "GAP",
+   "status": "INFO",
    "note": "clean copy carries m_AAAAAAAAAAAAAAAA; raw frame still contains both ids"
   },
   {
@@ -167,7 +165,7 @@
    "input": "cue payload \"text\" twice",
    "expect": "ok",
    "observed": "ok(cue)",
-   "status": "GAP",
+   "status": "INFO",
    "note": "kept: Volume"
   },
   {
@@ -176,7 +174,7 @@
    "input": "\"payload\" twice (first invalid, last valid)",
    "expect": "ok",
    "observed": "ok(ping)",
-   "status": "GAP",
+   "status": "INFO",
    "note": "first payload is never validated; only the last survives parsing"
   },
   {
@@ -193,7 +191,7 @@
    "klass": "deep nesting",
    "input": "payload = 3900 nested arrays (8040 bytes raw, under the cap)",
    "expect": "bad_schema",
-   "observed": "bad_schema: payload nested too deeply",
+   "observed": "bad_schema: message nested too deeply",
    "status": "PASS",
    "note": ""
   },
@@ -211,16 +209,16 @@
    "klass": "deep nesting",
    "input": "validateMessageObject, payload 200000 levels deep (programmatic)",
    "expect": "bad_schema|payload_too_large",
-   "observed": "payload_too_large: message exceeds the size limit",
+   "observed": "bad_schema: message nested too deeply",
    "status": "PASS",
-   "note": "no crash; 9.5 ms"
+   "note": "no crash; 0.1 ms"
   },
   {
    "id": "D05",
    "klass": "deep nesting",
    "input": "validateMessageObject, circular payload",
    "expect": "bad_schema",
-   "observed": "bad_schema: message is not serializable",
+   "observed": "bad_schema: message nested too deeply",
    "status": "PASS",
    "note": ""
   },
@@ -229,7 +227,7 @@
    "klass": "deep nesting",
    "input": "validateMessageObject, BigInt in payload",
    "expect": "bad_schema",
-   "observed": "bad_schema: message is not serializable",
+   "observed": "bad_schema: payload: unknown field",
    "status": "PASS",
    "note": ""
   },
@@ -246,10 +244,10 @@
    "id": "D08",
    "klass": "TOCTOU",
    "input": "stateful Proxy whose 4th read of \"payload\" (the clone step) returns {injected:\"unvalidated\"}",
-   "expect": "bad_schema",
-   "observed": "ok(ping)",
-   "status": "FAIL",
-   "note": "clean copy contains unvalidated field: true; validate a clone made once, not the original object"
+   "expect": "no_leak",
+   "observed": "no_leak (ok(ping); reads=0)",
+   "status": "PASS",
+   "note": "PK-01: rev 4 snapshots the input once and validates and returns the snapshot"
   },
   {
    "id": "E01",
@@ -290,20 +288,20 @@
   {
    "id": "E05",
    "klass": "negative zero",
-   "input": "sequence -0 (raw)",
-   "expect": "ok",
-   "observed": "ok(ping)",
-   "status": "GAP",
-   "note": "Object.is(sequence,-0)=true; Intl.NumberFormat renders \"-0\"; normalise to +0 in the clean copy"
+   "input": "sequence -0 (raw): clean copy must not contain -0",
+   "expect": "normalised",
+   "observed": "normalised",
+   "status": "PASS",
+   "note": "PK-05"
   },
   {
    "id": "E06",
    "klass": "negative zero",
-   "input": "level.dbfs -0",
-   "expect": "ok",
-   "observed": "ok(level)",
-   "status": "GAP",
-   "note": "Object.is(dbfs,-0)=true; (-0.04).toFixed(1) would print -0.0"
+   "input": "level.dbfs -0: clean copy must not contain -0",
+   "expect": "normalised",
+   "observed": "normalised",
+   "status": "PASS",
+   "note": "PK-05"
   },
   {
    "id": "E07",
@@ -390,10 +388,46 @@
    "id": "E16",
    "klass": "numbers",
    "input": "level.dbfs = -23.123456789012345 (15 digits)",
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.dbfs: not a multiple of 0.1",
+   "status": "PASS",
+   "note": "PK-06: dB fields are multiples of 0.1"
+  },
+  {
+   "id": "E16b",
+   "klass": "numbers",
+   "input": "level.dbfs = -23.1 (one decimal)",
    "expect": "ok",
    "observed": "ok(level)",
-   "status": "GAP",
-   "note": "unbounded mantissa precision is a covert channel (see review, section 3)"
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "id": "E16c",
+   "klass": "numbers",
+   "input": "level.dbfs = -23.15 (two decimals)",
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.dbfs: not a multiple of 0.1",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "id": "E16d",
+   "klass": "numbers",
+   "input": "window.result.coverage = 0.9996 (not a multiple of 0.001)",
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.coverage: not a multiple of 0.001",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "id": "E16e",
+   "klass": "numbers",
+   "input": "level.t_audio_ms = 1000.5 (not an integer)",
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.t_audio_ms: expected integer",
+   "status": "PASS",
+   "note": ""
   },
   {
    "id": "E17",
@@ -489,19 +523,19 @@
    "id": "F-U+2028 LINE SEP",
    "klass": "format/invisible char",
    "input": "phrase \"aU+2028 LINE SEPb\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+2029 PARA SEP",
    "klass": "format/invisible char",
    "input": "phrase \"aU+2029 PARA SEPb\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+200B ZWSP",
@@ -509,8 +543,8 @@
    "input": "phrase \"aU+200B ZWSPb\"",
    "expect": "ok",
    "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "allowed by design (ZWNJ and ZWJ are needed for Persian, Urdu, Devanagari and emoji sequences)"
   },
   {
    "id": "F-U+200C ZWNJ",
@@ -518,8 +552,8 @@
    "input": "phrase \"aU+200C ZWNJb\"",
    "expect": "ok",
    "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "allowed by design (ZWNJ and ZWJ are needed for Persian, Urdu, Devanagari and emoji sequences)"
   },
   {
    "id": "F-U+200D ZWJ",
@@ -527,26 +561,26 @@
    "input": "phrase \"aU+200D ZWJb\"",
    "expect": "ok",
    "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "allowed by design (ZWNJ and ZWJ are needed for Persian, Urdu, Devanagari and emoji sequences)"
   },
   {
    "id": "F-U+2060 WORD JOINER",
    "klass": "format/invisible char",
    "input": "phrase \"aU+2060 WORD JOINERb\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+FEFF BOM mid-string",
    "klass": "format/invisible char",
    "input": "phrase \"aU+FEFF BOM mid-stringb\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+00AD SOFT HYPHEN",
@@ -554,26 +588,26 @@
    "input": "phrase \"aU+00AD SOFT HYPHENb\"",
    "expect": "ok",
    "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "allowed by design (ZWNJ and ZWJ are needed for Persian, Urdu, Devanagari and emoji sequences)"
   },
   {
    "id": "F-U+FFFE noncharacter",
    "klass": "format/invisible char",
    "input": "phrase \"aU+FFFE noncharacterb\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+FFF9 interlinear",
    "klass": "format/invisible char",
    "input": "phrase \"aU+FFF9 interlinearb\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+E000 private use",
@@ -581,44 +615,44 @@
    "input": "phrase \"aU+E000 private useb\"",
    "expect": "ok",
    "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "allowed by design (ZWNJ and ZWJ are needed for Persian, Urdu, Devanagari and emoji sequences)"
   },
   {
    "id": "F-U+E0041 TAG LATIN A (surrogate pair)",
    "klass": "format/invisible char",
    "input": "phrase \"aU+E0041 TAG LATIN A (surrogate pair)b\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-3 x U+200B only",
    "klass": "visually empty phrase",
    "input": "phrase = 3 x U+200B only",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "passes trim and the 1-code-point minimum but renders as blank"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: no visible content",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+3164 HANGUL FILLER",
    "klass": "visually empty phrase",
    "input": "phrase = U+3164 HANGUL FILLER",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "passes trim and the 1-code-point minimum but renders as blank"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: no visible content",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-U+2800 BRAILLE BLANK",
    "klass": "visually empty phrase",
    "input": "phrase = U+2800 BRAILLE BLANK",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "passes trim and the 1-code-point minimum but renders as blank"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: no visible content",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "F-leading-space",
@@ -723,10 +757,19 @@
    "id": "F-combining-stack",
    "klass": "combining marks",
    "input": "\"x\" + 59 x U+0301 (NFC-stable, 60 code points)",
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: too many combining marks",
+   "status": "PASS",
+   "note": "PK-03"
+  },
+  {
+   "id": "F-combining-4",
+   "klass": "combining marks",
+   "input": "\"x\" + 4 combining marks",
    "expect": "ok",
    "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "renders as a tall stacked glyph; limit consecutive combining marks (<= 4) or clip the container"
+   "status": "PASS",
+   "note": ""
   },
   {
    "id": "F-device-label-24emoji",
@@ -1244,7 +1287,7 @@
   {
    "id": "K01",
    "klass": "message_id",
-   "input": "same id twice",
+   "input": "record then has: same id is a duplicate",
    "expect": "true",
    "observed": "true",
    "status": "PASS",
@@ -1253,7 +1296,7 @@
   {
    "id": "K02",
    "klass": "message_id",
-   "input": "after 1024 further distinct ids the first id is evicted; resend of it",
+   "input": "after 1024 further distinct ids the first id is evicted",
    "expect": "false",
    "observed": "false",
    "status": "INFO",
@@ -1262,11 +1305,20 @@
   {
    "id": "K03",
    "klass": "message_id",
-   "input": "id first used by role \"phone\", then by role \"tv\" in the same dedupe instance",
-   "expect": "true",
-   "observed": "true",
-   "status": "GAP",
-   "note": "API has no role parameter: one instance per room lets either role suppress the other's message that reuses an id; use one instance per (room, role)"
+   "input": "id recorded for role \"phone\" is NOT a duplicate for role \"tv\" (PK-08 scoping)",
+   "expect": "false",
+   "observed": "false",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "id": "K03b",
+   "klass": "message_id",
+   "input": "has() does not record: a message dropped later can be retransmitted with the same id",
+   "expect": "false",
+   "observed": "false",
+   "status": "PASS",
+   "note": ""
   },
   {
    "id": "K04",
@@ -1289,11 +1341,11 @@
   {
    "id": "K06",
    "klass": "sequence",
-   "input": "SequenceTracker: generation jump to 2^31-1 from a producer on generation 1",
-   "expect": "ok",
-   "observed": "ok",
-   "status": "GAP",
-   "note": "tracker accepts ANY higher generation; relay must first compare to the authoritative current generation (ADR-0003 section 9). Afterwards legit generation 1 is stale: stale"
+   "input": "SequenceTracker.accept(expected=1, generation=2147483647, sequence=0): a jump is stale",
+   "expect": "stale",
+   "observed": "stale",
+   "status": "PASS",
+   "note": "PK-07; afterwards the legitimate generation-1 sequence 6 is ok"
   },
   {
    "id": "K07",
@@ -1301,6 +1353,24 @@
    "input": "tracker: same sequence twice",
    "expect": "replay",
    "observed": "replay",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "id": "K08",
+   "klass": "sequence",
+   "input": "old two-argument call form throws instead of silently rejecting",
+   "expect": "TypeError",
+   "observed": "TypeError",
+   "status": "PASS",
+   "note": ""
+  },
+  {
+   "id": "K09",
+   "klass": "sequence",
+   "input": "expectedGeneration must not decrease",
+   "expect": "RangeError",
+   "observed": "RangeError",
    "status": "PASS",
    "note": ""
   },
@@ -1497,82 +1567,82 @@
    "id": "N-phrase-U+202A LRE",
    "klass": "bidi control",
    "input": "phrase \"abcU+202A LREdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+202B RLE",
    "klass": "bidi control",
    "input": "phrase \"abcU+202B RLEdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+202C PDF",
    "klass": "bidi control",
    "input": "phrase \"abcU+202C PDFdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+202D LRO",
    "klass": "bidi control",
    "input": "phrase \"abcU+202D LROdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+202E RLO",
    "klass": "bidi control",
    "input": "phrase \"abcU+202E RLOdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+2066 LRI",
    "klass": "bidi control",
    "input": "phrase \"abcU+2066 LRIdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+2067 RLI",
    "klass": "bidi control",
    "input": "phrase \"abcU+2067 RLIdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+2068 FSI",
    "klass": "bidi control",
    "input": "phrase \"abcU+2068 FSIdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+2069 PDI",
    "klass": "bidi control",
    "input": "phrase \"abcU+2069 PDIdef\"",
-   "expect": "ok",
-   "observed": "ok(phrases.update)",
-   "status": "GAP",
-   "note": "explicit override/embedding/isolate; recommend reject"
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.phrases[0]: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-phrase-U+200E LRM",
@@ -1581,7 +1651,7 @@
    "expect": "ok",
    "observed": "ok(phrases.update)",
    "status": "INFO",
-   "note": "implicit marks are legitimate in mixed-direction text; keep allowed"
+   "note": "implicit marks are legitimate in mixed-direction text; kept allowed"
   },
   {
    "id": "N-phrase-U+200F RLM",
@@ -1590,7 +1660,7 @@
    "expect": "ok",
    "observed": "ok(phrases.update)",
    "status": "INFO",
-   "note": "implicit marks are legitimate in mixed-direction text; keep allowed"
+   "note": "implicit marks are legitimate in mixed-direction text; kept allowed"
   },
   {
    "id": "N-phrase-U+061C ALM",
@@ -1599,34 +1669,34 @@
    "expect": "ok",
    "observed": "ok(phrases.update)",
    "status": "INFO",
-   "note": "implicit marks are legitimate in mixed-direction text; keep allowed"
+   "note": "implicit marks are legitimate in mixed-direction text; kept allowed"
   },
   {
    "id": "N-label-RLO",
    "klass": "bidi control",
    "input": "device_label \"Mom\\u202es phone\" (shown on the TV at pairing)",
-   "expect": "ok",
-   "observed": "ok(join.request)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.device_label: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-cue-RLO",
    "klass": "bidi control",
    "input": "cue \"Vol\\u202eume\"",
-   "expect": "ok",
-   "observed": "ok(cue)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.text: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "N-appver-RLO",
    "klass": "bidi control",
    "input": "room.create app_version \"1.0\\u202e\"",
-   "expect": "ok",
-   "observed": "ok(room.create)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.client.app_version: forbidden character",
+   "status": "PASS",
+   "note": "PK-03"
   },
   {
    "id": "O01",
@@ -1730,74 +1800,74 @@
   {
    "id": "O-covert-capacity",
    "klass": "audio guard",
-   "input": "level.dbfs with a free 52-bit mantissa at 20 frames/s",
+   "input": "level.dbfs after PK-06 quantisation: multiples of 0.1 over -140..20 = 1601 values at 20 frames/s",
    "expect": "n/a",
-   "observed": "1040 bit/s (130 B/s) per numeric field, before t_audio_ms",
+   "observed": "212 bit/s per dB field (was 1040 bit/s with a free 52-bit mantissa)",
    "status": "INFO",
-   "note": "not blocked by the guard; low-rate speech codecs run at 0.7-2.4 kbit/s. Recommend quantized numeric fields."
+   "note": "residual R4: below low-rate speech codecs (0.7-2.4 kbit/s) per field but not zero; enforced by review, CSP connect-src and network inspection"
   },
   {
    "id": "P01",
    "klass": "cross-field semantics",
    "input": "valid:true with coverage 0.01",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.coverage: does not match frame counts",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P02",
    "klass": "cross-field semantics",
    "input": "frame_count 700 > expected_frames 160",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.frame_count: exceeds expected_frames",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P03",
    "klass": "cross-field semantics",
    "input": "active_ms 35000 > duration_ms 8000",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.active_ms: inconsistent durations",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P04",
    "klass": "cross-field semantics",
    "input": "longest_active_ms 8000 > active_ms 3000",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.active_ms: inconsistent durations",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P05",
    "klass": "cross-field semantics",
    "input": "valid:true but p95_active/p50/peak all null",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload: statistics required when valid",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P06",
    "klass": "cross-field semantics",
    "input": "p50 (-10) > p95 (-20) and peak (-30) < p95",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload: statistics out of order",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P07",
    "klass": "cross-field semantics",
    "input": "segments 0 but onset_ms 300 and active_ms 3000",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.segments: inconsistent with active_ms and onset_ms",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P08",
@@ -1805,44 +1875,44 @@
    "input": "valid:true with clipped_frames 160 (all frames)",
    "expect": "ok",
    "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "accepted: the TV cannot recompute accepted-active frames, so it cannot check the clipped share of a window the phone calls valid; a phone able to send this can send any self-consistent numbers (residual R11)"
   },
   {
    "id": "P09",
    "klass": "cross-field semantics",
    "input": "window.result kind \"calibration\" with duration_ms 100",
-   "expect": "ok",
-   "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.expected_frames: does not match duration_ms",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P10",
    "klass": "cross-field semantics",
    "input": "precheck valid:true with floor_dbfs null",
-   "expect": "ok",
-   "observed": "ok(precheck.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.floor_dbfs: required when valid",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P11",
    "klass": "cross-field semantics",
    "input": "precheck p20 (-40) > p80 (-70), floor outside [p20,p80]",
-   "expect": "ok",
-   "observed": "ok(precheck.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload: percentiles out of order",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P12",
    "klass": "cross-field semantics",
    "input": "precheck valid:true with floor_dbfs 0 (loud) and clipped_frames 100",
-   "expect": "ok",
-   "observed": "ok(precheck.result)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload: percentiles out of order",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "P13",
@@ -1850,8 +1920,8 @@
    "input": "level frame_index 0 with t_audio_ms 35000",
    "expect": "ok",
    "observed": "ok(level)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "accepted by design: gaps are allowed, so only the lower bound t_audio_ms >= 50*frame_index - 1 is a protocol rule; the TV bounds it by its own window timing"
   },
   {
    "id": "P14",
@@ -1859,8 +1929,8 @@
    "input": "level frame_index 5 repeated with new message_id/sequence (replayed frame)",
    "expect": "ok",
    "observed": "ok(level)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "stateful: the TV ignores a repeated frame_index (tests/security SEC-T07 and session-core tests)"
   },
   {
    "id": "P15",
@@ -1868,8 +1938,8 @@
    "input": "level dbfs 20 (above full scale) active:true clipped:false",
    "expect": "ok",
    "observed": "ok(level)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "plausible reading; a level above 0 dBFS is allowed by the range"
   },
   {
    "id": "P16",
@@ -1877,17 +1947,17 @@
    "input": "window.result invalid_reason \"no_voice\" with active_ms 3000",
    "expect": "ok",
    "observed": "ok(window.result)",
-   "status": "GAP",
-   "note": ""
+   "status": "INFO",
+   "note": "accepted: a phone-claimed invalid reason only makes the attempt unscored (fails closed); the TV reports it as claimed"
   },
   {
    "id": "P17",
    "klass": "cross-field semantics",
    "input": "window.start vad_floor_dbfs 0 (ADR: floor <= -30)",
-   "expect": "ok",
-   "observed": "ok(window.start)",
-   "status": "GAP",
-   "note": ""
+   "expect": "bad_schema",
+   "observed": "bad_schema: payload.vad_floor_dbfs: out of range",
+   "status": "PASS",
+   "note": "PK-02"
   },
   {
    "id": "Q01",
@@ -2013,7 +2083,7 @@
    "expect": "bad_schema",
    "observed": "bad_schema: envelope has an unknown field",
    "status": "PASS",
-   "note": "0.29 ms"
+   "note": "1.22 ms"
   },
   {
    "id": "S07",
@@ -2022,16 +2092,16 @@
    "expect": "fast",
    "observed": "fast",
    "status": "INFO",
-   "note": "worst 0.47 ms on this host (Node v25.2.1); not a load test"
+   "note": "worst 0.57 ms on this host (Node v25.2.1); not a load test"
   },
   {
    "id": "S08",
    "klass": "serialize-then-check",
-   "input": "validateMessageObject with payload.x = sparse Array(2e7) (programmatic object)",
+   "input": "validateMessageObject with payload.x = sparse Array(1e8) (programmatic object)",
    "expect": "bad_schema|payload_too_large",
    "observed": "payload_too_large: message exceeds the size limit",
-   "status": "GAP",
-   "note": "105 ms; validateMessageObject calls JSON.stringify before any bound (sparse_array_cost.mjs: 1e8 elements = about 2.3 s and 2.7 to 2.8 GB RSS). Safe for strings via parseWireMessage; a hazard for untrusted in-memory objects"
+   "status": "PASS",
+   "note": "0 ms (rev 1: about 2300 ms and 2.8 GB RSS); PK-09 snapshot bound"
   },
   {
    "id": "T01",

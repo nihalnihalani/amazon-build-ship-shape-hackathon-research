@@ -1,6 +1,7 @@
 # Threat model v1: Across the Room, the far-side check
 
 - Status: first version, written at the start of T16 (security and privacy gate). Design-time: it models the specification (ADR-0001 to ADR-0009, `docs/PROTOCOL.md` revision 2, `packages/session-core/src/contract.ts`, `packages/protocol` at base `018bdc0`). The relay, phone page and TV app were being built in parallel worktrees and were not available to review, so every "status" below describes what is specified, not what is implemented or tested. Nothing here is test evidence.
+- **Status after the rework wave (T16, 2026-10-05):** section 8 was turned into executable tests under `tests/security/` and run against `build/across-the-room`. Per-row results (executed, executed in part, not executed, pending_external), the residual-risk update and the gate verdict are in `T16_GATE.md`. This document is the design-time model and is not rewritten; where the shipped system differs, `T16_GATE.md` wins.
 - Author: security (`claude-sonnet-5-5`), branch `wt/security`, 2026-10-05. Finding ids (A1-01, PK-03, ...) refer to `ADR_REVIEW.md` and `PROTOCOL_PACKAGE_REVIEW.md`. Threat-model-only gaps are `TM-Gn` (section 9).
 - Method: STRIDE per component (TV app, phone page, local relay, AWS relay, pairing, storage), driven by assets, trust boundaries and four attacker profiles. Mitigations are mapped to ADR sections. The security tests T16 must run are in section 8 and become the gate checklist.
 - Requirement IDs: R-S1 to R-S6, R-X1, R-X2, R-L2, R-M6, R-Q1, R-ST1, R-U4 (traceability in section 8).

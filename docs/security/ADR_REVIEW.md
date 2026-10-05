@@ -5,6 +5,7 @@
 - Worktree / branch / base: `/Users/nihalnihalani/Desktop/Github/atr-worktrees/security`, `wt/security`, base commit `018bdc0`.
 - Date: 2026-10-05 (Asia/Kolkata). Inputs: `docs/adr/0001` to `0009`, `docs/PROTOCOL.md` revision 2, `packages/protocol/src/**`, `packages/session-core/src/contract.ts`, `.build/requirements.json`, master prompt, teammate prompt, product audit, audio research.
 - Requirement IDs covered: R-M6, R-S1 to R-S6, R-X1, R-X2, R-L2, R-Q1, R-ST1, R-U4.
+- **Status after the rework wave (T16, 2026-10-05):** the findings below were decided in `docs/adr/AMENDMENTS-REV2.md` and implemented at `build/across-the-room`. The verdict on each finding against the shipped implementation (closed, closed-with-residual, open, pending_external) is in `T16_GATE.md` section 3. The text below is the original review and is kept unchanged except for one erratum (A1-03).
 - Authorship: the lead wrote the ADRs. Every verdict below is a reasoned decision; where I agree I say what I checked, where I disagree I give the exact replacement text. Nothing in the ADRs was edited.
 
 ## 0. Evidence classes and limits of this review
@@ -90,7 +91,9 @@ The quiet check accepts `p80 - p20 <= 6` and `p95 - floor <= 10`. A room at the 
 |---|---|---|---|---|---|
 | P(active_ms >= 400 given silence) | 0.0003 | 0.005 | 0.104 | 0.177 | 0.392 |
 
-A silent attempt in such a room is scored `not_reached` ("Below today's relative level band") instead of `unscored: no_voice`. It is very unlikely to become `reached` (that needs p95 of at least `cal_margin - 1 >= 12 dB`), but the scored-failure outcome is still wrong. Tightening only the stability limit does not help: the sweep (`adr0001_threshold_sweep.mjs`) shows that with the stability limit at 3 dB, noise with sigma 3.5 still gives 46% false activity at T=6 because the rooms that pass are lucky samples of a still-noisy process. Raising the candidate threshold T does:
+A silent attempt in such a room is scored `not_reached` ("Below today's relative level band") instead of `unscored: no_voice`. It is very unlikely to become `reached` (that needs p95 of at least `cal_margin - 1 >= 12 dB`), but the scored-failure outcome is still wrong.
+
+*Erratum (T16, 2026-10-05).* "Very unlikely to become `reached`" was an estimate, not a bound. With the shipped hysteresis rule (open at 10 dB, continue at 6 dB) the T16 simulation (`tests/security/g-dsp-recheck.test.ts`, 20,000 seeded trials per cell, `cal_margin` 13) scores a silent 8 s window `reached` in 0.015 % (sigma 2.5, rho 0.9), 0.3 % (3.0, 0.8) and 2.3 % (3.5, 0.9) of trials. `docs/LIMITATIONS.md` says it "cannot become a false `reached`"; that sentence is too strong (finding N-05 in `T16_GATE.md`). Tightening only the stability limit does not help: the sweep (`adr0001_threshold_sweep.mjs`) shows that with the stability limit at 3 dB, noise with sigma 3.5 still gives 46% false activity at T=6 because the rooms that pass are lucky samples of a still-noisy process. Raising the candidate threshold T does:
 
 | sigma, rho (stability 6 dB) | T=6 | T=8 | T=9 | T=10 | T=12 |
 |---|---|---|---|---|---|

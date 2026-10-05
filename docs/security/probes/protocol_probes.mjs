@@ -5,6 +5,7 @@
 //   npx tsc -p packages/protocol/tsconfig.build.json --outDir /tmp/atr-protocol-dist
 //   ATR_PROTOCOL_DIST=/tmp/atr-protocol-dist/index.js node docs/security/probes/protocol_probes.mjs out.json
 //
+// Revision 4 edition (T16): expectations follow docs/adr/AMENDMENTS-REV2.md and PROTOCOL.md rev 4. The rev 1 record is in git history (commit eb84ea6).
 // Every probe records: id, input class, input, expected (what PROTOCOL.md / the package README
 // promise, or "ok" where the current rules accept it), observed, status.
 // status: PASS = observed matches expected and no change is recommended
@@ -124,17 +125,17 @@ rec('A07', 'control', 'valid level', 'ok', run(J(levelMsg())));
   const rawDupType = J(ping({ room_id: 'r_AAAAAAAAAAAAAAAA' })).replace('"type":"ping"', '"type":"ping","type":"unpair"');
   const r1 = run(rawDupType);
   rec('C01', 'duplicate keys', '"type" appears twice ("ping" then "unpair")', 'ok', r1, {
-    gap: true,
-    note: `last wins: parsed type=${r1.ok ? r1.message.type : 'n/a'}; a first-wins component (log scrubber, proxy) would see "ping". Forward a canonical re-serialization, not the raw frame.`,
+    info: true,
+    note: `validator: last wins (type=${r1.ok ? r1.message.type : 'n/a'}); the relay forwards the canonical re-serialization (PK-04), verified end to end in tests/security (SEC-V03)`,
   });
   const rawDupMsgId = J(ping()).replace('"message_id":"' + mid + '"', '"message_id":"m_BBBBBBBBBBBBBBBB","message_id":"' + mid + '"');
   const r2 = run(rawDupMsgId);
-  rec('C02', 'duplicate keys', '"message_id" twice (B..., then A...)', 'ok', r2, { gap: true, note: `clean copy carries ${r2.ok ? r2.message.message_id : 'n/a'}; raw frame still contains both ids` });
+  rec('C02', 'duplicate keys', '"message_id" twice (B..., then A...)', 'ok', r2, { info: true, note: `clean copy carries ${r2.ok ? r2.message.message_id : 'n/a'}; raw frame still contains both ids` });
   const rawDupText = J(cue('Hi')).replace('"text":"Hi"', '"text":"Hi","text":"Volume"');
   const r3 = run(rawDupText);
-  rec('C03', 'duplicate keys', 'cue payload "text" twice', 'ok', r3, { gap: true, note: `kept: ${r3.ok ? r3.message.payload.text : 'n/a'}` });
+  rec('C03', 'duplicate keys', 'cue payload "text" twice', 'ok', r3, { info: true, note: `kept: ${r3.ok ? r3.message.payload.text : 'n/a'}` });
   const rawDupPayload = J(ping()).replace('"payload":{}', '"payload":{"a":1},"payload":{}');
-  rec('C04', 'duplicate keys', '"payload" twice (first invalid, last valid)', 'ok', run(rawDupPayload), { gap: true, note: 'first payload is never validated; only the last survives parsing' });
+  rec('C04', 'duplicate keys', '"payload" twice (first invalid, last valid)', 'ok', run(rawDupPayload), { info: true, note: 'first payload is never validated; only the last survives parsing' });
 }
 
 // ------------------------------------------------------------------ D nesting and structural DoS
@@ -165,9 +166,8 @@ rec('A07', 'control', 'valid level', 'ok', run(J(levelMsg())));
   });
   const rP = runObj(proxy);
   const leaked = rP.ok && Object.prototype.hasOwnProperty.call(rP.message.payload, 'injected');
-  rec('D08', 'TOCTOU', 'stateful Proxy whose 4th read of "payload" (the clone step) returns {injected:"unvalidated"}', 'bad_schema', rP, {
-    gap: rP.ok, info: !rP.ok,
-    note: rP.ok ? `clean copy contains unvalidated field: ${leaked}; validate a clone made once, not the original object` : 'rejected',
+  rec('D08', 'TOCTOU', 'stateful Proxy whose 4th read of "payload" (the clone step) returns {injected:"unvalidated"}', 'no_leak', leaked ? 'LEAK: clean copy contains unvalidated field' : `no_leak (${sum(rP)}; reads=${reads})`, {
+    note: 'PK-01: rev 4 snapshots the input once and validates and returns the snapshot',
   });
 }
 
@@ -179,9 +179,9 @@ rec('A07', 'control', 'valid level', 'ok', run(J(levelMsg())));
   rec('E03', 'huge numbers', 'sequence 9007199254740993 (rounds to 2^53)', 'bad_schema', run(withSeq('9007199254740993')));
   rec('E04', 'huge numbers', 'sequence 9007199254740991 (MAX_SAFE_INTEGER)', 'ok', run(withSeq('9007199254740991')), { info: true, note: 'legal; a producer that sends it exhausts its own sequence space until it resumes with a new generation' });
   const r0 = run(withSeq('-0'));
-  rec('E05', 'negative zero', 'sequence -0 (raw)', 'ok', r0, { gap: true, note: `Object.is(sequence,-0)=${r0.ok ? Object.is(r0.message.sequence, -0) : 'n/a'}; Intl.NumberFormat renders "-0"; normalise to +0 in the clean copy` });
+  rec('E05', 'negative zero', 'sequence -0 (raw): clean copy must not contain -0', 'normalised', r0.ok ? (Object.is(r0.message.sequence, -0) ? 'STILL_NEGATIVE_ZERO' : 'normalised') : sum(r0), { note: 'PK-05' });
   const rl = run(J(levelMsg()).replace('"dbfs":-50', '"dbfs":-0'));
-  rec('E06', 'negative zero', 'level.dbfs -0', 'ok', rl, { gap: true, note: `Object.is(dbfs,-0)=${rl.ok ? Object.is(rl.message.payload.dbfs, -0) : 'n/a'}; (-0.04).toFixed(1) would print -0.0` });
+  rec('E06', 'negative zero', 'level.dbfs -0: clean copy must not contain -0', 'normalised', rl.ok ? (Object.is(rl.message.payload.dbfs, -0) ? 'STILL_NEGATIVE_ZERO' : 'normalised') : sum(rl), { note: 'PK-05' });
   rec('E07', 'huge numbers', 'producer_generation 2147483648 (2^31)', 'bad_schema', run(J(ping()).replace('"producer_generation":1', '"producer_generation":2147483648')));
   rec('E08', 'huge numbers', 'producer_generation 2147483647', 'ok', run(J(ping()).replace('"producer_generation":1', '"producer_generation":2147483647')));
   rec('E09', 'huge numbers', 'level.dbfs 1e308', 'bad_schema', run(J(levelMsg()).replace('"dbfs":-50', '"dbfs":1e308')));
@@ -191,7 +191,11 @@ rec('A07', 'control', 'valid level', 'ok', run(J(levelMsg())));
   rec('E13', 'numbers', 'NaN literal in raw JSON', 'bad_schema', run(withSeq('NaN')));
   rec('E14', 'numbers', 'Infinity literal in raw JSON', 'bad_schema', run(withSeq('Infinity')));
   rec('E15', 'numbers', 'level.frame_index 701', 'bad_schema', run(J(levelMsg({ frame_index: 701 }))));
-  rec('E16', 'numbers', 'level.dbfs = -23.123456789012345 (15 digits)', 'ok', run(J(levelMsg({ dbfs: -23.123456789012345 }))), { gap: true, note: 'unbounded mantissa precision is a covert channel (see review, section 3)' });
+rec('E16', 'numbers', 'level.dbfs = -23.123456789012345 (15 digits)', 'bad_schema', run(J(levelMsg({ dbfs: -23.123456789012345 }))), { note: 'PK-06: dB fields are multiples of 0.1' });
+  rec('E16b', 'numbers', 'level.dbfs = -23.1 (one decimal)', 'ok', run(J(levelMsg({ dbfs: -23.1 }))));
+  rec('E16c', 'numbers', 'level.dbfs = -23.15 (two decimals)', 'bad_schema', run(J(levelMsg({ dbfs: -23.15 }))));
+  rec('E16d', 'numbers', 'window.result.coverage = 0.9996 (not a multiple of 0.001)', 'bad_schema', run(J(winResult({ coverage: 0.9996 }))));
+  rec('E16e', 'numbers', 'level.t_audio_ms = 1000.5 (not an integer)', 'bad_schema', run(J(levelMsg({ t_audio_ms: 1000.5 }))));
   rec('E17', 'numbers', 'window.result.coverage 1.0000001', 'bad_schema', run(J(winResult({ coverage: 1.0000001 }))));
 }
 
@@ -210,11 +214,12 @@ const fmtProbes = [
   ['U+FFFE noncharacter', '\\ufffe'], ['U+FFF9 interlinear', '\\ufff9'], ['U+E000 private use', '\\ue000'],
   ['U+E0041 TAG LATIN A (surrogate pair)', '\\udb40\\udc41'],
 ];
+const keepFmt = /ZWSP|ZWNJ|ZWJ|SOFT HYPHEN|private use/;
 for (const [name, e] of fmtProbes) {
-  rec(`F-${name}`, 'format/invisible char', `phrase "a${name}b"`, 'ok', run(J(phrases(['x'])).replace('"x"', `"a${e}b"`)), { gap: true });
+  rec(`F-${name}`, 'format/invisible char', `phrase "a${name}b"`, keepFmt.test(name) ? 'ok' : 'bad_schema', run(J(phrases(['x'])).replace('"x"', `"a${e}b"`)), keepFmt.test(name) ? { info: true, note: 'allowed by design (ZWNJ and ZWJ are needed for Persian, Urdu, Devanagari and emoji sequences)' } : { note: 'PK-03' });
 }
 for (const [name, e] of [['3 x U+200B only', '\\u200b\\u200b\\u200b'], ['U+3164 HANGUL FILLER', '\\u3164'], ['U+2800 BRAILLE BLANK', '\\u2800']]) {
-  rec(`F-${name}`, 'visually empty phrase', `phrase = ${name}`, 'ok', run(J(phrases(['x'])).replace('"x"', `"${e}"`)), { gap: true, note: 'passes trim and the 1-code-point minimum but renders as blank' });
+  rec(`F-${name}`, 'visually empty phrase', `phrase = ${name}`, 'bad_schema', run(J(phrases(['x'])).replace('"x"', `"${e}"`)), { note: 'PK-03' });
 }
 rec('F-leading-space', 'trim', 'phrase " Hello"', 'bad_schema', run(J(phrases([' Hello']))));
 rec('F-trailing-nbsp', 'trim', 'phrase "Hello\\u00a0"', 'bad_schema', run(J(phrases(['Hello\u00a0']))));
@@ -229,7 +234,8 @@ rec('F-61emoji', 'length', 'phrase 61 x U+1F600', 'bad_schema', run(J(phrases(['
 rec('F-zwj-family', 'length', '9 x family emoji (7 code points each = 63)', 'bad_schema', run(J(phrases(['\u{1F468}\u200d\u{1F469}\u200d\u{1F467}\u200d\u{1F466}'.repeat(9)]))), { info: true, note: 'length is code points, not grapheme clusters: 9 visible glyphs are rejected' });
 {
   const zalgo = 'x' + '\u0301'.repeat(59);
-  rec('F-combining-stack', 'combining marks', '"x" + 59 x U+0301 (NFC-stable, 60 code points)', 'ok', run(J(phrases([zalgo]))), { gap: true, note: 'renders as a tall stacked glyph; limit consecutive combining marks (<= 4) or clip the container' });
+  rec('F-combining-stack', 'combining marks', '"x" + 59 x U+0301 (NFC-stable, 60 code points)', 'bad_schema', run(J(phrases([zalgo]))), { note: 'PK-03' });
+  rec('F-combining-4', 'combining marks', '"x" + 4 combining marks', 'ok', run(J(phrases(['x' + String.fromCodePoint(0x301, 0x302, 0x303, 0x304)]))));
 }
 rec('F-device-label-24emoji', 'length', 'device_label 24 emoji (96 bytes)', 'ok', run(J(joinReq('ACDEFH', '\u{1F600}'.repeat(24)))));
 rec('F-device-label-25', 'length', 'device_label 25 chars', 'bad_schema', run(J(joinReq('ACDEFH', 'a'.repeat(25)))));
@@ -301,22 +307,25 @@ for (const [name, val] of [
 // ------------------------------------------------------------------ K message_id collisions (relay helper)
 {
   const d = new P.MessageIdDedupe();
-  rec('K01', 'message_id', 'same id twice', 'true', String(d.seen('m_AAAAAAAAAAAAAAAA')) === 'false' ? String(d.seen('m_AAAAAAAAAAAAAAAA')) : 'unexpected');
+  rec('K01', 'message_id', 'record then has: same id is a duplicate', 'true', String((d.record('m_AAAAAAAAAAAAAAAA'), d.has('m_AAAAAAAAAAAAAAAA'))));
   const d2 = new P.MessageIdDedupe(1024);
-  d2.seen('m_FIRST000000000000');
-  for (let i = 0; i < 1024; i++) d2.seen('m_' + String(i).padStart(16, '0'));
-  rec('K02', 'message_id', 'after 1024 further distinct ids the first id is evicted; resend of it', 'false', String(d2.seen('m_FIRST000000000000')), { info: true, note: 'after eviction only the sequence check stops a replay; at 40 msgs/s the window is ~26 s' });
-  const d3 = new P.MessageIdDedupe();
-  const seenByPhone = d3.seen('m_SHAREDID00000000'); const seenByTv = d3.seen('m_SHAREDID00000000');
-  rec('K03', 'message_id', 'id first used by role "phone", then by role "tv" in the same dedupe instance', 'true', String(seenByTv), { gap: seenByPhone === false, note: 'API has no role parameter: one instance per room lets either role suppress the other\'s message that reuses an id; use one instance per (room, role)' });
-  rec('K04', 'message_id', 'ids differing only in case are distinct', 'false', String(new P.MessageIdDedupe().seen('m_aaaaaaaaaaaaaaaa') || (() => { const x = new P.MessageIdDedupe(); x.seen('m_AAAAAAAAAAAAAAAA'); return x.seen('m_aaaaaaaaaaaaaaaa'); })()));
+  d2.record('m_FIRST000000000000');
+  for (let i = 0; i < 1024; i++) d2.record('m_' + String(i).padStart(16, '0'));
+  rec('K02', 'message_id', 'after 1024 further distinct ids the first id is evicted', 'false', String(d2.has('m_FIRST000000000000')), { info: true, note: 'after eviction only the sequence check stops a replay; at 40 msgs/s the window is ~26 s' });
+  const scopes = new P.DedupeScopes();
+  scopes.record('r_AAAAAAAAAAAAAAAA', 'phone', 'm_SHAREDID00000000');
+  rec('K03', 'message_id', 'id recorded for role "phone" is NOT a duplicate for role "tv" (PK-08 scoping)', 'false', String(scopes.has('r_AAAAAAAAAAAAAAAA', 'tv', 'm_SHAREDID00000000')));
+  rec('K03b', 'message_id', 'has() does not record: a message dropped later can be retransmitted with the same id', 'false', String((() => { const x = new P.MessageIdDedupe(); x.has('m_RETRY00000000000'); return x.has('m_RETRY00000000000'); })()));
+  rec('K04', 'message_id', 'ids differing only in case are distinct', 'false', String((() => { const x = new P.MessageIdDedupe(); x.record('m_AAAAAAAAAAAAAAAA'); return x.has('m_aaaaaaaaaaaaaaaa'); })()));
   const idsOK = [run(J(ping({ message_id: 'm_' + 'A'.repeat(16) }))), run(J(ping({ message_id: 'm_' + 'A'.repeat(32) }))), run(J(ping({ message_id: 'm_' + 'A'.repeat(33) }))), run(J(ping({ message_id: 'm_' + 'A'.repeat(15) })))].map(cls);
   rec('K05', 'message_id', 'length 16 and 32 accepted, 15 and 33 rejected', 'ok,ok,bad_schema,bad_schema', idsOK.join(','), { note: 'format allows low-entropy chosen ids (e.g. 16 x "A"); uniqueness is not enforced by the validator' });
   const t = new P.SequenceTracker();
-  t.accept(1, 5);
-  rec('K06', 'sequence', 'SequenceTracker: generation jump to 2^31-1 from a producer on generation 1', 'ok', t.accept(2147483647, 0), { gap: true, note: 'tracker accepts ANY higher generation; relay must first compare to the authoritative current generation (ADR-0003 section 9). Afterwards legit generation 1 is stale: ' + t.accept(1, 6) });
+  t.accept(1, 1, 5);
+  rec('K06', 'sequence', 'SequenceTracker.accept(expected=1, generation=2147483647, sequence=0): a jump is stale', 'stale', t.accept(1, 2147483647, 0), { note: 'PK-07; afterwards the legitimate generation-1 sequence 6 is ' + t.accept(1, 1, 6) });
   const t2 = new P.SequenceTracker();
-  rec('K07', 'sequence', 'tracker: same sequence twice', 'replay', (() => { t2.accept(1, 3); return t2.accept(1, 3); })());
+  rec('K07', 'sequence', 'tracker: same sequence twice', 'replay', (() => { t2.accept(1, 1, 3); return t2.accept(1, 1, 3); })());
+  rec('K08', 'sequence', 'old two-argument call form throws instead of silently rejecting', 'TypeError', (() => { try { new P.SequenceTracker().accept(1, 5); return 'no_throw'; } catch (e) { return e instanceof TypeError ? 'TypeError' : 'other'; } })());
+  rec('K09', 'sequence', 'expectedGeneration must not decrease', 'RangeError', (() => { const x = new P.SequenceTracker(); x.accept(2, 2, 1); try { x.accept(1, 1, 5); return 'no_throw'; } catch (e) { return e instanceof RangeError ? 'RangeError' : 'other'; } })());
 }
 function rawVerdict(v) { return v; }
 
@@ -349,11 +358,12 @@ const bidi = [
 ];
 for (const [name, ch] of bidi) {
   const rp = run(J(phrases(['abc' + ch + 'def'])));
-  rec(`N-phrase-${name}`, 'bidi control', `phrase "abc${name}def"`, 'ok', rp, { gap: !/LRM|RLM|ALM/.test(name), info: /LRM|RLM|ALM/.test(name), note: /LRM|RLM|ALM/.test(name) ? 'implicit marks are legitimate in mixed-direction text; keep allowed' : 'explicit override/embedding/isolate; recommend reject' });
+  const implicit = /LRM|RLM|ALM/.test(name);
+  rec(`N-phrase-${name}`, 'bidi control', `phrase "abc${name}def"`, implicit ? 'ok' : 'bad_schema', rp, implicit ? { info: true, note: 'implicit marks are legitimate in mixed-direction text; kept allowed' } : { note: 'PK-03' });
 }
-rec('N-label-RLO', 'bidi control', 'device_label "Mom\\u202es phone" (shown on the TV at pairing)', 'ok', run(J(joinReq('ACDEFH', 'Mom\u202es phone'))), { gap: true });
-rec('N-cue-RLO', 'bidi control', 'cue "Vol\\u202eume"', 'ok', run(J(cue('Vol\u202eume'))), { gap: true });
-rec('N-appver-RLO', 'bidi control', 'room.create app_version "1.0\\u202e"', 'ok', run(J(env('room.create', { client: { app_version: '1.0\u202e', platform: 'vega' } }, { room_id: null, producer_generation: 0, sender_role: 'tv' }))), { gap: true });
+rec('N-label-RLO', 'bidi control', 'device_label "Mom\\u202es phone" (shown on the TV at pairing)', 'bad_schema', run(J(joinReq('ACDEFH', 'Mom\u202es phone'))), { note: 'PK-03' });
+rec('N-cue-RLO', 'bidi control', 'cue "Vol\\u202eume"', 'bad_schema', run(J(cue('Vol\u202eume'))), { note: 'PK-03' });
+rec('N-appver-RLO', 'bidi control', 'room.create app_version "1.0\\u202e"', 'bad_schema', run(J(env('room.create', { client: { app_version: '1.0\u202e', platform: 'vega' } }, { room_id: null, producer_generation: 0, sender_role: 'tv' }))), { note: 'PK-03' });
 
 // ------------------------------------------------------------------ O audio guard
 rec('O01', 'audio guard', 'cue payload extra key "Data"', 'audio_rejected', run(J(cue('Hi')).replace('"text":"Hi"', '"text":"Hi","Data":1')));
@@ -368,30 +378,41 @@ for (const [name, v] of [['Float32Array', new Float32Array(4)], ['Uint8Array', n
 {
   // 20 level frames per second, arbitrary mantissa: capacity of the numeric covert channel
   const bitsPerFrame = 52; const fps = 20;
-  info('O-covert-capacity', 'audio guard', 'level.dbfs with a free 52-bit mantissa at 20 frames/s', `${bitsPerFrame * fps} bit/s (${(bitsPerFrame * fps) / 8} B/s) per numeric field, before t_audio_ms`, 'not blocked by the guard; low-rate speech codecs run at 0.7-2.4 kbit/s. Recommend quantized numeric fields.');
+  info('O-covert-capacity', 'audio guard', 'level.dbfs after PK-06 quantisation: multiples of 0.1 over -140..20 = 1601 values at 20 frames/s', `${Math.floor(Math.log2(1601) * 20)} bit/s per dB field (was 1040 bit/s with a free 52-bit mantissa)`, 'residual R4: below low-rate speech codecs (0.7-2.4 kbit/s) per field but not zero; enforced by review, CSP connect-src and network inspection');
 }
 
 // ------------------------------------------------------------------ P cross-field semantic gaps (all accepted today)
 const sem = [
-  ['P01 valid:true with coverage 0.01', () => run(J(winResult({ coverage: 0.01 }))), 'ok'],
-  ['P02 frame_count 700 > expected_frames 160', () => run(J(winResult({ frame_count: 700 }))), 'ok'],
-  ['P03 active_ms 35000 > duration_ms 8000', () => run(J(winResult({ active_ms: 35000 }))), 'ok'],
-  ['P04 longest_active_ms 8000 > active_ms 3000', () => run(J(winResult({ longest_active_ms: 8000 }))), 'ok'],
-  ['P05 valid:true but p95_active/p50/peak all null', () => run(J(winResult({ p95_active_dbfs: null, p50_active_dbfs: null, peak_dbfs: null }))), 'ok'],
-  ['P06 p50 (-10) > p95 (-20) and peak (-30) < p95', () => run(J(winResult({ p50_active_dbfs: -10, peak_dbfs: -30 }))), 'ok'],
-  ['P07 segments 0 but onset_ms 300 and active_ms 3000', () => run(J(winResult({ segments: 0 }))), 'ok'],
-  ['P08 valid:true with clipped_frames 160 (all frames)', () => run(J(winResult({ clipped_frames: 160 }))), 'ok'],
-  ['P09 window.result kind "calibration" with duration_ms 100', () => run(J(winResult({ kind: 'calibration', duration_ms: 100 }))), 'ok'],
-  ['P10 precheck valid:true with floor_dbfs null', () => run(J(preResult({ floor_dbfs: null }))), 'ok'],
-  ['P11 precheck p20 (-40) > p80 (-70), floor outside [p20,p80]', () => run(J(preResult({ p20_dbfs: -40, p80_dbfs: -70 }))), 'ok'],
-  ['P12 precheck valid:true with floor_dbfs 0 (loud) and clipped_frames 100', () => run(J(preResult({ floor_dbfs: 0, clipped_frames: 100 }))), 'ok'],
-  ['P13 level frame_index 0 with t_audio_ms 35000', () => run(J(levelMsg({ t_audio_ms: 35000 }))), 'ok'],
-  ['P14 level frame_index 5 repeated with new message_id/sequence (replayed frame)', () => run(J(levelMsg({ frame_index: 5 }))), 'ok'],
+  ['P01 valid:true with coverage 0.01', () => run(J(winResult({ coverage: 0.01 }))), 'bad_schema'],
+  ['P02 frame_count 700 > expected_frames 160', () => run(J(winResult({ frame_count: 700 }))), 'bad_schema'],
+  ['P03 active_ms 35000 > duration_ms 8000', () => run(J(winResult({ active_ms: 35000 }))), 'bad_schema'],
+  ['P04 longest_active_ms 8000 > active_ms 3000', () => run(J(winResult({ longest_active_ms: 8000 }))), 'bad_schema'],
+  ['P05 valid:true but p95_active/p50/peak all null', () => run(J(winResult({ p95_active_dbfs: null, p50_active_dbfs: null, peak_dbfs: null }))), 'bad_schema'],
+  ['P06 p50 (-10) > p95 (-20) and peak (-30) < p95', () => run(J(winResult({ p50_active_dbfs: -10, peak_dbfs: -30 }))), 'bad_schema'],
+  ['P07 segments 0 but onset_ms 300 and active_ms 3000', () => run(J(winResult({ segments: 0 }))), 'bad_schema'],
+  ['P08 valid:true with clipped_frames 160 (all frames)', () => run(J(winResult({ clipped_frames: 160 }))), 'bad_schema'],
+  ['P09 window.result kind "calibration" with duration_ms 100', () => run(J(winResult({ kind: 'calibration', duration_ms: 100 }))), 'bad_schema'],
+  ['P10 precheck valid:true with floor_dbfs null', () => run(J(preResult({ floor_dbfs: null }))), 'bad_schema'],
+  ['P11 precheck p20 (-40) > p80 (-70), floor outside [p20,p80]', () => run(J(preResult({ p20_dbfs: -40, p80_dbfs: -70 }))), 'bad_schema'],
+  ['P12 precheck valid:true with floor_dbfs 0 (loud) and clipped_frames 100', () => run(J(preResult({ floor_dbfs: 0, clipped_frames: 100 }))), 'bad_schema'],
+  ['P13 level frame_index 0 with t_audio_ms 35000', () => run(J(levelMsg({ t_audio_ms: 35000 }))), 'bad_schema'],
+  ['P14 level frame_index 5 repeated with new message_id/sequence (replayed frame)', () => run(J(levelMsg({ frame_index: 5, t_audio_ms: 250 }))), 'ok'],
   ['P15 level dbfs 20 (above full scale) active:true clipped:false', () => run(J(levelMsg({ dbfs: 20, active: true }))), 'ok'],
-  ['P16 window.result invalid_reason "no_voice" with active_ms 3000', () => run(J(winResult({ valid: false, invalid_reason: 'no_voice' }))), 'ok'],
-  ['P17 window.start vad_floor_dbfs 0 (ADR: floor <= -30)', () => run(J(env('window.start', { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: 0 }, { ...ids, sender_role: 'tv' }))), 'ok'],
+  ['P16 window.result invalid_reason "no_voice" with active_ms 3000', () => run(J(winResult({ valid: false, invalid_reason: 'no_voice' }))), 'bad_schema'],
+  ['P17 window.start vad_floor_dbfs 0 (ADR: floor <= -30)', () => run(J(env('window.start', { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: 0 }, { ...ids, sender_role: 'tv' }))), 'bad_schema'],
 ];
-for (const [name, fn, expect] of sem) rec(name.split(' ')[0], 'cross-field semantics', name.slice(4), expect, fn(), { gap: true });
+const stateOnly = new Set(['P08', 'P13', 'P14', 'P15', 'P16']);
+const stateNote = {
+  P08: 'accepted: the TV cannot recompute accepted-active frames, so it cannot check the clipped share of a window the phone calls valid; a phone able to send this can send any self-consistent numbers (residual R11)',
+  P13: 'accepted by design: gaps are allowed, so only the lower bound t_audio_ms >= 50*frame_index - 1 is a protocol rule; the TV bounds it by its own window timing',
+  P14: 'stateful: the TV ignores a repeated frame_index (tests/security SEC-T07 and session-core tests)',
+  P15: 'plausible reading; a level above 0 dBFS is allowed by the range',
+  P16: 'accepted: a phone-claimed invalid reason only makes the attempt unscored (fails closed); the TV reports it as claimed',
+};
+for (const [name, fn] of sem) {
+  const id = name.split(' ')[0];
+  rec(id, 'cross-field semantics', name.slice(4), stateOnly.has(id) ? 'ok' : 'bad_schema', fn(), stateOnly.has(id) ? { info: true, note: stateNote[id] } : { note: 'PK-02' });
+}
 
 // ------------------------------------------------------------------ Q envelope / role binding
 rec('Q01', 'direction', 'relay-only type room.created sent with sender_role "phone"', 'ok', run(J(env('room.created', { room_id: 'r_AAAAAAAAAAAAAAAA', pairing_code: 'ACDEFH', code_expires_at: 1, tv_credential: 'A'.repeat(43), credential_expires_at: 1, generation: 1 }, { producer_generation: 0 }))), { info: true, note: 'validator is direction-blind by design; isAllowedSender("room.created","phone")=' + P.isAllowedSender('room.created', 'phone') });
@@ -425,10 +446,10 @@ rec('Q08', 'identity', 'pre-auth type with generation 1', 'bad_schema', run(J(jo
   rec('S07', 'timing', 'worst single parse over 1800 runs of 6 hostile 8 KB frames', 'fast', worst < 25 ? 'fast' : 'SLOW', { info: true, note: `worst ${worst.toFixed(2)} ms on this host (Node ${process.version}); not a load test` });
 }
 {
-  const t0 = performance.now(); let res; let threw = false;
-  try { res = runObj({ ...ping(), payload: { x: new Array(2e7) } }); } catch (e) { threw = true; res = { ok: false, code: 'THROW', detail: String(e).slice(0, 40) }; }
+  const t0 = performance.now(); let res;
+  try { res = runObj({ ...ping(), payload: { x: new Array(1e8) } }); } catch (e) { res = { ok: false, code: 'THROW', detail: String(e).slice(0, 40) }; }
   const dt = performance.now() - t0;
-  rec('S08', 'serialize-then-check', 'validateMessageObject with payload.x = sparse Array(2e7) (programmatic object)', ['bad_schema', 'payload_too_large'], res, { gap: true, note: `${dt.toFixed(0)} ms; validateMessageObject calls JSON.stringify before any bound (sparse_array_cost.mjs: 1e8 elements = about 2.3 s and 2.7 to 2.8 GB RSS). Safe for strings via parseWireMessage; a hazard for untrusted in-memory objects` });
+  rec('S08', 'serialize-then-check', 'validateMessageObject with payload.x = sparse Array(1e8) (programmatic object)', ['bad_schema', 'payload_too_large'], res, { note: `${dt.toFixed(0)} ms (rev 1: about 2300 ms and 2.8 GB RSS); PK-09 snapshot bound`, ...(dt > 200 ? { gap: true } : {}) });
 }
 
 // ------------------------------------------------------------------ T failure-detail leakage

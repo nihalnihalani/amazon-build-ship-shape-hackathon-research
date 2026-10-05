@@ -4,6 +4,7 @@
 - Under test: `packages/protocol/src/**` at the base commit, built with `npx tsc -p packages/protocol/tsconfig.build.json --outDir <scratch>/dist` (the checked-in `dist/` was not used because it can be older than the source).
 - Environment: Node v25.2.1 (project targets Node 22+/24; the validators use no Node-only API, but see PK-12 about Hermes). Run 2026-10-05, Asia/Kolkata.
 - Baseline: `npm test -w @atr/protocol` from the worktree root: 11 test files, **746 tests passed** (vitest 3.2.4), exit 0.
+- **Status after the rework wave (T16, 2026-10-05):** protocol revision 4 was built from these findings. The verdict per PK finding against the shipped package, the rerun of the probe script (236 rows: 200 PASS, 36 INFO, 0 FAIL, 0 GAP) and the 921-test package suite are in `T16_GATE.md` sections 3 and 4. The text below is the original review (revision 1 package, 228 probes) and is kept unchanged except for the artifact table at the end. The probe script now targets revision 4; the revision 1 outputs are kept as `*_rev1` files.
 - Evidence class: automated (adversarial probes against the package, synthetic inputs). It says nothing about the relay, TV or phone code that will call these functions.
 
 ## 1. Result summary
@@ -364,15 +365,18 @@ node docs/security/probes/adr0001_sim.mjs                                     # 
 node docs/security/probes/adr0001_threshold_sweep.mjs                         # threshold sweep (about 30 s)
 ```
 
-Artifacts in `docs/security/probes/` (SHA-256 at the time of writing):
+Artifacts in `docs/security/probes/` (SHA-256 at the time of the T16 re-run, 2026-10-05; `protocol_probes.mjs`, `protocol_probe_results.json`, `protocol_probe_table_rev4.md` and `sparse_array_cost_output.txt` were regenerated for revision 4, the `*_rev1` files are the original review's outputs, the others are unchanged):
 
 | File | SHA-256 |
 |---|---|
-| protocol_probes.mjs | e079c3604cc1433a670730eebfa59ccecc0cfc53273a19842d206ef32875d7cc |
-| protocol_probe_results.json | 053df98ea3c1f3541cd483e37308f7b73e6a2ad614128931def40ec93bc87087 |
-| protocol_test_baseline.txt | cac3fa8d92dc690cd0aad1ea87786afed9753f90a79b97c08dfff0028d404219 |
+| protocol_probes.mjs | 5437d53a7f1c8339e14aa3d5809aa1ad25f768762667c2896b0935f67bed307b |
+| protocol_probe_results.json | bdf55c68342e167b78c2598aa67747e3db7911a9fc2f4eec35d3027c413c534d |
+| protocol_probe_table_rev4.md | 6edd19e997a89a621018f6cfd8eb4673d14afa221b6d5dd27d07d902c992b9a6 |
+| protocol_probe_results_rev1.json | 053df98ea3c1f3541cd483e37308f7b73e6a2ad614128931def40ec93bc87087 |
+| protocol_test_baseline_rev1.txt | cac3fa8d92dc690cd0aad1ea87786afed9753f90a79b97c08dfff0028d404219 |
 | sparse_array_cost.mjs | 1d71a38a175064d8f164ef2812130a49855499ad38aac144b83b5f1b6bd4e8a1 |
-| sparse_array_cost_output.txt | 0c9c3026f23b8d70a30d88ec35a0996fd63303f767cb11ff0a991cc8ef758e9a |
+| sparse_array_cost_output.txt | 7e6854a32fa71680cd4450ee1a84e175f55d01ed5ff001f8040b52d8c4fa2111 |
+| sparse_array_cost_output_rev1.txt | 0c9c3026f23b8d70a30d88ec35a0996fd63303f767cb11ff0a991cc8ef758e9a |
 | text_policy_sketch.mjs | 7ac692cac8d828a9cabed943c49de508baf8a115c707ffb7fde43820c3d101ee |
 | adr0001_sim.mjs | 60e4c0200f06025291f961a83cae3913ddb7327f3e53a067da36bae44547037e |
 | adr0001_sim_output.txt | 59216c78f815b809107fa0885bc18518e2f246cde3c595543760276a638ca072 |
