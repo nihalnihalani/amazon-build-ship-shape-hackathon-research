@@ -297,3 +297,116 @@ export async function clearDispatched(page: Page): Promise<void> {
     if (api !== undefined) api.dispatched.length = 0;
   });
 }
+
+/* ------------------------------------------------------------------ layout at UI scales (wave 2 ruling on A11Y-03) */
+
+export interface Box {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+export interface LayoutProbe {
+  canvas: Box;
+  footer: { present: boolean; inside: boolean; box: Box | null };
+  scrollers: { testId: string | null; scrollHeight: number; clientHeight: number; overflowPx: number }[];
+  /** Any scroller whose content is taller than its viewport. */
+  scrolls: boolean;
+  overflowPx: number;
+  /** Elements beyond the canvas edge on the left or right (content clipped horizontally). */
+  horizontalOutside: { testId: string | null; tag: string; left: number; right: number }[];
+  /** Containers that clip their own content horizontally (scrollWidth > clientWidth). */
+  horizontalClipped: { testId: string | null; tag: string; scrollWidth: number; clientWidth: number }[];
+  /** Elements beyond the canvas edge on the top or bottom, ignoring content that is inside a scroller (scrollable). */
+  verticalOutsideFixed: { testId: string | null; tag: string; top: number; bottom: number }[];
+}
+
+/** Layout facts of the current screen, measured in the page (canvas scale 1 at the standard viewport). */
+export async function layoutProbe(page: Page): Promise<LayoutProbe> {
+  return page.evaluate(() => {
+    const canvasEl = document.querySelector('[data-testid="tv-canvas"]') as HTMLElement;
+    const c = canvasEl.getBoundingClientRect();
+    const canvas = { left: c.left, top: c.top, right: c.right, bottom: c.bottom };
+    const box = (r: DOMRect): { left: number; top: number; right: number; bottom: number } => ({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+    const footerEl = canvasEl.querySelector('[data-testid="footer-bar"]') as HTMLElement | null;
+    const fr = footerEl?.getBoundingClientRect() ?? null;
+    const eps = 1;
+    const insideBox = (r: DOMRect): boolean => r.left >= c.left - eps && r.right <= c.right + eps && r.top >= c.top - eps && r.bottom <= c.bottom + eps;
+    const scrollers: LayoutProbeScroller[] = [];
+    const horizontalOutside: LayoutProbe['horizontalOutside'] = [];
+    const horizontalClipped: LayoutProbe['horizontalClipped'] = [];
+    const verticalOutsideFixed: LayoutProbe['verticalOutsideFixed'] = [];
+    interface LayoutProbeScroller { testId: string | null; scrollHeight: number; clientHeight: number; overflowPx: number }
+    canvasEl.querySelectorAll<HTMLElement>('*').forEach((el) => {
+      if (el.closest('[data-testid="live-region"]') !== null) return;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return;
+      const id = el.dataset['testid'] ?? null;
+      const tag = el.tagName.toLowerCase();
+      if (r.left < c.left - eps || r.right > c.right + eps) horizontalOutside.push({ testId: id, tag, left: Math.round(r.left), right: Math.round(r.right) });
+      const scrollsY = el.dataset['testid'] === 'screen-scroll' || cs.overflowY === 'auto' || cs.overflowY === 'scroll';
+      if (scrollsY) scrollers.push({ testId: id, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, overflowPx: Math.max(0, el.scrollHeight - el.clientHeight) });
+      if ((cs.overflowX === 'hidden' || cs.overflowX === 'clip' || cs.overflowX === 'scroll' || cs.overflowX === 'auto') && el.scrollWidth > el.clientWidth + 1) {
+        horizontalClipped.push({ testId: id, tag, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth });
+      }
+      const insideScroller = el.closest('[data-testid="screen-scroll"]') !== null && el.dataset['testid'] !== 'screen-scroll';
+      if (!insideScroller && (r.top < c.top - eps || r.bottom > c.bottom + eps)) verticalOutsideFixed.push({ testId: id, tag, top: Math.round(r.top), bottom: Math.round(r.bottom) });
+    });
+    const overflowPx = scrollers.reduce((m, s) => Math.max(m, s.overflowPx), 0);
+    return {
+      canvas,
+      footer: { present: footerEl !== null, inside: fr !== null && insideBox(fr), box: fr === null ? null : box(fr) },
+      scrollers,
+      scrolls: overflowPx > 1,
+      overflowPx,
+      horizontalOutside: horizontalOutside.slice(0, 12),
+      horizontalClipped: horizontalClipped.slice(0, 12),
+      verticalOutsideFixed: verticalOutsideFixed.slice(0, 12),
+    };
+  });
+}
+
+export interface ControlVisibility {
+  testId: string;
+  insideCanvas: boolean;
+  /** Top and bottom inside the visible part of its scroll container (not scrolled out of view). */
+  insideScrollerVertically: boolean;
+  /** Share of the control's box (ring and scale included) that is inside its scroll viewport and the canvas, 0..1. */
+  visibleFraction: number;
+  /** Left or right edge (the focus ring and the 1.05 scale included) cut off by the scroll container. */
+  clippedHorizontallyByScroller: boolean;
+  overlapsFooter: boolean;
+  box: Box;
+}
+
+/** Where a control is right now, relative to the canvas, its scroll viewport and the pinned footer. */
+export async function controlVisibility(page: Page, testId: string): Promise<ControlVisibility | null> {
+  return page.evaluate((id) => {
+    const el = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+    const canvasEl = document.querySelector('[data-testid="tv-canvas"]') as HTMLElement;
+    if (el === null) return null;
+    const r = el.getBoundingClientRect();
+    const c = canvasEl.getBoundingClientRect();
+    const scroller = el.closest('[data-testid="screen-scroll"]') as HTMLElement | null;
+    const s = (scroller ?? canvasEl).getBoundingClientRect();
+    const f = (canvasEl.querySelector('[data-testid="footer-bar"]') as HTMLElement | null)?.getBoundingClientRect() ?? null;
+    const eps = 1;
+    const vis = (box: DOMRect, area: DOMRect): number => {
+      const w = Math.max(0, Math.min(box.right, area.right) - Math.max(box.left, area.left));
+      const h = Math.max(0, Math.min(box.bottom, area.bottom) - Math.max(box.top, area.top));
+      return box.width * box.height === 0 ? 0 : (w * h) / (box.width * box.height);
+    };
+    return {
+      testId: id,
+      visibleFraction: Math.min(vis(r, s), vis(r, c)),
+      insideCanvas: r.left >= c.left - eps && r.right <= c.right + eps && r.top >= c.top - eps && r.bottom <= c.bottom + eps,
+      insideScrollerVertically: r.top >= s.top - eps && r.bottom <= s.bottom + eps,
+      clippedHorizontallyByScroller: scroller !== null && (r.left < s.left - eps || r.right > s.right + eps),
+      overlapsFooter: f !== null && r.bottom > f.top + eps && r.top < f.bottom,
+      box: { left: r.left, top: r.top, right: r.right, bottom: r.bottom },
+    };
+  }, testId);
+}
