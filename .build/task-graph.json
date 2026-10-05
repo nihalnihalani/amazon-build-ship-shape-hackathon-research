@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T09:07:16+05:30",
+ "updated_at": "2026-10-05T09:07:28+05:30",
  "states": [
   "pending",
   "ready",
@@ -225,7 +225,7 @@
     "T02"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 2,
    "acceptance_criteria": [
     "packages/protocol implements PROTOCOL.md v1 with validators and tests",
@@ -238,7 +238,9 @@
    "reviewer": "security-review",
    "evidence_refs": [
     "EV-0009",
-    "EV-0026"
+    "EV-0026",
+    "EV-0044",
+    "EV-0049"
    ],
    "commit": "c844c21",
    "blocker": "ADR rev 2 rework in progress (AMENDMENTS-REV2.md)"
@@ -259,7 +261,7 @@
     "T05"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 2,
    "acceptance_criteria": [
     "Pure DSP functions with independent-expected-value tests covering ADR-0001 boundaries",
@@ -273,7 +275,9 @@
    "evidence_refs": [
     "EV-0012",
     "EV-0020",
-    "EV-0029"
+    "EV-0029",
+    "EV-0044",
+    "EV-0049"
    ],
    "commit": "87b397e",
    "blocker": "ADR rev 2 rework in progress (AMENDMENTS-REV2.md)"
@@ -294,7 +298,7 @@
     "T05"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 1,
    "acceptance_criteria": [
     "Shared relay core + local HTTPS/WSS adapter",
@@ -306,10 +310,12 @@
    "reviewer": "security-review",
    "evidence_refs": [
     "EV-0024",
-    "EV-0034"
+    "EV-0034",
+    "EV-0044",
+    "EV-0049"
    ],
    "commit": "5ecb818",
-   "blocker": "ADR rev 2 rework (relay rows)"
+   "blocker": null
   },
   {
    "id": "T08",
