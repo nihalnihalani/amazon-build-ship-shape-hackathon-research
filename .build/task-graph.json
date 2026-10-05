@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T08:31:16+05:30",
+ "updated_at": "2026-10-05T08:40:03+05:30",
  "states": [
   "pending",
   "ready",
@@ -465,7 +465,7 @@
     "T11"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "verified",
    "attempts": 2,
    "acceptance_criteria": [
     "Full journey pair\u2192deletion over local relay with real phone page code and TV session core"
@@ -477,7 +477,8 @@
    "evidence_refs": [
     "EV-0022",
     "EV-0035",
-    "EV-0037"
+    "EV-0037",
+    "EV-0048"
    ],
    "commit": "1e34358",
    "blocker": null
@@ -599,7 +600,8 @@
    "reviewer": "qa-accessibility",
    "evidence_refs": [
     "EV-0036",
-    "EV-0038"
+    "EV-0038",
+    "EV-0048"
    ],
    "commit": "1e34358",
    "blocker": null
@@ -698,7 +700,8 @@
    "reviewer": "lead",
    "evidence_refs": [
     "EV-0040",
-    "EV-0042"
+    "EV-0042",
+    "EV-0048"
    ],
    "commit": null,
    "blocker": null
