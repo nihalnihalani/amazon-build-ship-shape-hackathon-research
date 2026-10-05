@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T05:30:52+05:30",
+ "updated_at": "2026-10-05T05:45:43+05:30",
  "states": [
   "pending",
   "ready",
@@ -292,7 +292,7 @@
     "T05"
    ],
    "required": true,
-   "status": "in_progress",
+   "status": "in_review",
    "attempts": 1,
    "acceptance_criteria": [
     "Shared relay core + local HTTPS/WSS adapter",
@@ -303,9 +303,10 @@
    ],
    "reviewer": "security-review",
    "evidence_refs": [
-    "EV-0024"
+    "EV-0024",
+    "EV-0034"
    ],
-   "commit": "20d5e48",
+   "commit": "5ecb818",
    "blocker": "ADR rev 2 rework (relay rows)"
   },
   {
@@ -461,8 +462,8 @@
     "T11"
    ],
    "required": true,
-   "status": "in_review",
-   "attempts": 1,
+   "status": "in_progress",
+   "attempts": 2,
    "acceptance_criteria": [
     "Full journey pair\u2192deletion over local relay with real phone page code and TV session core"
    ],
@@ -471,10 +472,11 @@
    ],
    "reviewer": "qa-accessibility",
    "evidence_refs": [
-    "EV-0022"
+    "EV-0022",
+    "EV-0035"
    ],
    "commit": "9035535",
-   "blocker": "Review-driven rework (ADR rev 2) will rerun T12"
+   "blocker": "DEF-003 session.begin before phone Yes"
   },
   {
    "id": "T12H",
