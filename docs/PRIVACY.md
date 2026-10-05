@@ -50,16 +50,16 @@ The TV does **not** send results, verdicts, speaker ratings, history, phrase tex
 
 > Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.
 
-**TV, Settings > About** (`packages/session-core/src/copy.ts`, shown by the `about` view; the About screen in `apps/tv/src/screens/AboutScreen.tsx` also renders its own storage and licence lines from `apps/tv/src/copy.ts`):
+**TV, Settings > About** (`packages/session-core/src/copy.ts`, shown by the `about` view; **fix in progress (tv)**: the About screen in `apps/tv/src/screens/AboutScreen.tsx` still also renders its own storage and licence lines from `apps/tv/src/copy.ts`, which is routed to the tv owner and had not landed at `cfa5158`):
 
 - "Practice data is stored unencrypted on this TV. Session summaries keep positions and counts only, never phrase text, cue words or phone names, for 8 days. Your phrase bank stays on this TV until you delete it in Settings."
 - "This TV tells the relay and your phone which practice step you are on and the room's background level. It does not send your results, ratings or history."
 - "The relay keeps short-lived abuse-prevention counters (counts only) keyed by a keyed hash of the connection's network address. The key changes at least daily and the counters expire within an hour."
-- "Practice data stays on this TV, stored unencrypted. Delete it in Settings. Sound is never recorded or sent by this TV." (the `apps/tv` copy)
+- "Practice data stays on this TV, stored unencrypted. Delete it in Settings. Sound is never recorded or sent by this TV." (the `apps/tv` copy: the second source, **fix in progress (tv)**; until it lands the About screen shows both this line and the session-core storage line above)
 
 **TV footer, every screen:** "Not a medical device. Does not diagnose or treat any condition."
 
-**Known discrepancy for the owner to decide.** The TV's onboarding and pairing screens still show the ADR-0002 revision 1 sentence (`PRIVACY_LINE` in `packages/session-core/src/copy.ts`): "Audio stays on this phone and is never saved or uploaded. Only levels, typed phrases, listener responses, and connection details are sent to the relay and TV." Amendment A2-01 replaced the phone's sentence because the old list omits voice-activity timing, phone status and the device name. The TV sentence is therefore narrower than what is sent. Aligning it is a one-line change in `session-core` (not a docs change, and outside this task's allowed files); until then this document and the phone copy are the complete statement.
+**Resolved in session-core (merged at `cfa5158`, commit `0061d83`).** The TV's onboarding and pairing screens previously showed the ADR-0002 revision 1 sentence, which omits voice-activity timing, phone status and the device name. `PRIVACY_LINE` in `packages/session-core/src/copy.ts` is now the exact amended A2-01 sentence, the same one the phone shows, and `packages/session-core/test/privacy-copy.test.ts` checks that it matches the A2-01 row of `docs/adr/AMENDMENTS-REV2.md`, that onboarding and pairing each show it once, and that the revision 1 wording appears nowhere in the TV copy table. **Still open: the About screen's second copy source (fix in progress, tv)**, described above.
 
 **Claims that must not be made** (ADR-0002): "end-to-end encrypted", "no data leaves the household", "only numbers", "relay never inspects payloads". Also not allowed anywhere: dB SPL, intelligibility, comprehension, hearing or clinical claims, and any efficacy claim.
 
@@ -135,6 +135,6 @@ Credentials, pairing codes, levels and audio are **never** stored (memory only).
 
 ## 10. Decisions and items for the owner
 
-1. Align the TV's onboarding and pairing sentence (`PRIVACY_LINE`) with the amended phone sentence, or record why it stays narrower.
+1. ~~Align the TV's onboarding and pairing sentence with the amended phone sentence~~ done in session-core. Remaining: confirm that the tv owner's removal of the About screen's second copy source has landed, then update section 4.
 2. Provide a real privacy contact and decide whether a public privacy notice is required for any store or public launch. This document is not one.
 3. Before any hosted use: deploy, then run the log-content check in section 6 and update this document and the README with the result.

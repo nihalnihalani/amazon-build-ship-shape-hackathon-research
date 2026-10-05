@@ -39,10 +39,10 @@ The recorded `engineering_release_candidate` reason ("Implementation in progress
 | Native TV build, `vega project doctor`, `vpt validate`, VVD run (T03, T09 native) | **blocked_external (B-001)** | none |
 | Physical microphone qualification (T04, T04A) and phone/VVD acoustic and latency gate (T19) | **blocked_external (B-002)**; protocol frozen, not executed | EV-0030 |
 | Hosted relay, hosted end-to-end, operations rehearsals (T10, T12H, T20) | **blocked_external (B-003)**; template lints, nothing deployed | EV-0004, `infra/README.md` |
-| Dependency audit (ADR amendment A7-01) | root clean; **`apps/tv` has 70 open findings (5 critical, 44 high)**, none in the shipped JavaScript bundle; root dev-only findings open | [SUPPLY_CHAIN.md](SUPPLY_CHAIN.md) |
+| Dependency audit (ADR amendment A7-01) | root `--omit=dev` clean (0) after the `vitest` 3.2.7 and `ws` 8.22.0 bumps; 2 dev-only moderates remain (accepted for development use); **`apps/tv` still has 70 findings (5 critical, 44 high)**, none in the shipped JavaScript bundle, recorded by the lead as an **A7-01 exception for build-time tooling** (re-audit at every SDK bump and before any public release) | [SUPPLY_CHAIN.md](SUPPLY_CHAIN.md), `docs/adr/AMENDMENTS-REV2.md` |
 | Independent release review at the release commit (T21), release candidate task (T22) | **pending** | none |
 
-**What flips it to true:** B-001 and B-002 cleared with real VVD and real phone evidence recorded under their own classes; T09 native, T17, T19 verified; T10, T12H and T20 verified on an authorized staging account (B-003); T16 re-review and T21 independent release review at one release commit; T05 to T08, T12 and T15 moved to `verified`; a clean-clone CI run (T18); and the `apps/tv` audit status resolved or explicitly accepted by the owner. `next_action`: owner clears B-001 first (it unblocks the native build, the VVD demo and most of the rest).
+**What flips it to true:** B-001 and B-002 cleared with real VVD and real phone evidence recorded under their own classes; T09 native, T17, T19 verified; T10, T12H and T20 verified on an authorized staging account (B-003); T16 re-review and T21 independent release review at one release commit; T05 to T08, T12 and T15 moved to `verified`; a clean-clone CI run (T18); and the `apps/tv` audit exception re-confirmed at the release commit (it is recorded by the lead, not yet by the owner). `next_action`: owner clears B-001 first (it unblocks the native build, the VVD demo and most of the rest).
 
 ## 2. `hackathon_ready`: false
 
@@ -83,4 +83,4 @@ The recorded `engineering_release_candidate` reason ("Implementation in progress
 
 ## 6. Note on evidence timestamps
 
-`.build/evidence.jsonl` records timestamps for EV-0033 onward (10:20, 10:45, 11:40 and 12:30 IST) that are later than the git commit dates of the commits they cite (05:30, 05:42, 06:03 and 06:40 IST) and later than the host clock when this document was written (about 07:00 IST). Treat the log's times as unreliable until the lead reconciles them; this documentation uses git commit dates (`docs/submission/WORK_IN_WINDOW.md`).
+The first version of this document reported that `.build/evidence.jsonl` timestamps from EV-0033 onward were later than the commits they cite. The lead corrected them from the recording commit times (EV-0041; each corrected entry keeps its original value in `timestamp_as_first_recorded`, and the log's timestamps now come from the host clock). The remark is kept for the record; `docs/submission/WORK_IN_WINDOW.md` still uses git commit dates, which now agree with the log. A commit time bounds when evidence was recorded, not when the underlying run happened.

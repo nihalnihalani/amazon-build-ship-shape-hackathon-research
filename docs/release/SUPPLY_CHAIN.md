@@ -1,6 +1,6 @@
 # Supply chain: lockfiles, audit, SBOM, bundle contents, artifact hashes
 
-Status: prepared at integration commit `63af0ae` on 2026-10-05 from a **clean clone** (`git clone` of the `wt/docs` repository, `git checkout 63af0ae`, then `npm ci`), so the results do not depend on a developer's leftover `node_modules`. Nothing here was signed or published. Companion files: [LICENSES.md](LICENSES.md), `../../THIRD_PARTY_NOTICES.md`, `SBOM.cdx.json`, `SBOM.tv.cdx.json`, `audit/`.
+Status: first prepared at integration commit `63af0ae` on 2026-10-05 from a **clean clone** (`git clone` of the `wt/docs` repository, `git checkout 63af0ae`, then `npm ci`), so the results do not depend on a developer's leftover `node_modules`; **updated after merging `build/across-the-room` at `cfa5158`**, which bumped `vitest` to 3.2.7 and the `tests` workspace `ws` to 8.22.0 (lockfile change) and recorded the A7-01 exception. After the merge the root and `apps/tv` projects were reinstalled with `npm ci` from the merged lockfiles and the audits, the licence inventory and both SBOMs were regenerated. Nothing here was signed or published. Companion files: [LICENSES.md](LICENSES.md), `../../THIRD_PARTY_NOTICES.md`, `SBOM.cdx.json`, `SBOM.tv.cdx.json`, `audit/`.
 
 Release gate this serves: amendment **A7-01** ("root lockfile, exact versions for security-relevant packages, `npm audit --omit=dev` with no unresolved high/critical, licence inventory and SBOM, recorded support dates for Node 22/24, Vega SDK 0.24 and RN 0.83 (early access)").
 
@@ -8,34 +8,37 @@ Release gate this serves: amendment **A7-01** ("root lockfile, exact versions fo
 
 | A7-01 item | Status | Notes |
 |---|---|---|
-| Root lockfile | **met** | `package-lock.json` (lockfileVersion 3) is committed; `npm ci` at the root succeeded under Node 24.11.1 (110 packages) |
+| Root lockfile | **met** | `package-lock.json` (lockfileVersion 3) is committed; `npm ci` at the root succeeded under Node 24.11.1 (110 packages at `63af0ae`, 105 after the bumps) |
 | `apps/tv` lockfile | **met** | `apps/tv/package-lock.json` is committed; `npm ci` in `apps/tv` succeeded under Node 22.23.2 |
 | Exact versions of security-relevant packages | **met for the relay**, ranges for Vega packages | `ws` 8.22.0 and `@aws-sdk/*` 3.1146.0 are pinned exactly in `services/relay/package.json`. The Vega packages use the starter's `~` ranges (`@amazon-devices/react-native-kepler ~4.0.0+rn0.83.0`, `react-native-svg ~3.0.0`, async-storage alias `~2.1.0`); the lockfile freezes them |
-| `npm audit --omit=dev`, root workspace | **met: 0 vulnerabilities** | section 2 |
-| `npm audit --omit=dev`, `apps/tv` | **NOT met: 70 findings, 5 critical, 44 high** | open; none of the packages carrying an advisory is in the JavaScript bundle; section 3 |
+| `npm audit --omit=dev`, root workspace | **met: 0 vulnerabilities**, before and after the bumps | section 2 |
+| `npm audit --omit=dev`, `apps/tv` | **not clean: 70 findings, 5 critical, 44 high; recorded as an A7-01 exception by the lead** | build and CLI tooling only; none of the packages carrying an advisory is in the 27-package JavaScript bundle; the exception does not cover any bundled package; section 3 |
 | Licence inventory | **met, with flags** | [LICENSES.md](LICENSES.md): 5 proprietary Amazon packages, 2 packages with unclear licence declarations (neither in the bundle) |
 | SBOM | **met** | section 5 |
 | Recorded support dates | **met** | section 6 |
 
-Overall: **A7-01 is not satisfied until the `apps/tv` audit status is resolved or explicitly accepted by the owner.** This document does not accept any risk.
+Overall: the root workspace meets A7-01. `apps/tv` does **not** have a clean `--omit=dev` audit; the lead recorded a documented exception for build-time tooling in `docs/adr/AMENDMENTS-REV2.md` ("Supply-chain decision (A7-01 exception, 2026-10-05)"): none of the affected packages is in the Metro runtime bundle (`tv-bundle-packages.json`), re-audit at every SDK bump and before any public release. This document records that decision and does not itself accept any risk.
 
 ## 2. Root workspace audit
 
-Command: `npm audit --omit=dev` at the repository root (Node 24.11.1, npm 11.6.2). Exit 0, **0 vulnerabilities** (50 production, 117 dev, 53 optional, 2 peer dependencies counted by npm). Raw JSON: `audit/npm-audit-root-omit-dev.json`.
+**After the bumps** (merged lockfile at `cfa5158`, Node 24.11.1, npm 11.6.2):
 
-Full audit including dev dependencies (`npm audit`, `audit/npm-audit-root-all.json`): 3 findings, **all in development-only packages**, none shipped:
+- `npm audit --omit=dev`: exit 0, **0 vulnerabilities** (50 production, 112 dev, 53 optional, 2 peer dependencies counted by npm). Raw JSON: `audit/npm-audit-root-omit-dev.json`.
+- `npm audit` including dev dependencies: **2 moderate findings, 0 high, 0 critical**, both development-only and not shipped: `vitest` 3.2.7 and `@vitest/mocker` 3.2.7, GHSA-82fw-gwwq-j7x9 (path traversal and arbitrary file read through redirect mocks; advisory range below 4.1.11). npm's suggested fix is a **semver-major** `vitest` upgrade (5.0.3 when rechecked; the lead's record says v4), which was **accepted for development use only** because the test UI server is never run in CI or production. Raw JSON: `audit/npm-audit-root-all.json`.
 
-| Package | Severity | Advisory | Where | Status |
+**Before the bumps** (`63af0ae`; the same commands in the clean clone, kept here for the record; the raw pre-bump JSON is in commit `f2075fe`): `npm audit --omit=dev` 0, and `npm audit` including dev 3 findings, all development-only:
+
+| Package | Severity | Advisory | Where | Resolution |
 |---|---|---|---|---|
-| `vitest` 3.2.4 | critical | GHSA-5xrq-8626-4rwp: arbitrary file read and execution **when the Vitest UI server is listening** (range below 3.2.6) | root `devDependencies` | open. The repository never starts the Vitest UI server (`vitest run` only). Fix available: `vitest` 3.2.7, a patch-level bump of a root manifest (integrator-owned) |
-| `@vitest/mocker` 3.2.4 | moderate | GHSA-82fw-gwwq-j7x9: path traversal through redirect mocks | same chain | open, fixed by the same bump |
-| `ws` 8.18.3 | high (and one moderate) | GHSA-96hv-2xvq-fx4p: memory exhaustion from tiny fragments (below 8.21.0); GHSA-58qx-3vcg-4xpx: uninitialised memory disclosure (below 8.20.1) | `tests/package.json` `devDependencies` only (the fault-injecting WebSocket proxies of the end-to-end tests) | open. The shipped relay uses `ws` 8.22.0 and is not affected. Fix: bump the `tests` workspace to 8.22.0 |
+| `vitest` 3.2.4 | critical | GHSA-5xrq-8626-4rwp: arbitrary file read and execution **when the Vitest UI server is listening** (range below 3.2.6) | root `devDependencies` | fixed by the bump to 3.2.7 (verified: the post-bump audit no longer lists it) |
+| `ws` 8.18.3 | high (and one moderate) | GHSA-96hv-2xvq-fx4p: memory exhaustion from tiny fragments (below 8.21.0); GHSA-58qx-3vcg-4xpx: uninitialised memory disclosure (below 8.20.1) | `tests/package.json` `devDependencies` only (the fault-injecting WebSocket proxies of the end-to-end tests) | fixed by the bump to 8.22.0 (verified). The shipped relay already used `ws` 8.22.0 and was never affected. |
+| `@vitest/mocker` 3.2.4 | moderate | GHSA-82fw-gwwq-j7x9 | same chain as `vitest` | **still open at 3.2.7**: fixed only in a major version (above) and accepted for development use |
 
-Recommended action for the lead (root manifests are not in this task's allowed files): bump `vitest` to 3.2.7 and the `tests` workspace `ws` to 8.22.0, then rerun the whole workspace.
+Effect of the bumps on the shipped inventory: the third-party production package set is unchanged (the same 36 packages and versions). `ws` 8.22.0 moved from `services/relay/node_modules/ws` to the hoisted `node_modules/ws`, so its path changed in `licenses.root.json` and the SBOM. The root SBOM was regenerated and is idempotent on a second run (identical bytes); its component set is the same 43 components as before, with more metadata fields (descriptions and `private` flags) than the first run.
 
-## 3. `apps/tv` audit (open)
+## 3. `apps/tv` audit (exception recorded)
 
-Command: `npm audit --omit=dev` in `apps/tv` (Node 22.23.2, npm 10.9.8). Exit 1: **70 vulnerabilities (2 low, 19 moderate, 44 high, 5 critical)** among 1,208 production-classified packages. Raw JSON: `audit/npm-audit-tv-omit-dev.json` (full audit, `audit/npm-audit-tv-all.json`: 95 findings, 68 high, 5 critical).
+Command: `npm audit --omit=dev` in `apps/tv` (Node 22.23.2, npm 10.9.8; rerun after the merge with the same result, the `apps/tv` lockfile did not change). Exit 1: **70 vulnerabilities (2 low, 19 moderate, 44 high, 5 critical)** among 1,208 production-classified packages. Raw JSON: `audit/npm-audit-tv-omit-dev.json` (full audit, `audit/npm-audit-tv-all.json`: 95 findings, 68 high, 5 critical).
 
 Why so many "production" findings: `react-native` 0.83.0 and `@amazon-devices/react-native-kepler` declare the command-line and Metro tooling (`@react-native/community-cli-plugin`, `metro`, `@react-native-community/cli`, `jscodeshift`, `@microsoft/api-extractor` and their dependencies) as ordinary dependencies, so npm counts them as production. They run on the developer's build machine; they are not part of the app that runs on the TV.
 
@@ -59,7 +62,7 @@ The remaining findings are parents flagged only through those packages (for exam
 
 **What is and is not in the shipped bundle.** A Metro bundle for platform `kepler` (`--dev false`) was built and its source map read (`tools/bundle-packages.mjs`): the bundle contains **27 third-party packages** (774 source files, 89 of ours), listed with licences in `tv-bundle-packages.json`. None of the packages that carry an advisory above is among them. Four bundled packages are flagged only transitively (`@amazon-devices/kepler-a11y-settings-interface-turbo`, `@amazon-devices/keplerscript-turbomodule-api`, `@amazon-devices/react-native-async-storage__async-storage` and `@amazon-devices/react-native-kepler`, all severity "high" through non-bundled tooling such as `jscodeshift` and `@microsoft/api-extractor`); the audit lists no advisory on those four packages themselves.
 
-**Status: open.** npm's suggested fixes are semver-major jumps (for example `react-native` 0.87.1) or point at old vendor versions, and none fits the Vega-supported RN 0.83 line, so none was applied. Options for the owner and lead, none taken here: (a) record a documented risk acceptance (dev-time tooling, not shipped, JS bundle verified free of the advisory packages); (b) ask Amazon to move the tooling out of the runtime dependency list; (c) add `overrides` for individual tooling packages after confirming the Vega build still works, which needs the SDK (B-001). The developer-machine exposure is real even though the TV is unaffected: for example `logkitty` and `shell-quote` run in the developer's shell during React Native CLI use.
+**Status: recorded as an A7-01 exception by the lead (2026-10-05), not resolved.** The exception text in `docs/adr/AMENDMENTS-REV2.md` reads, in substance: all 70 findings sit inside React Native and Vega build and CLI tooling; none of the affected packages is in the 27-package Metro runtime bundle (`tv-bundle-packages.json`); accepted as a documented exception for build-time tooling pending upstream Vega and React Native releases; **re-audit at every SDK bump and before any public release; the exception does not cover any package that ships in the bundle.** npm's suggested fixes are semver-major jumps (for example `react-native` 0.87.1) or point at old vendor versions, and none fits the Vega-supported RN 0.83 line, so none was applied. The developer-machine exposure is real even though the TV is unaffected: for example `logkitty` and `shell-quote` run in the developer's shell during React Native CLI use. Other options, not taken: ask Amazon to move the tooling out of the runtime dependency list, or add `overrides` for individual tooling packages after confirming the Vega build still works, which needs the SDK (B-001). The five `@amazon-devices/*` packages are proprietary dependencies, never vendored into this MIT repository.
 
 ## 4. Licences
 
@@ -69,7 +72,7 @@ See [LICENSES.md](LICENSES.md) for the method, counts by licence, direct depende
 
 | File | Contents | Tool | SHA-256 (first 16 hex) |
 |---|---|---|---|
-| `SBOM.cdx.json` | CycloneDX 1.6, root workspace, production only (`--omit dev`): 43 components (36 third-party, 7 first-party workspace packages) | `npx @cyclonedx/cyclonedx-npm@6.0.1 --omit dev --output-format JSON --output-reproducible --spec-version 1.6` run at the repository root with Node 24.11.1 | `82ec667c6001db2e` |
+| `SBOM.cdx.json` | CycloneDX 1.6, root workspace, production only (`--omit dev`): 43 components (36 third-party, 7 first-party workspace packages) | `npx @cyclonedx/cyclonedx-npm@6.0.1 --omit dev --output-format JSON --output-reproducible --spec-version 1.6` run at the repository root with Node 24.11.1 (twice after the merge: identical bytes) | `53f5a1d4ec88980d` (regenerated after the bumps; first run `82ec667c6001db2e`) |
 | `SBOM.tv.cdx.json` | CycloneDX 1.6, `apps/tv`, production only: 1,248 components counted with nesting (npm's production closure, a superset of the bundle) | the same tool run in `apps/tv` with Node 22.23.2 and `--ignore-npm-errors` | `cd19867c9e864b42` |
 
 `--output-reproducible` omits the serial number and timestamp so that regenerating from the same lockfile produces the same file. The `apps/tv` SBOM needs `--ignore-npm-errors` because `npm ls --all --json` reports one `missing` edge (`@atr/protocol@0.1.0` required by `@atr/session-core` through the `file:` link) although `npm ci`, the build, the typecheck and the jest suite all work; the SBOM still lists `@atr/protocol` through the TV's own `file:` dependency. No system install was needed: the tool ran through `npx`.
@@ -114,8 +117,9 @@ These hashes were observed on this host at `63af0ae` and are recorded so that a 
 
 ## 8. Open items
 
-1. Resolve or accept the `apps/tv` audit status (section 3). Owner decision.
-2. Bump `vitest` to 3.2.7 and the `tests` workspace `ws` to 8.22.0 (section 2). Lead (root manifests).
+1. Re-audit `apps/tv` at every SDK bump and before any public release; the A7-01 exception does not cover any package that ships in the bundle. Lead and owner.
+2. The two dev-only `vitest` moderates stay until a major upgrade is acceptable (decided: accepted for development use). Lead.
 3. Read Amazon's Program Materials License Agreement before any public distribution of the TV app (section 4). Owner.
 4. Add a CI workflow that runs `npm ci`, the audits and the SBOM from a clean checkout (none exists yet; EV-0040 notes "CI workflow not yet added"). Lead.
 5. After B-001 is cleared: pin the SDK build, regenerate the SBOM from the native build if the route needs one, and re-run the audit on the lockfile the SDK resolves.
+6. Regenerate the licence inventory, SBOMs and audit files at the release commit (`docs/submission/SUBMISSION_CHECKLIST.md`, pre-publication cleanup).

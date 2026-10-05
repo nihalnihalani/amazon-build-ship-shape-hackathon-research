@@ -98,6 +98,7 @@
       "name": "across-the-room",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0",
+      "description": "Across the Room: the far-side check. Fire TV (Vega) practice display with a phone microphone at the far side of the room.",
       "licenses": [
         {
           "license": {
@@ -109,8 +110,16 @@
       "purl": "pkg:npm/across-the-room@0.1.0",
       "properties": [
         {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=22"
+        },
+        {
           "name": "cdx:npm:package:path",
           "value": ""
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -128,6 +137,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/phone-mic-meter@0.1.0",
+      "description": "Deterministic relative-level DSP (RMS, dBFS, floor, VAD, window summaries) and a local browser capture adapter",
       "licenses": [
         {
           "license": {
@@ -141,6 +151,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/phone-mic-meter"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -150,6 +164,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/phone@0.1.0",
+      "description": "Phone companion page: pairing, microphone, local analysis, listener controls",
       "licenses": [
         {
           "license": {
@@ -163,6 +178,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/phone"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -172,6 +191,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/protocol@0.1.0",
+      "description": "Across the Room wire protocol v1: envelope, message schemas, validators and limits",
       "licenses": [
         {
           "license": {
@@ -185,6 +205,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/protocol"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -194,6 +218,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/relay@0.1.0",
+      "description": "Shared relay core plus local HTTPS/WSS server and AWS Lambda adapter",
       "licenses": [
         {
           "license": {
@@ -207,6 +232,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/relay"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -216,6 +245,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/session-core@0.1.0",
+      "description": "Authoritative TV session state machine, verdicts, reveal, agreement, summary and history derivation (pure TypeScript)",
       "licenses": [
         {
           "license": {
@@ -229,6 +259,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/session-core"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -238,6 +272,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/ten-foot-meter@0.1.0",
+      "description": "Ten-foot relative-level arc geometry and display smoothing",
       "licenses": [
         {
           "license": {
@@ -251,6 +286,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/ten-foot-meter"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -260,6 +299,7 @@
       "group": "@atr",
       "version": "0.1.0",
       "bom-ref": "across-the-room@0.1.0|@atr/tests@0.1.0",
+      "description": "Cross-component integration and end-to-end tests (local relay + phone page in Chrome + headless TV session core)",
       "licenses": [
         {
           "license": {
@@ -273,6 +313,10 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@atr/tests"
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
         }
       ]
     },
@@ -282,6 +326,8 @@
       "group": "@aws-sdk",
       "version": "3.1146.0",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-apigatewaymanagementapi@3.1146.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS SDK for JavaScript Apigatewaymanagementapi Client for Node.js, Browser and React Native",
       "licenses": [
         {
           "license": {
@@ -295,10 +341,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/client-apigatewaymanagementapi/-/client-apigatewaymanagementapi-3.1146.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bf4a85a87e595780a0511c5ab1b6c5f0b7e7c807edf29f28cc73e784324c8ffddfb6e8ef571d7f106322436ed51d735d493e2efaff72b0ae03703eb13f6e959f"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#clients/client-apigatewaymanagementapi",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-apigatewaymanagementapi",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/client-apigatewaymanagementapi"
@@ -311,6 +382,8 @@
       "group": "@aws-sdk",
       "version": "3.1146.0",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-dynamodb@3.1146.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS SDK for JavaScript Dynamodb Client for Node.js, Browser and React Native",
       "licenses": [
         {
           "license": {
@@ -324,10 +397,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/client-dynamodb/-/client-dynamodb-3.1146.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "dcc73c6244aed8a96034d4aeb29696f85a34a53c17f9f2d8942e68bc7df25f73a80e0d913eda773f2f0ab9026bd050e5423d6d1f0d0adfe02d687e0d5e523769"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#clients/client-dynamodb",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-dynamodb",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/client-dynamodb"
@@ -340,6 +438,8 @@
       "group": "@aws-sdk",
       "version": "3.1146.0",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-sqs@3.1146.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS SDK for JavaScript Sqs Client for Node.js, Browser and React Native",
       "licenses": [
         {
           "license": {
@@ -353,10 +453,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/client-sqs/-/client-sqs-3.1146.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2504f4ab2f3b1cb92b089358681933a50ba8a55169bda7f0cab1d345a2f9e605c2ad8461f32de8274f34b2abb85fa826c83db03bbbb0e04eb9a6cd772ae8ac27"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#clients/client-sqs",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sqs",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/client-sqs"
@@ -369,6 +494,8 @@
       "group": "@aws-sdk",
       "version": "3.1146.0",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/client-ssm@3.1146.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS SDK for JavaScript Ssm Client for Node.js, Browser and React Native",
       "licenses": [
         {
           "license": {
@@ -382,10 +509,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/client-ssm/-/client-ssm-3.1146.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "431dbd8f364454fa71531cd136cd70c07836aad3a61dcc1ade9d416ee7e2c60ed29f22e0df374b6e16caea879e4671433c176572369c51123fe4963e6929aefd"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#clients/client-ssm",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-ssm",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/client-ssm"
@@ -398,6 +550,8 @@
       "group": "@aws-sdk",
       "version": "3.978.1",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/core@3.978.1",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "Core functions & classes shared by multiple AWS SDK clients.",
       "licenses": [
         {
           "license": {
@@ -411,10 +565,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/core/-/core-3.978.1.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2db63d686b048b39c35a651cdf4370bf76885fff9d6f04f1f0a7d2d32382dcd3d830ef8ef757ba8e44f56b37f7e05c233a776af3f43e45c555673e719deaf076"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/core",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/core",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/core"
@@ -427,6 +606,8 @@
       "group": "@aws-sdk",
       "version": "3.972.72",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-env@3.972.72",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that sources credentials from known environment variables",
       "licenses": [
         {
           "license": {
@@ -440,10 +621,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-env/-/credential-provider-env-3.972.72.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "c5328efc55893e8cd32176e8cd59d51a834185a19b6bc4c1731f8ac948d155e3a55c4f9d51cec64d1d5c2efbb4b937487667a6cda15baaa0ac8577990357d97b"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-env",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-env",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-env"
@@ -456,6 +662,8 @@
       "group": "@aws-sdk",
       "version": "3.972.74",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-http@3.972.74",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider for containers and HTTP sources",
       "licenses": [
         {
           "license": {
@@ -469,10 +677,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.74.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bbdd44fe14fc7f8775c72d0997b546e2754a2779716eb664a014de495a0975606248450cc0c4bff7e7b41ff68955057ffcbb79c2eccff84ebdbf86914ac3539b"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-http",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-http",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-http"
@@ -485,6 +718,8 @@
       "group": "@aws-sdk",
       "version": "3.973.17",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-ini@3.973.17",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that sources credentials from ~/.aws/credentials and ~/.aws/config",
       "licenses": [
         {
           "license": {
@@ -498,10 +733,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-ini/-/credential-provider-ini-3.973.17.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "81e77829774192f202f356cbbcd1c7b9029d29a93f5578504d1d4d5984d3a96d38ef89e59acc72f4efef9604c8a210c3587df1a4176d54c651ca36fe0e7a1c0c"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-ini",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-ini",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-ini"
@@ -514,6 +774,8 @@
       "group": "@aws-sdk",
       "version": "3.972.79",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-login@3.972.79",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that sources credentials from aws login cached tokens",
       "licenses": [
         {
           "license": {
@@ -527,10 +789,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.79.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2fe67ce5a9ce34977c31a8aeada3b8c11c404c27447a3059dcaddeca6cd623924f5daf6c392f429089bbd8f04aa97297f99f69f4d18c5f90083179b42c47e583"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-login",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-login",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-login"
@@ -543,6 +830,8 @@
       "group": "@aws-sdk",
       "version": "3.972.84",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-node@3.972.84",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that sources credentials from a Node.JS environment. ",
       "licenses": [
         {
           "license": {
@@ -556,10 +845,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-node/-/credential-provider-node-3.972.84.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a07b7ce78a1d20d570cf0b21f9ce71ebd8f46a39b80dbaaaa9527e3b5102b0221978c0c06f31695c8b5aa8fed466cb498ff01375393f285487d0b68d02057e90"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-node",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-node",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-node"
@@ -572,6 +886,8 @@
       "group": "@aws-sdk",
       "version": "3.972.72",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-process@3.972.72",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that sources credential_process from ~/.aws/credentials and ~/.aws/config",
       "licenses": [
         {
           "license": {
@@ -585,10 +901,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-process/-/credential-provider-process-3.972.72.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "acb229db16cc8d7fe4f7fa1dec03e9aaad598175e7574a4e2f54e1dd9b0bf16bb44d1b41b034d54bc88fa9c7d115c1da905c4fbd1d383924efda46b6a8e6ffd8"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-process",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-process",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-process"
@@ -601,6 +942,8 @@
       "group": "@aws-sdk",
       "version": "3.973.16",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-sso@3.973.16",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that exchanges a resolved SSO login token file for temporary AWS credentials",
       "licenses": [
         {
           "license": {
@@ -614,10 +957,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-sso/-/credential-provider-sso-3.973.16.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "2068a16897c565869c249affa1da882c2a0aed6fe6beb67b72e2bb1029f7b00bb8bcb0babb457c6d2ee60866ddba027c02e9b6b67bea9b1d05d8c445a76ae7f6"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-sso",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-sso",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-sso"
@@ -630,6 +998,8 @@
       "group": "@aws-sdk",
       "version": "3.972.78",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/credential-provider-web-identity@3.972.78",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that calls STS assumeRole for temporary AWS credentials",
       "licenses": [
         {
           "license": {
@@ -643,10 +1013,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/credential-provider-web-identity/-/credential-provider-web-identity-3.972.78.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "ff2f56bcdb6570f0462d1d2a7356bef49ff1b5865f55ccef2d43ae5da556ca5cedb47edec2cc701ed8e68894a894dad5483a2b2311c61cc53ad426e89d1926c0"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/credential-provider-web-identity",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-web-identity",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/credential-provider-web-identity"
@@ -659,6 +1054,7 @@
       "group": "@aws-sdk",
       "version": "3.973.46",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/dynamodb-codec@3.973.46",
+      "author": "AWS SDK for JavaScript Team",
       "licenses": [
         {
           "license": {
@@ -672,10 +1068,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/dynamodb-codec/-/dynamodb-codec-3.973.46.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "0299d2b9b9fee42e874063fbd36e6af70fd888dccac22988324b0fefac558a3efbf41082a9c989f69a01ea1438b3263d354c6a98440b06a6343e4b57e772fc89"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/dynamodb-codec",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/dynamodb-codec",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/dynamodb-codec"
@@ -688,6 +1109,7 @@
       "group": "@aws-sdk",
       "version": "3.972.11",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/endpoint-cache@3.972.11",
+      "author": "AWS SDK for JavaScript Team",
       "licenses": [
         {
           "license": {
@@ -701,10 +1123,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/endpoint-cache/-/endpoint-cache-3.972.11.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f2ad480b17038c721dddb06bcaebbf8fed4bf72e7fdee427c332c3b798f6125723652a16985b7299d272ece8cbae5b9231ed19e26ab96dc1f87f1057be51077f"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/endpoint-cache",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/endpoint-cache",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/endpoint-cache"
@@ -717,6 +1164,8 @@
       "group": "@aws-sdk",
       "version": "3.1146.0",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/lib-dynamodb@3.1146.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "The document client simplifies working with items in Amazon DynamoDB by abstracting away the notion of attribute values.",
       "licenses": [
         {
           "license": {
@@ -730,10 +1179,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/lib-dynamodb/-/lib-dynamodb-3.1146.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "42c98db6b73a57ca9f27a48f591a1574dd627500a27afcda28a04c1606e3c3d600beeffc0bdb4633db5363f077740f47888f9e5fd9f1f7d2656dee8db8b9f047"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#lib/lib-dynamodb",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/lib/lib-dynamodb",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/lib-dynamodb"
@@ -746,6 +1220,7 @@
       "group": "@aws-sdk",
       "version": "3.972.31",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/middleware-endpoint-discovery@3.972.31",
+      "author": "AWS SDK for JavaScript Team",
       "licenses": [
         {
           "license": {
@@ -759,10 +1234,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/middleware-endpoint-discovery/-/middleware-endpoint-discovery-3.972.31.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "26a3885eea733fa7290260829ae11a69c6d7a3f6d509c8353648250890baab8c0302f24ed3da88b3b3ce7f9d093739a13a158fb5f5efce05b16f99cc425f1088"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/middleware-endpoint-discovery",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-endpoint-discovery",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/middleware-endpoint-discovery"
@@ -775,6 +1275,7 @@
       "group": "@aws-sdk",
       "version": "3.972.43",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/middleware-sdk-sqs@3.972.43",
+      "author": "AWS SDK for JavaScript Team",
       "licenses": [
         {
           "license": {
@@ -788,10 +1289,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/middleware-sdk-sqs/-/middleware-sdk-sqs-3.972.43.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d15d5b2983df027840e9f5bdaf4e2e65f5c1ec39304f5e3dc0a2f5e012820bbcd4af2c4805e7200f2bf128852c640a66bd25e91333cbebabb33bf61ce79b3be2"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/middleware-sdk-sqs",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-sdk-sqs",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/middleware-sdk-sqs"
@@ -804,6 +1330,8 @@
       "group": "@aws-sdk",
       "version": "3.997.46",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/nested-clients@3.997.46",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "Nested clients for AWS SDK packages.",
       "licenses": [
         {
           "license": {
@@ -817,10 +1345,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.997.46.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a11c6d05c91afc91871acf65f69f4855a8c6a133fcbd33e6a00cdd1c6cb841ccbd3f9bcf9c37fa9e121e33f08e40d63d93f39a84899345a2e41dfb685ef7dc99"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages/nested-clients",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/nested-clients",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/nested-clients"
@@ -833,6 +1386,7 @@
       "group": "@aws-sdk",
       "version": "3.996.47",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/signature-v4-multi-region@3.996.47",
+      "author": "AWS SDK for JavaScript Team",
       "licenses": [
         {
           "license": {
@@ -846,10 +1400,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.996.47.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "664d3c99a70cbd04c7cd02422c95643a5be2568ab060cae95efe2598b37b6fbb006e232838aec6a34358751e54785f8c5bc2c86d19b0acdcbdbbfe55bd7d54e6"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages/signature-v4-multi-region",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/signature-v4-multi-region",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/signature-v4-multi-region"
@@ -862,6 +1441,8 @@
       "group": "@aws-sdk",
       "version": "3.1138.0",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/token-providers@3.1138.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "A collection of token providers",
       "licenses": [
         {
           "license": {
@@ -875,10 +1456,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/token-providers/-/token-providers-3.1138.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "1a9c80af40c3eb760e12660533a0dffa026e2200bdd8c3138812b815329fc628b9309f607b6d1ea51ecbcaba2e96c718946f3d27e641da2bc50cf8ef7d087377"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages/token-providers",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/token-providers",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/token-providers"
@@ -891,6 +1497,8 @@
       "group": "@aws-sdk",
       "version": "3.974.6",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/types@3.974.6",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "Types for the AWS SDK",
       "licenses": [
         {
           "license": {
@@ -904,10 +1512,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/types/-/types-3.974.6.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bff725359cd99c3c46cafa4730e1a924a55714013127350d0008da58675cc7c4007172c6c1368e930df7a79487022d18022a0adf6c41de15b039e91155f99f2a"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/types",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/types",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/types"
@@ -920,6 +1553,7 @@
       "group": "@aws-sdk",
       "version": "3.996.9",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/util-dynamodb@3.996.9",
+      "author": "AWS SDK for JavaScript Team",
       "licenses": [
         {
           "license": {
@@ -933,10 +1567,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/util-dynamodb/-/util-dynamodb-3.996.9.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d7ac76b51be5ece6296745bf0dd14989e16b883d77f91bee4410db7b9b23fed0847caf3a1d219dec8dace63d22bf3f29e8a586912fb9c0a44ef4e9622648d439"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages/util-dynamodb",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/util-dynamodb",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/util-dynamodb"
@@ -949,6 +1608,8 @@
       "group": "@aws-sdk",
       "version": "3.972.41",
       "bom-ref": "across-the-room@0.1.0|@aws-sdk/xml-builder@3.972.41",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "XML utilities for the AWS SDK",
       "licenses": [
         {
           "license": {
@@ -962,10 +1623,35 @@
         {
           "url": "https://registry.npmjs.org/@aws-sdk/xml-builder/-/xml-builder-3.972.41.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "72d8d54b208c7a0ad67d7971e95ab3481148e94aa64396659df32174b2225a68681fc5004314823f93773a91bb5f79382e74bba2eef80b89addb4f9b7d35b669"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/aws/aws-sdk-js-v3.git#packages-internal/xml-builder",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/xml-builder",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=20.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws-sdk/xml-builder"
@@ -978,6 +1664,8 @@
       "group": "@aws",
       "version": "0.3.0",
       "bom-ref": "across-the-room@0.1.0|@aws/lambda-invoke-store@0.3.0",
+      "author": "Amazon Web Services",
+      "description": "Invoke scoped data storage for AWS Lambda Node.js Runtime Environment",
       "licenses": [
         {
           "license": {
@@ -991,10 +1679,35 @@
         {
           "url": "https://registry.npmjs.org/@aws/lambda-invoke-store/-/lambda-invoke-store-0.3.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b25e019baca230d62b64a92aa8315637451f9d68654bc8af2b1ad897eeadd2008baeaafccb707622a6596c54647da555a7b0bf6da029ca1ef53fe2de135036b1"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/awslabs/aws-lambda-invoke-store/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/awslabs/aws-lambda-invoke-store.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/awslabs/aws-lambda-invoke-store",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@aws/lambda-invoke-store"
@@ -1007,6 +1720,7 @@
       "group": "@smithy",
       "version": "3.35.1",
       "bom-ref": "across-the-room@0.1.0|@smithy/core@3.35.1",
+      "author": "AWS Smithy Team",
       "licenses": [
         {
           "license": {
@@ -1020,10 +1734,35 @@
         {
           "url": "https://registry.npmjs.org/@smithy/core/-/core-3.35.1.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "8b860f4b807ab6cedb8e7ed4c0b9c68e265da6b3af1ef806a1b159b182b7188637139848aad8f4ad1794ebd05c4e91a9f9fbedada48d5de1b597e8ed26f179e7"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/smithy-lang/smithy-typescript.git#packages/core",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/core",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@smithy/core"
@@ -1036,6 +1775,8 @@
       "group": "@smithy",
       "version": "4.5.2",
       "bom-ref": "across-the-room@0.1.0|@smithy/credential-provider-imds@4.5.2",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "AWS credential provider that sources credentials from the EC2 instance metadata service and ECS container metadata service",
       "licenses": [
         {
           "license": {
@@ -1049,10 +1790,35 @@
         {
           "url": "https://registry.npmjs.org/@smithy/credential-provider-imds/-/credential-provider-imds-4.5.2.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "03db92767ef6a336d15128add1e89bd135bb9d7b8d3e569e334cdc1a427e9c4ead15c4836e79adc28c5b4c2141ba455072ccc3032bec77bfab4ddb8f4d7a7282"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/smithy-lang/smithy-typescript.git#packages/credential-provider-imds",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/credential-provider-imds",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@smithy/credential-provider-imds"
@@ -1065,6 +1831,8 @@
       "group": "@smithy",
       "version": "5.8.0",
       "bom-ref": "across-the-room@0.1.0|@smithy/fetch-http-handler@5.8.0",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "Provides a way to make requests",
       "licenses": [
         {
           "license": {
@@ -1078,10 +1846,35 @@
         {
           "url": "https://registry.npmjs.org/@smithy/fetch-http-handler/-/fetch-http-handler-5.8.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "c9c489bb7b45010e2fd380810746a0a85315b12435886df2c3e4a983146a29f694469403e0267c5a7d333cc9929ceb93a5387ae55cfe100d2b32bc34f3dc2f90"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/smithy-lang/smithy-typescript.git#packages/fetch-http-handler",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/fetch-http-handler",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@smithy/fetch-http-handler"
@@ -1094,6 +1887,8 @@
       "group": "@smithy",
       "version": "4.12.1",
       "bom-ref": "across-the-room@0.1.0|@smithy/node-http-handler@4.12.1",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "Provides a way to make requests",
       "licenses": [
         {
           "license": {
@@ -1107,10 +1902,35 @@
         {
           "url": "https://registry.npmjs.org/@smithy/node-http-handler/-/node-http-handler-4.12.1.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "4e13246e819e38d59701e96af45bc6b2e242e2b3a2faac82e3fce1505e7cc58a71520e6c40ac76557658266b4d8ebe1d4ae049d477895c44d020b0b3df0387bf"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/smithy-lang/smithy-typescript.git#packages/node-http-handler",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/node-http-handler",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@smithy/node-http-handler"
@@ -1123,6 +1943,8 @@
       "group": "@smithy",
       "version": "5.7.4",
       "bom-ref": "across-the-room@0.1.0|@smithy/signature-v4@5.7.4",
+      "author": "AWS SDK for JavaScript Team",
+      "description": "A standalone implementation of the AWS Signature V4 request signing algorithm",
       "licenses": [
         {
           "license": {
@@ -1136,10 +1958,35 @@
         {
           "url": "https://registry.npmjs.org/@smithy/signature-v4/-/signature-v4-5.7.4.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b47cb42b456da8d77963b638d61d1ad0b861d0bd46cc2d3c7535a0d05eef449585b5310d83b2198a47f7c1091a9d821175bee782820f3139aa8148b8d357c479"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/smithy-lang/smithy-typescript.git#packages/signature-v4",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/signature-v4",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@smithy/signature-v4"
@@ -1152,6 +1999,7 @@
       "group": "@smithy",
       "version": "4.19.0",
       "bom-ref": "across-the-room@0.1.0|@smithy/types@4.19.0",
+      "author": "AWS Smithy Team",
       "licenses": [
         {
           "license": {
@@ -1165,10 +2013,35 @@
         {
           "url": "https://registry.npmjs.org/@smithy/types/-/types-4.19.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "afb8e1e3d549c467ab7c0713400ea05dc29cfbdf333a9feda91c3362380e13e89242c3fa70453586ad90cdbba2a663faf10b58758f70284862090648cc7819e1"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/smithy-lang/smithy-typescript.git#packages/types",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\" and \"repository.directory\""
+        },
+        {
+          "url": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/types",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
+        {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=18.0.0"
+        },
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@smithy/types"
@@ -1180,6 +2053,8 @@
       "name": "bowser",
       "version": "2.14.1",
       "bom-ref": "across-the-room@0.1.0|bowser@2.14.1",
+      "author": "Dustin Diaz",
+      "description": "Lightweight browser detector",
       "licenses": [
         {
           "license": {
@@ -1193,7 +2068,28 @@
         {
           "url": "https://registry.npmjs.org/bowser/-/bowser-2.14.1.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b733e3cc2c7280029614e24fd35d68c451ece7b1f3221384ada70880078f138a6a0772e29002ca9d2cd4c94e0c1acf7f882114b879402538d373933ebbb6041a"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/bowser-js/bowser/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/bowser-js/bowser.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/bowser-js/bowser",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
@@ -1208,6 +2104,8 @@
       "name": "mnemonist",
       "version": "0.38.3",
       "bom-ref": "across-the-room@0.1.0|mnemonist@0.38.3",
+      "author": "Guillaume Plique",
+      "description": "Curated collection of data structures for the JavaScript language.",
       "licenses": [
         {
           "license": {
@@ -1221,7 +2119,28 @@
         {
           "url": "https://registry.npmjs.org/mnemonist/-/mnemonist-0.38.3.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d8af5062e6d7c7f3408efe152ead5dd4bcbca56342e4bdc1ae2c6d764c937a05d6248a98fb32cd0e1857fc0f99c16b7bd2d0754bc1f8044f052d8105c8da0e07"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/yomguithereal/mnemonist/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/yomguithereal/mnemonist.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/yomguithereal/mnemonist#readme",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
@@ -1236,6 +2155,8 @@
       "name": "obliterator",
       "version": "1.6.1",
       "bom-ref": "across-the-room@0.1.0|obliterator@1.6.1",
+      "author": "Guillaume Plique",
+      "description": "Higher order iterator library for JavaScript.",
       "licenses": [
         {
           "license": {
@@ -1249,7 +2170,28 @@
         {
           "url": "https://registry.npmjs.org/obliterator/-/obliterator-1.6.1.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f565ecc27a883679e1386ff948b8a6525cee53584525473cce4c320f9f5277e74f38c7f4e4f9a7606fdde90ec767e2a68246496b53f146ca3a41d337b133478a"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/yomguithereal/obliterator/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/yomguithereal/obliterator.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/yomguithereal/obliterator#readme",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
@@ -1264,6 +2206,8 @@
       "name": "tslib",
       "version": "2.8.1",
       "bom-ref": "across-the-room@0.1.0|tslib@2.8.1",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
       "licenses": [
         {
           "license": {
@@ -1277,7 +2221,28 @@
         {
           "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/Microsoft/TypeScript/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/Microsoft/tslib.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://www.typescriptlang.org/",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
@@ -1292,6 +2257,8 @@
       "name": "ws",
       "version": "8.22.0",
       "bom-ref": "across-the-room@0.1.0|ws@8.22.0",
+      "author": "Einar Otto Stangvik",
+      "description": "Simple to use, blazing fast and thoroughly tested websocket client and server for Node.js",
       "licenses": [
         {
           "license": {
@@ -1305,13 +2272,38 @@
         {
           "url": "https://registry.npmjs.org/ws/-/ws-8.22.0.tgz",
           "type": "distribution",
-          "comment": "as detected from npm-ls property \"resolved\""
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "61d82073df3bf913b40275ad67fed6abd16d36f72b2f56ff44ed2e77d9968d43e00ebb00030412179d6c9b6866d57a1f6d4ff88e4a4612c2c5b1967153ed433a"
+            }
+          ],
+          "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+        },
+        {
+          "url": "https://github.com/websockets/ws/issues",
+          "type": "issue-tracker",
+          "comment": "as detected from PackageJson property \"bugs.url\""
+        },
+        {
+          "url": "git+https://github.com/websockets/ws.git",
+          "type": "vcs",
+          "comment": "as detected from PackageJson property \"repository.url\""
+        },
+        {
+          "url": "https://github.com/websockets/ws",
+          "type": "website",
+          "comment": "as detected from PackageJson property \"homepage\""
         }
       ],
       "properties": [
         {
+          "name": "cdx:npm:package:constraint:engine:node",
+          "value": ">=10.0.0"
+        },
+        {
           "name": "cdx:npm:package:path",
-          "value": "services/relay/node_modules/ws"
+          "value": "node_modules/ws"
         }
       ]
     }

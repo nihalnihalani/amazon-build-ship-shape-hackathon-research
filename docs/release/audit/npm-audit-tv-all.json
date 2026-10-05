@@ -323,8 +323,8 @@
         "node_modules/@jest/transform"
       ],
       "fixAvailable": {
-        "name": "babel-jest",
-        "version": "30.5.2",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -437,8 +437,8 @@
         "node_modules/@react-native-community/cli-clean"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -473,8 +473,8 @@
         "node_modules/@react-native-community/cli-config-android"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -493,8 +493,8 @@
         "node_modules/@react-native-community/cli-config-apple"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -534,8 +534,8 @@
         "node_modules/react-native-tscodegen-types/node_modules/@react-native-community/cli-platform-android"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -555,8 +555,8 @@
         "node_modules/@react-native-community/cli-platform-apple"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -577,8 +577,8 @@
         "node_modules/react-native-tscodegen-types/node_modules/@react-native-community/cli-platform-ios"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -793,8 +793,8 @@
         "node_modules/babel-jest"
       ],
       "fixAvailable": {
-        "name": "babel-jest",
-        "version": "30.5.2",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -996,8 +996,8 @@
         "node_modules/external-editor"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -1020,8 +1020,8 @@
         "node_modules/fast-glob"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -1061,8 +1061,8 @@
         "node_modules/fbjs-scripts"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -1124,8 +1124,8 @@
         "node_modules/inquirer"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -1571,8 +1571,8 @@
         "node_modules/react-native-tscodegen-types/node_modules/logkitty"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -1951,8 +1951,8 @@
         "node_modules/react-native-tscodegen-types/node_modules/node-notifier"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "jest",
+        "version": "26.6.3",
         "isSemVerMajor": true
       }
     },
@@ -2009,8 +2009,8 @@
         "node_modules/react-native-tscodegen-types/node_modules/react-devtools-core"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -2204,8 +2204,8 @@
         "node_modules/tmp"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },
@@ -2289,8 +2289,8 @@
         "node_modules/uuid"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "jest",
+        "version": "26.6.3",
         "isSemVerMajor": true
       }
     },
@@ -2367,8 +2367,8 @@
         "node_modules/xcode"
       ],
       "fixAvailable": {
-        "name": "@react-native-community/cli",
-        "version": "13.5.1",
+        "name": "react-native",
+        "version": "0.87.1",
         "isSemVerMajor": true
       }
     },

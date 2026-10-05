@@ -47,7 +47,7 @@ Run on the tracked files at `63af0ae` with `git grep` (excluding generated relea
 | Secret patterns (AWS access key ids, private key blocks, `aws_secret_access_key`, Slack, GitHub and common API-key token shapes) | **None found.** |
 | AWS account ids | Only `123456789012`, AWS's documented example id, in test fixtures (`services/relay/test/aws-adapter.test.ts`, `aws-handlers.test.ts`) and two research files. The evidence log redacts the real account id. |
 | Personal email address | Not found in tracked files. Git author identity on all 162 commits is a GitHub no-reply address. |
-| Local usernames and absolute paths | **Present in 7 tracked files**: `/Users/nihalnihalani/...` in `.build/task-graph.json`, `docs/evaluation/A11Y_T17_PREP.md`, `docs/evaluation/QA_REVIEW_T11_T13_T14.md`, `docs/security/ADR_REVIEW.md`, `docs/security/PROTOCOL_PACKAGE_REVIEW.md` and `docs/security/probes/protocol_test_baseline.txt`; the same username inside a `/private/tmp/...` path in `docs/security/probes/protocol_probe_results.json`. Not secrets, but the owner should decide whether to leave them. |
+| Local usernames and absolute paths | **Present in 7 tracked files owned by other roles** (the list, with line numbers, is in the next section). None is a secret; the owner should decide whether to leave them. This role's own files contain no absolute local path (checked after the follow-up pass with `grep` for the home-directory prefix, the temporary-directory prefix and the worktree directory name). |
 | Development certificates and keys | `certs/` is git-ignored; `ca.key` and `server.key` are not tracked. |
 | `research/` | 54 tracked files, about 82,000 lines of the owner's research, competitor notes and plans. The owner decides whether it ships. Some files cite third-party repositories and forum posts. |
 | `.build/` | The internal evidence ledger and task graph; contains local paths (above) and the honest blocker list. |
@@ -55,6 +55,22 @@ Run on the tracked files at `63af0ae` with `git grep` (excluding generated relea
 | Trademarks | Product name "Across the Room" is not a platform mark. "Fire TV", "Vega" and "Amazon" appear descriptively. "QR Code" is a registered trademark of DENSO WAVE INCORPORATED (noted in the notices). |
 
 Not checked: the full git history for deleted secrets (a pattern search of history was not run), and image or binary assets (the repository tracks few; `tests/a11y/artifacts/committed/*.png` are screenshots of the web preview).
+
+## Pre-publication cleanup list: local paths in other roles' files
+
+Not edited by release-docs (path ownership). Each entry is a repository-relative file, the line numbers that contain the build host's home-directory path (which exposes the local username) or a temporary-directory path, and the owner of the file. Suggested cleanup in each: replace the absolute path with a repository-relative one or with a placeholder such as `<worktree>`; for the JSON probe output, regenerate it with a relative `cwd`.
+
+| File | Lines | Content | Owner |
+|---|---|---|---|
+| `.build/task-graph.json` | 29, 70, 221, 255, 290, 326, 359, 457, 581 | the `cwd` of each task (the main checkout and the `contracts`, `dsp`, `phone`, `relay`, `tv` worktrees) | lead |
+| `docs/evaluation/A11Y_T17_PREP.md` | 4 | worktree, branch and base line | qa |
+| `docs/evaluation/QA_REVIEW_T11_T13_T14.md` | 4 | worktree, branch and base line | qa |
+| `docs/security/ADR_REVIEW.md` | 5 | worktree, branch and base line | security |
+| `docs/security/PROTOCOL_PACKAGE_REVIEW.md` | 3, 354 | reviewer line and the command listing | security |
+| `docs/security/probes/protocol_probe_results.json` | 3 | a temporary-directory path that contains the username | security |
+| `docs/security/probes/protocol_test_baseline.txt` | 1, 10 | the command's working directory and the test runner's root | security |
+
+Also for the owner to decide, not paths: `research/` (54 files) and `.build/` (the internal ledger) ship with the repository unless removed, and `tests/a11y/artifacts/` holds generated screenshots and a report.
 
 ## What needs the owner, in one list
 

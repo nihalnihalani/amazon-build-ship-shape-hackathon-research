@@ -43,13 +43,29 @@ Deadlines: **submission 2026-10-23 12:00 Pacific = 2026-10-24 00:30 IST**; inter
 
 | Gate | Status | Detail |
 |---|---|---|
-| Automated suites from a clean clone | **done** with one exception | all pass except the phone `e2e:production` script on this host (`docs/TESTING.md` section 2, `docs/LIMITATIONS.md` section 7 item 1) |
+| Automated suites from a clean clone | **done at `63af0ae`** with one exception; rerun needed at the release commit (P4) | all pass except the phone `e2e:production` script on this host (`docs/TESTING.md` section 2, `docs/LIMITATIONS.md` section 7 item 1); the lead recorded the run as EV-0042 and routed the script fix to the phone owner |
 | T04 physical microphone qualification | **blocked** | protocol frozen, not run (B-002) |
 | TV accessibility on a device (VoiceView, focus, UI scale) | **blocked** | web preview passes 59 of 59 (B-001) |
 | Hosted relay evidence | **blocked** | B-003 |
-| Dependency audit | open | root clean; `apps/tv` 70 findings, none in the JS bundle (`docs/release/SUPPLY_CHAIN.md`) |
+| Dependency audit | root clean (0) after the `vitest` 3.2.7 and `ws` 8.22.0 bumps; `apps/tv` has 70 findings in build tooling, recorded by the lead as an A7-01 exception | none of the affected packages is in the 27-package JS bundle; re-audit at every SDK bump and before any public release (`docs/release/SUPPLY_CHAIN.md`, `docs/adr/AMENDMENTS-REV2.md`) |
 | Independent security re-review of the integrated commit (T16) and independent release review (T21) | pending | lead |
-| Privacy copy consistency (TV `PRIVACY_LINE` against the amended phone sentence) | open | `docs/PRIVACY.md` section 4; owner or lead decides |
+| Privacy copy consistency | TV `PRIVACY_LINE` **resolved** in session-core (`cfa5158`); the About screen's second copy source is **fix in progress (tv)** | `docs/PRIVACY.md` section 4 |
+
+## Pre-publication cleanup (before anything becomes visible to anyone)
+
+None of these publishes anything; they are the checks that must be done at the release commit, in this order. Items marked owner need the owner; the rest can be done by the lead or the named role.
+
+| # | Item | Status | Detail |
+|---|---|---|---|
+| P1 | **Local paths** | open | Replace the build host's home-directory and temporary-directory paths in the 7 files owned by other roles (list with line numbers in `JUDGE_ACCESS.md`, "Pre-publication cleanup list"). This role's own files are already free of them. Rerun the `grep` after the cleanup. |
+| P2 | **Owner README decision** | owner | Adopt, edit or reject `docs/release/README.proposed.md` as the root `README.md`. The root README currently holds the owner's research README and an uncommitted edit; nothing was changed. Re-check the status block and the counts in the proposal against the release commit before adopting. |
+| P3 | **Repository visibility** | owner | Public (the root `LICENSE` is MIT) or private shared with `testing@devpost.com` and the named reviewer accounts. Also decide whether `research/` (54 files) and `.build/` ship. Publication, pushing and invitations each need separate authorization (B-005). |
+| P4 | **Rerun the full test matrix at the release commit** | open | `docs/TESTING.md` was verified from a clean clone at `63af0ae`, before the `vitest` 3.2.7 and `ws` 8.22.0 bumps, the session-core `PRIVACY_LINE` change and the pending tv and phone fixes. Rerun from a fresh clone at the release commit: `npm ci`, `npm run build`, `npm run typecheck`, `npm test`; `apps/tv` `npm ci`, `build:packages`, `tsc --noEmit`, `jest`, `check:bundle`; the local-journey and fault-recovery end-to-end suites; `QA_STRICT=1 node a11y/run-a11y.mjs`; the phone `e2e:all` (including `production.mjs` once the phone owner's fix lands and Chrome's microphone permission state is understood). Update the counts in `docs/TESTING.md`, `docs/LIMITATIONS.md`, `docs/release/README.proposed.md` and `DEVPOST_DRAFT.md`, and record the run in `.build/evidence.jsonl`. |
+| P5 | **Regenerate the supply-chain files at the release commit** | open | `node docs/release/tools/license-inventory.mjs`, both CycloneDX SBOMs and the four `npm audit` files (commands in `docs/release/SUPPLY_CHAIN.md` section 5); re-confirm the `apps/tv` A7-01 exception. |
+| P6 | **Tv owner's About-screen fix** | open (fix in progress, tv) | Confirm the About screen no longer renders a second copy source, then update `docs/PRIVACY.md` section 4 and `docs/LIMITATIONS.md` section 7. |
+| P7 | **Re-read the Official Rules** | owner, on the day | They carry no version date; check the video, repository, judge-access and feedback requirements, and the deadline, again. |
+| P8 | **Adopt or reject the open decisions in the drafts** | owner | AI-assistance disclosure wording, the "would you build again" answers in `FEEDBACK.md`, the Open Source repository, any AWS credit request. |
+| P9 | **Logged-out access check** | owner | After publication: open the repository and the video in a logged-out browser (or confirm each invitation). |
 
 ## Order of work once the blockers clear
 

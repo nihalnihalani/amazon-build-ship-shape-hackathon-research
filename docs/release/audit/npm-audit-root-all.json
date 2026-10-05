@@ -32,33 +32,16 @@
       ],
       "fixAvailable": {
         "name": "vitest",
-        "version": "3.2.7",
-        "isSemVerMajor": false
+        "version": "5.0.3",
+        "isSemVerMajor": true
       }
     },
     "vitest": {
       "name": "vitest",
-      "severity": "critical",
+      "severity": "moderate",
       "isDirect": true,
       "via": [
         "@vitest/mocker",
-        {
-          "source": 1139528,
-          "name": "vitest",
-          "dependency": "vitest",
-          "title": "When Vitest UI server is listening, arbitrary file can be read and executed",
-          "url": "https://github.com/advisories/GHSA-5xrq-8626-4rwp",
-          "severity": "critical",
-          "cwe": [
-            "CWE-22",
-            "CWE-862"
-          ],
-          "cvss": {
-            "score": 9.8,
-            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
-          },
-          "range": "<3.2.6"
-        },
         {
           "source": 1193683,
           "name": "vitest",
@@ -77,65 +60,14 @@
         }
       ],
       "effects": [],
-      "range": "<=4.1.10",
+      "range": "2.1.0-beta.1 - 4.1.10",
       "nodes": [
         "node_modules/vitest"
       ],
       "fixAvailable": {
         "name": "vitest",
-        "version": "3.2.7",
-        "isSemVerMajor": false
-      }
-    },
-    "ws": {
-      "name": "ws",
-      "severity": "high",
-      "isDirect": true,
-      "via": [
-        {
-          "source": 1119108,
-          "name": "ws",
-          "dependency": "ws",
-          "title": "ws: Uninitialized memory disclosure",
-          "url": "https://github.com/advisories/GHSA-58qx-3vcg-4xpx",
-          "severity": "moderate",
-          "cwe": [
-            "CWE-908"
-          ],
-          "cvss": {
-            "score": 4.4,
-            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
-          },
-          "range": ">=8.0.0 <8.20.1"
-        },
-        {
-          "source": 1123259,
-          "name": "ws",
-          "dependency": "ws",
-          "title": "ws: Memory exhaustion DoS from tiny fragments and data chunks",
-          "url": "https://github.com/advisories/GHSA-96hv-2xvq-fx4p",
-          "severity": "high",
-          "cwe": [
-            "CWE-400",
-            "CWE-770",
-            "CWE-1050"
-          ],
-          "cvss": {
-            "score": 7.5,
-            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
-          },
-          "range": ">=8.0.0 <8.21.0"
-        }
-      ],
-      "effects": [],
-      "range": "8.0.0 - 8.20.1",
-      "nodes": [
-        "node_modules/ws"
-      ],
-      "fixAvailable": {
-        "name": "ws",
-        "version": "8.22.0",
-        "isSemVerMajor": false
+        "version": "5.0.3",
+        "isSemVerMajor": true
       }
     }
   },
@@ -143,18 +75,18 @@
     "vulnerabilities": {
       "info": 0,
       "low": 0,
-      "moderate": 1,
-      "high": 1,
-      "critical": 1,
-      "total": 3
+      "moderate": 2,
+      "high": 0,
+      "critical": 0,
+      "total": 2
     },
     "dependencies": {
       "prod": 50,
-      "dev": 117,
+      "dev": 112,
       "optional": 53,
       "peer": 2,
       "peerOptional": 0,
-      "total": 167
+      "total": 162
     }
   }
 }

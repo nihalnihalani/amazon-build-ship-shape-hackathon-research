@@ -78,7 +78,7 @@ All suites, commands, environment variables and observed counts: [docs/TESTING.m
 
 ## Limitations (short)
 
-No Vega build or run; no physical microphone measurement; no AWS stack; per-session relative levels only; the unqualified-phone label on every band result until the frozen qualification experiment passes on a real phone; level-based voice activity can mistake coughs, music or other speakers for speech; the TV's local storage is unencrypted; WSS to a locally generated certificate from the Vega runtime is untested. Details and the supply-chain status (including an open dependency-audit finding for `apps/tv`): [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/release/SUPPLY_CHAIN.md](docs/release/SUPPLY_CHAIN.md).
+No Vega build or run; no physical microphone measurement; no AWS stack; per-session relative levels only; the unqualified-phone label on every band result until the frozen qualification experiment passes on a real phone; level-based voice activity can mistake coughs, music or other speakers for speech; the TV's local storage is unencrypted; WSS to a locally generated certificate from the Vega runtime is untested. Details and the supply-chain status (including a recorded dependency-audit exception for `apps/tv` build tooling, none of which is in the shipped bundle): [docs/LIMITATIONS.md](docs/LIMITATIONS.md), [docs/release/SUPPLY_CHAIN.md](docs/release/SUPPLY_CHAIN.md).
 
 ## Licence
 
