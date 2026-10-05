@@ -47,7 +47,7 @@ Run on the tracked files at `63af0ae` with `git grep` (excluding generated relea
 | Secret patterns (AWS access key ids, private key blocks, `aws_secret_access_key`, Slack, GitHub and common API-key token shapes) | **None found.** |
 | AWS account ids | Only `123456789012`, AWS's documented example id, in test fixtures (`services/relay/test/aws-adapter.test.ts`, `aws-handlers.test.ts`) and two research files. The evidence log redacts the real account id. |
 | Personal email address | Not found in tracked files. Git author identity on all 162 commits is a GitHub no-reply address. |
-| Local usernames and absolute paths | **Present in 7 tracked files owned by other roles** (the list, with line numbers, is in the next section). None is a secret; the owner should decide whether to leave them. This role's own files contain no absolute local path (checked after the follow-up pass with `grep` for the home-directory prefix, the temporary-directory prefix and the worktree directory name). |
+| Local usernames and absolute paths | **Present in 11 tracked files owned by other roles** (counted again at `6291c90`; it was 7 before the QA, security and gate documents were merged) (the list, with line numbers, is in the next section). None is a secret; the owner should decide whether to leave them. This role's own files contain no absolute local path (checked after the follow-up pass with `grep` for the home-directory prefix, the temporary-directory prefix and the worktree directory name). |
 | Development certificates and keys | `certs/` is git-ignored; `ca.key` and `server.key` are not tracked. |
 | `research/` | 54 tracked files, about 82,000 lines of the owner's research, competitor notes and plans. The owner decides whether it ships. Some files cite third-party repositories and forum posts. |
 | `.build/` | The internal evidence ledger and task graph; contains local paths (above) and the honest blocker list. |
@@ -62,13 +62,19 @@ Not edited by release-docs (path ownership). Each entry is a repository-relative
 
 | File | Lines | Content | Owner |
 |---|---|---|---|
-| `.build/task-graph.json` | 29, 70, 221, 255, 290, 326, 359, 457, 581 | the `cwd` of each task (the main checkout and the `contracts`, `dsp`, `phone`, `relay`, `tv` worktrees) | lead |
+| `.build/task-graph.json` | 29, 70, 223, 259, 296, 334, 368, 466, 591 | the `cwd` of each task (the main checkout and the `contracts`, `dsp`, `phone`, `relay`, `tv` worktrees) | lead |
 | `docs/evaluation/A11Y_T17_PREP.md` | 4 | worktree, branch and base line | qa |
 | `docs/evaluation/QA_REVIEW_T11_T13_T14.md` | 4 | worktree, branch and base line | qa |
+| `docs/evaluation/QA_REVIEW_T12_T15.md` | 165, 212 | command and scratch-directory paths | qa |
+| `docs/evaluation/T18_CLEAN_BUILD.md` | 33 | the clone command and the scratch directory | qa |
 | `docs/security/ADR_REVIEW.md` | 5 | worktree, branch and base line | security |
-| `docs/security/PROTOCOL_PACKAGE_REVIEW.md` | 3, 354 | reviewer line and the command listing | security |
+| `docs/security/PROTOCOL_PACKAGE_REVIEW.md` | 3, 355 | reviewer line and the command listing | security |
+| `docs/security/T16_GATE.md` | 4 | worktree and branch line | security |
 | `docs/security/probes/protocol_probe_results.json` | 3 | a temporary-directory path that contains the username | security |
-| `docs/security/probes/protocol_test_baseline.txt` | 1, 10 | the command's working directory and the test runner's root | security |
+| `docs/security/probes/protocol_probe_results_rev1.json` | 3 | the same, in the revision 1 record | security |
+| `docs/security/probes/protocol_test_baseline_rev1.txt` | 1, 10 | the command's working directory and the test runner's root (the file was renamed from `protocol_test_baseline.txt`) | security |
+
+The list was recounted at `6291c90` with `git ls-files | xargs grep` for the home-directory prefix, the temporary-directory prefix, the worktree directory name and the username; the username `nihalnihalani` also appears, as the git author identity, in `docs/submission/TRACK_AND_CHALLENGES.md`, which is not a path and is left.
 
 Also for the owner to decide, not paths: `research/` (54 files) and `.build/` (the internal ledger) ship with the repository unless removed, and `tests/a11y/artifacts/` holds generated screenshots and a report.
 

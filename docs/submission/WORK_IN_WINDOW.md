@@ -48,13 +48,13 @@ Line counts are `wc -l` over tracked files by extension and are only a size indi
 1. **Decisions first:** nine ADRs (measurement contract, privacy, pairing and authentication, hidden meter and listener, storage, transport, toolchain, spoken output, qualification and modes) and a versioned wire protocol, then an independent review that accepted all with changes (3 blockers and 22 majors) and a second round of amendments (`docs/adr/AMENDMENTS-REV2.md`).
 2. **Shared, pure packages:** the protocol validators, the phone DSP, the TV meter helpers and the TV session state machine, each with independent tests and fixtures.
 3. **Three applications:** the phone page, the TV app (React Native for Vega) and the relay (local and AWS adapters, plus a SAM template that has never been deployed).
-4. **Verification:** an independent review suite, an end-to-end journey and fault-injection suite, an accessibility gate on a web preview, a threat model, an independent security and privacy gate (T16, pass with residuals) and a physical-microphone experiment protocol (revision 2 was rejected by that gate, revision 3 is in progress, not run).
+4. **Verification:** an independent review suite, an end-to-end journey and fault-injection suite, an accessibility gate on a web preview, a threat model, an independent security and privacy gate (T16, pass with residuals) and a physical-microphone experiment protocol (revision 2 was rejected by that gate, revision 3 was approved and frozen, not run). The gate's findings were fixed in the same window (reconnect over a half-open socket, a tightened CSP, a build-time relay URL for the AWS layout, a 90-day development CA, phrase clearing, a phone measurement budget and idle limit), and a QA review added 13 checks to the end-to-end suites and a paced phone outbox.
 5. **Defects found and fixed inside the window** by those checks: DEF-001 (TV heartbeat), DEF-002 (window id reuse), DEF-003 (session start before the phone's confirmation), DEF-004 to DEF-007 (reconnect state, offline peer, duplicate pre-authentication joins, speak prompt timing) and the accessibility defects A11Y-01 to A11Y-05.
 6. **Release documents:** setup, testing, architecture, privacy, limitations, licence inventory, SBOM, audit results and this submission package.
 
 ## What was **not** done in the window
 
-The TV app has never run natively (no Vega SDK, B-001); no physical phone microphone was used (B-002); no AWS stack exists (B-003); no Fire TV was available (B-004); nothing was published (B-005). The qualification experiment (T04) has not run: protocol revision 2 was rejected by the T16 security gate and revision 3 is in progress.
+The TV app has never run natively (no Vega SDK, B-001); no physical phone microphone was used (B-002); no AWS stack exists (B-003); no Fire TV was available (B-004); nothing was published (B-005). The qualification experiment (T04) has not run: protocol revision 2 was rejected by the T16 security gate, revision 3 was approved and frozen (EV-0047) and the qualification-mode harness has not been built.
 
 ## How it was built (for the owner to disclose as appropriate)
 
