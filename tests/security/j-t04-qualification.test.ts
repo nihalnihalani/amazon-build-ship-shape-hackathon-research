@@ -1,11 +1,12 @@
 /**
  * T16 gate, part J: independent check of the frozen T04 qualification analysis (`analyzeQualification`,
- * packages/phone-mic-meter/src/qualification.ts, frozen with docs/evaluation/T04-protocol.md revision 2).
+ * packages/phone-mic-meter/src/qualification.ts, frozen with docs/evaluation/T04-protocol.md revision 3).
  *
  * Question asked: can a FAILED experiment become a PASS? (ADR-0009, finding A9-01.) The inputs are synthetic series
  * generated here. Evidence class: automated, synthetic; nothing about a real phone.
  *
  * Tests wrapped in it.fails assert the behaviour the protocol document promises and the code does not deliver yet.
+ * Revision 3 (dsp): N-08, N-09, N-10 and N-11 are fixed; their tests are plain `it` below and N-10/N-11 now assert the fix.
  */
 import { describe, expect, it } from 'vitest';
 import { analyzeQualification, sdUpperConfidenceBound, chiSquareQuantile, QUALIFICATION_PARAMS, type NegativeCaseResult, type QualificationTrial } from '@atr/phone-mic-meter';
@@ -90,13 +91,13 @@ describe('the analysis does what the document says on honest inputs', () => {
 });
 
 describe('can a failed experiment become a pass? (findings against the frozen code)', () => {
-  it.fails('OPEN FINDING N-08: the slope criterion cannot be passed by an AGC-compressed input that was measured at closely spaced nominal levels (levels must be the frozen -30, -18, -6 dBFS or at least 10 dB apart)', () => {
+  it('N-08 (fixed in revision 3): the slope criterion cannot be passed by an AGC-compressed input that was measured at closely spaced nominal levels (levels must be the frozen -30, -18, -6 dBFS or at least 10 dB apart)', () => {
     // Nominal levels 2 dB apart, a 3:1 compressor: measured steps 0.67 dB, |0.67 - 2| = 1.33 <= 2 dB, so C2 passes.
     const a = run(series({ slope: 1 / 3, sd: 0.1, levels: [-30, -28, -26] }));
     expect(a.status).toBe('failed');
   });
 
-  it.fails('OPEN FINDING N-09: the negative-case criterion fails when N1 or N2 results are missing, malformed or run with fewer than 10 windows (protocol section 8: "Missing results fail C7")', () => {
+  it('N-09 (fixed in revision 3): the negative-case criterion fails when N1 or N2 results are missing, malformed or run with fewer than 10 windows (protocol section 8: "Missing results fail C7")', () => {
     const trials = series({ slope: 1 });
     const cases: Array<[string, NegativeCaseResult[]]> = [
       ['an empty list', []],
@@ -108,29 +109,36 @@ describe('can a failed experiment become a pass? (findings against the frozen co
     for (const [label, neg] of cases) expect(run(trials, neg).status, label).toBe('failed');
   });
 
-  it('characterisation (N-11, minor): a caller can pass its own params; the criteria are then silently relaxed and the output does not record which params were used', () => {
+  it('N-11 (fixed in revision 3): a caller cannot relax the criteria; a different params object fails the analysis and the result echoes the frozen parameters', () => {
     const squeezed = series({ slope: 1 / 3, sd: 0.3 });
     expect(run(squeezed).status).toBe('failed');
-    const relaxed = analyzeQualification(squeezed, { params: { ...QUALIFICATION_PARAMS, stepToleranceDb: 12 }, settings: SETTINGS, negativeCases: NEG_OK });
-    expect(relaxed.status).toBe('passed');
-    expect(Object.keys(relaxed)).not.toContain('params');
+    const relaxed = analyzeQualification(squeezed, { params: { ...QUALIFICATION_PARAMS, stepToleranceDb: 12 }, settings: SETTINGS, negativeCases: NEG_OK } as never);
+    expect(relaxed.status).toBe('failed');
+    expect(relaxed.byCriterion.C2).toBe(false);
+    expect(Object.keys(relaxed)).toContain('params');
+    expect(relaxed.params).toEqual(QUALIFICATION_PARAMS);
+    expect(relaxed.paramsAccepted).toBe(false);
   });
 
-  it('characterisation (documented, not a finding): trials flagged valid:false are excluded without a reason; the protocol relies on the live log written before results are read', () => {
+  it('N-10 (fixed in revision 3): the analysis takes the full planned list; cherry-picking by exclusion fails C3 and the exclusions are counted with their reasons', () => {
     const lots = series({ slope: 1, n: 20, sd: 1.0, seed: 9 });
     // drop, per level, the five trials farthest from the level median, the way a cherry-picker would
     const kept: QualificationTrial[] = [];
     for (const stimulus of ['tone', 'pink'] as const) {
       for (const level of LEVELS) {
         const group = lots.filter((t) => t.stimulus === stimulus && t.nominalDb === level);
-        const med = [...group].sort((a, b) => a.rel95Db - b.rel95Db)[10]?.rel95Db ?? 0;
-        const sorted = [...group].sort((a, b) => Math.abs(a.rel95Db - med) - Math.abs(b.rel95Db - med));
-        kept.push(...sorted.slice(0, 15), ...sorted.slice(15).map((t) => ({ ...t, valid: false })));
+        const med = [...group].sort((a, b) => (a.rel95Db as number) - (b.rel95Db as number))[10]?.rel95Db ?? 0;
+        const sorted = [...group].sort((a, b) => Math.abs((a.rel95Db as number) - med) - Math.abs((b.rel95Db as number) - med));
+        kept.push(...sorted.slice(0, 15), ...sorted.slice(15).map((t) => ({ ...t, exclusion: 'disturbed' as const })));
       }
     }
-    const honest = run(lots.map((t) => t));
     const picked = run(kept);
-    console.log('N-10 cherry-pick effect on the SD bound (tone, level 1):', JSON.stringify({ honest: honest.levels.tone[0]?.sdUpperBound, picked: picked.levels.tone[0]?.sdUpperBound }));
-    expect(picked.levels.tone[0]!.sdUpperBound!).toBeLessThan(honest.levels.tone[0]!.sdUpperBound!);
+    expect(picked.byCriterion.C3).toBe(false); // 20 planned slots per level are listed, the plan has 15
+    expect(picked.status).toBe('failed');
+    expect(picked.exclusions.count).toBe(30);
+    expect(picked.exclusions.byReason.disturbed).toBe(30);
+    // the original trick, a boolean flag with no reason, is no longer an input: it is ignored, so those trials count
+    const legacy = run(lots.map((t, i) => (i % 4 === 0 ? ({ ...t, valid: false } as unknown as QualificationTrial) : t)));
+    expect(legacy.byCriterion.C3).toBe(false); // 20 counted slots per level, not 15
   });
 });

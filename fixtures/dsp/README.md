@@ -33,7 +33,7 @@ experiment in `docs/evaluation/T04-protocol.md` (revision 2, not yet executed).
 | `soft-windows.json` | **20** | Phrase windows that are valid but whose accepted-active p95 is below the band edge (`cal_margin - 1`); expected verdict `not_reached` |
 | `vad-phase-sweep.json` | 12 conditions x 40 offsets | Sample-level sweep (A1-01): 100 / 125 / 150 / 175 / 200 / 250 ms bursts at +10 and +20 dB over 40 sub-frame offsets |
 | `vad-click-train.json` | 19 | Sample-level click trains (A1-02), plus positive controls |
-| `vad-ar1-noise.json` | 6 models x 10,000 rooms | Seeded AR(1) noise at and below the edge of quiet-check validity, silent 8 s window (A1-03) |
+| `vad-ar1-noise.json` | 7 models x 10,000 rooms, plus the T16 comparison | Seeded AR(1) noise at and below the edge of quiet-check validity, silent 8 s window: P(accepted segment) and P(scored `reached`) (A1-03, T16 N-05) |
 
 ## Run encoding (quiet-check, vad, windows, soft-windows)
 
@@ -119,17 +119,28 @@ rejected when the leading partial frame (which cannot open a segment) takes most
 "200 ms always" is wanted at +10 dB: count the frame immediately before the opening frame when it
 is at or above +6 dB, or open at a lower level (with the noise cost below).
 
-**The 1 % false-activity target (A1-03) is not met at the edge of quiet-check validity.**
+**The 1 % false-activity target (A1-03) is not met at the edge of quiet-check validity, and a silent
+window can be scored `reached` (T16 N-05).**
 `vad-ar1-noise.json`, rooms that pass the quiet check, silent 8 s phrase window, 10,000 rooms per
-model, P(at least one accepted segment):
+model; P(at least one accepted segment) and P(window scored `reached`, calibration margin 13 dB, i.e.
+emitted `p95_active_dbfs - floor >= 12`):
 
-| sigma / rho | 2.0 / 0.9 | 2.5 / 0.5 | 2.5 / 0.8 | 3.0 / 0.8 | 3.5 / 0.5 | 3.5 / 0.9 |
-|---|---|---|---|---|---|---|
-| P(active) | 0.03 % | 0.00 % | 0.45 % | 4.4 % | 3.5 % | 16.5 % |
-| meets 1 % | yes | yes | yes | **no** | **no** | **no** |
+| sigma / rho | 2.0 / 0.9 | 2.5 / 0.5 | 2.5 / 0.8 | 2.5 / 0.9 | 3.0 / 0.8 | 3.5 / 0.5 | 3.5 / 0.9 |
+|---|---|---|---|---|---|---|---|
+| P(active) | 0.03 % | 0.00 % | 0.45 % | 0.95 % | 4.4 % | 3.5 % | 16.5 % |
+| P(reached) | 0.00 % | 0.00 % | 0.03 % | 0.04 % | 0.77 % | 1.13 % | 4.8 % |
+| meets 1 % | yes | yes | yes | yes (at the limit) | **no** | **no** | **no** |
+
+The independent T16 review (N-05) reported lower figures with another model: floor equal to the process
+mean and no quiet check (P(active) / P(reached) 0.3 % / 0.015 %, 2.3 % / 0.3 %, 10.2 % / 2.3 % at sigma /
+rho 2.5 / 0.9, 3.0 / 0.8, 3.5 / 0.9). The `t16_comparison` block of the fixture reproduces them with the
+same trial generator (0.27 % / 0.025 %, 2.3 % / 0.34 %, 11.2 % / 2.4 %) and shows where the difference
+comes from: estimating the floor from a 5 s quiet check but keeping every room gives 0.72 % / 0.045 %,
+4.0 % / 0.69 % and 16.2 % / 4.8 %, so the floor estimate (not the conditioning) raises the rates. The
+TypeScript test reproduces all of these counts exactly.
 
 The quiet check admits noise up to sigma of about 3.56 dB (`p80 - p20 = 1.683 sigma <= 6`), so the
-bottom three models are the edge. The model is synthetic (Gaussian per-frame dB with AR(1)
+sigma 3.0 and 3.5 models are the edge. The model is synthetic (Gaussian per-frame dB with AR(1)
 correlation), not measured room noise. Alternatives, from `tools/ar1_threshold_comparison.mjs`
 (same acceptance rule, 10,000 rooms per cell, seed 7; open threshold O, continuation C, quiet-check
 stability limit S):

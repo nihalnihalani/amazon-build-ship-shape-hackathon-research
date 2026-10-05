@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
-"""Print the freeze values for the T04 protocol (AMENDMENTS-REV2 A9-04). Writes nothing.
+"""Print the freeze values for the T04 protocol (AMENDMENTS-REV2 A9-04, T16 N-13). Writes nothing.
 
-The "protocol + criteria" freeze hash is the SHA-256 of two lines, one per frozen file:
+The "protocol + criteria" freeze hash is the SHA-256 of three lines, one per frozen file:
 
     <sha256 of docs/evaluation/T04-protocol.md up to the Approval block>  docs/evaluation/T04-protocol.md
     <sha256 of packages/phone-mic-meter/src/qualification.ts>  packages/phone-mic-meter/src/qualification.ts
+    <sha256 of packages/phone-mic-meter/src/percentile.ts>  packages/phone-mic-meter/src/percentile.ts
 
-(each line ends with a newline). The protocol is hashed WITHOUT its trailing "## Approval block"
-section (everything from the line "## Approval block" on is excluded), so that filling in the
-reviewer, the date and the approving commit does not change the frozen content. The lead records the commit SHA and this hash in
-.build/evidence.jsonl before the first trial. Run from anywhere inside the repository.
+(each line ends with a newline). percentile.ts is included because qualification.ts imports it for the
+nearest-rank median. The protocol is hashed WITHOUT its trailing "## Approval block" section
+(everything from the line "## Approval block" on is excluded), so that filling in the reviewer, the date
+and the approving commit does not change the frozen content.
+
+NOT covered by the hash: the TV verdict function (@atr/session-core) that decides what counts as `reached`
+for the negative cases N1, N2 and N8. Its commit is recorded in the session record of every run
+(protocol section 10).
+
+The lead records the commit SHA and this hash in .build/evidence.jsonl before the first trial.
+Run from anywhere inside the repository.
 """
 import hashlib
 import json
@@ -17,7 +25,11 @@ import os
 import subprocess
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
-FILES = ["docs/evaluation/T04-protocol.md", "packages/phone-mic-meter/src/qualification.ts"]
+FILES = [
+    "docs/evaluation/T04-protocol.md",
+    "packages/phone-mic-meter/src/qualification.ts",
+    "packages/phone-mic-meter/src/percentile.ts",
+]
 
 
 APPROVAL_MARKER = b"\n## Approval block"
@@ -44,4 +56,16 @@ for f in FILES:
 print(f"freeze hash (protocol + criteria): {combined}")
 print(f"git HEAD: {commit}" + ("   WARNING: the frozen files have uncommitted changes" if dirty else ""))
 print("evidence line template:")
-print(json.dumps({"kind": "t04_freeze", "commit": commit, "protocol_sha256": hashes[FILES[0]], "criteria_sha256": hashes[FILES[1]], "freeze_hash": combined}))
+print(
+    json.dumps(
+        {
+            "kind": "t04_freeze",
+            "revision": 3,
+            "commit": commit,
+            "protocol_sha256": hashes[FILES[0]],
+            "criteria_sha256": hashes[FILES[1]],
+            "percentile_sha256": hashes[FILES[2]],
+            "freeze_hash": combined,
+        }
+    )
+)
