@@ -1,8 +1,12 @@
 // Production bundle (dist) in real headless Chrome.
 //
-//   A. a permission prompt that is never answered -> "Waiting for permission" with a working
-//      Cancel (real Chrome behaviour); then each getUserMedia error class rendered by the real page
-//      (the rejection itself is STUBBED: headless Chrome cannot be made to deny a prompt)
+//   A1. the REAL getUserMedia, with no permission granted. What headless Chrome does with it depends
+//      on the host (macOS microphone permission state for Chrome, Chrome version), so BOTH outcomes
+//      are legitimate and each is checked against the right UI; the one that happened is recorded:
+//        pending            -> "Waiting for permission" with a working Cancel, Cancel returns to "Mic off"
+//        immediate denial   -> "Permission denied" with re-enable guidance, Start offered again, the
+//                              TV told permission_denied and never open or measuring
+//      A2. each getUserMedia error class rendered by the real page (the rejection itself is STUBBED)
 //   B. a precheck and a full shutdown through the production bundle's real capture adapter, real
 //      AudioContext and real AudioWorklet loaded under the strict CSP. getUserMedia is STUBBED by
 //      this script to return an oscillator MediaStream (headless Chrome 154 leaves the real
@@ -18,6 +22,7 @@
 import { createIdFactory, MessageFactory, parseWireMessage } from '@atr/protocol';
 import { DIST, launchChrome, makeChecker, startStaticServer, waitFor } from './lib.mjs';
 
+const SIMULATE = process.env['ATR_E2E_SIMULATE'] === 'pending' ? 'pending' : null;
 const checker = makeChecker();
 const { check } = checker;
 const site = await startStaticServer(DIST);
@@ -65,7 +70,7 @@ async function pair(page, mock) {
   await page.waitForSelector('#view-setup:not([hidden])');
 }
 
-const initScript = () => {
+const initScript = (opts) => {
   window.__csp = [];
   document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(`${e.violatedDirective} ${e.blockedURI}`));
   window.__ctxs = [];
@@ -81,6 +86,27 @@ const initScript = () => {
   if (gum) {
     navigator.mediaDevices.getUserMedia = async (c) => {
       window.__gumCalls = (window.__gumCalls ?? []).concat([JSON.stringify(c)]);
+      if (!window.__gumFail && !window.__gumSynthetic) {
+        // A REAL request: record how the browser answers it (settled outcome or still pending).
+        const entry = { at: Date.now(), settled: null, name: null, ms: null };
+        (window.__realGum = window.__realGum ?? []).push(entry);
+        // ATR_E2E_SIMULATE=pending holds the request unanswered (what older hosts did), so the
+        // "pending" branch can be exercised on a host that denies at once. Never the default.
+        const real = opts?.simulate === 'pending' ? new Promise(() => undefined) : gum(c);
+        real.then(
+          (stream) => {
+            entry.settled = 'resolved';
+            entry.ms = Date.now() - entry.at;
+            window.__tracks.push(...stream.getTracks());
+          },
+          (error) => {
+            entry.settled = 'rejected';
+            entry.name = error?.name ?? 'Error';
+            entry.ms = Date.now() - entry.at;
+          },
+        );
+        return real;
+      }
       // STUB (A2 only): the browser API is made to reject with a named DOMException so the real
       // page, real capture adapter and real CSS render each error class. Headless Chrome cannot
       // be made to deny a prompt (a denied request stays pending), so this is not a real denial.
@@ -116,7 +142,7 @@ try {
   {
     const context = await denied.newContext();
     const page = await context.newPage();
-    await page.addInitScript(initScript);
+    await page.addInitScript(initScript, { simulate: SIMULATE });
     const mock = await mockRelay(page);
     await page.goto(`${site.origin}/?relay=ws://127.0.0.1:9/ws#code=ACDEFH`);
     check('C. production page has no test banner and no test hook', (await page.locator('#test-banner').isHidden()) && (await page.evaluate(() => window.__atrTestAudio)) === undefined);
@@ -124,15 +150,43 @@ try {
     check('C. ?relay= is ignored in production: the page dialled wss://<its own host>/ws', mock.state.urls[0] === `wss://${new URL(site.origin).host}/ws`, mock.state.urls[0]);
     check('A. before the tap the page has not asked for the microphone', ((await page.evaluate(() => window.__gumCalls)) ?? []).length === 0);
 
-    // A1: the prompt is never answered (real Chrome keeps getUserMedia pending)
+    // A1: the REAL getUserMedia. Observe how this host's Chrome answers it, then assert the matching UI.
     await page.click('#start-mic');
-    await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Waiting for permission', null, { timeout: 5000 });
-    await new Promise((r) => setTimeout(r, 1500));
-    check('A1. an unanswered prompt keeps saying "Waiting for permission" (never open or measuring)', (await page.textContent('#mic-badge')) === 'Waiting for permission' && !mock.of('mic.state').some((m) => ['open_idle', 'measuring'].includes(m.payload.state)));
-    check('A1. Cancel is offered and Start is hidden while waiting', (await page.locator('#cancel-mic').isVisible()) && (await page.locator('#start-mic').isHidden()));
-    await page.click('#cancel-mic');
-    await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Mic off', null, { timeout: 5000 });
-    check('A1. Cancel returns to "Mic off" and the TV is told off', (await waitFor(() => mock.of('mic.state').at(-1)?.payload.state === 'off', { label: 'mic.state off after cancel' })) === true);
+    const settledBy = Date.now() + 2500;
+    const realOutcome = async () => (await page.evaluate(() => (window.__realGum ?? []).at(-1) ?? null));
+    let real = await realOutcome();
+    while ((real === null || real.settled === null) && Date.now() < settledBy) {
+      await new Promise((r) => setTimeout(r, 50));
+      real = await realOutcome();
+    }
+    const outcome = real === null ? 'no request seen' : real.settled === null ? 'pending' : real.settled === 'rejected' && real.name === 'NotAllowedError' ? 'immediate_not_allowed' : `unexpected_${real.settled}${real.name ? `_${real.name}` : ''}`;
+    const label = SIMULATE ? `${outcome} (SIMULATED: ATR_E2E_SIMULATE=pending holds the real request unanswered)` : outcome;
+    console.log(`      getUserMedia outcome on this host (no permission granted): ${label}${real?.ms != null ? ` after ${real.ms} ms` : ' (still unanswered after 2.5 s)'}`);
+    check(`A1. outcome recorded: ${label}`, outcome === 'pending' || outcome === 'immediate_not_allowed', JSON.stringify(real));
+    if (outcome === 'pending') {
+      await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Waiting for permission', null, { timeout: 5000 });
+      await new Promise((r) => setTimeout(r, 1500));
+      check('A1 (pending). an unanswered prompt keeps saying "Waiting for permission" (never open or measuring)', (await page.textContent('#mic-badge')) === 'Waiting for permission' && !mock.of('mic.state').some((m) => ['open_idle', 'measuring'].includes(m.payload.state)));
+      check('A1 (pending). Cancel is offered and Start is hidden while waiting', (await page.locator('#cancel-mic').isVisible()) && (await page.locator('#start-mic').isHidden()));
+      await page.click('#cancel-mic');
+      await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Mic off', null, { timeout: 5000 });
+      check('A1 (pending). Cancel returns to "Mic off" and the TV is told off', (await waitFor(() => mock.of('mic.state').at(-1)?.payload.state === 'off', { label: 'mic.state off after cancel' })) === true);
+    } else if (outcome === 'immediate_not_allowed') {
+      await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Permission denied', null, { timeout: 5000 });
+      const help = await page.textContent('#mic-help');
+      check('A1 (denied). the page shows "Permission denied" with re-enable guidance (site settings, set Microphone to Allow)', /site settings/.test(help) && /Allow/.test(help), help);
+      await waitFor(() => mock.of('mic.state').some((m) => m.payload.state === 'permission_denied'), { label: 'mic.state permission_denied' });
+      check('A1 (denied). the TV is told permission_denied and never saw open_idle or measuring', !mock.of('mic.state').some((m) => ['open_idle', 'measuring'].includes(m.payload.state)));
+      check('A1 (denied). Start microphone is offered again and Cancel is not shown', (await page.locator('#start-mic').isEnabled()) && (await page.locator('#start-mic').isVisible()) && (await page.locator('#cancel-mic').isHidden()));
+      const realCallsBefore = (await page.evaluate(() => window.__realGum.length));
+      await page.click('#start-mic'); // retrying asks the browser again and is denied again, still real
+      await waitFor(async () => (await page.evaluate(() => window.__realGum.length)) > realCallsBefore, { label: 'a second real request' });
+      await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Permission denied', null, { timeout: 5000 });
+      check('A1 (denied). retrying asks the real browser again and shows the denial again', (await page.evaluate(() => window.__realGum.length)) === realCallsBefore + 1);
+    } else {
+      // Not a legitimate outcome for this check (for example a real microphone opened): release it and fail loudly.
+      if (await page.locator('#stop-mic').isVisible()) await page.click('#stop-mic');
+    }
 
     // A2 (STUBBED rejection, see initScript): every error class renders with its own wording.
     const classes = [
@@ -142,12 +196,14 @@ try {
       ['OverconstrainedError', 'Settings not supported', /requested settings/, 'constraints_unsupported'],
     ];
     for (const [name, badgeText, helpRe, wireState] of classes) {
+      const seenStates = () => mock.of('mic.state').filter((m) => m.payload.state === wireState).length;
+      const before = seenStates();
       await page.evaluate((n) => { window.__gumFail = n; }, name);
       await page.click('#start-mic');
+      await waitFor(() => seenStates() > before, { label: `a new mic.state ${wireState}` }); // new, not left over from A1
       await page.waitForFunction((b) => document.getElementById('mic-badge').textContent === b, badgeText, { timeout: 10_000 });
       const help = await page.textContent('#mic-help');
       check(`A2 (stubbed ${name}): badge "${badgeText}" with guidance`, helpRe.test(help), help);
-      await waitFor(() => mock.of('mic.state').some((m) => m.payload.state === wireState), { label: `mic.state ${wireState}` });
       check(`A2 (stubbed ${name}): Start microphone is offered again`, await page.locator('#start-mic').isEnabled());
     }
     check('A2: the TV never saw open_idle or measuring in any failed attempt', !mock.of('mic.state').some((m) => ['open_idle', 'measuring'].includes(m.payload.state)));
@@ -170,7 +226,7 @@ try {
     page.on('console', (m) => {
       if (m.type() === 'error' && !m.text().includes('404')) problems.push(`console.error: ${m.text()}`);
     });
-    await page.addInitScript(initScript);
+    await page.addInitScript(initScript, { simulate: SIMULATE });
     const mock = await mockRelay(page);
     await page.goto(`${site.origin}/#code=ACDEFH`);
     await pair(page, mock);
