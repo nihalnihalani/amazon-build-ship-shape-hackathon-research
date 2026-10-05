@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "project": "Across the Room: the far-side check",
- "updated_at": "2026-10-05T08:40:03+05:30",
+ "updated_at": "2026-10-05T09:07:03+05:30",
  "states": [
   "pending",
   "ready",
@@ -625,7 +625,7 @@
     "T15"
    ],
    "required": true,
-   "status": "in_review",
+   "status": "blocked_external",
    "attempts": 1,
    "acceptance_criteria": [
     "Threat model, adversarial tests, network/storage/log audit, privacy copy matches transmitted data"
@@ -635,10 +635,11 @@
    ],
    "reviewer": "lead",
    "evidence_refs": [
-    "EV-0044"
+    "EV-0044",
+    "EV-0049"
    ],
    "commit": null,
-   "blocker": "Residual fixes N-01,N-02,N-03,N-06,N-07,N-12 routed; AWS checks pending B-003"
+   "blocker": "Local-scope gate passed and residuals closed (EV-0044, EV-0049); deployed-log/IAM/CloudFront checks need AWS staging (B-003)"
   },
   {
    "id": "T17",
