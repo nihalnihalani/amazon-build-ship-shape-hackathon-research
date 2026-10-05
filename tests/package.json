@@ -14,9 +14,9 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "devDependencies": {
-    "@types/ws": "8.18.1",
+    "@types/ws": "8.18.2",
     "axe-core": "4.13.0",
     "playwright-core": "1.63.0",
-    "ws": "8.18.3"
+    "ws": "8.22.0"
   }
 }
