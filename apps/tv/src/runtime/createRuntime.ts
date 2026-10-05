@@ -51,6 +51,7 @@ export function createRuntime(options: RuntimeOptions = {}): Runtime | null {
     storage: createAsyncStoragePort(),
     transport,
     relayUrl: config.relayUrl,
+    ...(config.phonePageOrigin === undefined ? {} : { phonePageOrigin: config.phonePageOrigin }),
     appVersion: APP_VERSION,
     platform: config.platform,
     fixtureMode: config.fixtureMode,
