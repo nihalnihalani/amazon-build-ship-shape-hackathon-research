@@ -9,6 +9,7 @@ import {
   flush,
   joinAccepted,
   joinPending,
+  lastMessageId,
   listenerOpen,
   precheckStart,
   relayMsg,
@@ -71,7 +72,7 @@ describe('A3-01: the phone asks "Did you just pick NN on your TV?" before it sha
     expect(nonJoinNonPing(h)).toEqual([]);
   });
 
-  it('TV commands are ignored without an ack and without touching the microphone', async () => {
+  it('TV commands are not acted on, not acknowledged and never touch the microphone before Yes', async () => {
     const h = await acceptedHarness();
     h.audio.makeOpen();
     for (const text of [
@@ -204,6 +205,233 @@ describe('A3-01: the phone asks "Did you just pick NN on your TV?" before it sha
     const h2 = makeHarness();
     expect(h2.controller.getState()).toMatchObject({ screen: 'join', pairingConfirmed: false });
     expect(h2.controller.getState().canStartMic).toBe(false);
+  });
+});
+
+describe('DEF-003: the TV announces its session while the question is on screen', () => {
+  const SESSION_B = 's_session0002';
+  const type = (h: Harness): string[] => h.sockets.current.messages().map((m) => m.type);
+  const ackFor = (h: Harness, text: string) =>
+    h.sockets.current.messages('ack').find((a) => a.payload['acked_message_id'] === lastMessageId(text));
+
+  it('session.begin and session.state received before Yes are held: no ack, no state, nothing sent', async () => {
+    const h = await acceptedHarness();
+    h.sockets.current.receive(sessionBegin());
+    h.sockets.current.receive(sessionState('quiet_check'));
+    await flush();
+    expect(type(h)).toEqual(['join.request']);
+    expect(h.controller.getState().session).toBeNull(); // held, not acted on
+    expect(h.controller.getState()).toMatchObject({ canStartMic: false, pairingConfirmed: false });
+  });
+
+  it('on Yes: mic.state first, then session.begin is applied and acked, then session.state is applied and acked', async () => {
+    const h = await acceptedHarness();
+    const begin = sessionBegin();
+    const state = sessionState('quiet_check', 1);
+    h.sockets.current.receive(begin);
+    h.sockets.current.receive(state);
+    h.controller.confirmPairing();
+    await flush();
+    const msgs = h.sockets.current.messages();
+    expect(msgs[0]?.type).toBe('join.request');
+    expect(msgs[1]?.type).toBe('mic.state'); // the very first thing after Yes
+    const beginAck = ackFor(h, begin);
+    const stateAck = ackFor(h, state);
+    expect(beginAck).toMatchObject({ session_id: SESSION, window_id: null, attempt_id: null, payload: { outcome: 'applied' } });
+    expect(stateAck).toMatchObject({ session_id: SESSION, payload: { outcome: 'applied' } });
+    const at = (m: { message_id: string } | undefined): number => msgs.findIndex((x) => x.message_id === m?.message_id);
+    expect(at(beginAck)).toBeGreaterThan(1);
+    expect(at(stateAck)).toBeGreaterThan(at(beginAck));
+    expect(h.controller.getState().session).toMatchObject({ sessionId: SESSION, familyMode: true, phraseCount: 4, stage: 'quiet_check' });
+    expect(h.controller.getState().cue.used).toBe(1);
+    // the first mic.state knew of no session; the next one carries it
+    expect(h.sockets.current.messages('mic.state')[0]?.session_id).toBeNull();
+    expect(h.sockets.current.messages('mic.state').some((m) => m.session_id === SESSION)).toBe(true);
+  });
+
+  it('the regression: after Yes the TV commands for that session are accepted, not "ignored_stale unknown_session"', async () => {
+    const h = await acceptedHarness();
+    h.sockets.current.receive(sessionBegin());
+    h.sockets.current.receive(sessionState('permission_pending'));
+    h.controller.confirmPairing();
+    h.audio.makeOpen();
+    await flush();
+    const later = sessionState('quiet_check', 0);
+    h.sockets.current.receive(later);
+    expect(ackFor(h, later)?.payload).toMatchObject({ outcome: 'applied' });
+    const pre = precheckStart('quiet_check');
+    h.sockets.current.receive(pre);
+    expect(ackFor(h, pre)?.payload).toMatchObject({ outcome: 'applied' });
+    expect(h.audio.precheckCalls).toEqual([{ purpose: 'quiet_check', durationMs: 5000 }]);
+  });
+
+  it('only the latest session.begin and the latest session.state are kept', async () => {
+    const h = await acceptedHarness();
+    h.sockets.current.receive(sessionBegin(SESSION));
+    h.sockets.current.receive(sessionState('pairing', 0, null, SESSION));
+    h.sockets.current.receive(sessionState('permission_pending', 2, null, SESSION));
+    const last = sessionBegin(SESSION_B);
+    h.sockets.current.receive(last);
+    h.controller.confirmPairing();
+    await flush();
+    expect(h.controller.getState().session).toMatchObject({ sessionId: SESSION_B, stage: null });
+    const acks = h.sockets.current.messages('ack');
+    expect(acks).toHaveLength(1); // the older begin and both older states were superseded
+    expect(acks[0]).toMatchObject({ session_id: SESSION_B, payload: { outcome: 'applied' } });
+  });
+
+  it('a held state without a held begin is answered ignored_stale (the TV resends begin defensively)', async () => {
+    const h = await acceptedHarness();
+    const state = sessionState('quiet_check');
+    h.sockets.current.receive(state);
+    h.controller.confirmPairing();
+    await flush();
+    expect(ackFor(h, state)?.payload).toMatchObject({ outcome: 'ignored_stale', detail: 'unknown_session' });
+    expect(h.controller.getState().session).toBeNull();
+    const again = sessionBegin();
+    h.sockets.current.receive(again);
+    expect(ackFor(h, again)?.payload.outcome).toBe('applied');
+  });
+
+  it('measurement commands before Yes are dropped for good: never run, never acked, even after Yes', async () => {
+    const h = await acceptedHarness();
+    h.audio.makeOpen();
+    const dropped = [precheckStart(), windowStart('phrase'), listenerOpen(), tvMsg('window.stop', { reason: 'complete' }, { s: SESSION, w: WINDOW, a: ATTEMPT }), tvMsg('window.cancel', { reason: 'user_cancel' }, { s: SESSION, w: WINDOW, a: ATTEMPT }), tvMsg('attempt.reveal', {}, { s: SESSION, w: WINDOW, a: ATTEMPT }), sessionEnd()];
+    h.sockets.current.receive(sessionBegin());
+    for (const text of dropped) h.sockets.current.receive(text);
+    h.controller.confirmPairing();
+    await flush();
+    for (const text of dropped) expect(ackFor(h, text), 'no ack for a dropped command').toBeUndefined();
+    expect(h.audio.precheckCalls).toHaveLength(0);
+    expect(h.audio.windowCalls).toHaveLength(0);
+    expect(h.audio.closeCalls).toBe(0);
+    expect(h.controller.getState()).toMatchObject({ run: null, canAnswer: false });
+    expect(h.controller.getState().session).toMatchObject({ sessionId: SESSION }); // only the begin was applied
+  });
+
+  it('No discards the held messages: nothing is applied or acked later, and a new pairing starts clean', async () => {
+    const h = await acceptedHarness();
+    const begin = sessionBegin();
+    h.sockets.current.receive(begin);
+    h.sockets.current.receive(sessionState('quiet_check', 2));
+    h.controller.rejectPairing();
+    expect(h.sockets.current.messages().map((m) => m.type)).toEqual(['join.request']);
+    // second pairing
+    h.controller.setCode(CODE);
+    h.controller.join();
+    h.sockets.current.open();
+    h.sockets.current.receive(joinPending('83'));
+    h.sockets.current.receive(joinAccepted());
+    h.controller.confirmPairing();
+    await flush();
+    expect(h.controller.getState().session).toBeNull();
+    expect(h.controller.getState().cue.used).toBe(0);
+    expect(h.sockets.current.messages('ack')).toHaveLength(0);
+  });
+
+  it.each([
+    ['the connection drops', (h: Harness) => h.sockets.current.drop(1006)],
+    ['the relay says unpaired', (h: Harness) => h.sockets.current.receive(relayMsg('unpaired', { reason: 'room_closed' }))],
+  ])('held messages are discarded when %s before Yes', async (_n, act) => {
+    const h = await acceptedHarness();
+    h.sockets.current.receive(sessionBegin());
+    act(h);
+    await flush();
+    h.controller.setCode(CODE);
+    h.controller.join();
+    h.sockets.current.open();
+    h.sockets.current.receive(joinPending());
+    h.sockets.current.receive(joinAccepted());
+    h.controller.confirmPairing();
+    await flush();
+    expect(h.controller.getState().session).toBeNull();
+    expect(h.sockets.current.messages('ack')).toHaveLength(0);
+  });
+
+  it('messages held for one pairing are not applied to another room: a begin arriving after Yes is the normal path', async () => {
+    const h = await acceptedHarness();
+    h.controller.confirmPairing();
+    await flush();
+    const begin = sessionBegin();
+    h.sockets.current.receive(begin);
+    expect(ackFor(h, begin)?.payload.outcome).toBe('applied');
+  });
+
+  it('nothing is held once the pairing is confirmed (commands are applied at once) or after No (a stray late message from the old connection is ignored)', async () => {
+    const k = await acceptedHarness();
+    k.controller.confirmPairing();
+    await flush();
+    k.sockets.current.receive(sessionBegin());
+    k.sockets.current.receive(sessionState('quiet_check'));
+    expect(k.controller.getState().session).toMatchObject({ stage: 'quiet_check' });
+
+    const h = await acceptedHarness();
+    const old = h.sockets.current;
+    h.controller.rejectPairing();
+    old.receive(sessionBegin()); // the old, closed connection says something late
+    h.controller.setCode(CODE);
+    h.controller.join();
+    h.sockets.current.open();
+    h.sockets.current.receive(joinPending());
+    h.sockets.current.receive(joinAccepted());
+    h.controller.confirmPairing();
+    await flush();
+    expect(h.controller.getState().session).toBeNull();
+  });
+});
+
+describe('DEF-003: session.begin is idempotent for the same session id', () => {
+  it('a repeat is acked applied and changes nothing: stage, position, cue count and an open window survive', async () => {
+    const h = await acceptedHarness();
+    h.controller.confirmPairing();
+    h.audio.makeOpen();
+    await flush();
+    h.sockets.current.receive(sessionBegin());
+    h.sockets.current.receive(sessionState('phrase_active', 2, null));
+    h.sockets.current.receive(windowStart('phrase'));
+    h.audio.frame(0);
+    const before = h.controller.getState();
+    const again = sessionBegin();
+    h.sockets.current.receive(again);
+    const ack = h.sockets.current.messages('ack').find((a) => a.payload['acked_message_id'] === lastMessageId(again));
+    expect(ack?.payload).toMatchObject({ outcome: 'applied' });
+    const after = h.controller.getState();
+    expect(after.session).toEqual(before.session);
+    expect(after.session?.stage).toBe('phrase_active');
+    expect(after.cue.used).toBe(2);
+    expect(after.run).toEqual(before.run); // the open window is untouched
+    expect(h.audio.hasOpenRun).toBe(true);
+    // and a few more repeats do not disturb anything either
+    for (let i = 0; i < 3; i++) h.sockets.current.receive(sessionBegin());
+    expect(h.controller.getState().session).toEqual(before.session);
+    expect(h.audio.windowCalls).toHaveLength(1);
+  });
+
+  it('a repeat that carries a different configuration refreshes only that, keeping progress', async () => {
+    const h = await acceptedHarness();
+    h.controller.confirmPairing();
+    await flush();
+    h.sockets.current.receive(sessionBegin());
+    h.sockets.current.receive(sessionState('calibration', 1));
+    h.sockets.current.receive(tvMsg('session.begin', { family_mode: false, phrase_count: 7, cues_max: 3 }, { s: SESSION }));
+    expect(h.controller.getState().session).toMatchObject({ familyMode: false, phraseCount: 7, stage: 'calibration' });
+    expect(h.controller.getState().cue.used).toBe(1);
+  });
+
+  it('a begin for a DIFFERENT session still starts that session fresh (cue count reset, old window discarded)', async () => {
+    const h = await acceptedHarness();
+    h.controller.confirmPairing();
+    h.audio.makeOpen();
+    await flush();
+    h.sockets.current.receive(sessionBegin());
+    h.sockets.current.receive(sessionState('phrase_active', 2, null));
+    h.sockets.current.receive(windowStart('phrase'));
+    h.audio.frame(0);
+    h.sockets.current.receive(sessionBegin('s_session0002'));
+    expect(h.controller.getState().session).toMatchObject({ sessionId: 's_session0002', stage: null });
+    expect(h.controller.getState().cue.used).toBe(0);
+    expect(h.controller.getState().run).toBeNull();
+    expect(h.audio.hasOpenRun).toBe(false);
   });
 });
 
