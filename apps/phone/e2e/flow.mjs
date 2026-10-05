@@ -276,6 +276,38 @@ try {
   await new Promise((r) => setTimeout(r, 200));
   check('a tap after reveal is not sent', phoneMsgs('cue').length === cuesBefore && phoneMsgs('listener.response').length === 1);
 
+  // ---- DEF-004: the TV's link drops mid-window and the TV reconnects ----------------------------
+  const w4 = ids.window();
+  const a4 = ids.attempt();
+  tvMsg('window.start', { kind: 'phrase', phrase_position: 1, max_duration_ms: 8000, vad_floor_dbfs: -60 }, { session_id: SESSION, window_id: w4, attempt_id: a4 });
+  await waitFor(() => phoneMsgs('level').filter((m) => m.window_id === w4).length >= 5, { timeout: 10_000, label: 'levels for the DEF-004 window' });
+  relayMsg('peer.state', { role: 'tv', connected: false, generation: 1 }); // the relay: the TV is gone
+  await page.waitForFunction(() => document.getElementById('mic-badge').textContent === 'Mic open, not measuring');
+  await waitFor(() => phoneMsgs('mic.state').at(-1)?.payload.state === 'open_idle', { label: 'mic.state open_idle after the interruption' });
+  await new Promise((r) => setTimeout(r, 600));
+  const micBefore = phoneMsgs('mic.state').length;
+  const levelsDuringOutage = phoneMsgs('level').filter((m) => m.window_id === w4).length;
+  await new Promise((r) => setTimeout(r, 400));
+  check('DEF-004: while the TV is away the interrupted window sends no more levels and holds its result', phoneMsgs('level').filter((m) => m.window_id === w4).length === levelsDuringOutage && !phoneMsgs('window.result').some((m) => m.window_id === w4));
+  check('DEF-004: nothing spontaneous: no new mic.state while the TV is away and nothing changed', phoneMsgs('mic.state').length === micBefore);
+  const lastKnown = phoneMsgs('mic.state').at(-1);
+  relayMsg('peer.state', { role: 'tv', connected: true, generation: 2 }); // the TV is back with a new generation
+  await waitFor(() => phoneMsgs('mic.state').length > micBefore, { timeout: 5000, label: 'mic.state re-report after the TV reconnected' });
+  await waitFor(() => phoneMsgs('window.result').some((m) => m.window_id === w4), { timeout: 5000, label: 'held window.result' });
+  const reReport = phoneMsgs('mic.state')[micBefore];
+  const heldResult = phoneMsgs('window.result').find((m) => m.window_id === w4);
+  check('DEF-004: the phone re-reported its mic.state when the TV reconnected (nothing had changed)', reReport.payload.state === 'open_idle' && JSON.stringify(reReport.payload) === JSON.stringify(lastKnown.payload), JSON.stringify(reReport.payload.state));
+  check('DEF-004: the re-report carries the session id', reReport.session_id === SESSION);
+  check('DEF-004: mic.state came BEFORE the held interrupted window.result, which is bound to the window ids', received.indexOf(reReport) < received.indexOf(heldResult) && heldResult.payload.valid === false && heldResult.payload.invalid_reason === 'interrupted' && heldResult.attempt_id === a4);
+  const micAfterFirst = phoneMsgs('mic.state').length;
+  relayMsg('peer.state', { role: 'tv', connected: true, generation: 3 }); // another notice straight away
+  await new Promise((r) => setTimeout(r, 300));
+  check('DEF-004: a second notice within a second is not answered at once (at most one per second)', phoneMsgs('mic.state').length === micAfterFirst);
+  await waitFor(() => phoneMsgs('mic.state').length === micAfterFirst + 1, { timeout: 3000, label: 'trailing re-report' });
+  await new Promise((r) => setTimeout(r, 1300));
+  check('DEF-004: exactly one trailing report followed, then quiet', phoneMsgs('mic.state').length === micAfterFirst + 1);
+  check('DEF-004: the TV-reconnect reports stayed on the wire grid and passed the validator', invalid.length === 0, invalid.join(' | '));
+
   // ---- phrases ---------------------------------------------------------------------
   await page.fill('#phrase-1', '<img src=x onerror=alert(1)>');
   await page.click('#save-phrases');
