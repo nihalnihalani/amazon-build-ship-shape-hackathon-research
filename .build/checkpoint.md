@@ -14,11 +14,15 @@ Open an interactive Claude Code session in `/Users/nihalnihalani/Desktop/Github/
 ## State at this checkpoint
 
 - Integration branch `build/across-the-room`; full automated matrix green at `6291c90` (EV-0050), docs/security-only commits after it.
-- Verified tasks: T01, T02, T05, T06, T07, T08, T11, T12, T13, T14, T15.
-- In review/progress: T00 (lead; teammate model reports all claude-sonnet-5-5), T18 (clean clone + matrix pass; CI workflow written, never run on GitHub), T23 (package prepared, not published).
+- Verified tasks: T00, T01, T02, T05, T06, T07, T08, T11, T12, T13, T14, T15 (trust `python3 .build/tools/graph.py status`).
+- In review/progress: T18 (clean clone + matrix pass; CI workflow written, never run on GitHub), T23 (package prepared, not published).
 - Blocked external: T03, T04, T09 (native), T10, T12H, T16 (AWS part; local gate passed), T17 (VVD part; web-preview gate passed), T19, T20. Pending on blocked deps: T04A, T21, T22, T24, T26. Optional: T25.
 - Defects found by integration/fault/QA/security runs and fixed: DEF-001..007, QA-01..13, QA-E2E-01/04, QA-T18-01/02, A11Y-01..05, N-01..N-14 (N-15 info open), R26.
 - Owner's uncommitted research README edit and untracked research files are untouched (not committed by the lead).
+
+## What is left
+
+See `REMAINING_WORK.md` at the repository root (verified against these records by an independent read-only workflow before publication).
 
 ## Owner decisions outstanding
 

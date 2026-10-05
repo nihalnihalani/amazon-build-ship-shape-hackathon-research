@@ -363,7 +363,8 @@
     "R-A1",
     "R-U2",
     "R-U3",
-    "R-P1"
+    "R-P1",
+    "R-J1"
    ],
    "owner": "tv",
    "cwd": "/Users/nihalnihalani/Desktop/Github/atr-worktrees/tv",
@@ -395,7 +396,8 @@
    "id": "T10",
    "title": "Authorized AWS staging relay",
    "requirement_ids": [
-    "R-O1"
+    "R-O1",
+    "R-P4"
    ],
    "owner": "relay-cloud",
    "cwd": null,
@@ -425,7 +427,9 @@
    "title": "Local storage, migrations, resume and deletion",
    "requirement_ids": [
     "R-ST1",
-    "R-J2"
+    "R-J2",
+    "R-I2",
+    "R-J1"
    ],
    "owner": "session",
    "cwd": null,
@@ -461,7 +465,9 @@
     "R-D2",
     "R-E1",
     "R-F2",
-    "R-I1"
+    "R-I1",
+    "R-B2",
+    "R-I2"
    ],
    "owner": "lead",
    "cwd": "/Users/nihalnihalani/Desktop/Github/amazon devpost hackathon",
@@ -687,7 +693,9 @@
    "requirement_ids": [
     "R-V1",
     "R-V2",
-    "R-O4"
+    "R-O4",
+    "R-P4",
+    "R-P5"
    ],
    "owner": "qa",
    "cwd": null,
