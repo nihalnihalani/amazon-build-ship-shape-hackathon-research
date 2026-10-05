@@ -19,7 +19,7 @@ import {
   saveSessionRecord,
   saveSettings,
 } from './storage.js';
-import { relaySocketUrl } from './urls.js';
+import { relaySocketUrl, validatePhonePageOrigin } from './urls.js';
 import { Outbox } from './wire.js';
 
 function fallbackBytes(n: number): Uint8Array {
@@ -50,11 +50,16 @@ export function createSessionStore(deps: SessionStoreDeps): SessionStore {
         return idFactory.attempt();
     }
   };
+  // Contract revision 3: an unset option keeps the relay origin; a set but invalid one is ignored and noted.
+  const phoneOriginSet = deps.phonePageOrigin !== undefined && deps.phonePageOrigin !== null;
+  const phonePageOrigin = phoneOriginSet ? validatePhonePageOrigin(deps.phonePageOrigin) : null;
   const env: Env = {
     now: () => deps.clock.now(),
     localDate: (ms) => deps.clock.localDate(ms),
     newId,
     relayUrl: deps.relayUrl,
+    ...(phonePageOrigin !== null ? { phonePageOrigin } : {}),
+    phonePageOriginInvalid: phoneOriginSet && phonePageOrigin === null,
     appVersion: deps.appVersion,
     platform: deps.platform,
     fixtureMode: deps.fixtureMode === true,

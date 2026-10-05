@@ -242,6 +242,10 @@ export interface Env {
   /** PK-12 startup self-test of NFC normalization; injectable for tests. */
   nfcSelfTest(): boolean;
   relayUrl: string;
+  /** Contract revision 3: the validated https origin that serves the phone page, when the option was set and valid. */
+  phonePageOrigin?: string;
+  /** The `phonePageOrigin` option was set but is not an https origin: ignored, noted in Diagnostics. */
+  phonePageOriginInvalid?: boolean;
   appVersion: string;
   platform: 'vega' | 'web_preview' | 'test';
   fixtureMode: boolean;

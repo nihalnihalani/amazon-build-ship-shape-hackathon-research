@@ -141,6 +141,8 @@ export interface HarnessOptions {
   settings?: { familyMode?: boolean; onboarded?: boolean; cueWord?: string | null };
   seed?: Record<string, string>;
   relayUrl?: string;
+  /** Contract revision 3; passed through as given (including values that are not strings) to test validation. */
+  phonePageOrigin?: unknown;
   noBoot?: boolean;
   /** Seed for the deterministic byte source (identifiers and number-matching decoys). */
   randomSeed?: number;
@@ -208,6 +210,7 @@ export class Harness {
       storage: this.storage,
       transport: this.transport,
       relayUrl: this.opts.relayUrl ?? 'https://relay.example.test/ws',
+      ...(this.opts.phonePageOrigin !== undefined ? { phonePageOrigin: this.opts.phonePageOrigin as string } : {}),
       randomBytes: this.opts.randomBytes ?? seededBytes(this.opts.randomSeed),
       appVersion: '0.1.0-test',
       platform: 'test',
