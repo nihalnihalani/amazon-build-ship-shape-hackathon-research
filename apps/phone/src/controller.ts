@@ -174,6 +174,9 @@ const COMMAND_TYPES: ReadonlySet<InboundType> = new Set<InboundType>([
 /** Outbound types allowed before the user answers "Did you just pick NN on your TV?". */
 const PRE_CONFIRM_TYPES: ReadonlySet<OutboundType> = new Set<OutboundType>(['ping']);
 
+/** DEF-004: a TV that (re)connects is told the mic state at most once per second. */
+const TV_REPORT_MIN_INTERVAL_MS = 1000;
+
 const FATAL_RESUME_CODES: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'revoked',
   'expired',
@@ -219,6 +222,9 @@ export class PhoneController {
   private heldSessionState: Extract<Command, { type: 'session.state' }> | null = null;
   private failTimer: ReturnType<typeof setTimeout> | null = null;
   private listenerTimer: ReturnType<typeof setTimeout> | null = null;
+  /** DEF-004: when the last peer.state-triggered mic.state went out, and a pending trailing one. */
+  private lastTvReportAt = Number.NEGATIVE_INFINITY;
+  private tvReportTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingResponse: string | null = null;
   private pendingPhrases: { id: string; phrases: string[] } | null = null;
   /** Phrases the TV has acknowledged as saved. */
@@ -410,6 +416,7 @@ export class PhoneController {
     this.credential = null;
     this.userConfirmed = false;
     this.dropHeld();
+    this.clearTvReportTimer();
     this.clearFailureWindow();
     this.patch({
       screen: 'join',
@@ -463,6 +470,7 @@ export class PhoneController {
 
   /** Paired but the socket is gone: cancel measurement, then retry with backoff and jitter. */
   private onLinkLost(): void {
+    this.clearTvReportTimer();
     this.factory.clearAuth();
     this.lastMicKey = null;
     this.abortRun('interrupted');
@@ -543,8 +551,15 @@ export class PhoneController {
       case 'peer.state':
         if (this.userConfirmed && msg.payload.role === 'tv') {
           this.patch({ tvConnected: msg.payload.connected });
-          if (!msg.payload.connected) this.abortRun('interrupted');
-          else this.flushPending();
+          if (!msg.payload.connected) {
+            this.abortRun('interrupted');
+          } else {
+            // DEF-004: a TV (re)connecting knows nothing about this phone. Tell it the current mic
+            // state first, then deliver anything held for it. A generation change with no
+            // "disconnected" in between is also a reconnect, so every `connected: true` counts.
+            this.reportMicToTv();
+            this.flushPending();
+          }
         }
         return;
       case 'unpaired':
@@ -1139,6 +1154,43 @@ export class PhoneController {
     if (this.sendAuthed('mic.state', payload, { session_id: sessionId })) this.lastMicKey = key;
   }
 
+  /**
+   * Re-sends the current mic.state even though nothing changed (the normal path de-duplicates),
+   * for a TV that has just (re)connected. At most one per second: a burst of `peer.state` messages
+   * produces one immediate report and one trailing report when the second is up, so the TV always
+   * ends up with the latest state without being flooded. The message is the same snapshot the
+   * normal path would send (including session_id when known), so repeating it is harmless.
+   */
+  private reportMicToTv(): void {
+    const wait = this.lastTvReportAt + TV_REPORT_MIN_INTERVAL_MS - this.clock();
+    if (wait > 0) {
+      if (this.tvReportTimer === null) {
+        this.tvReportTimer = setTimeout(() => {
+          this.tvReportTimer = null;
+          this.sendMicToTv();
+        }, wait);
+      }
+      return;
+    }
+    this.sendMicToTv();
+  }
+
+  private sendMicToTv(): void {
+    if (!this.userConfirmed || !this.linkUp()) return;
+    this.lastMicKey = null; // force: the TV may never have seen the current state
+    this.publishMic();
+    if (this.lastMicKey !== null) this.lastTvReportAt = this.clock();
+  }
+
+  private clearTvReportTimer(): void {
+    if (this.tvReportTimer !== null) clearTimeout(this.tvReportTimer);
+    this.tvReportTimer = null;
+  }
+
+  private clock(): number {
+    return (this.deps.now ?? Date.now)();
+  }
+
   // ---- listener controls -----------------------------------------------------
 
   private lockListener(feedback?: string): void {
@@ -1256,6 +1308,8 @@ export class PhoneController {
     this.resetCues();
     this.userConfirmed = false;
     this.dropHeld();
+    this.clearTvReportTimer();
+    this.lastTvReportAt = Number.NEGATIVE_INFINITY;
     this.clearFailureWindow();
     this.clearListenerTimer();
     this.patch({ session: null, micNotice: null });
@@ -1277,6 +1331,7 @@ export class PhoneController {
   /** Tear down everything (page unload, tests). */
   dispose(): void {
     this.transport.close();
+    this.clearTvReportTimer();
     this.clearFailureWindow();
     this.clearListenerTimer();
     void this.shutdownCapture('discard');
