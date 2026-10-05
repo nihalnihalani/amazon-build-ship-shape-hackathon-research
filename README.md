@@ -2,7 +2,11 @@
 
 Research, idea selection and build plans for an entry to [Build, Ship, Shape: Amazon Developer Hackathon](https://amazonappdev2026.devpost.com/), organised by Amazon Developer and run on Devpost.
 
-> **Status as of Sunday 4 October 2026 (IST): research only.** Nothing in this repository has been built, run, tested or submitted. Every hour, latency, cost and score figure is an estimate. Every external fact links to its source in the documents and in the evidence register. Nothing here predicts or promises a result.
+> **5 October reassessment status: research and specifications only.** This research pass did not build, device-test, deploy or submit an application. A separate active build/checkpoint is present and was preserved; this report does not certify its readiness. Research artifacts and graph structure were checked; proposed product gates remain unexecuted by this pass. Estimates do not predict a prize.
+
+**Latest skeptical reassessment:** [all 20 ideas, current rules and final judgment](research/HACKATHON_REASSESSMENT_2026-10-05.md), [four complete category project briefs](research/CATEGORY_PROJECTS_2026-10-05.md), [updated Opus/Sonnet team prompt](research/OPUS_SONNET_REASSESSMENT_BUILD_PROMPT.md), [build and verification graph](research/REASSESSMENT_BUILD_GRAPH.md) with its [35-task JSON seed](research/REASSESSMENT_TASK_GRAPH.json), and [40 fresh pages / 20 saved searches / evidence hashes](research/REASSESSMENT_EVIDENCE_2026-10-05.json). **This reassessment supersedes the earlier unconditional project choice and meter-centered claims.** Phone, physical Fire TV, Bee and Apple Watch access remain unconfirmed.
+
+**5 October implementation research pack:** [current sources and design corrections](research/ACROSS_THE_ROOM_DEEP_RESEARCH.md), [Opus 5.5 master build prompt](research/ACROSS_THE_ROOM_OPUS_5_5_MASTER_PROMPT.md), [Sonnet 5.5 teammate prompt](research/ACROSS_THE_ROOM_SONNET_5_5_TEAMMATE_PROMPT.md), and [complete build/verification graph](research/ACROSS_THE_ROOM_BUILD_GRAPH.md) with its [29-task JSON seed](research/ACROSS_THE_ROOM_TASK_GRAPH.json). These are build instructions and unexecuted gates; no application or device test was performed for this pack.
 
 ---
 
@@ -26,18 +30,20 @@ Research, idea selection and build plans for an entry to [Build, Ship, Shape: Am
 
 ## 1. TL;DR
 
-**Build "Across the Room: the far-side check" for the Fire TV track.** It is a React Native for Vega app, demonstrated on the Vega Virtual Device. It serves adults who have been told by a clinician to practise speaking louder at home, plus the family member who listens from across the room. An Android phone lies on a taped mark beside the TV as the microphone, and the user stays on the sofa with only the remote. The TV runs a room-noise check, one calibration phrase, a timed "ahh" and ten household phrases. For each phrase it shows whether the voice reached the listener's end of the room. No audio leaves the phone, and no AI model decides the score.
+**First qualify "Across the Room: the Carryover Check" for Fire TV.** Its core is remote-led household practice with separate speaker self-rating, listener report and an optional qualified relative microphone signal. A meter does not establish comprehension or that somebody heard the words. Full implementation depends on an actual phone, second consenting person, working native Vega and observed user value. Under confirmed Mac-only access, qualify BorrowBridge instead. Neither is a validated winning project.
 
-| Role | Idea | Track | Judge score | After red team | Solo build estimate | When to use it |
-|---|---|---|---|---|---|---|
-| **Primary** | FTV-4 Across the Room | Fire TV | 3.62 | 3.30 | ≈ 102.5 h of ≈ 104 h | Default |
-| Alternative 1 | FTV-3 Mail Check | Fire TV | 3.58 | 3.33 | ≈ 95.5 h | Two-person team, iPhone-only household, or the microphone test fails by Tue 6 Oct |
-| Alternative 2 | ALX-5 OutPass | Alexa+ | 3.37 | 3.00 | ≈ 83 h | The Vega toolchain will not run by Wed 7 Oct |
-| Fallback | FTV-4F Listener Edition | Fire TV | not scored separately | not red-teamed | ≈ 80% reuse of the primary | The Thu 8 Oct gate finds the phone's loudness readings untrustworthy |
+| Track | Strongest conditional proposal | Decisive gate |
+|---|---|---|
+| Fire TV | Across the Room: Carryover Check | Actual native/phone/listener loop and concrete TV advantage |
+| Alexa+ | BorrowBridge | Contingent multi-owner borrowing demand, rival distinction and real MCP/Apps |
+| Bee | Counterexample | Actual Bee/Apple Watch data and source-linked executable learning loop |
+| Ring | Doorstep Difference | Useful changing official-source frames, privacy exclusion and user advantage |
 
-Scores use the team's own analyst model, weighted Tech 25%, Design 20%, Impact 20%, Originality 20% and Feasibility 15%. This is **not** the official rubric, which weights four criteria equally. The primary is not the top scorer on either number. The top judge score, an allergy-safety helper for Alexa+, was killed by the red team. Mail Check edges the primary by 0.03 after the red team, which is noise. See [RECOMMENDATION.md](research/RECOMMENDATION.md) for why the primary still wins for a solo builder.
+The official rubric weights Tech Implementation, Design, Potential Impact and Quality of Idea equally. The old five-factor decimal scores remain historical analyst estimates. Fresh rival pages weaken Mail Check, music score following and meter-only voice practice; OutPass is demoted. [Read the current reasoning and reversal conditions](research/HACKATHON_REASSESSMENT_2026-10-05.md).
 
-**Dependency that must work first:** the Vega toolchain on an Apple-silicon Mac, on Mon 5 Oct. That means Rosetta 2, Node 20, Vega SDK 0.24 and a hello-world app in the Vega Virtual Device. The same day, an Android Chrome microphone test must give repeatable loudness readings with automatic gain control off. That test is the assumption that would reverse the choice.
+**First work:** the bounded qualification sprint. Running Hello World on VVD, observing a real phone pipeline and testing the TV-versus-phone workflow are evidence gates. Requested AGC settings alone do not qualify measurement. The public gallery remains unpublished; actual competitors and winners cannot be fully evaluated.
+
+**Historical material below:** sections 2–13 preserve the 4 October research workflow and earlier selection. Use the linked 5 October reassessment and updated prompt when recommendations, scope or claims conflict.
 
 ---
 

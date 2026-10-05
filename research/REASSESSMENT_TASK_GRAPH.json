@@ -1,0 +1,647 @@
+{
+  "schema_version": "1.0",
+  "as_of_date_IST": "2026-10-05",
+  "status": "unexecuted_seed",
+  "objective": "Qualify and complete ONE selected project with independent evidence and separate readiness decisions.",
+  "preferred_conditional_thesis": "firetv",
+  "Mac_only_alternative": "alexa",
+  "selected_track": null,
+  "allowed_tracks_in_seed": [
+    "firetv",
+    "alexa"
+  ],
+  "other_categories": "Bee/Ring require separate graphs from their specs after real-data/media gates.",
+  "max_active_agents_including_lead": 4,
+  "states": [
+    "pending",
+    "ready",
+    "running",
+    "needs_review",
+    "verified",
+    "blocked",
+    "failed",
+    "not_applicable"
+  ],
+  "gate_semantics": "verified requires current evidence and independent acceptance; gate_result must be pass. Completed failure evaluation is not a pass.",
+  "qualification_semantics": "Provisional selection permits qualification; full scope requires applicable access/native/value gates to pass.",
+  "mini_challenge": "Additional OSS kit proposed; C07 scope changes need explicit selected mini and current rules.",
+  "tasks": [
+    {
+      "id": "C01",
+      "title": "Current rules, evidence and rights ledger",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [],
+      "owner_role": "lead",
+      "status": "pending",
+      "acceptance": "Governing rules refreshed; requirements and rights mapped.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "C02",
+      "title": "Environment, Git, models and native team audit",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [],
+      "owner_role": "lead",
+      "status": "pending",
+      "acceptance": "Actual host/model/team capability recorded; user work preserved.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "C03",
+      "title": "Access and 48-hour qualification plan",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C01",
+        "C02"
+      ],
+      "owner_role": "product",
+      "status": "pending",
+      "acceptance": "Actual equipment/participant availability recorded; probes and decision criteria predeclared.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": "Equipment/participants may remain unconfirmed."
+    },
+    {
+      "id": "C04",
+      "title": "One-project selection record",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C03"
+      ],
+      "owner_role": "lead",
+      "status": "pending",
+      "acceptance": "One active branch; preferred thesis vs confirmed executable choice separated; fatal gates cannot be waived.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F01",
+      "title": "Actual native Vega feasibility",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "C04"
+      ],
+      "owner_role": "platform",
+      "status": "pending",
+      "acceptance": "Pinned SDK/RN/sample; actual VVD build/run, D-pad and secure relay proof.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "F02",
+      "title": "Actual phone and independent listener feasibility",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "C04"
+      ],
+      "owner_role": "companion",
+      "status": "pending",
+      "acceptance": "Real HTTPS phone mic/lifecycle, independent listener and controlled quality evidence.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Supported physical phone and consenting second human."
+    },
+    {
+      "id": "F03",
+      "title": "Minimal remote/blind-loop value prototype",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F01",
+        "F02"
+      ],
+      "owner_role": "client",
+      "status": "pending",
+      "acceptance": "Truthful native/phone loop; no intelligibility/treatment verdict; short-bank behavior defined.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F04",
+      "title": "Intended-user comparison and value gate",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F03"
+      ],
+      "owner_role": "product",
+      "status": "pending",
+      "acceptance": "Phone-workflow comparison recorded; actual evidence class explicit; fail/pending blocks full scope.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Consenting intended-user dyads; clinician perspective where feasible."
+    },
+    {
+      "id": "F05",
+      "title": "Typed state/transport/privacy contract",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F01",
+        "F02"
+      ],
+      "owner_role": "core",
+      "status": "pending",
+      "acceptance": "Roles, expiries, sequence/generation, attempts/windows, payload bounds and hidden-reveal invariants reviewed.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F06",
+      "title": "Complete native client and persistence",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F04",
+        "F05"
+      ],
+      "owner_role": "client",
+      "status": "pending",
+      "acceptance": "Six-capability client; remote focus/Back/recovery, literal phrases, minimal history/deletion.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F07",
+      "title": "Complete HTTPS phone companion",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F04",
+        "F05"
+      ],
+      "owner_role": "companion",
+      "status": "pending",
+      "acceptance": "Ephemeral local analysis, lifecycle states and role-separated response; no hidden leak/raw retention.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F08",
+      "title": "Reference and cloud relay adapters",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F04",
+        "F05"
+      ],
+      "owner_role": "backend",
+      "status": "pending",
+      "acceptance": "Actual transport validates role/window/message constraints, expiry, bounds and redacted logs.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F09",
+      "title": "Integrated blind/reveal and recovery",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F06",
+        "F07",
+        "F08"
+      ],
+      "owner_role": "integrator",
+      "status": "pending",
+      "acceptance": "Real round trip; 1/2/3/10 phrase sessions, late/disconnect/skip and denominator cases.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "F10",
+      "title": "Metric qualification and independent oracles",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F09"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Independent fixtures plus randomized physical phone negatives; unsupported metrics removed.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Physical phone and independent stimuli/observer."
+    },
+    {
+      "id": "F11",
+      "title": "Security/privacy/failure acceptance",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F09"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Role/room/replay/expiry/malformed/stale failures; no-audio egress/storage/logs, deletion and track shutdown.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "F12",
+      "title": "Native remote/accessibility acceptance",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F09"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "D-pad/Back/focus/recovery and applicable screen-reader journey; no accessible blind leak.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "F13",
+      "title": "Independent native/phone end-to-end evidence",
+      "track": "firetv",
+      "guard": "selected_track == 'firetv'",
+      "depends_on": [
+        "F10",
+        "F11",
+        "F12"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Fresh build with actual evidence classes/measurements and defects independently reviewed. Minimum operating/rollback runbook prepared.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "A01",
+      "title": "Actual MCP and Apps qualification",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "C04"
+      ],
+      "owner_role": "platform",
+      "status": "pending",
+      "acceptance": "2025-11-25 StreamableHTTP lifecycle/tools/resources and actual ui:// sandbox bridge; labelled simulated host.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "A02",
+      "title": "Borrowing demand and rival gate",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A01"
+      ],
+      "owner_role": "product",
+      "status": "pending",
+      "acceptance": "Recent contingent-borrowing incidents and simpler-workaround comparison; detailed rival wedge audited.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Consenting adults with recent relevant borrowing."
+    },
+    {
+      "id": "A03",
+      "title": "Bounded planner/consent/store contracts",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A02"
+      ],
+      "owner_role": "core",
+      "status": "pending",
+      "acceptance": "Stable IDs/slots/timezone, revision-bound immutable terms, owner roles and store-local invariants.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "A04",
+      "title": "Local/cloud store and planner",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A03"
+      ],
+      "owner_role": "backend",
+      "status": "pending",
+      "acceptance": "SQLite/DynamoDB invariants; ≤100 distinct transaction items; attach conditions; durable receipts; no external atomicity.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "A05",
+      "title": "Complete authenticated MCP tools",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A03"
+      ],
+      "owner_role": "backend",
+      "status": "pending",
+      "acceptance": "Plan/propose/approve/decline/commit/resume/cancel/manual checkout-return/export/delete; no approve-all.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "A06",
+      "title": "Voice-first simulator and actual Apps UI",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A03"
+      ],
+      "owner_role": "client",
+      "status": "pending",
+      "acceptance": "Borrower/owner exact-term confirmation, useful accessible interaction, persistent simulation disclosure.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "A07",
+      "title": "Integrated multi-owner workflow",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A04",
+        "A05",
+        "A06"
+      ],
+      "owner_role": "integrator",
+      "status": "pending",
+      "acceptance": "Real calls/state changes over labelled inventory; repair, revision consent, commit and session resume.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "A08",
+      "title": "Adversarial transaction/auth/UX acceptance",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A07"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Race, changed/expired/missing approval, durable duplicate receipt, cancel/DST/cross-circle/unknown failures.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "A09",
+      "title": "Independent MCP/cloud/user evidence",
+      "track": "alexa",
+      "guard": "selected_track == 'alexa'",
+      "depends_on": [
+        "A08"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Fresh clean run, actual claimed runtime/AWS calls and protocol/UI/user evidence; no physical guarantee. Minimum operating/rollback runbook prepared.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "C05",
+      "title": "Independent engineering release review",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "F13",
+        "A09"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Only selected branch required; clean setup/build, license/security/privacy and critical/high defects reviewed. Minimum operating/rollback runbook independently verified.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null,
+      "dependency_policy": "Require selected-track dependencies; unselected branch must be not_applicable with selection evidence."
+    },
+    {
+      "id": "C06",
+      "title": "Operations and authorized cloud smoke",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C05"
+      ],
+      "owner_role": "backend",
+      "status": "pending",
+      "acceptance": "Runbook, redaction, state recovery/backup, bounded load and rollback; actual services recorded. Verify actual local or cloud route; cloud smoke applies only to claimed integrations.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Cloud account/spending/deployment authorization as needed."
+    },
+    {
+      "id": "C07",
+      "title": "Additional reusable OSS contribution",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C05"
+      ],
+      "owner_role": "release",
+      "status": "pending",
+      "acceptance": "Separate useful licensed kit, interface/examples/meaningful tests and exact contribution fields.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "C08",
+      "title": "Functional video and submission drafts",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C05"
+      ],
+      "owner_role": "release",
+      "status": "pending",
+      "acceptance": "Under3min English actual demo/labels; project, feedback, genuine friction, judge instructions and rights.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": false,
+      "external_dependency": null
+    },
+    {
+      "id": "C09",
+      "title": "Final rules/repository/judge access audit",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C06",
+        "C07",
+        "C08"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Amendments, source/license/reviewer access, usable free judge route and all fields checked.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "External publication/account actions only within user authorization."
+    },
+    {
+      "id": "C10",
+      "title": "Hackathon-readiness decision",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C09"
+      ],
+      "owner_role": "lead",
+      "status": "pending",
+      "acceptance": "Current selected-branch evidence complete; draft/publication/submission states distinguished.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    },
+    {
+      "id": "C11",
+      "title": "Real intended-device distribution qualification",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C05"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Actual target environments/current distribution rules tested; FireTV Appstore needs physical device.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Physical Fire TV for FireTV production; real intended environment/users."
+    },
+    {
+      "id": "C12",
+      "title": "Public production operations/intended-use acceptance",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C06",
+        "C11"
+      ],
+      "owner_role": "reviewer",
+      "status": "pending",
+      "acceptance": "Actual intended users, privacy/intended-use/accessibility/security, capacity/recovery/support/distribution verified.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": "Real participants/accounts/device/review outcomes as needed."
+    },
+    {
+      "id": "C13",
+      "title": "Production-readiness decision and handoff",
+      "track": "common",
+      "guard": "always",
+      "depends_on": [
+        "C12"
+      ],
+      "owner_role": "lead",
+      "status": "pending",
+      "acceptance": "Production label only with real required passes; otherwise exact blockers and resume action.",
+      "evidence": [],
+      "gate_result": null,
+      "is_gate": true,
+      "external_dependency": null
+    }
+  ],
+  "evidence_record_required": [
+    "requirement_id",
+    "expected",
+    "observed",
+    "command_or_procedure",
+    "exit_or_result",
+    "timestamp_UTC",
+    "timestamp_IST",
+    "git_SHA",
+    "environment_or_device",
+    "artifact_path",
+    "artifact_hash",
+    "reviewer"
+  ],
+  "repair_transitions": [
+    {
+      "trigger": "review rejected or test failed",
+      "action": "Open concrete defect/reproducer; repair and retest affected path."
+    },
+    {
+      "trigger": "interface/scope/commit changed",
+      "action": "Invalidate affected downstream evidence; reopen acceptance."
+    },
+    {
+      "trigger": "external input missing",
+      "action": "Block exact task with missing dependency; continue independent work; do not waive gate."
+    },
+    {
+      "trigger": "session resume",
+      "action": "Read checkpoint, verify checkout/evidence, respawn missing teammates."
+    }
+  ],
+  "readiness_axes": {
+    "engineering": "C05",
+    "hackathon": "C10",
+    "public_production": "C13"
+  },
+  "stopping_rule": "Finish authorized executable work. Preserve checkpoints and truthful external blockers; no false readiness.",
+  "source_specs": [
+    "research/CATEGORY_PROJECTS_2026-10-05.md",
+    "research/OPUS_SONNET_REASSESSMENT_BUILD_PROMPT.md"
+  ],
+  "readiness_note": "Public-production readiness is independent of hackathon form/video readiness; both remain required for full requested scope.",
+  "mini_scope_note": "C07 mandatory for chosen additional OSS scope; not universal primary-track eligibility."
+}

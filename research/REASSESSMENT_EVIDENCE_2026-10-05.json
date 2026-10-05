@@ -1,0 +1,1126 @@
+{
+  "schema_version": "1.0",
+  "as_of_date_IST": "2026-10-05",
+  "workflow": "firecrawl-deep-research",
+  "user_selected_depth": "exhaustive",
+  "status": "research_only",
+  "constraints": {
+    "solo": true,
+    "location": "India",
+    "confirmed_host": "existing Mac",
+    "Android_phone": "unconfirmed",
+    "physical_Fire_TV": "unconfirmed",
+    "Bee_Pioneer": "unconfirmed",
+    "Apple_Watch_with_Bee": "unconfirmed"
+  },
+  "coverage": {
+    "original_concepts_reviewed": 20,
+    "fresh_usable_page_captures": 40,
+    "fresh_unique_requested_urls": 40,
+    "successful_searches_with_saved_results": 20,
+    "additional_collector_reported_empty_search": 1,
+    "same_day_full_bodies_reused": 18,
+    "historical_claim_count": 1275,
+    "historical_source_record_count": 804,
+    "historical_search_record_count": 205,
+    "historical_verification_status": {
+      "confirmed": 100,
+      "not_independently_reverified": 75,
+      "partially_confirmed": 24,
+      "single_researcher": 1062,
+      "verifier_surfaced": 14
+    },
+    "historical_decision_critical": 224
+  },
+  "limits": [
+    "No product implementation/device trial/deployment/rival install/customer interview.",
+    "Historical corpus synthesized and relevant source bodies read; not all804 URLs reread/refetched.",
+    "Vendor claims and snippets are not effectiveness or global feature-absence proof.",
+    "Retries/failed requests excluded from source counts.",
+    "Raw files retained locally and gitignored; SHA-256 hashes provided.",
+    "Retrieval date is not a publisher date."
+  ],
+  "sources": [
+    {
+      "id": "NEW-001",
+      "url": "https://amazonappdev2026.devpost.com/rules",
+      "title": "Official Rules",
+      "area": "event",
+      "source_quality": "governing",
+      "saved_file": ".firecrawl/reassessment-oct5/event-rules.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 45136,
+      "sha256": "56b271d26c0d788a90b7d81fa70ddb93a9feea2fd426a608d7f2730902b21dec",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-002",
+      "url": "https://amazonappdev2026.devpost.com/resources",
+      "title": "Resources",
+      "area": "event",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/event-resources.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 10295,
+      "sha256": "62ef32e1ab9cd45a70dba4a8f3bc8570cca06ca55379170adf8bb5b6b4048a81",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-003",
+      "url": "https://amazonappdev2026.devpost.com/project-gallery",
+      "title": "Gallery unpublished",
+      "area": "event",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/event-gallery.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 681,
+      "sha256": "2350a5d23cca83b6466953e3d570540ff3ced4d8790e093f2bbd2191c4bc3d25",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-004",
+      "url": "https://amazonappdev2026.devpost.com/updates/46456-got-an-idea",
+      "title": "Creative guidance",
+      "area": "event",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/event-creative.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 3217,
+      "sha256": "ca34f0388182f32c85350e2b968bb806cf814a46697748f4cfd75ad6f5de401b",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-005",
+      "url": "https://amazonappdev2026.devpost.com/details/faqs",
+      "title": "FAQs",
+      "area": "event",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/event-faqs.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 5943,
+      "sha256": "32557d4f840c26defdcc2c3a88c9457809baac94fba4ec4be15cca7bc23de3bc",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-006",
+      "url": "https://amazonappdev2026.devpost.com/details/dates",
+      "title": "Schedule",
+      "area": "event",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/event-dates.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 842,
+      "sha256": "b86ad33ff02fb27806ad052d96917c1eefbee65b5916b541d23181f9a635d070",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-007",
+      "url": "https://amazonappdev2026.devpost.com/updates",
+      "title": "Update index",
+      "area": "event",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/event-updates.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 7508,
+      "sha256": "1975949465204141c88559316131a97ca4032af9e6ba7608bbe742346e495edc",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-008",
+      "url": "https://amazonappdev2026.devpost.com/forum_topics/45397-what-exactly-are-you-looking-for-in-the-alexa-track",
+      "title": "Alexa judging clarification",
+      "area": "event",
+      "source_quality": "official_clarification",
+      "saved_file": ".firecrawl/reassessment-oct5/event-alexa-guidance.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 4385,
+      "sha256": "4b2f930941de579a21216a8cc0793669b0d37e8ed9c2810d2cba4a4cc022f992",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-009",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html",
+      "title": "DynamoDB transactions",
+      "area": "aws",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/aws-transactions.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 31641,
+      "sha256": "9c70a519e0efe57a055d087400b2fcce694347c01d3931d240e961c6b31777c3",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-010",
+      "url": "https://developer.amazon.com/docs/vega/latest/focus-management.html",
+      "title": "Vega focus",
+      "area": "firetv",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-focus.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 44047,
+      "sha256": "8cf235dc99da95dc88d6560d25db15d48d6db162700cf9a0fcf68d5d3e9a809a",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-011",
+      "url": "https://apps.apple.com/us/app/loud-and-clear/id1491171131",
+      "title": "Loud and Clear",
+      "area": "firetv",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-loudclear-store.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 15148,
+      "sha256": "6a5500677594288270133e3f9234e5b75693d35c4e342fb773e41ea09de405dd",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-012",
+      "url": "https://loudandclear.io/parkinsons-voice-fitness/",
+      "title": "Loud and Clear voice fitness",
+      "area": "firetv",
+      "source_quality": "vendor_historical_content",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-loudclear.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 2731,
+      "sha256": "a0e75f38a12374ec815dca6ce853167e36cadab15559bdd243173c15550502dd",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-013",
+      "url": "https://apps.apple.com/us/app/speak-up-for-parkinsons/id784117908",
+      "title": "Speak Up",
+      "area": "firetv",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-speakup.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 10416,
+      "sha256": "d142d8655659a7a1316d2b5d752761ba9eb91a6be92432ab1a9c513aad97372a",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-014",
+      "url": "https://apps.apple.com/us/app/voicibel/id6444749376",
+      "title": "Voicibel",
+      "area": "firetv",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-voicibel.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 5767,
+      "sha256": "edd9bf2657245d6f373bea521740b98f149aa6f126b1145c167ec28fc3a2841a",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-015",
+      "url": "https://support.apple.com/guide/iphone/magnify-information-iphe867dc99c/ios",
+      "title": "Apple Magnifier",
+      "area": "firetv",
+      "source_quality": "official_product",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-magnifier.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 14235,
+      "sha256": "7d8151bade34aca96fa2b88323d5087fe6c8c04081c9e28f27de706def4d3bd3",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-016",
+      "url": "https://apps.apple.com/no/app/score-wizard/id1438151717",
+      "title": "Score Wizard",
+      "area": "firetv",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-scorewizard.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 18746,
+      "sha256": "83366b39fed824cbd50fa52367e12336e4184e94496f96ed4b55236b0999a24e",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-017",
+      "url": "https://www.ava.me/",
+      "title": "Ava",
+      "area": "firetv",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-ava.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 9970,
+      "sha256": "db1581848eb05e0b9e7c659829fd3555df3e98360a76d0d36420f773ba6a1482",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-018",
+      "url": "https://developer.amazon.com/docs/alexaplus/add-ons/home.html",
+      "title": "Alexa add-on access",
+      "area": "alexa",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-gating.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 10319,
+      "sha256": "485de8cf253daaf058eccee346962615df0c7a9d22a03c564c0944bfb318e091",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-019",
+      "url": "https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-overview.html",
+      "title": "Alexa MCP overview",
+      "area": "alexa",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-toolkit.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 9800,
+      "sha256": "6895d8e9c6f629afdb812210c5770e95372c63217e11156ae987868d92a1332a",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-020",
+      "url": "https://developer.amazon.com/docs/alexaplus/add-ons/mcp-toolkit-client-lifecycle.html",
+      "title": "Alexa client lifecycle",
+      "area": "alexa",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-lifecycle.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 12316,
+      "sha256": "4698f9a98463c45c923ab96e839f92561577c6a10ba766ddc941fc4b072b0177",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-021",
+      "url": "https://developer.amazon.com/docs/alexaplus/add-ons/functional-requirements.html",
+      "title": "Alexa functional requirements",
+      "area": "alexa",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-functional.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 31231,
+      "sha256": "6405175ce527f08f7128c263113961dbe047171335555b22280a672dae946608",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-022",
+      "url": "https://www.aboutamazon.com/news/devices/new-alexa-top-features",
+      "title": "Alexa native features",
+      "area": "alexa",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-native-features.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 36227,
+      "sha256": "ffdd06ceb55c52710fb764aa47d1204b530550a4509467fe6c089e625b2f0c64",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-023",
+      "url": "https://myturn.com/lending-libraries/",
+      "title": "myTurn",
+      "area": "alexa",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-myturn.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 3453,
+      "sha256": "e442d879bb0acf53df186b85ae9aa9bdbcbb7c1c102f98e62f8d77189ad75de2",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-024",
+      "url": "https://www.lend-engine.com/features/loan-management-software",
+      "title": "Lend Engine",
+      "area": "alexa",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-lendengine.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 6277,
+      "sha256": "92108048e240ac2b49f8ebb52bd72efa258de6fef4ca256e0374c226570eff7c",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-025",
+      "url": "https://modelcontextprotocol.io/extensions/apps/overview",
+      "title": "MCP Apps",
+      "area": "alexa",
+      "source_quality": "primary_spec",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-mcp-apps.json",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 15843,
+      "sha256": "dd25cca139a42cfec2f82b711e356cc734af2479e7366fbf71b41e08dff97473",
+      "http_status_in_saved_capture": 200
+    },
+    {
+      "id": "NEW-026",
+      "url": "https://developer.amazon.com/docs/ring/api-documentation.html",
+      "title": "Ring API",
+      "area": "ring",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-api.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 453047,
+      "sha256": "3f0851419076b31381b9c74ac33fa339ff6926b8d7432be2bd886f4c7c0d76f9",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-027",
+      "url": "https://developer.amazon.com/docs/ring/release-notes.html",
+      "title": "Ring releases",
+      "area": "ring",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-release-notes.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 31202,
+      "sha256": "53bf6709f809500db7eed76f257bf1cea1b68ea1f67e82088f3910cab801790a",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-028",
+      "url": "https://developer.amazon.com/docs/ring/developer-faq.html",
+      "title": "Ring developer FAQ",
+      "area": "ring",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-developer-faq.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 24739,
+      "sha256": "72f1e376dac40e2c401743eaaebe241e53e989123a70433c16bd7ee7fc9612ab",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-029",
+      "url": "https://developer.amazon.com/docs/ring/ux-design-guide.html",
+      "title": "Ring UX privacy zones",
+      "area": "ring",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-ux.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 43781,
+      "sha256": "b836cdc8691246f0b54071a2563a6c0a9e0d9e327212648ee51b7a0f4489fe6d",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-030",
+      "url": "https://ring.com/appstore/category/all-apps",
+      "title": "Ring Appstore",
+      "area": "ring",
+      "source_quality": "vendor_directory",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-appstore-all.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 19920,
+      "sha256": "d3fcbdd0ad4048caeec1977252c9d09bdbcda56d595b0b8d9cf21d7b72ad3e1c",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-031",
+      "url": "https://docs.bee.computer/docs/cli",
+      "title": "Bee CLI",
+      "area": "bee",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-cli.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 27240,
+      "sha256": "f1066ae9c3808ab3b06a84bb3d9a4e7f1c8affbed65d41620b06495c9213e0fc",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-032",
+      "url": "https://docs.bee.computer/docs/realtime",
+      "title": "Bee realtime",
+      "area": "bee",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-realtime.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 12350,
+      "sha256": "dbf998067f7a4b841ed149e35850c79ff46a102df297942a9eec127c19b866d8",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-033",
+      "url": "https://docs.bee.computer/docs/agentic-sync",
+      "title": "Bee incremental sync",
+      "area": "bee",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-agentic-sync.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 2968,
+      "sha256": "b95e479ed43ba17359d1afa6ca0d95bc6e50a43aa628e12fa7d793833be8efff",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-034",
+      "url": "https://docs.bee.computer/docs/proxy",
+      "title": "Bee local proxy",
+      "area": "bee",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-proxy.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 6820,
+      "sha256": "2f43d11eb8370e419ecc854a3a68bd5a10744ccd384219946d95248a05ac2e15",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-035",
+      "url": "https://docs.bee.computer/docs/developer-mode",
+      "title": "Bee Developer Mode",
+      "area": "bee",
+      "source_quality": "official",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-developer-mode.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 1431,
+      "sha256": "51dc0e9d743d517751ebd808be7903771dd73751e87a2da4f58adac773ab586b",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-036",
+      "url": "https://bee.computer/",
+      "title": "Bee product",
+      "area": "bee",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-home.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 8320,
+      "sha256": "bb249b13fca62011c63440ac8fd589c4656a2050f8abb366ec6193145e139b9e",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-037",
+      "url": "https://www.aboutamazon.com/news/devices/bee-amazon-wearable-ai-device-new-features",
+      "title": "Bee native features",
+      "area": "bee",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-native-features.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 14250,
+      "sha256": "56523913348540bc804dea9fdf25a8e1e4cfa67b18f96ac6e125439ebbfadfa7",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-038",
+      "url": "https://openai.com/index/chatgpt-study-mode/",
+      "title": "ChatGPT Study Mode",
+      "area": "bee",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-rival-study-mode.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 13424,
+      "sha256": "8c8010b47d0ff0cb741a985e7b8e1123fc8ad8ca01d583e952f99837e515df16",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-039",
+      "url": "https://www.khanmigo.ai/",
+      "title": "Khanmigo",
+      "area": "bee",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-rival-khanmigo.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 16361,
+      "sha256": "ee0b4aae64f11538d7f26feb26d3a5d87d7a7f44678426d4c67121d90eb1101c",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    },
+    {
+      "id": "NEW-040",
+      "url": "https://blog.google/innovation-and-ai/models-and-research/google-labs/notebooklm-student-features/",
+      "title": "NotebookLM student features",
+      "area": "bee",
+      "source_quality": "vendor",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-rival-notebooklm.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Fresh Firecrawl full body, cache disabled",
+      "limitation": "Documented/advertised capability; no implementation, customer benefit or feature absence proven.",
+      "bytes": 12387,
+      "sha256": "f9fd01bb194af9741fe5084bca4cebe7755516e0d75b9e482682dff3b8b6c6d3",
+      "http_status_in_saved_capture": null,
+      "status_note": "Successful usable body inspected by collector; markdown file omits response metadata."
+    }
+  ],
+  "same_day_reused_sources": [
+    {
+      "url": "https://developer.amazon.com/docs/vega/0.24/install-vega-sdk",
+      "saved_file": ".firecrawl/across-room-oct5/platform-install.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 21009,
+      "sha256": "e125effb784e132130e7fff48ee4c1a1326bc3f0431b1a98726193c4a728851c"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/vega/0.24/target-os-version",
+      "saved_file": ".firecrawl/across-room-oct5/platform-matrix.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 18082,
+      "sha256": "7d50f4c0162810b41128bc81b6e62e6c18fd657dd3317637b79c6f5772fa1f6c"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/vega/0.24/hello-world",
+      "saved_file": ".firecrawl/across-room-oct5/platform-hello-world.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 10003,
+      "sha256": "7f973c1e2817037fa3038ac03d038d3f21791c00fd84a83561f85f300e19ffc5"
+    },
+    {
+      "url": "https://github.com/AmazonAppDev/vega-tv-interfaces-sample",
+      "saved_file": ".firecrawl/across-room-oct5/platform-tv-sample.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 42037,
+      "sha256": "0f5673efb90787c4dfedf4f939c74e8f405d716f5d3e9a52147b088d6dd81bc7"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/react-native-vega/0.83/network",
+      "saved_file": ".firecrawl/across-room-oct5/platform-network.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 14889,
+      "sha256": "33422b6059ca5d40ff68654e6c1cfa1a99e99e781286e873db756ed2999b3624"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/vega-api/0.24/react-native-svg",
+      "saved_file": ".firecrawl/across-room-oct5/platform-svg.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 11281,
+      "sha256": "416cda09cedb1e872bc31901f1b03b3d60af542b7162919c2eacb86ee078ac8a"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/react-native-vega/0.83/accessibility",
+      "saved_file": ".firecrawl/across-room-oct5/platform-accessibility.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 50505,
+      "sha256": "53cdd574e03d90660499250fc2af582821b70392e17c7f4419d5bb7e9e8e38ee"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/vega-api/0.24/react-native-async-storage",
+      "saved_file": ".firecrawl/across-room-oct5/platform-storage.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 12466,
+      "sha256": "83c1148b5ee02959fe5c5d0f2f5c799b3377bc9ff54ee8fd16db604cd5dea420"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/vega/0.24/run-apps",
+      "saved_file": ".firecrawl/across-room-oct5/platform-run-apps.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 37370,
+      "sha256": "02e7140b0564b3949dbbda771129f25360e259e69c053e6f6e35b6259f252581"
+    },
+    {
+      "url": "https://developer.amazon.com/docs/vega/0.24/test-before-submission",
+      "saved_file": ".firecrawl/across-room-oct5/platform-test-before-submission.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 11468,
+      "sha256": "d65d0775b58810c6c434a8eab3ed41b3ac9fc7344f269229b283bd73a71d0467"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia",
+      "saved_file": ".firecrawl/across-room-oct5/audio-getusermedia.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 27693,
+      "sha256": "ffbfba78c02069de3a216bb1611f82b6bff7943e379a9d274143e0c9969507bf"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/autoGainControl",
+      "saved_file": ".firecrawl/across-room-oct5/audio-autogaincontrol.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 7690,
+      "sha256": "12e0af07fc16c968d4c5b8253da986dd08854acd2b0e59a5f0ce079d538d8847"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/getFloatTimeDomainData",
+      "saved_file": ".firecrawl/across-room-oct5/audio-analysernode.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 8665,
+      "sha256": "0e42c6993939df921386fd0c21eba39b16d5d31007e5a68ab212701485c4b045"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-websocket-api-lambda-auth.html",
+      "saved_file": ".firecrawl/across-room-oct5/aws-auth.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 26799,
+      "sha256": "ccf8c825bbc9a04c20f7fb9ae6f858f8974f11aeb65ae2bbee72256b0836bd31"
+    },
+    {
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html",
+      "saved_file": ".firecrawl/across-room-oct5/aws-ttl.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day Firecrawl full body",
+      "bytes": 13693,
+      "sha256": "8a3b07e7e60047bea51199ec74b68ed49ea986686182282a83678150ccfa7101"
+    },
+    {
+      "url": "https://code.claude.com/docs/en/model-config",
+      "saved_file": ".firecrawl/oct5/claude-model-config.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day official full body",
+      "bytes": 127941,
+      "sha256": "3f18fc321351731b9be07004b5436c1bed7efde9b661948e9c5a1035b0bdb08f"
+    },
+    {
+      "url": "https://code.claude.com/docs/en/agent-teams",
+      "saved_file": ".firecrawl/oct5/claude-agent-teams.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day official full body",
+      "bytes": 45035,
+      "sha256": "856e7960d4b9aa5b704e4fdc8c8a161c446a32b2d80f3054cb1c4cbb08182857"
+    },
+    {
+      "url": "https://code.claude.com/docs/en/hooks",
+      "saved_file": ".firecrawl/oct5/claude-hooks.md",
+      "retrieved_date_IST": "2026-10-05",
+      "retrieval": "Reused earlier same-day official full body",
+      "bytes": 271037,
+      "sha256": "3251b56eb2ee94eb69bcd483c9be850e48674e0a8587be83bffbdb156388db11"
+    }
+  ],
+  "searches": [
+    {
+      "query": "site:aboutamazon.com Alexa+ reservations reminders calendar proactive groceries 2026",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-search-native.json",
+      "bytes": 1861,
+      "sha256": "02408e196765bc8cce2144e1fe2c7087ab15478fe9b4d053d001c54c54fa9f35"
+    },
+    {
+      "query": "site:aboutamazon.com/news/devices/new-alexa-top-features Alexa+ \"calendar\" \"groceries\" \"reservations\"",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-search2.json",
+      "bytes": 2381,
+      "sha256": "ed8d33f9dc854f7f6773ced7ab2db3b5d7a42837c12b379d5a637d9161d12ab2"
+    },
+    {
+      "query": "neighbor borrowing library reservations tools multiple owners lending library myTurn Lend Engine features",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-search3.json",
+      "bytes": 3169,
+      "sha256": "709c662ee2790ccdf5f43a4f95f642a8f39fe7ff25568fe86bbcb473bb5f704e"
+    },
+    {
+      "query": "community volunteer shift swap multi person confirmation SignUpGenius Lotsa Helping Hands",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/alx-search4.json",
+      "bytes": 2347,
+      "sha256": "c67e7578499040bb4c490c507e07e0e3ef7f10bbd54c47278469c7d28dce3fa2"
+    },
+    {
+      "query": "\"speech practice\" \"TV\" \"loudness\" app caregiver",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-farfield.json",
+      "bytes": 2225,
+      "sha256": "2ca5a163067cd2dde5036c303f6df6cc425fae52c510ce0ade83f1d40fae672f"
+    },
+    {
+      "query": "\"low vision\" \"TV\" \"document\" \"remote\" magnifier",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-mail.json",
+      "bytes": 1894,
+      "sha256": "36fa9893b2be2c0e91a1b7fa75c5c7d1b5c308e6b157763950ef48186f7bc414"
+    },
+    {
+      "query": "\"live captions\" \"TV\" \"family\" \"conversation\" app",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-group.json",
+      "bytes": 1973,
+      "sha256": "c9cab40d80376d2937d2000cd983d090f72acbddcddb2c78989fb7844847d987"
+    },
+    {
+      "query": "\"score following\" \"TV\" \"music\" app",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-music.json",
+      "bytes": 1835,
+      "sha256": "df40a2be01a226b3378e15f70a1222624fd6b445ef302cd4e619664b361cea4d"
+    },
+    {
+      "query": "Loud and Clear speech app caregiver baseline loudness biofeedback",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-speech-products.json",
+      "bytes": 1950,
+      "sha256": "ff90a7e0b9f0e6b8dbcfb64d0471bf193483391fcccc188a680d35f8efae59a6"
+    },
+    {
+      "query": "Score Wizard app Apple TV hands free music score following",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-score-tv.json",
+      "bytes": 1685,
+      "sha256": "9482f41b158f0508acdd05dc2e48c1d42ab6df0a9935f9d6af7fa4371f5bb493"
+    },
+    {
+      "query": "site:developer.amazon.com Fire TV accessibility multimodal remote D-pad 2026",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-tv-access.json",
+      "bytes": 406,
+      "sha256": "a8d1f7c56a9bde021c7b766ffc299641f25a3044e05d458b8fd33a98a8e49668"
+    },
+    {
+      "query": "\"Fire TV\" \"hackathon\" \"Vega\" accessibility health speech 2026",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/ftv-search-family-new.json",
+      "bytes": 1745,
+      "sha256": "4dec9074ccee9f6e8d59eeb9fc6cc178bf79d4d9790e3e6060ac86d762240b9a"
+    },
+    {
+      "query": "site:developer.amazon.com/docs/ring \"Playground\" \"webhook\"",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-search-playground.json",
+      "bytes": 666,
+      "sha256": "cc792fcc598569c03faa30b13dcd75d47e4fa8da74383dd85a0ac58df5a85e69"
+    },
+    {
+      "query": "Ring Appstore \"handoff\" \"evidence\" \"package\" accessibility business 2026",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-search-workflow.json",
+      "bytes": 1939,
+      "sha256": "d2029df8579f264d857251870769732675631ee424da24ebcbcc1831978ddceb"
+    },
+    {
+      "query": "Bee wearable memory commitments Actions templates official Amazon 2026",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-search-product.json",
+      "bytes": 1693,
+      "sha256": "94c1c082315706985ae7bf5ee4a39b12d90b06842274815d25fc16b3363ec98d"
+    },
+    {
+      "query": "site:ring.com \"Video Descriptions\" \"Package\" \"Smart Alerts\"",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/rng-search-native.json",
+      "bytes": 1730,
+      "sha256": "655667d92d7e70563a0b3c49eb0faf0b37b74b7ed8023a0e116f81bb5c270b5a"
+    },
+    {
+      "query": "site:blog.google NotebookLM quizzes flashcards learning 2026",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/bee-search-notebooklm.json",
+      "bytes": 3756,
+      "sha256": "a66f635089196fd38931404f6438ac719d1a531e71e0ace76bad22fd4f53c933"
+    },
+    {
+      "query": "\"amazonappdev2026\" \"Fire TV\" project hackathon",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/global-search-competition.json",
+      "bytes": 2422,
+      "sha256": "4f2a589cb4b594ebb5af19fc81db32f42834fb571b6ed4bfe075b3c55cbd9780"
+    },
+    {
+      "query": "site:developer.amazon.com hackathon winners Alexa developer challenge",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/global-search-winners.json",
+      "bytes": 2320,
+      "sha256": "7c9dbaa0e1425ba66e1b61cfbb862c6ff4ee55cb151d9c6db9c268c5955c0d15"
+    },
+    {
+      "query": "site:amazonappdev2026.devpost.com \"looking for\" \"Alexa\"",
+      "status": "success_with_saved_results",
+      "saved_file": ".firecrawl/reassessment-oct5/global-search-judges.json",
+      "bytes": 1300,
+      "sha256": "24e0ef8246bee1211f8c0f2527d5a277f82d93a0ec497061cad3fd20df13de8a"
+    },
+    {
+      "query": "site:bee.computer OR site:docs.bee.computer \"Actions\" \"commitments\" \"templates\"",
+      "status": "collector_reported_empty_result",
+      "saved_file": null,
+      "limitation": "No result retained; excluded from saved-result count."
+    }
+  ],
+  "excluded_captures": [
+    {
+      "saved_file": ".firecrawl/reassessment-oct5/alx-lot-impact.md",
+      "reason": "Not-found body; no impact numbers used."
+    }
+  ],
+  "critical_claims": [
+    {
+      "id": "CLAIM-001",
+      "claim": "Four equally weighted criteria",
+      "source_ids": [
+        "NEW-001",
+        "NEW-004"
+      ],
+      "kind": "documented_fact",
+      "limitation": "No actual judging prediction."
+    },
+    {
+      "id": "CLAIM-002",
+      "claim": "Gallery unpublished",
+      "source_ids": [
+        "NEW-003"
+      ],
+      "kind": "current_observation",
+      "limitation": "Private/complete entrant field unknown."
+    },
+    {
+      "id": "CLAIM-003",
+      "claim": "Bee requires actual device-derived data",
+      "source_ids": [
+        "NEW-001"
+      ],
+      "kind": "documented_fact",
+      "limitation": "FAQ does not supersede rules; hardware unconfirmed."
+    },
+    {
+      "id": "CLAIM-004",
+      "claim": "Alexa participant partner tools gated",
+      "source_ids": [
+        "NEW-005",
+        "NEW-018"
+      ],
+      "kind": "documented_fact",
+      "limitation": "Public documentation does not grant access."
+    },
+    {
+      "id": "CLAIM-005",
+      "claim": "Fire TV native simulator allowed",
+      "source_ids": [
+        "NEW-001",
+        "NEW-005"
+      ],
+      "kind": "documented_fact",
+      "limitation": "No project execution performed."
+    },
+    {
+      "id": "CLAIM-006",
+      "claim": "Native document reader overlap",
+      "source_ids": [
+        "NEW-015"
+      ],
+      "kind": "advertised_capability",
+      "limitation": "Supported hardware/region/language; not installed."
+    },
+    {
+      "id": "CLAIM-007",
+      "claim": "Voice meters and functional practice exist",
+      "source_ids": [
+        "NEW-011",
+        "NEW-013",
+        "NEW-014"
+      ],
+      "kind": "advertised_capability",
+      "limitation": "No clinical/comparative quality claim."
+    },
+    {
+      "id": "CLAIM-008",
+      "claim": "Score following/page turning exists",
+      "source_ids": [
+        "NEW-016"
+      ],
+      "kind": "advertised_capability",
+      "limitation": "Listing iPad/Mac; search fragment did not prove TV."
+    },
+    {
+      "id": "CLAIM-009",
+      "claim": "Multi-item lending reservation exists",
+      "source_ids": [
+        "NEW-024"
+      ],
+      "kind": "advertised_capability",
+      "limitation": "Exact cross-owner wedge not verified absent."
+    },
+    {
+      "id": "CLAIM-010",
+      "claim": "Store-local DynamoDB atomicity and bounds",
+      "source_ids": [
+        "NEW-009"
+      ],
+      "kind": "architecture_constraint",
+      "limitation": "External services/physical handoffs outside guarantee."
+    },
+    {
+      "id": "CLAIM-011",
+      "claim": "DynamoDB client-token idempotency ten minutes",
+      "source_ids": [
+        "NEW-009"
+      ],
+      "kind": "documented_fact",
+      "limitation": "Need durable application receipt."
+    },
+    {
+      "id": "CLAIM-012",
+      "claim": "Ring privacy zones must be excluded",
+      "source_ids": [
+        "NEW-029"
+      ],
+      "kind": "documented_fact",
+      "limitation": "Media path not empirically tested."
+    },
+    {
+      "id": "CLAIM-013",
+      "claim": "Ring TAKE/E2EE/geography restrict access",
+      "source_ids": [
+        "NEW-027",
+        "NEW-028"
+      ],
+      "kind": "documented_fact",
+      "limitation": "Actual account/device access pending."
+    },
+    {
+      "id": "CLAIM-014",
+      "claim": "Bee realtime at-most-once",
+      "source_ids": [
+        "NEW-032",
+        "NEW-033"
+      ],
+      "kind": "documented_fact",
+      "limitation": "Processed event/no guaranteed speech latency."
+    },
+    {
+      "id": "CLAIM-015",
+      "claim": "Bee proxy local unauthenticated",
+      "source_ids": [
+        "NEW-034"
+      ],
+      "kind": "documented_fact",
+      "limitation": "No actual login/proxy run here."
+    },
+    {
+      "id": "CLAIM-016",
+      "claim": "Generic AI tutoring and study quizzes overlap",
+      "source_ids": [
+        "NEW-037",
+        "NEW-038",
+        "NEW-039",
+        "NEW-040"
+      ],
+      "kind": "advertised_capability",
+      "limitation": "Executable correction loop not globally unique."
+    },
+    {
+      "id": "CLAIM-017",
+      "claim": "Carryover preferred conditional thesis",
+      "source_ids": [],
+      "kind": "analyst_recommendation",
+      "limitation": "Phone/listener/native/value gates pending."
+    },
+    {
+      "id": "CLAIM-018",
+      "claim": "BorrowBridge Mac-only alternative",
+      "source_ids": [],
+      "kind": "analyst_recommendation",
+      "limitation": "Demand/exact advantage pending."
+    },
+    {
+      "id": "CLAIM-019",
+      "claim": "Ring and Bee conditional category choices",
+      "source_ids": [],
+      "kind": "analyst_recommendation",
+      "limitation": "Real-data/media/customer gates pending."
+    }
+  ],
+  "independent_cross_reviews": [
+    "research/_working/reassessment_cross_redteam_alexa.md",
+    "research/_working/reassessment_cross_redteam_firetv.md"
+  ],
+  "rule_body_diff": {
+    "compared": [
+      ".firecrawl/oct4/evt-rules.md",
+      ".firecrawl/reassessment-oct5/event-rules.md"
+    ],
+    "result": "Identical governing bodies after navigation/footer removed",
+    "limitation": "Later amendments remain possible."
+  }
+}

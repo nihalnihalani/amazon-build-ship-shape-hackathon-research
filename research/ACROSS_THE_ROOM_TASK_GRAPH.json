@@ -1,0 +1,542 @@
+{
+  "schema_version": 1,
+  "project": "Across the Room: the far-side check",
+  "prepared_at": "2026-10-05",
+  "timezone": "Asia/Kolkata",
+  "artifact_kind": "unexecuted build plan; public launch optional until explicitly authorized",
+  "requested_models": {
+    "lead": "claude-opus-5-5",
+    "teammates": "claude-sonnet-5-5"
+  },
+  "truth_rule": "A plan, citation or teammate assertion cannot satisfy runtime evidence. Verify on the release commit.",
+  "states": [
+    "pending",
+    "ready",
+    "in_progress",
+    "in_review",
+    "verified",
+    "rework",
+    "blocked_external",
+    "cancelled_optional"
+  ],
+  "native_task_mapping": {
+    "pending": [
+      "pending",
+      "ready",
+      "blocked_external",
+      "rework"
+    ],
+    "in_progress": [
+      "in_progress",
+      "in_review"
+    ],
+    "completed": [
+      "verified",
+      "cancelled_optional"
+    ]
+  },
+  "gates": {
+    "engineering_release_candidate": "T22",
+    "hackathon_ready": "T23",
+    "public_production_ready": "T24",
+    "public_production_launched": "T26"
+  },
+  "tasks": [
+    {
+      "id": "T00",
+      "title": "Inventory, model access and team setup",
+      "role": "lead",
+      "depends_on": [],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Environment and model access evidence; no application files overwritten"
+      ]
+    },
+    {
+      "id": "T01",
+      "title": "Verify rules and dependency matrix",
+      "role": "research",
+      "depends_on": [
+        "T00"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Cited current rule matrix, SDK/RN/OS/package pins and source dates"
+      ]
+    },
+    {
+      "id": "T02",
+      "title": "Freeze product scope and resolve ADRs",
+      "role": "lead",
+      "depends_on": [
+        "T01"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Noise gate, privacy payload, authentication, relative-band meaning and persistence decisions"
+      ]
+    },
+    {
+      "id": "T03",
+      "title": "Run Vega hello-world and network spike",
+      "role": "vega",
+      "depends_on": [
+        "T01"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Actual VVD boot/render/input/WSS evidence at pinned SDK"
+      ]
+    },
+    {
+      "id": "T04",
+      "title": "Run real Android microphone spike",
+      "role": "audio",
+      "depends_on": [
+        "T02"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Physical Android experiment executed with settings, repeatability and monotonicity results; pass/fail preserved truthfully, with no automatic clinical inference"
+      ]
+    },
+    {
+      "id": "T04A",
+      "title": "Decide and validate measurement mode",
+      "role": "lead",
+      "depends_on": [
+        "T04",
+        "T02"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Choose relative-band mode only if supported by device evidence; otherwise Listener Edition with qualified VAD/relative-only display and revised requirements; failed AGC never masquerades as valid cross-session measurement"
+      ]
+    },
+    {
+      "id": "T05",
+      "title": "Freeze versioned protocol and state machines",
+      "role": "contracts",
+      "depends_on": [
+        "T02"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Validated role/room/session/window schemas, failure states and compatibility rules"
+      ]
+    },
+    {
+      "id": "T06",
+      "title": "Implement deterministic DSP package",
+      "role": "audio",
+      "depends_on": [
+        "T05"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Numeric, noise, clipping, VAD and boundary fixtures pass; no audio persistence"
+      ]
+    },
+    {
+      "id": "T07",
+      "title": "Implement secure local relay",
+      "role": "backend",
+      "depends_on": [
+        "T05"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Pairing/role isolation/idempotency/expiry/abuse tests pass"
+      ]
+    },
+    {
+      "id": "T08",
+      "title": "Implement phone companion",
+      "role": "phone",
+      "depends_on": [
+        "T05",
+        "T06",
+        "T07"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "HTTPS permissions, mic lifecycle, privacy payload, phrase editor and wake-lock recovery"
+      ]
+    },
+    {
+      "id": "T09",
+      "title": "Implement native TV shell and focus",
+      "role": "vega",
+      "depends_on": [
+        "T03",
+        "T05"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Actual Vega screens and D-pad focus/navigation at supported UI scales"
+      ]
+    },
+    {
+      "id": "T10",
+      "title": "Deploy and verify AWS staging relay",
+      "role": "cloud",
+      "depends_on": [
+        "T05",
+        "T07"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Authorized stack plan/deploy, HTTPS/WSS smoke, isolation, log redaction and cost controls"
+      ]
+    },
+    {
+      "id": "T11",
+      "title": "Implement durable TV state and deletion",
+      "role": "vega",
+      "depends_on": [
+        "T05",
+        "T09"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Migrations, crash-resume, idempotent summaries and complete deletion evidence"
+      ]
+    },
+    {
+      "id": "T12",
+      "title": "Integrate local full session loop",
+      "role": "integrator",
+      "depends_on": [
+        "T07",
+        "T08",
+        "T09",
+        "T11"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Complete local protocol journey on supported VVD; real-phone path verified separately; secure context and evidence modes explicit"
+      ]
+    },
+    {
+      "id": "T12H",
+      "title": "Verify hosted full session integration",
+      "role": "integrator",
+      "depends_on": [
+        "T12",
+        "T10"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Real authorized staging relay phone/VVD path; authentication, no-audio transfer, expiry and recovery evidence"
+      ]
+    },
+    {
+      "id": "T13",
+      "title": "Implement three blind checks",
+      "role": "vega",
+      "depends_on": [
+        "T12"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "3/6/9 hidden arc, rating/reveal/skip, no pre-reveal leaks"
+      ]
+    },
+    {
+      "id": "T14",
+      "title": "Implement listener controls and agreement",
+      "role": "phone",
+      "depends_on": [
+        "T12"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Heard/Not heard, 3-cue cap, immutable window binding and late-tap exclusion"
+      ]
+    },
+    {
+      "id": "T15",
+      "title": "Implement failure recovery",
+      "role": "integrator",
+      "depends_on": [
+        "T12",
+        "T13",
+        "T14"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Loss/background/expiry/invalid data cancels scoring; reconnect never duplicates results"
+      ]
+    },
+    {
+      "id": "T16",
+      "title": "Run security and privacy gate",
+      "role": "security",
+      "depends_on": [
+        "T08",
+        "T10",
+        "T11",
+        "T15"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "No unresolved critical/high findings; no audio/network token/body leakage; deletion verified"
+      ]
+    },
+    {
+      "id": "T17",
+      "title": "Run TV and phone accessibility gate",
+      "role": "qa",
+      "depends_on": [
+        "T13",
+        "T14",
+        "T15"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Remote-only journeys, VoiceView coordination, scaling, contrast and focus evidence"
+      ]
+    },
+    {
+      "id": "T18",
+      "title": "Run automated integration and clean-build gate",
+      "role": "qa",
+      "depends_on": [
+        "T06",
+        "T07",
+        "T15",
+        "T16",
+        "T17"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Meaningful unit/contract/E2E/fault tests and locked clean build pass on current commit"
+      ]
+    },
+    {
+      "id": "T19",
+      "title": "Run live device and acoustic gate",
+      "role": "qa",
+      "depends_on": [
+        "T04A",
+        "T12H",
+        "T18"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Real Android + VVD tests; delayed packets/noise tests; camera latency and limitations recorded"
+      ]
+    },
+    {
+      "id": "T20",
+      "title": "Verify production operations",
+      "role": "cloud",
+      "depends_on": [
+        "T10",
+        "T16",
+        "T18"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Alarms, redaction, budgets, rollback/restore drills, runbooks and artifact provenance"
+      ]
+    },
+    {
+      "id": "T21",
+      "title": "Independent adversarial release review",
+      "role": "reviewer",
+      "depends_on": [
+        "T19",
+        "T20"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Reviewer outside implementation accepts evidence or opens blocking rework tasks"
+      ]
+    },
+    {
+      "id": "T22",
+      "title": "Create engineering release candidate",
+      "role": "lead",
+      "depends_on": [
+        "T21"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Clean pinned artifacts; all required engineering gates verified; release report has no unsupported claims"
+      ]
+    },
+    {
+      "id": "T23",
+      "title": "Prepare complete hackathon package and judge access",
+      "role": "release",
+      "depends_on": [
+        "T22"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Complete current-rule package and actual platform demo; licensed source/judge access prepared; publication/submission status recorded; no false readiness if required access is absent"
+      ]
+    },
+    {
+      "id": "T24",
+      "title": "Complete public-production readiness and distribution gate",
+      "role": "release",
+      "depends_on": [
+        "T22"
+      ],
+      "required": true,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Actual target consumer hardware and support matrix verified; security/privacy/accessibility/operations signoff; signed/versioned distribution candidate and applicable certification requirements resolved; rollout prepared"
+      ]
+    },
+    {
+      "id": "T25",
+      "title": "Optional stretch after core release gates",
+      "role": "integrator",
+      "depends_on": [
+        "T22"
+      ],
+      "required": false,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Separately approved why-line/starter phrases/export/Polly; all impacted gates rerun"
+      ]
+    },
+    {
+      "id": "T26",
+      "title": "Publish production release after owner authorization",
+      "role": "release",
+      "depends_on": [
+        "T24"
+      ],
+      "required": false,
+      "status": "pending",
+      "owner": null,
+      "attempts": 0,
+      "evidence": [],
+      "acceptance": [
+        "Explicit launch authorization, completed distribution/store acceptance as applicable, approved rollout and postlaunch smoke/rollback readiness; actual URL/version recorded"
+      ]
+    }
+  ],
+  "retry_policy": {
+    "same_failure_attempts_before_escalation": 3,
+    "action": "Record root cause; try a materially different documented recovery or mark blocked_external. Continue independent ready tasks."
+  },
+  "continuity": {
+    "checkpoint_after": "Every verified task, contract change, integration, blocker and before compaction/shutdown",
+    "restart": "Read checkpoint and evidence; verify git SHA/artifacts; respawn teammates; invalidate affected evidence; claim ready nodes."
+  }
+}
