@@ -1,8 +1,34 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-05T03:30:00+05:30",
-  "engineering_release_candidate": {"value": false, "reason": "Implementation in progress"},
-  "hackathon_ready": {"value": false, "reason": "No native Vega build (B-001); no physical phone evidence (B-002)"},
-  "public_production_ready": {"value": false, "reason": "Requires physical Fire TV (B-004), hosted ops evidence (B-003) and distribution requirements"},
-  "public_production_launched": {"value": false, "reason": "Requires owner authorization (B-005) after readiness"}
+  "updated_at": "2026-10-05T10:03:49+05:30",
+  "integration_commit": "57a88c4",
+  "engineering_release_candidate": {
+    "value": false,
+    "reason": "All automated gates pass at 6291c90 (EV-0050), but T19 (real phone + VVD acoustic/latency gate), T20 (operations drills on AWS) and T21 (independent release review of those) are blocked by B-001/B-002/B-003, so no RC tag is cut."
+  },
+  "hackathon_ready": {
+    "value": false,
+    "reason": "The rules require a functioning Fire TV/Vega demo; the app has never been built or run on the Vega Virtual Device (B-001: Rosetta absent, Vega SDK not installed). Also needs a public English video <3 min, owner publication decisions (B-005) and ideally real-phone evidence (B-002). Package prepared in docs/submission/."
+  },
+  "public_production_ready": {
+    "value": false,
+    "reason": "Requires physical Fire TV testing (B-004), authorized AWS staging with alarm/rollback drills (B-003), real-phone qualification (T04 protocol rev 3 approved, not executed; B-002), vega project doctor and vpt validate, and Appstore requirements."
+  },
+  "public_production_launched": {
+    "value": false,
+    "reason": "Requires public_production_ready plus explicit owner authorization and accepted distribution (B-005)."
+  },
+  "automated_evidence_summary": "EV-0050 at 6291c90: workspace 3,761 tests (2 skipped), apps/tv tsc + 678 jest + bundle, strict a11y 59/59 (web preview), e2e 12/12, review-e2e 13/13, security 130/130; slow budget test EV-0051.",
+  "evidence_classes_present": [
+    "automated",
+    "web_preview",
+    "fixture_replay",
+    "documentation_only"
+  ],
+  "evidence_classes_missing": [
+    "real_phone",
+    "real_VVD",
+    "physical_Fire_TV",
+    "AWS staging"
+  ]
 }
