@@ -1,4 +1,6 @@
-import { APP_VERSION, DEFAULT_RELAY_URL, isAllowedRelayUrl, resolveConfig } from '../config';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { APP_VERSION, DEFAULT_RELAY_URL, isAllowedPhonePageOrigin, isAllowedRelayUrl, resolveConfig } from '../config';
 
 describe('relay URL validation', () => {
   it.each([
@@ -29,6 +31,95 @@ describe('relay URL validation', () => {
 
   it('rejects non-strings', () => {
     for (const value of [undefined, null, 5, {}, ['wss://x']]) expect(isAllowedRelayUrl(value)).toBe(false);
+  });
+});
+
+describe('phone page origin validation (contract revision 3)', () => {
+  it.each([
+    'https://d1234abcd.cloudfront.net',
+    'https://phone.example.com',
+    'https://localhost',
+    'https://localhost:8443',
+    'https://192.168.1.20:8443',
+    'https://[::1]:8443',
+    'https://a-b.example.co.uk:65535',
+    'https://x',
+  ])('accepts %s', (value) => {
+    expect(isAllowedPhonePageOrigin(value)).toBe(true);
+  });
+
+  it.each([
+    ['plain http', 'http://phone.example.com'],
+    ['plain http on localhost', 'http://localhost:8443'],
+    ['a wss URL', 'wss://relay.example.com/ws'],
+    ['a trailing slash (not an origin)', 'https://phone.example.com/'],
+    ['a path', 'https://phone.example.com/app'],
+    ['credentials', 'https://user:secret@phone.example.com'],
+    ['a query', 'https://phone.example.com?code=ABC'],
+    ['a fragment', 'https://phone.example.com#code=ABC'],
+    ['an upper-case scheme', 'HTTPS://phone.example.com'],
+    ['port 0', 'https://phone.example.com:0'],
+    ['port above 65535', 'https://phone.example.com:65536'],
+    ['a six-digit port', 'https://phone.example.com:123456'],
+    ['an empty port', 'https://phone.example.com:'],
+    ['no host', 'https://'],
+    ['whitespace', 'https://phone example.com'],
+    ['a trailing dot-less double dot', 'https://phone..example.com'],
+    ['empty string', ''],
+  ])('rejects %s', (_label, value) => {
+    expect(isAllowedPhonePageOrigin(value)).toBe(false);
+  });
+
+  it('rejects non-strings', () => {
+    for (const value of [undefined, null, 5, {}, ['https://x']]) expect(isAllowedPhonePageOrigin(value)).toBe(false);
+  });
+});
+
+describe('phonePageOrigin in the resolved configuration', () => {
+  it('defaults to unset, so the core uses the relay origin', () => {
+    expect(resolveConfig(undefined).phonePageOrigin).toBeUndefined();
+    expect('phonePageOrigin' in resolveConfig(undefined)).toBe(false);
+    expect(resolveConfig({ relayUrl: 'wss://x.execute-api.ap-south-1.amazonaws.com/prod' }).phonePageOrigin).toBeUndefined();
+  });
+
+  it('applies a valid override next to the relay URL (the AWS shape: CloudFront phone page, execute-api relay)', () => {
+    const config = resolveConfig({
+      relayUrl: 'wss://abc123.execute-api.ap-south-1.amazonaws.com/prod',
+      phonePageOrigin: 'https://d1234abcd.cloudfront.net',
+    });
+    expect(config.relayUrl).toBe('wss://abc123.execute-api.ap-south-1.amazonaws.com/prod');
+    expect(config.phonePageOrigin).toBe('https://d1234abcd.cloudfront.net');
+    expect(config.warnings).toEqual([]);
+  });
+
+  it('ignores an invalid override, leaves it unset and records a warning that does not echo the value', () => {
+    for (const bad of ['http://phone.example.com', 'https://phone.example.com/x', 'https://user:pw@phone.example.com', 42]) {
+      const config = resolveConfig({ phonePageOrigin: bad });
+      expect(config.phonePageOrigin).toBeUndefined();
+      expect(config.warnings).toHaveLength(1);
+      expect(config.warnings[0]).toContain('Phone page origin');
+      expect(config.warnings[0]).not.toContain('pw@');
+      expect(config.warnings[0]).not.toContain('phone.example.com');
+    }
+  });
+
+  it('validates the two settings independently', () => {
+    const config = resolveConfig({ relayUrl: 'ws://remote.example.com/ws', phonePageOrigin: 'https://phone.example.com' });
+    expect(config.relayUrl).toBe(DEFAULT_RELAY_URL);
+    expect(config.phonePageOrigin).toBe('https://phone.example.com');
+    expect(config.warnings).toHaveLength(1);
+    const other = resolveConfig({ relayUrl: 'wss://relay.example.com/ws', phonePageOrigin: 'http://phone.example.com' });
+    expect(other.relayUrl).toBe('wss://relay.example.com/ws');
+    expect(other.phonePageOrigin).toBeUndefined();
+  });
+
+  it('documents both settings in the module comment and in index.js', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../config.ts'), 'utf8');
+    expect(source).toMatch(/relayUrl: where the TV opens its WebSocket/);
+    expect(source).toMatch(/phonePageOrigin: the https origin that serves the phone page/);
+    expect(source).toContain('Default: unset');
+    const index = fs.readFileSync(path.resolve(__dirname, '../../index.js'), 'utf8');
+    expect(index).toContain('phonePageOrigin');
   });
 });
 

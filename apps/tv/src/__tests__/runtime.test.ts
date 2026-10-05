@@ -67,6 +67,26 @@ describe('createRuntime', () => {
     expect(captured?.platform).toBe('web_preview');
   });
 
+  it('passes phonePageOrigin to the store only when configured', () => {
+    let captured: SessionStoreDeps | undefined;
+    const factory = (deps: SessionStoreDeps) => {
+      captured = deps;
+      return fakeStoreFor(deps, []);
+    };
+    createRuntime({ config: resolveConfig(undefined), factory });
+    expect(captured).toBeDefined();
+    expect('phonePageOrigin' in (captured as SessionStoreDeps)).toBe(false);
+    createRuntime({
+      config: resolveConfig({ relayUrl: 'wss://abc.execute-api.ap-south-1.amazonaws.com/prod', phonePageOrigin: 'https://d1234abcd.cloudfront.net' }),
+      factory,
+    });
+    expect(captured?.relayUrl).toBe('wss://abc.execute-api.ap-south-1.amazonaws.com/prod');
+    expect(captured?.phonePageOrigin).toBe('https://d1234abcd.cloudfront.net');
+    // An invalid override never reaches the store.
+    createRuntime({ config: resolveConfig({ phonePageOrigin: 'http://phone.example.com' }), factory });
+    expect('phonePageOrigin' in (captured as SessionStoreDeps)).toBe(false);
+  });
+
   it('passes platform randomness only when crypto.getRandomValues exists', () => {
     const original = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
     try {
