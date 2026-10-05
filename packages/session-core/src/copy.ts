@@ -11,8 +11,9 @@ export const LABEL_NO_BAND = 'No band set: results not scored';
 export const LABEL_LISTENER_EDITION = 'Listener Edition';
 export const LABEL_SAME_HOST = 'Same-device microphone mode';
 export const METER_CAPTION = 'Relative level, this session only';
+/** Amendment A2-01 (docs/adr/AMENDMENTS-REV2.md), exact. The same sentence as the phone's (apps/phone/src/config.ts). */
 export const PRIVACY_LINE =
-  'Audio stays on this phone and is never saved or uploaded. Only levels, typed phrases, listener responses, and connection details are sent to the relay and TV.';
+  'Audio stays on this phone and is never saved or uploaded. The phone sends only sound levels and when you are speaking, typed phrases, listener responses, phone status (microphone, screen, device name) and connection details to the relay and TV.';
 
 export const SUMMARY_COPY = {
   incomplete:
